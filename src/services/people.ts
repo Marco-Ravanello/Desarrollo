@@ -36,3 +36,30 @@ export async function getPersonById(id: string) {
     }
   });
 }
+
+export async function createPerson(data: any) {
+  return await prisma.person.create({
+    data: {
+      dni: data.dni,
+      firstName: data.firstName,
+      lastName: data.lastName,
+      birthDate: data.birthDate ? new Date(data.birthDate) : null,
+      address: data.address,
+      phone: data.phone,
+      email: data.email,
+    }
+  });
+}
+
+export async function updatePerson(id: string, data: any) {
+  return await prisma.person.update({
+    where: { id },
+    data: {
+      firstName: data.firstName,
+      lastName: data.lastName,
+      address: data.address,
+      phone: data.phone,
+      email: data.email,
+    }
+  });
+}

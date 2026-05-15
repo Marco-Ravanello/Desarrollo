@@ -15,20 +15,30 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const result = await signIn("credentials", { email, password, redirect: false });
-    if (result?.error) toast.error("Error al ingresar");
-    else router.push("/dashboard");
+    try {
+      const result = await signIn("credentials", { email, password, redirect: false });
+      if (result?.error) toast.error("Error al ingresar. Verifique sus credenciales.");
+      else router.push("/dashboard");
+    } catch (err) {
+      toast.error("Ocurrió un error inesperado.");
+    }
   };
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-slate-50">
-      <Card className="w-full max-w-md">
-        <CardHeader><CardTitle className="text-center font-bold">MuniGestión Login</CardTitle></CardHeader>
+      <Card className="w-full max-w-md shadow-lg">
+        <CardHeader><CardTitle className="text-2xl text-center font-bold text-slate-800">MuniGestión</CardTitle></CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2"><Label>Email</Label><Input type="email" value={email} onChange={e => setEmail(e.target.value)} required /></div>
-            <div className="space-y-2"><Label>Contraseña</Label><Input type="password" value={password} onChange={e => setPassword(e.target.value)} required /></div>
-            <Button className="w-full" type="submit">Ingresar</Button>
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input id="email" type="email" placeholder="usuario@municipio.gob.ar" value={email} onChange={e => setEmail(e.target.value)} required />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="password">Contraseña</Label>
+              <Input id="password" type="password" value={password} onChange={e => setPassword(e.target.value)} required />
+            </div>
+            <Button className="w-full bg-blue-600 hover:bg-blue-700" type="submit">Ingresar</Button>
           </form>
         </CardContent>
       </Card>
