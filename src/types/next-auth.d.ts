@@ -1,5 +1,5 @@
-import { Role } from "@prisma/client";
 import { DefaultSession } from "next-auth";
+import { Role } from "@prisma/client";
 
 declare module "next-auth" {
   interface Session {
@@ -7,7 +7,7 @@ declare module "next-auth" {
       id: string;
       role: Role;
       areaId: string | null;
-    } & DefaultSession["user"];
+    } & DefaultSession["user"]
   }
 
   interface User {

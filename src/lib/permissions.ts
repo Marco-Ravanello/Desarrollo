@@ -31,6 +31,9 @@ const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     PERMISSIONS.VIEW_REPORTS,
     PERMISSIONS.VIEW_AUDIT_LOGS,
   ],
+  VIOLENCIA_GENERO: [
+    PERMISSIONS.VIEW_SENSITIVE_CASES,
+  ],
 };
 
 export function hasPermission(role: Role, permission: Permission): boolean {

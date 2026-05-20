@@ -30,6 +30,7 @@ enum Role {
   DIRECTOR_AREA
   OPERATIVO
   AUDITOR
+  VIOLENCIA_GENERO
 }
 
 model Area {
