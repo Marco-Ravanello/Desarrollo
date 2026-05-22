@@ -17,23 +17,48 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) return null;
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email as string },
-        });
-        if (!user || !user.password) return null;
-        const isPasswordValid = await bcrypt.compare(
-          credentials.password as string,
-          user.password
-        );
-        if (!isPasswordValid) return null;
-        return {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          role: user.role,
-          areaId: user.areaId,
-        };
+        try {
+          if (!credentials?.email || !credentials?.password) return null;
+
+          console.log(`🔐 Intento de login para: ${credentials.email}`);
+
+          const user = await prisma.user.findUnique({
+            where: { email: credentials.email as string },
+          });
+
+          if (!user) {
+            console.warn(`⚠️ Usuario no encontrado: ${credentials.email}`);
+            return null;
+          }
+
+          if (!user.password) {
+            console.warn(`⚠️ Usuario sin contraseña configurada: ${credentials.email}`);
+            return null;
+          }
+
+          const isPasswordValid = await bcrypt.compare(
+            credentials.password as string,
+            user.password
+          );
+
+          if (!isPasswordValid) {
+            console.warn(`❌ Contraseña inválida para: ${credentials.email}`);
+            return null;
+          }
+
+          console.log(`✅ Login exitoso: ${user.email} (${user.role})`);
+
+          return {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            role: user.role,
+            areaId: user.areaId,
+          };
+        } catch (error) {
+          console.error("🔥 Error crítico en authorize:", error);
+          return null;
+        }
       },
     }),
   ],
