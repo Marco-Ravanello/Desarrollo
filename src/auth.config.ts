@@ -12,7 +12,11 @@ export const authConfig = {
       const isAuthPage = nextUrl.pathname.startsWith("/login");
 
       if (isAuthPage) {
-        if (isLoggedIn) return Response.redirect(new URL("/dashboard", nextUrl));
+        if (isLoggedIn) {
+          // In Colab/Tunnel, nextUrl might sometimes have a localhost base when we want the tunnel URL.
+          // Using a relative path for the redirect is often safer with Auth.js v5 middleware.
+          return Response.redirect(new URL("/dashboard", nextUrl.origin));
+        }
         return true;
       }
 
