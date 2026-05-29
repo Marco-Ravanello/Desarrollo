@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 import { getDashboardStats } from "@/services/dashboard";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Users, FileText, ArrowRightLeft, ShoppingBag, Receipt, AlertTriangle, TrendingUp, Activity, User, Calendar } from "lucide-react";
+import { DashboardCharts } from "@/components/dashboard/dashboard-charts";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 
@@ -45,6 +46,11 @@ export default async function DashboardPage() {
           </Card>
         ))}
       </div>
+
+      <DashboardCharts
+        casesByAreaData={stats.casesByAreaData}
+        poStatusData={stats.poStatusData}
+      />
 
       <div className="grid gap-6 lg:grid-cols-1">
         <Card className="border-none shadow-sm">

@@ -23,6 +23,28 @@ export async function getDashboardStats() {
     include: { user: true }
   });
 
+  // Aggregated data for charts
+  const casesByArea = await prisma.case.groupBy({
+    by: ['areaId'],
+    _count: { _all: true },
+  });
+
+  const areas = await prisma.area.findMany();
+  const casesByAreaData = areas.map(area => {
+    const caseCount = casesByArea.find(c => c.areaId === area.id)?._count._all || 0;
+    return { name: area.name, value: caseCount };
+  });
+
+  const poByStatus = await prisma.purchaseOrder.groupBy({
+    by: ['status'],
+    _count: { _all: true },
+  });
+
+  const poStatusData = poByStatus.map(s => ({
+    name: s.status.replace('_', ' '),
+    value: s._count._all
+  }));
+
   return {
     peopleCount,
     activeCases,
@@ -31,5 +53,7 @@ export async function getDashboardStats() {
     pendingInvoices,
     lowStockItems,
     recentActivity,
+    casesByAreaData,
+    poStatusData,
   };
 }

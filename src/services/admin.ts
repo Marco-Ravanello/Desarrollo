@@ -1,7 +1,9 @@
 import prisma from "@/lib/prisma";
+import { OrderStatus } from "@prisma/client";
 
-export async function getPurchaseOrders() {
+export async function getPurchaseOrders(status?: string) {
   return await prisma.purchaseOrder.findMany({
+    where: status ? { status: status as OrderStatus } : {},
     include: { provider: true },
     orderBy: { createdAt: 'desc' }
   });

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import Link from "next/link";
 import { GlobalSearch } from "@/components/search/global-search";
+import { ThemeToggle } from "./theme-toggle";
 
 export function AppSidebar() {
   const { data: session } = useSession();
@@ -84,9 +85,12 @@ export function AppSidebar() {
           <p className="text-sm font-medium truncate">{user?.name || "Invitado"}</p>
           <p className="text-xs text-slate-500 truncate">{user?.role || "Sin rol"}</p>
         </div>
-        <Button variant="ghost" size="icon" onClick={() => signOut()} className="text-slate-400 hover:text-white">
-          <LogOut className="h-4 w-4" />
-        </Button>
+        <div className="flex items-center gap-1">
+          <ThemeToggle />
+          <Button variant="ghost" size="icon" onClick={() => signOut()} className="text-slate-400 hover:text-white">
+            <LogOut className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
     </div>
   );
