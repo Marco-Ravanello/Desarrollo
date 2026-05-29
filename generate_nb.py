@@ -43,7 +43,6 @@ step1_source = [
     "    raise Exception(\"Postgres failed to start\")",
     "",
     "print(\"👤 Configurando base de datos...\")",
-    "# Intentamos cerrar conexiones activas a la DB si existe",
     "os.system(\"sudo -u postgres psql -c \\\"SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = 'munidb' AND pid <> pg_backend_pid();\\\"\")",
     "os.system(\"sudo -u postgres psql -c \\\"DROP DATABASE IF EXISTS munidb;\\\"\")",
     "os.system(\"sudo -u postgres psql -c \\\"DROP USER IF EXISTS muniuser;\\\"\")",
