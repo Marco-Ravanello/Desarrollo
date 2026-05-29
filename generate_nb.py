@@ -75,17 +75,17 @@ step1_source = [
     "    f.write(\"AUTH_SECRET=\\\"secret-key-for-colab-12345678\\\"\\n\")",
     "    f.write(\"AUTH_TRUST_HOST=\\\"true\\\"\\n\")",
     "",
-    "print(\"🗄️ Sincronizando esquema de base de datos...\")",
-    "res = subprocess.run([\"npx\", \"prisma\", \"db\", \"push\"], capture_output=True, text=True)",
+    "print(\"🗄️ Sincronizando esquema de base de datos (Prisma v6)...\")",
+    "res = subprocess.run([\"npx\", \"prisma@6\", \"db\", \"push\"], capture_output=True, text=True)",
     "if res.returncode != 0:",
     "    print(f\"❌ Error en db push: {res.stderr}\")",
     "    raise Exception(\"Prisma sync failed\")",
     "",
     "print(\"🌱 Poblando datos iniciales...\")",
-    "res = subprocess.run([\"npx\", \"prisma\", \"db\", \"seed\"], capture_output=True, text=True)",
+    "res = subprocess.run([\"npx\", \"prisma@6\", \"db\", \"seed\"], capture_output=True, text=True)",
     "print(res.stdout)",
     "",
-    "subprocess.run([\"npx\", \"prisma\", \"generate\"], capture_output=True)",
+    "subprocess.run([\"npx\", \"prisma@6\", \"generate\"], capture_output=True)",
     "print(\"✅ Configuración completada.\")"
 ]
 
