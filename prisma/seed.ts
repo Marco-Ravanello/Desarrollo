@@ -41,6 +41,21 @@ async function main() {
     },
   });
 
+  // Create Sample Providers
+  const providers = [
+    { name: 'Distribuidora Alimentos S.A.', cuit: '30-12345678-9', bank: 'Banco Nación', cbu: '0110123456789012345678' },
+    { name: 'Papelera Municipal', cuit: '20-87654321-0', bank: 'Banco Provincia', cbu: '0140123456789012345678' },
+    { name: 'Insumos Médicos S.R.L.', cuit: '33-11223344-5', bank: 'Banco Galicia', cbu: '0070123456789012345678' },
+  ];
+
+  for (const provider of providers) {
+    await prisma.provider.upsert({
+      where: { cuit: provider.cuit },
+      update: {},
+      create: provider,
+    });
+  }
+
   console.log('✅ Seed completed successfully');
 }
 
