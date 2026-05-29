@@ -66,6 +66,7 @@ step1_source = [
     "    os.system(f\"git clone {clone_url} {target_dir}\")",
     "",
     "os.chdir(target_dir)",
+    "os.makedirs(\"public/uploads\", exist_ok=True)",
     "",
     "print(\"📦 Instalando dependencias de Node (con legacy-peer-deps)...\")",
     "os.system(\"npm install --legacy-peer-deps\")",

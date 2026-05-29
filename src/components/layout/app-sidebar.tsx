@@ -25,7 +25,7 @@ export function AppSidebar() {
   ];
 
   return (
-    <div className="w-64 h-screen sticky top-0 bg-slate-900 text-white flex flex-col shrink-0 overflow-hidden">
+    <div className="w-64 h-screen sticky top-0 bg-slate-900 text-white flex flex-col shrink-0 overflow-hidden transition-colors">
       <div className="p-6 space-y-6">
         <div className="text-2xl font-bold flex items-center gap-2">
           <div className="bg-blue-600 p-1.5 rounded-lg text-white shadow-lg shadow-blue-900/20">

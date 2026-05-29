@@ -2,17 +2,26 @@ export const dynamic = "force-dynamic";
 import { getPersonById } from "@/services/people";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Phone, MapPin, ShieldAlert } from "lucide-react";
+import { Calendar, Phone, MapPin, ShieldAlert, Mail } from "lucide-react";
 import { notFound } from "next/navigation";
 import { auth } from "@/auth";
+import { getAreas } from "@/services/cases";
+import { CreateCaseForm } from "./create-case-form";
+import { UploadDocumentForm } from "./upload-document-form";
+import { FileIcon, ExternalLink } from "lucide-react";
 
 export default async function PersonDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
   const userRole = session?.user?.role;
 
   const { id } = await params;
-  const person = await getPersonById(id);
+  const [person, areas] = await Promise.all([
+    getPersonById(id),
+    getAreas()
+  ]);
+
   if (!person) notFound();
 
   // Filtrar casos sensibles si no tiene permisos
@@ -41,6 +50,7 @@ export default async function PersonDetailPage({ params }: { params: Promise<{ i
           <CardContent className="space-y-3">
             <div className="flex items-center gap-2"><MapPin className="h-4 w-4 text-slate-400"/> {person.address}</div>
             <div className="flex items-center gap-2"><Phone className="h-4 w-4 text-slate-400"/> {person.phone}</div>
+            {person.email && <div className="flex items-center gap-2"><Mail className="h-4 w-4 text-slate-400"/> {person.email}</div>}
             <div className="flex items-center gap-2"><Calendar className="h-4 w-4 text-slate-400"/> {person.birthDate?.toLocaleDateString()}</div>
           </CardContent>
         </Card>
@@ -53,6 +63,10 @@ export default async function PersonDetailPage({ params }: { params: Promise<{ i
               <TabsTrigger value="docs">Documentos</TabsTrigger>
             </TabsList>
             <TabsContent value="cases" className="p-4 pt-0">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wider">Casos Asociados</h3>
+              </div>
+
               {visibleCases.length === 0 ? <p className="text-slate-500">No hay casos activos visibles.</p> : (
                 <div className="space-y-2">
                   {visibleCases.map(c => (
@@ -71,6 +85,36 @@ export default async function PersonDetailPage({ params }: { params: Promise<{ i
                   ))}
                 </div>
               )}
+
+              <CreateCaseForm personId={person.id} areas={areas} />
+            </TabsContent>
+            <TabsContent value="docs" className="p-4 pt-0">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wider">Documentación Adjunta</h3>
+              </div>
+
+              {person.documents.length === 0 ? <p className="text-slate-500 text-center py-4 border rounded-md border-dashed">No hay documentos adjuntos.</p> : (
+                <div className="grid grid-cols-1 gap-2">
+                  {person.documents.map(d => (
+                    <div key={d.id} className="p-3 border rounded-md flex justify-between items-center bg-card hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors">
+                      <div className="flex items-center gap-3">
+                        <FileIcon className="h-4 w-4 text-slate-400" />
+                        <div>
+                          <p className="font-medium text-sm">{d.name}</p>
+                          <p className="text-[10px] text-slate-500">{new Date(d.createdAt).toLocaleDateString()}</p>
+                        </div>
+                      </div>
+                      <Button variant="ghost" size="sm" asChild>
+                        <a href={d.url} target="_blank" rel="noopener noreferrer">
+                          <ExternalLink className="h-4 w-4 mr-1" /> Abrir
+                        </a>
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <UploadDocumentForm personId={person.id} />
             </TabsContent>
           </Tabs>
         </Card>

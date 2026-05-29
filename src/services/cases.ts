@@ -15,3 +15,22 @@ export async function getCasesByArea(areaName: string) {
     orderBy: { updatedAt: 'desc' }
   });
 }
+
+export async function createCase(data: any) {
+  return await prisma.case.create({
+    data: {
+      personId: data.personId,
+      areaId: data.areaId,
+      title: data.title,
+      description: data.description,
+      status: 'ABIERTO',
+      priority: data.priority || 'MEDIA'
+    }
+  });
+}
+
+export async function getAreas() {
+  return await prisma.area.findMany({
+    orderBy: { name: 'asc' }
+  });
+}
