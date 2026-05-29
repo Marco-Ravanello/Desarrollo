@@ -7,8 +7,13 @@ import { Card } from "@/components/ui/card";
 import { Eye, Plus } from "lucide-react";
 import Link from "next/link";
 
-export default async function PeoplePage() {
-  const people = await getPeople();
+export default async function PeoplePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ search?: string }>;
+}) {
+  const { search } = await searchParams;
+  const people = await getPeople(search);
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">

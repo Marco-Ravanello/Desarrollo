@@ -1,7 +1,9 @@
 export const dynamic = "force-dynamic";
 import { getDashboardStats } from "@/services/dashboard";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Users, FileText, ArrowRightLeft, ShoppingBag, Receipt, AlertTriangle, TrendingUp } from "lucide-react";
+import { Users, FileText, ArrowRightLeft, ShoppingBag, Receipt, AlertTriangle, TrendingUp, Activity, User, Calendar } from "lucide-react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
 
 export default async function DashboardPage() {
   const stats = await getDashboardStats();
@@ -42,6 +44,58 @@ export default async function DashboardPage() {
             </CardContent>
           </Card>
         ))}
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-1">
+        <Card className="border-none shadow-sm">
+          <CardHeader className="flex flex-row items-center gap-2">
+            <Activity className="h-5 w-5 text-blue-600" />
+            <div className="space-y-1">
+              <CardTitle>Actividad Reciente</CardTitle>
+              <CardDescription>Últimas acciones realizadas en la plataforma.</CardDescription>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {stats.recentActivity.length > 0 ? (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Fecha</TableHead>
+                    <TableHead>Usuario</TableHead>
+                    <TableHead>Acción</TableHead>
+                    <TableHead>Entidad</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {stats.recentActivity.map((log) => (
+                    <TableRow key={log.id}>
+                      <TableCell className="text-xs text-slate-500">
+                        {new Date(log.createdAt).toLocaleString()}
+                      </TableCell>
+                      <TableCell className="flex items-center gap-2">
+                        <User className="h-3 w-3 text-slate-400" />
+                        <span className="font-medium text-sm">{log.user.name}</span>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="secondary" className="text-[10px] uppercase font-bold">
+                          {log.action}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-sm text-slate-600">
+                        {log.entity} #{log.entityId.substring(0, 8)}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-8 text-slate-400">
+                <Calendar className="h-10 w-10 mb-2 opacity-20" />
+                <p>No hay actividad registrada aún.</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

@@ -11,7 +11,7 @@ export default async function ViolenceModulePage() {
   const session = await auth();
   const role = session?.user?.role;
 
-  if (role !== "SUPERADMIN" && role !== "DIRECCION_GENERAL" && session?.user?.areaId !== "violence-area") {
+  if (role !== "SUPERADMIN" && role !== "DIRECCION_GENERAL" && role !== "VIOLENCIA_GENERO") {
     redirect("/dashboard");
   }
 

@@ -17,6 +17,12 @@ export async function getDashboardStats() {
     prisma.supplyItem.count({ where: { stock: { lte: 0 } } }),
   ]);
 
+  const recentActivity = await prisma.auditLog.findMany({
+    take: 5,
+    orderBy: { createdAt: 'desc' },
+    include: { user: true }
+  });
+
   return {
     peopleCount,
     activeCases,
@@ -24,5 +30,6 @@ export async function getDashboardStats() {
     pendingPurchaseOrders,
     pendingInvoices,
     lowStockItems,
+    recentActivity,
   };
 }

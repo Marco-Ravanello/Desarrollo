@@ -5,6 +5,7 @@ import { useSession, signOut } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import Link from "next/link";
+import { GlobalSearch } from "@/components/search/global-search";
 
 export function AppSidebar() {
   const { data: session } = useSession();
@@ -24,13 +25,15 @@ export function AppSidebar() {
 
   return (
     <div className="w-64 h-screen bg-slate-900 text-white flex flex-col shrink-0">
-      <div className="p-6">
+      <div className="p-6 space-y-6">
         <div className="text-2xl font-bold flex items-center gap-2">
           <div className="bg-blue-600 p-1.5 rounded-lg text-white shadow-lg shadow-blue-900/20">
             <Briefcase className="h-6 w-6" />
           </div>
           <span className="tracking-tight">MuniGestión</span>
         </div>
+
+        <GlobalSearch />
       </div>
 
       <nav className="flex-1 px-4 space-y-1 overflow-y-auto custom-scrollbar">
