@@ -1,6 +1,6 @@
 "use client";
 import * as React from "react";
-import { LayoutDashboard, Users, ShieldAlert, ClipboardList, LogOut, Briefcase } from "lucide-react";
+import { LayoutDashboard, Users, ShieldAlert, ClipboardList, LogOut, Briefcase, Car } from "lucide-react";
 import { useSession, signOut } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -15,7 +15,11 @@ export function AppSidebar() {
   const navigation = [
     { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard, color: "text-slate-400" },
     { title: "Registro Único", url: "/people", icon: Users, color: "text-slate-400" },
-    { title: "Admin. General", url: "/admin/purchase-orders", icon: Briefcase, color: "text-slate-400" },
+  ];
+
+  const adminNav = [
+    { title: "Compras y OC", url: "/admin/purchase-orders", icon: Briefcase, color: "text-slate-400" },
+    { title: "Vehículos y Logística", url: "/admin/vehicles", icon: Car, color: "text-slate-400" },
   ];
 
   const socialAreas = [
@@ -41,6 +45,20 @@ export function AppSidebar() {
         <div className="pb-2">
           <p className="px-2 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Principal</p>
           {navigation.map((item) => (
+            <Link
+              key={item.title}
+              href={item.url}
+              className="flex items-center gap-3 px-3 py-2 text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg transition-all group"
+            >
+              <item.icon className={`h-5 w-5 ${item.color} group-hover:text-white transition-colors`} />
+              <span className="text-sm font-medium">{item.title}</span>
+            </Link>
+          ))}
+        </div>
+
+        <div className="pt-4 pb-2">
+          <p className="px-2 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Administración</p>
+          {adminNav.map((item) => (
             <Link
               key={item.title}
               href={item.url}

@@ -37,7 +37,7 @@ export default async function DashboardPage() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-slate-900">{card.value}</div>
+              <div className="text-3xl font-bold text-foreground">{card.value}</div>
               <div className="mt-4 flex items-center text-xs text-slate-500">
                 <TrendingUp className="h-3 w-3 mr-1 text-green-500" />
                 <span>Actualizado ahora mismo</span>
@@ -80,7 +80,7 @@ export default async function DashboardPage() {
                       </TableCell>
                       <TableCell className="flex items-center gap-2">
                         <User className="h-3 w-3 text-slate-400" />
-                        <span className="font-medium text-sm">{log.user.name}</span>
+                        <span className="font-medium text-sm text-foreground">{log.user.name}</span>
                       </TableCell>
                       <TableCell>
                         <Badge variant="secondary" className="text-[10px] uppercase font-bold">

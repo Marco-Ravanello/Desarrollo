@@ -7,8 +7,8 @@ const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
 export function DashboardCharts({ casesByAreaData, poStatusData }: { casesByAreaData: any[], poStatusData: any[] }) {
   return (
     <div className="grid gap-6 md:grid-cols-2">
-      <div className="bg-white p-6 rounded-xl border border-slate-100 shadow-sm">
-        <h3 className="text-sm font-semibold text-slate-600 uppercase tracking-wider mb-6">Casos por Área</h3>
+      <div className="bg-card p-6 rounded-xl border border-border shadow-sm">
+        <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-6">Casos por Área</h3>
         <div className="h-[300px] w-full">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={casesByAreaData}>
@@ -28,8 +28,8 @@ export function DashboardCharts({ casesByAreaData, poStatusData }: { casesByArea
         </div>
       </div>
 
-      <div className="bg-white p-6 rounded-xl border border-slate-100 shadow-sm">
-        <h3 className="text-sm font-semibold text-slate-600 uppercase tracking-wider mb-6">Órdenes de Compra</h3>
+      <div className="bg-card p-6 rounded-xl border border-border shadow-sm">
+        <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-6">Órdenes de Compra</h3>
         <div className="h-[300px] w-full">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
