@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 import { getPersonById } from "@/services/people";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, Phone, MapPin, ShieldAlert, Mail } from "lucide-react";
@@ -11,7 +12,7 @@ import { getAreas } from "@/services/cases";
 import { CreateCaseForm } from "./create-case-form";
 import { UploadDocumentForm } from "./upload-document-form";
 import { CloseCaseButton } from "./close-case-button";
-import { FileIcon, ExternalLink, History } from "lucide-react";
+import { FileIcon, ExternalLink, History, Eye } from "lucide-react";
 
 export default async function PersonDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
@@ -84,7 +85,10 @@ export default async function PersonDetailPage({ params }: { params: Promise<{ i
                           <p className="text-xs text-slate-500 mt-1">{c.area.name} • {c.status}</p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2">
+                         <Button variant="ghost" size="icon" asChild>
+                           <Link href={`/cases/${c.id}`}><Eye className="h-4 w-4" /></Link>
+                         </Button>
                          <CloseCaseButton caseId={c.id} />
                       </div>
                     </div>
@@ -117,7 +121,12 @@ export default async function PersonDetailPage({ params }: { params: Promise<{ i
                           <p className="text-xs text-slate-500 mt-1">{c.area.name} • Finalizado el {new Date(c.updatedAt).toLocaleDateString()}</p>
                         </div>
                       </div>
-                      <Badge variant="outline" className="text-slate-500 uppercase text-[10px]">Cerrado</Badge>
+                      <div className="flex items-center gap-2">
+                        <Button variant="ghost" size="icon" asChild>
+                           <Link href={`/cases/${c.id}`}><Eye className="h-4 w-4" /></Link>
+                        </Button>
+                        <Badge variant="outline" className="text-slate-500 uppercase text-[10px]">Cerrado</Badge>
+                      </div>
                     </div>
                   ))}
                 </div>

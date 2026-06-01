@@ -34,3 +34,17 @@ export async function getAreas() {
     orderBy: { name: 'asc' }
   });
 }
+
+export async function getCaseById(id: string) {
+  return await prisma.case.findUnique({
+    where: { id },
+    include: {
+      person: true,
+      area: true,
+      interventions: {
+        orderBy: { date: 'desc' }
+      },
+      documents: true
+    }
+  });
+}
