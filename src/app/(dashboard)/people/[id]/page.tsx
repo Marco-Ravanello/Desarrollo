@@ -45,7 +45,10 @@ export default async function PersonDetailPage({ params }: { params: Promise<{ i
         </div>
         <div>
           <h2 className="text-3xl font-bold">{person.lastName}, {person.firstName}</h2>
-          <Badge variant="outline">DNI: {person.dni}</Badge>
+          <div className="flex gap-2 items-center mt-1">
+            <Badge variant="outline">DNI: {person.dni}</Badge>
+            {person.email && <Badge variant="secondary" className="font-normal">{person.email}</Badge>}
+          </div>
         </div>
       </div>
 
@@ -149,7 +152,7 @@ export default async function PersonDetailPage({ params }: { params: Promise<{ i
                         </div>
                       </div>
                       <Button variant="ghost" size="sm" asChild>
-                        <a href={d.url} target="_blank" rel="noopener noreferrer">
+                        <a href={`/api${d.url}`} target="_blank" rel="noopener noreferrer">
                           <ExternalLink className="h-4 w-4 mr-1" /> Abrir
                         </a>
                       </Button>

@@ -18,6 +18,9 @@ export default async function VehiclesPage() {
           <p className="text-slate-500">Gestión de flota, reservas y rendición de combustible.</p>
         </div>
         <div className="flex gap-2">
+          <Button variant="outline" asChild title="Reportes mensuales">
+            <Link href="/admin/vehicles/reports"><Calendar className="mr-2 h-4 w-4"/> Reportes</Link>
+          </Button>
           <Button variant="outline" asChild>
             <Link href="/admin/vehicles/fuel"><Fuel className="mr-2 h-4 w-4"/> Rendición</Link>
           </Button>
@@ -32,16 +35,23 @@ export default async function VehiclesPage() {
           <Card key={v.id} className="hover:shadow-md transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium">{v.brand} {v.model}</CardTitle>
-              <Car className="h-4 w-4 text-slate-400" />
+              <Car className={v.reservations.length > 0 ? "h-4 w-4 text-amber-500" : "h-4 w-4 text-slate-400"} />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold font-mono tracking-tighter uppercase">{v.plate}</div>
+              <div className="flex justify-between items-start">
+                <div className="text-2xl font-bold font-mono tracking-tighter uppercase">{v.plate}</div>
+                {v.reservations.length > 0 ? (
+                  <Badge variant="destructive" className="animate-pulse">OCUPADO</Badge>
+                ) : (
+                  <Badge variant="outline" className="text-emerald-500 border-emerald-500">DISPONIBLE</Badge>
+                )}
+              </div>
               <div className="mt-4 flex items-center justify-between">
                 <div className="flex items-center gap-2 text-xs text-slate-500">
                   <Calendar className="h-3 w-3" />
                   <span>{v._count.reservations} Reservas</span>
                 </div>
-                <Button size="sm" variant="ghost" asChild>
+                <Button size="sm" variant="ghost" asChild disabled={v.reservations.length > 0}>
                    <Link href={`/admin/vehicles/reserve?id=${v.id}`}>Reservar</Link>
                 </Button>
               </div>
@@ -70,9 +80,17 @@ export default async function VehiclesPage() {
                 <TableRow key={v.id}>
                   <TableCell className="font-mono font-bold uppercase">{v.plate}</TableCell>
                   <TableCell>{v.brand} {v.model}</TableCell>
-                  <TableCell><Badge variant="secondary">Disponible</Badge></TableCell>
+                  <TableCell>
+                    {v.reservations.length > 0 ? (
+                      <Badge variant="destructive">Ocupado hasta {new Date(v.reservations[0].endDate).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</Badge>
+                    ) : (
+                      <Badge variant="secondary">Disponible</Badge>
+                    )}
+                  </TableCell>
                   <TableCell className="text-right">
-                    <Button variant="ghost" size="sm">Historial</Button>
+                    <Button variant="ghost" size="sm" asChild>
+                      <Link href={`/admin/vehicles/${v.id}`}>Historial</Link>
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))}

@@ -50,6 +50,16 @@ export function CreateVehicleForm() {
             <Input id="model" name="model" placeholder="Ej: Hilux" required />
           </div>
 
+          <div className="space-y-2">
+            <Label htmlFor="fuelCardNumber">Número de Tarjeta YPF en Ruta</Label>
+            <Input id="fuelCardNumber" name="fuelCardNumber" placeholder="Opcional" />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="fuelMonthlyLimit">Cupo Mensual ($)</Label>
+            <Input id="fuelMonthlyLimit" name="fuelMonthlyLimit" type="number" placeholder="0.00" defaultValue="0" />
+          </div>
+
           <div className="flex gap-3 pt-4">
             <Button type="button" variant="ghost" className="flex-1" onClick={() => router.back()}>
               Cancelar

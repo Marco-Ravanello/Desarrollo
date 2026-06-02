@@ -13,13 +13,17 @@ export async function createVehicleAction(formData: FormData) {
   const plate = formData.get("plate") as string;
   const brand = formData.get("brand") as string;
   const model = formData.get("model") as string;
+  const fuelCardNumber = formData.get("fuelCardNumber") as string;
+  const fuelMonthlyLimit = parseFloat(formData.get("fuelMonthlyLimit") as string) || 0;
 
   try {
     const vehicle = await prisma.vehicle.create({
       data: {
         plate: plate.toUpperCase(),
         brand,
-        model
+        model,
+        fuelCardNumber,
+        fuelMonthlyLimit
       }
     });
 

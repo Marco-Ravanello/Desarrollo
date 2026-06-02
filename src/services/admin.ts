@@ -39,10 +39,40 @@ export async function createProvider(data: any) {
 }
 
 export async function getVehicles() {
+  const now = new Date();
   return await prisma.vehicle.findMany({
     include: {
       _count: {
         select: { reservations: true }
+      },
+      reservations: {
+        where: {
+          status: { in: ['RESERVADO', 'EN_CURSO'] },
+          startDate: { lte: now },
+          endDate: { gte: now }
+        },
+        take: 1
+      },
+      fuelRecords: {
+        orderBy: { date: 'desc' }
+      }
+    },
+    orderBy: { plate: 'asc' }
+  });
+}
+
+export async function getVehicleWithHistory(id: string) {
+  return await prisma.vehicle.findUnique({
+    where: { id },
+    include: {
+      reservations: {
+        orderBy: { startDate: 'desc' },
+        include: {
+          // Si tuviéramos relación con User la incluiríamos aquí
+        }
+      },
+      fuelRecords: {
+        orderBy: { date: 'desc' }
       }
     }
   });

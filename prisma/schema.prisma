@@ -193,6 +193,8 @@ model Vehicle {
   plate         String   @unique
   model         String
   brand         String
+  fuelCardNumber String?
+  fuelMonthlyLimit Decimal? @default(0)
   reservations  VehicleReservation[]
   fuelRecords   FuelRecord[]
 }
