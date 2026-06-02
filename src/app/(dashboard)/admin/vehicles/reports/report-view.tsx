@@ -38,7 +38,11 @@ export function FuelReportView({ vehicles }: { vehicles: any[] }) {
         </div>
 
         {vehicles.map(v => {
-           const monthlyRecords = v.fuelRecords.filter((r: any) => r.date.startsWith(selectedMonth));
+           const monthlyRecords = (v.fuelRecords || []).filter((r: any) => {
+             const recordDate = new Date(r.date);
+             const recordMonth = recordDate.toISOString().slice(0, 7);
+             return recordMonth === selectedMonth;
+           });
            const totalSpent = monthlyRecords.reduce((acc: number, r: any) => acc + Number(r.amount), 0);
            const totalLiters = monthlyRecords.reduce((acc: number, r: any) => acc + Number(r.liters), 0);
 
@@ -85,7 +89,11 @@ export function FuelReportView({ vehicles }: { vehicles: any[] }) {
            );
         })}
 
-        {vehicles.every(v => v.fuelRecords.filter((r: any) => r.date.startsWith(selectedMonth)).length === 0) && (
+        {vehicles.every(v => (v.fuelRecords || []).filter((r: any) => {
+           const recordDate = new Date(r.date);
+           const recordMonth = recordDate.toISOString().slice(0, 7);
+           return recordMonth === selectedMonth;
+        }).length === 0) && (
            <div className="text-center py-20 text-slate-400 border-2 border-dashed rounded-xl">
               No hay registros de combustible para el período seleccionado.
            </div>

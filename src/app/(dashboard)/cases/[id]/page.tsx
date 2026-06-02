@@ -2,16 +2,38 @@ export const dynamic = "force-dynamic";
 import { getCaseById } from "@/services/cases";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { notFound } from "next/navigation";
-import { Calendar, User, MapPin, Tag, ArrowLeft } from "lucide-react";
+import { notFound, redirect } from "next/navigation";
+import { Calendar, User, MapPin, Tag, ArrowLeft, ShieldAlert } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { auth } from "@/auth";
+import { hasPermission, PERMISSIONS } from "@/lib/permissions";
 
 export default async function CaseDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const session = await auth();
+  if (!session?.user) redirect("/login");
+
   const { id } = await params;
   const caseData = await getCaseById(id);
 
   if (!caseData) notFound();
+
+  // Validar permiso para casos sensibles
+  if (caseData.area.name === "Violencia de Género") {
+    const canView = hasPermission(session.user.role as any, PERMISSIONS.VIEW_SENSITIVE_CASES);
+    if (!canView) {
+      return (
+        <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
+          <ShieldAlert className="h-16 w-16 text-red-500 animate-pulse" />
+          <h2 className="text-2xl font-bold">Acceso Restringido</h2>
+          <p className="text-slate-500 max-w-md">No tiene los permisos necesarios para visualizar la información de este caso debido a su naturaleza sensible.</p>
+          <Button asChild variant="outline">
+            <Link href="/people">Volver al Registro</Link>
+          </Button>
+        </div>
+      );
+    }
+  }
 
   return (
     <div className="space-y-6">

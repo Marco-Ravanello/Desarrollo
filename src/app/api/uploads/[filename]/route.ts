@@ -1,11 +1,17 @@
 import { readFile } from "fs/promises";
 import { join } from "path";
 import { NextResponse } from "next/server";
+import { auth } from "@/auth";
 
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ filename: string }> }
 ) {
+  const session = await auth();
+  if (!session?.user) {
+    return new NextResponse("Unauthorized", { status: 401 });
+  }
+
   const { filename } = await params;
   const path = join(process.cwd(), "public", "uploads", filename);
 
