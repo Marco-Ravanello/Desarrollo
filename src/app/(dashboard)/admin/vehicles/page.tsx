@@ -82,9 +82,12 @@ export default async function VehiclesPage() {
                   <TableCell>{v.brand} {v.model}</TableCell>
                   <TableCell>
                     {v.reservations.length > 0 ? (
-                      <Badge variant="destructive">Ocupado hasta {new Date(v.reservations[0].endDate).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</Badge>
+                      <div className="flex flex-col gap-1">
+                        <Badge variant="destructive" className="w-fit">OCUPADO</Badge>
+                        <span className="text-[10px] text-slate-500 italic">Hasta {new Date(v.reservations[0].endDate).toLocaleString()}</span>
+                      </div>
                     ) : (
-                      <Badge variant="secondary">Disponible</Badge>
+                      <Badge variant="secondary" className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100">DISPONIBLE</Badge>
                     )}
                   </TableCell>
                   <TableCell className="text-right">

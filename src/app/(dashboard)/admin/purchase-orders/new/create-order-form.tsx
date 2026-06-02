@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { createPurchaseOrderAction } from "../../actions/create-purchase-order";
+import { Combobox } from "@/components/ui/combobox";
 
 export function CreatePurchaseOrderForm({ providers }: { providers: any[] }) {
   const router = useRouter();
@@ -47,17 +48,12 @@ export function CreatePurchaseOrderForm({ providers }: { providers: any[] }) {
             </div>
             <div className="space-y-2">
               <Label htmlFor="providerId">Proveedor</Label>
-              <select
-                id="providerId"
+              <Combobox
                 name="providerId"
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                placeholder="Buscar proveedor..."
+                options={providers.map(p => ({ value: p.id, label: `${p.name} (${p.cuit})` }))}
                 required
-              >
-                <option value="">Seleccione un proveedor</option>
-                {providers.map(p => (
-                  <option key={p.id} value={p.id}>{p.name} ({p.cuit})</option>
-                ))}
-              </select>
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="amount">Importe Total ($)</Label>

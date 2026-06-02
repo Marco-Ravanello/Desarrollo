@@ -17,3 +17,17 @@ export async function createAuditLog(
     },
   });
 }
+
+export async function getUsers() {
+  return await prisma.user.findMany({
+    include: { area: true },
+    orderBy: { name: 'asc' }
+  });
+}
+
+export async function getUserById(id: string) {
+  return await prisma.user.findUnique({
+    where: { id },
+    include: { area: true }
+  });
+}

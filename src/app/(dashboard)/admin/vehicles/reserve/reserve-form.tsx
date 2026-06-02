@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { createVehicleReservationAction } from "../../actions/vehicle-actions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Combobox } from "@/components/ui/combobox";
 
 export function ReserveVehicleForm({ vehicleId, vehicles }: { vehicleId: string, vehicles: any[] }) {
   const router = useRouter();
@@ -37,17 +38,13 @@ export function ReserveVehicleForm({ vehicleId, vehicles }: { vehicleId: string,
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="vehicleId">Vehículo</Label>
-            <select
-              id="vehicleId"
+            <Combobox
               name="vehicleId"
               defaultValue={vehicleId}
+              placeholder="Buscar vehículo..."
+              options={vehicles.map(v => ({ value: v.id, label: `${v.plate} - ${v.brand} ${v.model}` }))}
               required
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {vehicles.map(v => (
-                <option key={v.id} value={v.id}>{v.plate} - {v.brand} {v.model}</option>
-              ))}
-            </select>
+            />
           </div>
 
           <div className="grid grid-cols-1 gap-4">

@@ -8,6 +8,8 @@ export async function getDashboardStats() {
     pendingPurchaseOrders,
     pendingInvoices,
     lowStockItems,
+    vehicleCount,
+    occupiedVehicles,
   ] = await Promise.all([
     prisma.person.count(),
     prisma.case.count({ where: { status: { in: ['ABIERTO', 'EN_PROCESO'] } } }),
@@ -15,6 +17,14 @@ export async function getDashboardStats() {
     prisma.purchaseOrder.count({ where: { status: 'PENDIENTE_APROBACION' } }),
     prisma.invoice.count({ where: { status: 'PENDIENTE' } }),
     prisma.supplyItem.count({ where: { stock: { lte: 0 } } }),
+    prisma.vehicle.count(),
+    prisma.vehicleReservation.count({
+      where: {
+        status: { in: ['RESERVADO', 'EN_CURSO'] },
+        startDate: { lte: new Date() },
+        endDate: { gte: new Date() }
+      }
+    }),
   ]);
 
   const recentActivity = await prisma.auditLog.findMany({
@@ -55,5 +65,9 @@ export async function getDashboardStats() {
     recentActivity,
     casesByAreaData,
     poStatusData,
+    vehicleStats: {
+      total: vehicleCount,
+      occupied: occupiedVehicles
+    }
   };
 }

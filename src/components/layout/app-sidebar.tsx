@@ -1,15 +1,17 @@
 "use client";
 import * as React from "react";
-import { LayoutDashboard, Users, ShieldAlert, ClipboardList, LogOut, Briefcase, Car } from "lucide-react";
+import { LayoutDashboard, Users, ShieldAlert, ClipboardList, LogOut, Briefcase, Car, UserCog } from "lucide-react";
 import { useSession, signOut } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { GlobalSearch } from "@/components/search/global-search";
 import { ThemeToggle } from "./theme-toggle";
 
 export function AppSidebar() {
   const { data: session } = useSession();
+  const pathname = usePathname();
   const user = session?.user;
 
   const navigation = [
@@ -20,6 +22,7 @@ export function AppSidebar() {
   const adminNav = [
     { title: "Compras y OC", url: "/admin/purchase-orders", icon: Briefcase, color: "text-slate-400" },
     { title: "Vehículos y Logística", url: "/admin/vehicles", icon: Car, color: "text-slate-400" },
+    ...(user?.role === 'SUPERADMIN' ? [{ title: "Usuarios", url: "/admin/users", icon: UserCog, color: "text-slate-400" }] : []),
   ];
 
   const socialAreas = [
@@ -44,30 +47,40 @@ export function AppSidebar() {
       <nav className="flex-1 px-4 space-y-1 overflow-y-auto custom-scrollbar">
         <div className="pb-2">
           <p className="px-2 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Principal</p>
-          {navigation.map((item) => (
-            <Link
-              key={item.title}
-              href={item.url}
-              className="flex items-center gap-3 px-3 py-2 text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg transition-all group"
-            >
-              <item.icon className={`h-5 w-5 ${item.color} group-hover:text-white transition-colors`} />
-              <span className="text-sm font-medium">{item.title}</span>
-            </Link>
-          ))}
+          {navigation.map((item) => {
+            const isActive = pathname === item.url;
+            return (
+              <Link
+                key={item.title}
+                href={item.url}
+                className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-all group ${
+                  isActive ? "bg-blue-600 text-white" : "text-slate-300 hover:text-white hover:bg-slate-800"
+                }`}
+              >
+                <item.icon className={`h-5 w-5 ${isActive ? "text-white" : item.color} group-hover:text-white transition-colors`} />
+                <span className="text-sm font-medium">{item.title}</span>
+              </Link>
+            );
+          })}
         </div>
 
         <div className="pt-4 pb-2">
           <p className="px-2 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Administración</p>
-          {adminNav.map((item) => (
-            <Link
-              key={item.title}
-              href={item.url}
-              className="flex items-center gap-3 px-3 py-2 text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg transition-all group"
-            >
-              <item.icon className={`h-5 w-5 ${item.color} group-hover:text-white transition-colors`} />
-              <span className="text-sm font-medium">{item.title}</span>
-            </Link>
-          ))}
+          {adminNav.map((item) => {
+            const isActive = pathname.startsWith(item.url);
+            return (
+              <Link
+                key={item.title}
+                href={item.url}
+                className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-all group ${
+                  isActive ? "bg-slate-700 text-white" : "text-slate-300 hover:text-white hover:bg-slate-800"
+                }`}
+              >
+                <item.icon className={`h-5 w-5 ${isActive ? "text-white" : item.color} group-hover:text-white transition-colors`} />
+                <span className="text-sm font-medium">{item.title}</span>
+              </Link>
+            );
+          })}
         </div>
 
         <div className="pt-4 pb-2">

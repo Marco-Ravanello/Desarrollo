@@ -1,7 +1,7 @@
 export const dynamic = "force-dynamic";
 import { getDashboardStats } from "@/services/dashboard";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Users, FileText, ArrowRightLeft, ShoppingBag, Receipt, AlertTriangle, TrendingUp, Activity, User, Calendar } from "lucide-react";
+import { Users, FileText, ArrowRightLeft, ShoppingBag, Receipt, AlertTriangle, TrendingUp, Activity, User, Calendar, Car } from "lucide-react";
 import { DashboardCharts } from "@/components/dashboard/dashboard-charts";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -14,7 +14,7 @@ export default async function DashboardPage() {
     { title: "Derivaciones", description: "Pendientes entre áreas", value: stats.pendingDerivations, icon: ArrowRightLeft, color: "text-purple-600", bg: "bg-purple-50" },
     { title: "OC Pendientes", description: "Órdenes por aprobar", value: stats.pendingPurchaseOrders, icon: ShoppingBag, color: "text-green-600", bg: "bg-green-50" },
     { title: "Facturas", description: "Pendientes de pago", value: stats.pendingInvoices, icon: Receipt, color: "text-yellow-600", bg: "bg-yellow-50" },
-    { title: "Stock Crítico", description: "Insumos sin existencia", value: stats.lowStockItems, icon: AlertTriangle, color: "text-red-600", bg: "bg-red-50" },
+    { title: "Vehículos", description: "En uso vs Disponibles", value: `${stats.vehicleStats.occupied}/${stats.vehicleStats.total}`, icon: Car, color: "text-indigo-600", bg: "bg-indigo-50" },
   ];
 
   return (
