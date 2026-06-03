@@ -1,6 +1,6 @@
 "use client";
 import * as React from "react";
-import { LayoutDashboard, Users, ShieldAlert, ClipboardList, LogOut, Briefcase, Car, UserCog } from "lucide-react";
+import { LayoutDashboard, Users, ShieldAlert, ClipboardList, LogOut, Briefcase, Car, UserCog, ChevronLeft, ChevronRight, CheckCircle2 } from "lucide-react";
 import { useSession, signOut } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -13,15 +13,29 @@ export function AppSidebar() {
   const { data: session } = useSession();
   const pathname = usePathname();
   const user = session?.user;
+  const [isCollapsed, setIsCollapsed] = React.useState(false);
+
+  React.useEffect(() => {
+    const saved = localStorage.getItem("sidebar-collapsed");
+    if (saved) setIsCollapsed(JSON.parse(saved));
+  }, []);
+
+  const toggleSidebar = () => {
+    const newState = !isCollapsed;
+    setIsCollapsed(newState);
+    localStorage.setItem("sidebar-collapsed", JSON.stringify(newState));
+  };
 
   const navigation = [
     { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard, color: "text-slate-400" },
+    { title: "Mis Tareas", url: "/tasks", icon: CheckCircle2, color: "text-slate-400" },
     { title: "Registro Único", url: "/people", icon: Users, color: "text-slate-400" },
   ];
 
   const adminNav = [
     { title: "Compras y OC", url: "/admin/purchase-orders", icon: Briefcase, color: "text-slate-400" },
     { title: "Vehículos y Logística", url: "/admin/vehicles", icon: Car, color: "text-slate-400" },
+    { title: "Recursos Humanos", url: "/admin/hr", icon: UserCog, color: "text-slate-400" },
     ...(user?.role === 'SUPERADMIN' ? [{ title: "Usuarios", url: "/admin/users", icon: UserCog, color: "text-slate-400" }] : []),
   ];
 
@@ -32,93 +46,124 @@ export function AppSidebar() {
   ];
 
   return (
-    <div className="w-64 h-screen sticky top-0 bg-slate-900 text-white flex flex-col shrink-0 overflow-hidden transition-colors">
-      <div className="p-6 space-y-6">
-        <div className="text-2xl font-bold flex items-center gap-2">
-          <div className="bg-blue-600 p-1.5 rounded-lg text-white shadow-lg shadow-blue-900/20">
+    <div className={`${isCollapsed ? "w-20" : "w-64"} h-screen sticky top-0 bg-slate-900 text-white flex flex-col shrink-0 overflow-hidden transition-all duration-300 relative border-r border-slate-800`}>
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={toggleSidebar}
+        className="absolute -right-3 top-20 h-6 w-6 rounded-full bg-blue-600 hover:bg-blue-700 text-white border-none shadow-md z-50 print:hidden"
+      >
+        {isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+      </Button>
+
+      <div className={`p-6 space-y-6 ${isCollapsed ? "px-4" : ""}`}>
+        <div className={`text-2xl font-bold flex items-center gap-2 ${isCollapsed ? "justify-center" : ""}`}>
+          <div className="bg-blue-600 p-1.5 rounded-lg text-white shadow-lg shadow-blue-900/20 shrink-0">
             <Briefcase className="h-6 w-6" />
           </div>
-          <span className="tracking-tight">MuniGestión</span>
+          {!isCollapsed && <span className="tracking-tight truncate">MuniGestión</span>}
         </div>
 
-        <GlobalSearch />
+        {!isCollapsed && <GlobalSearch />}
       </div>
 
       <nav className="flex-1 px-4 space-y-1 overflow-y-auto custom-scrollbar">
         <div className="pb-2">
-          <p className="px-2 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Principal</p>
+          {!isCollapsed && <p className="px-2 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Principal</p>}
           {navigation.map((item) => {
             const isActive = pathname === item.url;
             return (
               <Link
                 key={item.title}
                 href={item.url}
-                className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-all group ${
+                title={isCollapsed ? item.title : ""}
+                className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-all group mb-1 ${
+                  isCollapsed ? "justify-center" : ""
+                } ${
                   isActive ? "bg-blue-600 text-white" : "text-slate-300 hover:text-white hover:bg-slate-800"
                 }`}
               >
-                <item.icon className={`h-5 w-5 ${isActive ? "text-white" : item.color} group-hover:text-white transition-colors`} />
-                <span className="text-sm font-medium">{item.title}</span>
+                <item.icon className={`h-5 w-5 shrink-0 ${isActive ? "text-white" : item.color} group-hover:text-white transition-colors`} />
+                {!isCollapsed && <span className="text-sm font-medium truncate">{item.title}</span>}
               </Link>
             );
           })}
         </div>
 
         <div className="pt-4 pb-2">
-          <p className="px-2 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Administración</p>
+          {!isCollapsed && <p className="px-2 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Administración</p>}
           {adminNav.map((item) => {
             const isActive = pathname.startsWith(item.url);
             return (
               <Link
                 key={item.title}
                 href={item.url}
-                className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-all group ${
+                title={isCollapsed ? item.title : ""}
+                className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-all group mb-1 ${
+                  isCollapsed ? "justify-center" : ""
+                } ${
                   isActive ? "bg-slate-700 text-white" : "text-slate-300 hover:text-white hover:bg-slate-800"
                 }`}
               >
-                <item.icon className={`h-5 w-5 ${isActive ? "text-white" : item.color} group-hover:text-white transition-colors`} />
-                <span className="text-sm font-medium">{item.title}</span>
+                <item.icon className={`h-5 w-5 shrink-0 ${isActive ? "text-white" : item.color} group-hover:text-white transition-colors`} />
+                {!isCollapsed && <span className="text-sm font-medium truncate">{item.title}</span>}
               </Link>
             );
           })}
         </div>
 
         <div className="pt-4 pb-2">
-          <p className="px-2 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Áreas Sociales</p>
+          {!isCollapsed && <p className="px-2 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Áreas Sociales</p>}
           {socialAreas.map((item) => (
             <Link
               key={item.title}
               href={item.url}
-              className="flex items-center gap-3 px-3 py-2 text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg transition-all group"
+              title={isCollapsed ? item.title : ""}
+              className={`flex items-center gap-3 px-3 py-2 text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg transition-all group mb-1 ${
+                isCollapsed ? "justify-center" : ""
+              }`}
             >
-              <item.icon className={`h-5 w-5 ${item.color} opacity-70 group-hover:opacity-100 transition-opacity`} />
-              <span className="text-sm font-medium">{item.title}</span>
+              <item.icon className={`h-5 w-5 shrink-0 ${item.color} opacity-70 group-hover:opacity-100 transition-opacity`} />
+              {!isCollapsed && <span className="text-sm font-medium truncate">{item.title}</span>}
             </Link>
           ))}
 
           {(user?.role === "SUPERADMIN" || user?.role === "DIRECCION_GENERAL" || user?.role === "VIOLENCIA_GENERO") && (
             <Link
               href="/areas/violence"
-              className="flex items-center gap-3 px-3 py-2 text-red-400/80 hover:text-red-400 hover:bg-red-950/30 rounded-lg transition-all group mt-1"
+              title={isCollapsed ? "Violencia de Género" : ""}
+              className={`flex items-center gap-3 px-3 py-2 text-red-400/80 hover:text-red-400 hover:bg-red-950/30 rounded-lg transition-all group mt-1 ${
+                isCollapsed ? "justify-center" : ""
+              }`}
             >
-              <ShieldAlert className="h-5 w-5" />
-              <span className="text-sm font-medium">Violencia de Género</span>
+              <ShieldAlert className="h-5 w-5 shrink-0" />
+              {!isCollapsed && <span className="text-sm font-medium truncate">Violencia de Género</span>}
             </Link>
           )}
         </div>
       </nav>
 
-      <div className="border-t border-slate-800 pt-4 mt-auto flex items-center gap-3">
-        <Avatar className="h-8 w-8">
+      <div className={`border-t border-slate-800 p-4 mt-auto flex items-center gap-3 ${isCollapsed ? "flex-col" : ""}`}>
+        <Avatar className="h-8 w-8 shrink-0">
           <AvatarFallback className="bg-slate-700 text-slate-200">{user?.name?.[0] || "U"}</AvatarFallback>
         </Avatar>
-        <div className="flex-1 overflow-hidden">
-          <p className="text-sm font-medium truncate">{user?.name || "Invitado"}</p>
-          <p className="text-xs text-slate-500 truncate">{user?.role || "Sin rol"}</p>
-        </div>
-        <div className="flex items-center gap-1">
+
+        {!isCollapsed && (
+          <div className="flex-1 overflow-hidden">
+            <p className="text-sm font-medium truncate">{user?.name || "Invitado"}</p>
+            <p className="text-xs text-slate-500 truncate">{user?.role || "Sin rol"}</p>
+          </div>
+        )}
+
+        <div className={`flex items-center gap-1 ${isCollapsed ? "flex-col" : ""}`}>
           <ThemeToggle />
-          <Button variant="ghost" size="icon" onClick={() => signOut()} className="text-slate-400 hover:text-white">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => signOut()}
+            className="text-slate-400 hover:text-white"
+            title="Cerrar sesión"
+          >
             <LogOut className="h-4 w-4" />
           </Button>
         </div>
