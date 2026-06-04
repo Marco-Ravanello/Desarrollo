@@ -1,12 +1,17 @@
 export const dynamic = "force-dynamic";
 import { getHRRecords } from "@/services/hr";
+import { getAreas } from "@/services/cases";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Briefcase } from "lucide-react";
 import { CreateHRForm } from "./create-hr-form";
 
 export default async function HRPage() {
-  const records = await getHRRecords();
+  const [records, areas] = await Promise.all([
+    getHRRecords(),
+    getAreas()
+  ]);
 
   return (
     <div className="space-y-6">
@@ -17,7 +22,7 @@ export default async function HRPage() {
 
       <div className="grid lg:grid-cols-3 gap-6">
         <div className="lg:col-span-1">
-          <CreateHRForm />
+          <CreateHRForm areas={areas} />
         </div>
 
         <Card className="lg:col-span-2">
@@ -30,7 +35,7 @@ export default async function HRPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Agente</TableHead>
-                  <TableHead>Cargo</TableHead>
+                  <TableHead>Área / Cargo</TableHead>
                   <TableHead>Ingreso</TableHead>
                   <TableHead>Estado</TableHead>
                 </TableRow>
@@ -56,7 +61,14 @@ export default async function HRPage() {
                           </div>
                         </div>
                       </TableCell>
-                      <TableCell className="text-sm font-medium">{r.position}</TableCell>
+                      <TableCell>
+                        <div className="flex flex-col gap-1">
+                          <div className="flex items-center gap-1 text-xs font-medium">
+                            <Briefcase className="h-3 w-3 text-slate-400" /> {r.area?.name || "Sin área"}
+                          </div>
+                          <p className="text-[10px] text-slate-500 uppercase tracking-tighter">{r.position}</p>
+                        </div>
+                      </TableCell>
                       <TableCell className="text-xs text-slate-500">
                         {r.startDate ? new Date(r.startDate).toLocaleDateString() : "-"}
                       </TableCell>

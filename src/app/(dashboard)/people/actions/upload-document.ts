@@ -1,6 +1,6 @@
 "use server";
 
-import { writeFile } from "fs/promises";
+import { writeFile, mkdir } from "fs/promises";
 import { join } from "path";
 import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
@@ -14,14 +14,22 @@ export async function uploadDocumentAction(formData: FormData) {
   const personId = formData.get("personId") as string;
   const caseId = formData.get("caseId") as string;
 
-  if (!file) return { error: "No se seleccionó ningún archivo" };
+  if (!file || file.size === 0) return { error: "No se seleccionó ningún archivo válido" };
 
   try {
+    const uploadsDir = join(process.cwd(), "public", "uploads");
+    try {
+      await mkdir(uploadsDir, { recursive: true });
+    } catch (e) {
+      // Directory might exist
+    }
+
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
-    const fileName = `${Date.now()}-${file.name}`;
-    const path = join(process.cwd(), "public", "uploads", fileName);
+    const fileName = `${Date.now()}-${file.name.replace(/\s+/g, '_')}`;
+    const path = join(uploadsDir, fileName);
+
     await writeFile(path, buffer);
 
     const document = await prisma.document.create({
@@ -47,7 +55,7 @@ export async function uploadDocumentAction(formData: FormData) {
     if (personId) revalidatePath(`/people/${personId}`);
     return { success: true };
   } catch (error) {
-    console.error(error);
-    return { error: "Error al subir el archivo" };
+    console.error("UPLOAD_ERROR:", error);
+    return { error: "Error al guardar el archivo en el servidor" };
   }
 }

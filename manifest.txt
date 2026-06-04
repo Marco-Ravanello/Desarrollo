@@ -1,3 +1,0 @@
-hr_service: $(ls src/services/hr.ts)
-tasks_page: $(ls src/app/\(dashboard\)/tasks/page.tsx)
-hr_page: $(ls src/app/\(dashboard\)/admin/hr/page.tsx)

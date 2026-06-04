@@ -39,6 +39,7 @@ model Area {
   description String?
   users       User[]
   cases       Case[]
+  hrRecords   HRRecord[]
   derivationsTo   Derivation[] @relation("ToArea")
   derivationsFrom Derivation[] @relation("FromArea")
   supplies    SupplyItem[]
@@ -263,6 +264,8 @@ model HRRecord {
   fileNumber    String?  @unique
   startDate     DateTime?
   position      String?
+  areaId        String?
+  area          Area?    @relation(fields: [areaId], references: [id])
   status        String?
 }
 

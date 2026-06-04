@@ -2,55 +2,58 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { toast } from "sonner";
+import { Upload, Loader2 } from "lucide-react";
 import { uploadDocumentAction } from "../actions/upload-document";
-import { Upload } from "lucide-react";
+import { toast } from "sonner";
 
 export function UploadDocumentForm({ personId, caseId }: { personId?: string, caseId?: string }) {
-  const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
-  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const form = e.currentTarget;
+    const fileInput = form.querySelector('input[type="file"]') as HTMLInputElement;
 
-    setLoading(true);
-    const formData = new FormData();
-    formData.append("file", file);
-    if (personId) formData.append("personId", personId);
-    if (caseId) formData.append("caseId", caseId);
-
-    const res = await uploadDocumentAction(formData);
-    if (res.success) {
-      toast.success("Documento subido correctamente");
-    } else {
-      toast.error(res.error);
+    if (!fileInput.files?.[0]) {
+      toast.error("Por favor seleccione un archivo");
+      return;
     }
-    setLoading(false);
-    // Reset input
-    e.target.value = "";
+
+    setUploading(true);
+    const formData = new FormData(form);
+
+    try {
+      const res = await uploadDocumentAction(formData);
+      if (res.success) {
+        toast.success("Documento subido correctamente");
+        form.reset();
+      } else {
+        toast.error(res.error || "Fallo en la subida");
+      }
+    } catch (err) {
+      toast.error("Error de conexión");
+    } finally {
+      setUploading(false);
+    }
   }
 
   return (
-    <div className="mt-4 p-4 border rounded-lg border-dashed border-slate-300 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/50">
-      <Label htmlFor="file-upload" className="flex flex-col items-center justify-center cursor-pointer gap-2 py-2">
-        <div className="p-2 bg-blue-100 dark:bg-blue-900/30 text-blue-600 rounded-full">
-          <Upload className="h-5 w-5" />
+    <form onSubmit={handleSubmit} className="mt-6 p-4 border rounded-lg bg-slate-50 dark:bg-slate-900/50 space-y-4">
+      <div className="space-y-2">
+        <Label htmlFor="file" className="text-xs font-bold uppercase text-slate-500">Adjuntar Nuevo Documento</Label>
+        <div className="flex gap-2">
+          <Input id="file" name="file" type="file" required disabled={uploading} className="bg-background" />
+          <input type="hidden" name="personId" value={personId || ""} />
+          <input type="hidden" name="caseId" value={caseId || ""} />
+          <Button type="submit" disabled={uploading}>
+            {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+            <span className="ml-2">{uploading ? "Subiendo..." : "Subir"}</span>
+          </Button>
         </div>
-        <div className="text-center">
-          <p className="text-sm font-medium">Subir Documentación</p>
-          <p className="text-xs text-slate-500">Haz clic para seleccionar archivos (PDF, Imágenes)</p>
-        </div>
-        <input
-          id="file-upload"
-          type="file"
-          className="hidden"
-          onChange={handleFileChange}
-          disabled={loading}
-          accept="image/*,application/pdf"
-        />
-      </Label>
-      {loading && <p className="text-center text-xs text-blue-600 animate-pulse mt-2">Subiendo...</p>}
-    </div>
+      </div>
+      <p className="text-[10px] text-slate-400">Formatos permitidos: PDF, JPG, PNG. Máx 5MB.</p>
+    </form>
   );
 }

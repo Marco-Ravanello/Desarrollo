@@ -7,8 +7,9 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { createHRRecordAction } from "../actions/hr-actions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Combobox } from "@/components/ui/combobox";
 
-export function CreateHRForm() {
+export function CreateHRForm({ areas }: { areas: any[] }) {
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -49,6 +50,15 @@ export function CreateHRForm() {
               <Label htmlFor="fileNumber">N° de Legajo</Label>
               <Input id="fileNumber" name="fileNumber" />
             </div>
+          </div>
+          <div className="space-y-2">
+            <Label>Área de Pertenencia</Label>
+            <Combobox
+              name="areaId"
+              placeholder="Seleccionar área..."
+              options={(areas || []).map(a => ({ value: a.id, label: a.name }))}
+              required
+            />
           </div>
           <div className="space-y-2">
             <Label htmlFor="position">Cargo / Función</Label>

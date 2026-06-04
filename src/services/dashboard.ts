@@ -1,6 +1,8 @@
 import prisma from "@/lib/prisma";
 
 export async function getDashboardStats() {
+  const now = new Date();
+
   const [
     peopleCount,
     activeCases,
@@ -9,7 +11,6 @@ export async function getDashboardStats() {
     pendingInvoices,
     lowStockItems,
     vehicleCount,
-    occupiedVehicles,
   ] = await Promise.all([
     prisma.person.count(),
     prisma.case.count({ where: { status: { in: ['ABIERTO', 'EN_PROCESO'] } } }),
@@ -18,14 +19,16 @@ export async function getDashboardStats() {
     prisma.invoice.count({ where: { status: 'PENDIENTE' } }),
     prisma.supplyItem.count({ where: { stock: { lte: 0 } } }),
     prisma.vehicle.count(),
-    prisma.vehicleReservation.count({
-      where: {
-        status: { in: ['RESERVADO', 'EN_CURSO'] },
-        startDate: { lte: new Date() },
-        endDate: { gte: new Date() }
-      }
-    }),
   ]);
+
+  // Contar vehículos REALMENTE ocupados ahora mismo
+  const occupiedVehicles = await prisma.vehicleReservation.count({
+    where: {
+      status: { in: ['RESERVADO', 'EN_CURSO'] },
+      startDate: { lte: now },
+      endDate: { gte: now }
+    }
+  });
 
   const recentActivity = await prisma.auditLog.findMany({
     take: 5,
@@ -67,7 +70,53 @@ export async function getDashboardStats() {
     poStatusData,
     vehicleStats: {
       total: vehicleCount,
-      occupied: occupiedVehicles
-    }
+      occupied: occupiedVehicles,
+      available: vehicleCount - occupiedVehicles
+    },
+    trends: await getTrendData()
   };
+}
+
+async function getTrendData() {
+  const sixMonthsAgo = new Date();
+  sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 5);
+  sixMonthsAgo.setDate(1);
+
+  // Casos por mes
+  const cases = await prisma.case.findMany({
+    where: { createdAt: { gte: sixMonthsAgo } },
+    select: { createdAt: true }
+  });
+
+  // Gastos combustible por mes
+  const fuel = await prisma.fuelRecord.findMany({
+    where: { date: { gte: sixMonthsAgo } },
+    select: { date: true, amount: true }
+  });
+
+  const months = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
+  const result = [];
+
+  for (let i = 0; i < 6; i++) {
+    const d = new Date();
+    d.setMonth(d.getMonth() - (5 - i));
+    const monthIndex = d.getMonth();
+    const monthYear = `${months[monthIndex]}`;
+
+    const monthlyCases = cases.filter(c =>
+      c.createdAt.getMonth() === monthIndex && c.createdAt.getFullYear() === d.getFullYear()
+    ).length;
+
+    const monthlyFuel = fuel.filter(f =>
+      f.date.getMonth() === monthIndex && f.date.getFullYear() === d.getFullYear()
+    ).reduce((acc, curr) => acc + Number(curr.amount), 0);
+
+    result.push({
+      month: monthYear,
+      casos: monthlyCases,
+      combustible: monthlyFuel
+    });
+  }
+
+  return result;
 }
