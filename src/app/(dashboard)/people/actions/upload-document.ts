@@ -18,11 +18,9 @@ export async function uploadDocumentAction(formData: FormData) {
 
   try {
     const uploadsDir = join(process.cwd(), "public", "uploads");
-    try {
-      await mkdir(uploadsDir, { recursive: true });
-    } catch (e) {
-      // Directory might exist
-    }
+
+    // Ensure directory exists recursively
+    await mkdir(uploadsDir, { recursive: true });
 
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
@@ -53,9 +51,11 @@ export async function uploadDocumentAction(formData: FormData) {
     });
 
     if (personId) revalidatePath(`/people/${personId}`);
-    return { success: true };
-  } catch (error) {
+    if (caseId) revalidatePath(`/people/${personId || 'any'}`);
+
+    return { success: true, fileName: file.name };
+  } catch (error: any) {
     console.error("UPLOAD_ERROR:", error);
-    return { error: "Error al guardar el archivo en el servidor" };
+    return { error: `Error en el servidor: ${error.message || "Fallo desconocido"}` };
   }
 }

@@ -37,12 +37,15 @@ model Area {
   id          String   @id @default(cuid())
   name        String   @unique
   description String?
+  color       String?  @default("blue")
+  annualBudget Decimal @default(0)
   users       User[]
   cases       Case[]
   hrRecords   HRRecord[]
   derivationsTo   Derivation[] @relation("ToArea")
   derivationsFrom Derivation[] @relation("FromArea")
   supplies    SupplyItem[]
+  purchaseOrders PurchaseOrder[]
 }
 
 model Person {
@@ -53,6 +56,8 @@ model Person {
   birthDate       DateTime?
   gender          String?
   address         String?
+  latitude        Float?
+  longitude       Float?
   phone           String?
   email           String?
   familyId        String?
@@ -156,6 +161,8 @@ model PurchaseOrder {
   number        String      @unique
   providerId    String
   provider      Provider    @relation(fields: [providerId], references: [id])
+  areaId        String?
+  area          Area?       @relation(fields: [areaId], references: [id])
   amount        Decimal
   description   String?
   status        OrderStatus @default(BORRADOR)

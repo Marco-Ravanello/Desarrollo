@@ -13,6 +13,47 @@ export function FuelReportView({ vehicles }: { vehicles: any[] }) {
     window.print();
   };
 
+  const handleExportCSV = () => {
+    const headers = ["Fecha", "Vehículo", "Patente", "Ticket", "Litros", "Importe"];
+    const rows: string[][] = [];
+
+    vehicles.forEach(v => {
+      const monthlyRecords = (v.fuelRecords || []).filter((r: any) => {
+        const recordDate = new Date(r.date);
+        const recordMonth = recordDate.toISOString().slice(0, 7);
+        return recordMonth === selectedMonth;
+      });
+
+      monthlyRecords.forEach((r: any) => {
+        rows.push([
+          new Date(r.date).toLocaleDateString(),
+          `${v.brand} ${v.model}`,
+          v.plate,
+          r.ticketNumber || "",
+          r.liters.toString(),
+          r.amount.toString()
+        ]);
+      });
+    });
+
+    if (rows.length === 0) return;
+
+    const csvContent = [
+      headers.join(","),
+      ...rows.map(row => row.map(cell => `"${cell}"`).join(","))
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `reporte-combustible-${selectedMonth}.csv`);
+    link.style.visibility = "hidden";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center print:hidden">
@@ -27,7 +68,7 @@ export function FuelReportView({ vehicles }: { vehicles: any[] }) {
         </div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={handlePrint}><Printer className="h-4 w-4 mr-1"/> Imprimir PDF</Button>
-          <Button variant="outline" size="sm"><Download className="h-4 w-4 mr-1"/> Exportar CSV</Button>
+          <Button variant="outline" size="sm" onClick={handleExportCSV}><Download className="h-4 w-4 mr-1"/> Exportar CSV</Button>
         </div>
       </div>
 

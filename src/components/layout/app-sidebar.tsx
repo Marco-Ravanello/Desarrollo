@@ -1,7 +1,8 @@
 "use client";
 import * as React from "react";
-import { LayoutDashboard, Users, ShieldAlert, ClipboardList, LogOut, Briefcase, Car, UserCog, ChevronLeft, ChevronRight, CheckCircle2 } from "lucide-react";
+import { LayoutDashboard, Users, ShieldAlert, ClipboardList, LogOut, Briefcase, Car, UserCog, ChevronLeft, ChevronRight, CheckCircle2, MapPin, Wallet, Building2 } from "lucide-react";
 import { useSession, signOut } from "next-auth/react";
+import { getAreaNavColor, getAreaBgColor } from "@/lib/area-theme";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import Link from "next/link";
@@ -28,6 +29,7 @@ export function AppSidebar() {
 
   const navigation = [
     { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard, color: "text-slate-400" },
+    { title: "Mapa Social", url: "/maps", icon: MapPin, color: "text-slate-400" },
     { title: "Mis Tareas", url: "/tasks", icon: CheckCircle2, color: "text-slate-400" },
     { title: "Registro Único", url: "/people", icon: Users, color: "text-slate-400" },
   ];
@@ -35,30 +37,33 @@ export function AppSidebar() {
   const adminNav = [
     { title: "Compras y OC", url: "/admin/purchase-orders", icon: Briefcase, color: "text-slate-400" },
     { title: "Vehículos y Logística", url: "/admin/vehicles", icon: Car, color: "text-slate-400" },
+    { title: "Presupuesto", url: "/admin/budget", icon: Wallet, color: "text-slate-400" },
     { title: "Recursos Humanos", url: "/admin/hr", icon: UserCog, color: "text-slate-400" },
     ...(user?.role === 'SUPERADMIN' ? [{ title: "Usuarios", url: "/admin/users", icon: UserCog, color: "text-slate-400" }] : []),
   ];
 
   const socialAreas = [
-    { title: "Protección Social", url: "/areas/social", icon: ClipboardList, color: "text-emerald-400" },
-    { title: "Niñez y Familia", url: "/areas/ninez", icon: ClipboardList, color: "text-amber-400" },
-    { title: "Hábitat y Vivienda", url: "/areas/habitat", icon: ClipboardList, color: "text-blue-400" },
+    { title: "Protección Social", url: "/areas/social", icon: ClipboardList, color: "emerald" },
+    { title: "Niñez y Familia", url: "/areas/ninez", icon: ClipboardList, color: "amber" },
+    { title: "Hábitat y Vivienda", url: "/areas/habitat", icon: Building2, color: "blue" },
   ];
 
+  const sidebarColor = getAreaBgColor(user?.role === 'SUPERADMIN' ? 'slate' : (user as any)?.area?.color);
+
   return (
-    <div className={`${isCollapsed ? "w-20" : "w-64"} h-screen sticky top-0 bg-slate-900 text-white flex flex-col shrink-0 overflow-hidden transition-all duration-300 relative border-r border-slate-800`}>
+    <div className={`${isCollapsed ? "w-20" : "w-64"} h-screen sticky top-0 bg-slate-950 text-white flex flex-col shrink-0 overflow-hidden transition-all duration-300 relative border-r border-slate-800`}>
       <Button
         variant="ghost"
         size="icon"
         onClick={toggleSidebar}
-        className="absolute -right-3 top-20 h-6 w-6 rounded-full bg-blue-600 hover:bg-blue-700 text-white border-none shadow-md z-50 print:hidden"
+        className={`absolute -right-3 top-20 h-6 w-6 rounded-full ${sidebarColor} hover:brightness-110 text-white border-none shadow-md z-50 print:hidden`}
       >
         {isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
       </Button>
 
       <div className={`p-6 space-y-6 ${isCollapsed ? "px-4" : ""}`}>
         <div className={`text-2xl font-bold flex items-center gap-2 ${isCollapsed ? "justify-center" : ""}`}>
-          <div className="bg-blue-600 p-1.5 rounded-lg text-white shadow-lg shadow-blue-900/20 shrink-0">
+          <div className={`${sidebarColor} p-1.5 rounded-lg text-white shadow-lg shadow-blue-900/20 shrink-0`}>
             <Briefcase className="h-6 w-6" />
           </div>
           {!isCollapsed && <span className="tracking-tight truncate">MuniGestión</span>}
@@ -123,7 +128,7 @@ export function AppSidebar() {
                 isCollapsed ? "justify-center" : ""
               }`}
             >
-              <item.icon className={`h-5 w-5 shrink-0 ${item.color} opacity-70 group-hover:opacity-100 transition-opacity`} />
+              <item.icon className={`h-5 w-5 shrink-0 ${getAreaNavColor(item.color)} opacity-70 group-hover:opacity-100 transition-opacity`} />
               {!isCollapsed && <span className="text-sm font-medium truncate">{item.title}</span>}
             </Link>
           ))}
@@ -132,11 +137,11 @@ export function AppSidebar() {
             <Link
               href="/areas/violence"
               title={isCollapsed ? "Violencia de Género" : ""}
-              className={`flex items-center gap-3 px-3 py-2 text-red-400/80 hover:text-red-400 hover:bg-red-950/30 rounded-lg transition-all group mt-1 ${
+              className={`flex items-center gap-3 px-3 py-2 text-rose-400/80 hover:text-rose-400 hover:bg-rose-950/30 rounded-lg transition-all group mt-1 ${
                 isCollapsed ? "justify-center" : ""
               }`}
             >
-              <ShieldAlert className="h-5 w-5 shrink-0" />
+              <ShieldAlert className="h-5 w-5 shrink-0 text-rose-400" />
               {!isCollapsed && <span className="text-sm font-medium truncate">Violencia de Género</span>}
             </Link>
           )}
