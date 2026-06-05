@@ -11,6 +11,11 @@ export async function getPeople(query?: string) {
     } : undefined,
     include: {
       family: true,
+      cases: {
+        include: {
+          area: true
+        }
+      },
       _count: {
         select: { cases: true }
       }
