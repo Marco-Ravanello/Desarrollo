@@ -1,22 +1,43 @@
 "use client";
 
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Cell, Pie, PieChart } from "recharts";
+import { useTheme } from "next-themes";
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
 
 export function DashboardCharts({ casesByAreaData, poStatusData }: { casesByAreaData: any[], poStatusData: any[] }) {
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
+
   return (
     <div className="grid gap-6 md:grid-cols-2">
       <div className="bg-card p-6 rounded-xl border border-border shadow-sm">
-        <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-6">Casos por Área</h3>
+        <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-6">Casos por Área</h3>
         <div className="h-[300px] w-full">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={casesByAreaData}>
-              <XAxis dataKey="name" fontSize={10} tickLine={false} axisLine={false} />
-              <YAxis fontSize={10} tickLine={false} axisLine={false} />
+              <XAxis
+                dataKey="name"
+                fontSize={10}
+                tickLine={false}
+                axisLine={false}
+                tick={{ fill: isDark ? '#94a3b8' : '#64748b' }}
+              />
+              <YAxis
+                fontSize={10}
+                tickLine={false}
+                axisLine={false}
+                tick={{ fill: isDark ? '#94a3b8' : '#64748b' }}
+              />
               <Tooltip
-                cursor={{fill: '#f8fafc'}}
-                contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+                cursor={{fill: isDark ? '#1e293b' : '#f8fafc'}}
+                contentStyle={{
+                  backgroundColor: isDark ? '#0f172a' : '#ffffff',
+                  borderRadius: '8px',
+                  border: isDark ? '1px solid #1e293b' : 'none',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                  color: isDark ? '#f8fafc' : '#0f172a'
+                }}
               />
               <Bar dataKey="value" radius={[4, 4, 0, 0]}>
                 {casesByAreaData.map((entry, index) => (
@@ -29,7 +50,7 @@ export function DashboardCharts({ casesByAreaData, poStatusData }: { casesByArea
       </div>
 
       <div className="bg-card p-6 rounded-xl border border-border shadow-sm">
-        <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-6">Órdenes de Compra</h3>
+        <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-6">Órdenes de Compra</h3>
         <div className="h-[300px] w-full">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
@@ -47,7 +68,13 @@ export function DashboardCharts({ casesByAreaData, poStatusData }: { casesByArea
                 ))}
               </Pie>
               <Tooltip
-                contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+                contentStyle={{
+                  backgroundColor: isDark ? '#0f172a' : '#ffffff',
+                  borderRadius: '8px',
+                  border: isDark ? '1px solid #1e293b' : 'none',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                  color: isDark ? '#f8fafc' : '#0f172a'
+                }}
               />
             </PieChart>
           </ResponsiveContainer>

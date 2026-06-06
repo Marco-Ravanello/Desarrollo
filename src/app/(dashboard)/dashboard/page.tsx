@@ -9,19 +9,19 @@ import { Badge } from "@/components/ui/badge";
 export default async function DashboardPage() {
   const stats = await getDashboardStats();
   const cards = [
-    { title: "Ciudadanos", description: "Total de personas registradas", value: stats.peopleCount, icon: Users, color: "text-blue-600", bg: "bg-blue-50" },
-    { title: "Casos Activos", description: "En proceso o abiertos", value: stats.activeCases, icon: FileText, color: "text-orange-600", bg: "bg-orange-50" },
-    { title: "Derivaciones", description: "Pendientes entre áreas", value: stats.pendingDerivations, icon: ArrowRightLeft, color: "text-purple-600", bg: "bg-purple-50" },
-    { title: "OC Pendientes", description: "Órdenes por aprobar", value: stats.pendingPurchaseOrders, icon: ShoppingBag, color: "text-green-600", bg: "bg-green-50" },
-    { title: "Facturas", description: "Pendientes de pago", value: stats.pendingInvoices, icon: Receipt, color: "text-yellow-600", bg: "bg-yellow-50" },
-    { title: "Vehículos Libres", description: "Disponibilidad actual", value: `${stats.vehicleStats.available}/${stats.vehicleStats.total}`, icon: Car, color: "text-indigo-600", bg: "bg-indigo-50" },
+    { title: "Ciudadanos", description: "Total de personas registradas", value: stats.peopleCount, icon: Users, color: "text-blue-600", bg: "bg-blue-50 dark:bg-blue-950/30" },
+    { title: "Casos Activos", description: "En proceso o abiertos", value: stats.activeCases, icon: FileText, color: "text-orange-600", bg: "bg-orange-50 dark:bg-orange-950/30" },
+    { title: "Derivaciones", description: "Pendientes entre áreas", value: stats.pendingDerivations, icon: ArrowRightLeft, color: "text-purple-600", bg: "bg-purple-50 dark:bg-purple-950/30" },
+    { title: "OC Pendientes", description: "Órdenes por aprobar", value: stats.pendingPurchaseOrders, icon: ShoppingBag, color: "text-green-600", bg: "bg-green-50 dark:bg-green-950/30" },
+    { title: "Facturas", description: "Pendientes de pago", value: stats.pendingInvoices, icon: Receipt, color: "text-yellow-600", bg: "bg-yellow-50 dark:bg-yellow-950/30" },
+    { title: "Vehículos Libres", description: "Disponibilidad actual", value: `${stats.vehicleStats.available}/${stats.vehicleStats.total}`, icon: Car, color: "text-indigo-600", bg: "bg-indigo-50 dark:bg-indigo-950/30" },
   ];
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
       <div className="flex flex-col gap-2">
-        <h2 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">Panel de Control</h2>
-        <p className="text-slate-500">Resumen general de indicadores por área.</p>
+        <h2 className="text-3xl font-bold tracking-tight text-foreground">Panel de Control</h2>
+        <p className="text-muted-foreground">Resumen general de indicadores por área.</p>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -29,16 +29,16 @@ export default async function DashboardPage() {
           <Card key={card.title} className="border-none shadow-sm hover:shadow-md transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
               <div className="space-y-1">
-                <CardTitle className="text-sm font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">{card.title}</CardTitle>
+                <CardTitle className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">{card.title}</CardTitle>
                 <CardDescription className="text-xs">{card.description}</CardDescription>
               </div>
-              <div className={`p-2 rounded-lg ${card.bg} dark:bg-slate-800`}>
+              <div className={`p-2 rounded-lg ${card.bg}`}>
                 <card.icon className={`h-5 w-5 ${card.color}`} />
               </div>
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-foreground">{card.value}</div>
-              <div className="mt-4 flex items-center text-xs text-slate-500">
+              <div className="mt-4 flex items-center text-xs text-muted-foreground">
                 <TrendingUp className="h-3 w-3 mr-1 text-green-500" />
                 <span>Actualizado ahora mismo</span>
               </div>
@@ -76,7 +76,7 @@ export default async function DashboardPage() {
                 <TableBody>
                   {stats.recentActivity.map((log) => (
                     <TableRow key={log.id}>
-                      <TableCell className="text-xs text-slate-500">
+                      <TableCell className="text-xs text-muted-foreground">
                         {new Date(log.createdAt).toLocaleString()}
                       </TableCell>
                       <TableCell className="flex items-center gap-2">
@@ -88,7 +88,7 @@ export default async function DashboardPage() {
                           {log.action}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-sm text-slate-600 dark:text-slate-400">
+                      <TableCell className="text-sm text-muted-foreground">
                         {log.entity} #{log.entityId.substring(0, 8)}
                       </TableCell>
                     </TableRow>
@@ -96,7 +96,7 @@ export default async function DashboardPage() {
                 </TableBody>
               </Table>
             ) : (
-              <div className="flex flex-col items-center justify-center py-8 text-slate-400">
+              <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
                 <Calendar className="h-10 w-10 mb-2 opacity-20" />
                 <p>No hay actividad registrada aún.</p>
               </div>
