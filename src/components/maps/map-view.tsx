@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { MapPin, User, Phone } from "lucide-react";
 
@@ -28,20 +27,7 @@ function ChangeView({ center }: { center: [number, number] }) {
 }
 
 export function MapView({ people }: MapViewProps) {
-  const [isMounted, setIsMounted] = useState(false);
   const [filterArea, setFilterArea] = useState<string>("all");
-
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
-
-  if (!isMounted) {
-    return (
-      <div className="h-[600px] w-full bg-slate-100 animate-pulse flex items-center justify-center">
-        <p className="text-slate-400">Cargando mapa...</p>
-      </div>
-    );
-  }
 
   // Filtrar personas que tienen coordenadas y opcionalmente por área de su último caso
   const filteredPeople = people.filter((p) => {

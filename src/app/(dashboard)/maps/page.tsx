@@ -1,20 +1,8 @@
+export const dynamic = "force-dynamic";
 import { getPeople } from "@/services/people";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MapPin } from "lucide-react";
-import dynamic from "next/dynamic";
-
-// Dynamic import for MapView to avoid SSR issues with Leaflet
-const MapView = dynamic(
-  () => import("@/components/maps/map-view").then((mod) => mod.MapView),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="h-[600px] w-full bg-slate-100 animate-pulse flex items-center justify-center">
-        <p className="text-slate-400">Cargando componentes del mapa...</p>
-      </div>
-    )
-  }
-);
+import { DynamicMapView } from "@/components/maps/dynamic-map-view";
 
 export default async function MapsPage() {
   const people = await getPeople();
@@ -44,7 +32,7 @@ export default async function MapsPage() {
       </div>
 
       <Card className="border-none shadow-md overflow-hidden">
-        <MapView people={people} />
+        <DynamicMapView people={people} />
       </Card>
     </div>
   );
