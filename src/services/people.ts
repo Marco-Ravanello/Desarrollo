@@ -43,6 +43,11 @@ export async function getPersonById(id: string) {
 }
 
 export async function createPerson(data: any) {
+  // Simulamos geocodificación básica para el MVP
+  // En una app real usaríamos Google Maps o OpenStreetMap API aquí
+  const lat = data.latitude || (-34.6037 + (Math.random() - 0.5) * 0.05);
+  const lng = data.longitude || (-58.3816 + (Math.random() - 0.5) * 0.05);
+
   return await prisma.person.create({
     data: {
       dni: data.dni,
@@ -52,6 +57,8 @@ export async function createPerson(data: any) {
       address: data.address,
       phone: data.phone,
       email: data.email,
+      latitude: lat,
+      longitude: lng,
     }
   });
 }
