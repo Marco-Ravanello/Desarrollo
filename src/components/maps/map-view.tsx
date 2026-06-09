@@ -5,9 +5,11 @@ import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, User, Phone, Layers, Flame } from "lucide-react";
+import { MapPin, User, Phone, Layers, Flame, Download, Filter, Map as MapIcon } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
 import dynamic from "next/dynamic";
+import domtoimage from "dom-to-image";
 
 // Dynamic import for HeatmapView to keep Leaflet logic contained
 const HeatmapView = dynamic(
@@ -39,6 +41,28 @@ function ChangeView({ center }: { center: [number, number] }) {
 export function MapView({ people }: MapViewProps) {
   const [filterArea, setFilterArea] = useState<string>("all");
   const [viewMode, setViewMode] = useState<string>("markers");
+  const [isExporting, setIsExporting] = useState(false);
+
+  const exportMap = async () => {
+    const mapElement = document.getElementById("social-map-container");
+    if (!mapElement) return;
+
+    setIsExporting(true);
+    try {
+      const dataUrl = await domtoimage.toPng(mapElement, {
+        quality: 0.95,
+        bgcolor: "#f8fafc",
+      });
+      const link = document.createElement("a");
+      link.download = `mapa-social-${new Date().toISOString().split("T")[0]}.png`;
+      link.href = dataUrl;
+      link.click();
+    } catch (error) {
+      console.error("Error exporting map:", error);
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   // Filtrar personas que tienen coordenadas y opcionalmente por área
   const filteredPeople = people.filter((p) => {
@@ -59,17 +83,32 @@ export function MapView({ people }: MapViewProps) {
   )).map(s => JSON.parse(s as string));
 
   return (
-    <div className="relative group/map">
+    <div className="relative group/map" id="social-map-container">
       {/* Controles del Mapa */}
-      <div className="absolute top-4 right-4 z-[1000] flex flex-col gap-2">
-        <div className="bg-background/95 backdrop-blur-sm p-3 rounded-xl shadow-xl border border-border min-w-[200px]">
-          <label className="text-[10px] font-bold text-muted-foreground uppercase block mb-2 tracking-widest">Filtrar por Área</label>
+      <div className="absolute top-6 left-6 z-[1000] flex items-center gap-2 pointer-events-none">
+        <div className="bg-background/80 backdrop-blur-md p-2 rounded-2xl shadow-2xl border border-border/50 pointer-events-auto flex items-center gap-2">
+          <div className="bg-primary text-white p-2 rounded-xl">
+             <MapIcon className="h-4 w-4" />
+          </div>
+          <div className="pr-4">
+             <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground leading-none">Capa Activa</p>
+             <p className="text-xs font-bold">{viewMode === 'markers' ? 'Puntos de Atención' : 'Mapa de Calor'}</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="absolute top-6 right-6 z-[1000] flex flex-col gap-3">
+        <div className="bg-background/80 backdrop-blur-md p-4 rounded-[2rem] shadow-2xl border border-border/50 min-w-[240px]">
+          <div className="flex items-center gap-2 mb-3">
+             <Filter className="h-3 w-3 text-primary" />
+             <label className="text-[10px] font-black text-muted-foreground uppercase tracking-tighter">Filtrar por Área</label>
+          </div>
           <select
-            className="text-sm border-none focus:ring-0 cursor-pointer bg-transparent w-full font-medium"
+            className="text-sm border-none focus:ring-0 cursor-pointer bg-muted/50 rounded-xl px-3 py-2 w-full font-bold appearance-none transition-colors hover:bg-muted"
             value={filterArea}
             onChange={(e) => setFilterArea(e.target.value)}
           >
-            <option value="all">Todas las áreas</option>
+            <option value="all">Todo el Territorio</option>
             {areas.map((area: any) => (
               <option key={area.id} value={area.id}>{area.name}</option>
             ))}
@@ -77,15 +116,24 @@ export function MapView({ people }: MapViewProps) {
         </div>
 
         <Tabs value={viewMode} onValueChange={setViewMode} className="w-full">
-          <TabsList className="grid grid-cols-2 bg-background/95 backdrop-blur-sm shadow-xl border border-border p-1 rounded-xl">
-            <TabsTrigger value="markers" className="text-xs gap-2">
-              <Layers className="h-3.5 w-3.5" /> Marcadores
+          <TabsList className="grid grid-cols-2 bg-background/80 backdrop-blur-md shadow-2xl border border-border/50 p-1.5 rounded-[2rem]">
+            <TabsTrigger value="markers" className="rounded-full text-xs gap-2 font-bold data-[state=active]:bg-primary data-[state=active]:text-white transition-all">
+              <Layers className="h-3.5 w-3.5" /> Puntos
             </TabsTrigger>
-            <TabsTrigger value="heatmap" className="text-xs gap-2">
+            <TabsTrigger value="heatmap" className="rounded-full text-xs gap-2 font-bold data-[state=active]:bg-primary data-[state=active]:text-white transition-all">
               <Flame className="h-3.5 w-3.5" /> Calor
             </TabsTrigger>
           </TabsList>
         </Tabs>
+
+        <Button
+          onClick={exportMap}
+          disabled={isExporting}
+          className="rounded-full bg-background/80 backdrop-blur-md border border-border/50 text-foreground hover:bg-accent shadow-2xl h-12 gap-2 font-bold"
+        >
+          <Download className="h-4 w-4" />
+          {isExporting ? 'Exportando...' : 'Exportar Vista'}
+        </Button>
       </div>
 
       {viewMode === "markers" ? (

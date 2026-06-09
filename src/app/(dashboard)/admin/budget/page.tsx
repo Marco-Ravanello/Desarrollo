@@ -2,7 +2,7 @@ export const dynamic = "force-dynamic";
 
 import { getBudgetSummary } from "@/app/(dashboard)/admin/actions/budget-actions";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Building2, Wallet, TrendingDown, AlertCircle } from "lucide-react";
+import { Wallet } from "lucide-react";
 import { BudgetEditDialog } from "@/app/(dashboard)/admin/budget/budget-edit-dialog";
 
 export default async function BudgetPage() {

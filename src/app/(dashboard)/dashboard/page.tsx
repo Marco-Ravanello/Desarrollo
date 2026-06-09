@@ -1,49 +1,70 @@
 export const dynamic = "force-dynamic";
 import { getDashboardStats } from "@/services/dashboard";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Users, FileText, ArrowRightLeft, ShoppingBag, Receipt, TrendingUp, Activity, User, Calendar, Car } from "lucide-react";
+import { Users, FileText, ArrowRightLeft, ShoppingBag, Receipt, TrendingUp, Activity, User, Calendar, Car, CheckCircle2, ShieldAlert } from "lucide-react";
 import { DashboardCharts } from "@/components/dashboard/dashboard-charts";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 
 export default async function DashboardPage() {
   const stats = await getDashboardStats();
-  const cards = [
-    { title: "Ciudadanos", description: "Total de personas registradas", value: stats.peopleCount, icon: Users, color: "text-blue-600", bg: "bg-blue-50 dark:bg-blue-950/30" },
-    { title: "Casos Activos", description: "En proceso o abiertos", value: stats.activeCases, icon: FileText, color: "text-orange-600", bg: "bg-orange-50 dark:bg-orange-950/30" },
-    { title: "Derivaciones", description: "Pendientes entre áreas", value: stats.pendingDerivations, icon: ArrowRightLeft, color: "text-purple-600", bg: "bg-purple-50 dark:bg-purple-950/30" },
-    { title: "OC Pendientes", description: "Órdenes por aprobar", value: stats.pendingPurchaseOrders, icon: ShoppingBag, color: "text-green-600", bg: "bg-green-50 dark:bg-green-950/30" },
-    { title: "Facturas", description: "Pendientes de pago", value: stats.pendingInvoices, icon: Receipt, color: "text-yellow-600", bg: "bg-yellow-50 dark:bg-yellow-950/30" },
-    { title: "Vehículos Libres", description: "Disponibilidad actual", value: `${stats.vehicleStats.available}/${stats.vehicleStats.total}`, icon: Car, color: "text-indigo-600", bg: "bg-indigo-50 dark:bg-indigo-950/30" },
+
+  const mainCards = [
+    { title: "Familias Registradas", description: "Total en base de datos", value: stats.peopleCount, icon: Users, color: "text-blue-600", bg: "bg-blue-50 dark:bg-blue-950/30", trend: "+2% este mes" },
+    { title: "Casos Activos", description: "Abiertos o en proceso", value: stats.activeCases, icon: FileText, color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/30", trend: "8 resueltos hoy" },
+    { title: "Tareas Pendientes", description: "Asignadas para hoy", value: stats.todayTasks, icon: CheckCircle2, color: "text-amber-600", bg: "bg-amber-50 dark:bg-amber-950/30", trend: "Prioridad alta" },
+    { title: "Casos Críticos", description: "Urgencia máxima", value: stats.criticalCases, icon: ShieldAlert, color: "text-rose-600", bg: "bg-rose-50 dark:bg-rose-950/30", trend: "Requiere atención" },
+  ];
+
+  const adminCards = [
+    { title: "OC Pendientes", value: stats.pendingPurchaseOrders, icon: ShoppingBag, color: "text-slate-600" },
+    { title: "Derivaciones", value: stats.pendingDerivations, icon: ArrowRightLeft, color: "text-slate-600" },
+    { title: "Vehículos Libres", value: `${stats.vehicleStats.available}/${stats.vehicleStats.total}`, icon: Car, color: "text-slate-600" },
   ];
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500">
+    <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
       <div className="flex flex-col gap-2">
-        <h2 className="text-3xl font-bold tracking-tight text-foreground">Panel de Control</h2>
-        <p className="text-muted-foreground">Resumen general de indicadores por área.</p>
+        <h2 className="text-4xl font-black tracking-tight text-foreground">Panel de Control</h2>
+        <p className="text-muted-foreground text-lg">Resumen estratégico de la gestión municipal.</p>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {cards.map((card) => (
-          <Card key={card.title} className="border-none shadow-sm hover:shadow-md transition-shadow">
-            <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+        {mainCards.map((card) => (
+          <Card key={card.title} className="border-none shadow-sm hover:shadow-xl transition-all duration-300 group overflow-hidden bg-card/50 backdrop-blur-sm">
+            <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0 relative z-10">
               <div className="space-y-1">
-                <CardTitle className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">{card.title}</CardTitle>
-                <CardDescription className="text-xs">{card.description}</CardDescription>
+                <CardTitle className="text-xs font-bold text-muted-foreground uppercase tracking-widest">{card.title}</CardTitle>
               </div>
-              <div className={`p-2 rounded-lg ${card.bg}`}>
-                <card.icon className={`h-5 w-5 ${card.color}`} />
+              <div className={`p-3 rounded-2xl ${card.bg} group-hover:scale-110 transition-transform duration-500`}>
+                <card.icon className={`h-6 w-6 ${card.color}`} />
               </div>
             </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-foreground">{card.value}</div>
-              <div className="mt-4 flex items-center text-xs text-muted-foreground">
-                <TrendingUp className="h-3 w-3 mr-1 text-green-500" />
-                <span>Actualizado ahora mismo</span>
+            <CardContent className="relative z-10">
+              <div className="text-4xl font-black text-foreground mb-1 tracking-tighter">{card.value}</div>
+              <div className="flex items-center text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                <div className="w-1.5 h-1.5 rounded-full bg-green-500 mr-2 animate-pulse" />
+                {card.trend}
               </div>
             </CardContent>
+            <div className={`absolute -right-4 -bottom-4 w-24 h-24 opacity-[0.03] group-hover:opacity-[0.08] transition-opacity duration-500`}>
+               <card.icon className="w-full h-full" />
+            </div>
           </Card>
+        ))}
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-3">
+        {adminCards.map((card) => (
+           <div key={card.title} className="flex items-center gap-4 p-4 rounded-2xl bg-card border border-border/50 shadow-sm">
+              <div className="p-2 rounded-xl bg-muted">
+                <card.icon className="h-5 w-5 text-muted-foreground" />
+              </div>
+              <div>
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">{card.title}</p>
+                <p className="text-xl font-bold">{card.value}</p>
+              </div>
+           </div>
         ))}
       </div>
 

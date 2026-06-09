@@ -66,10 +66,10 @@ export function AppSidebar() {
 
       <div className={`p-6 space-y-6 ${isCollapsed ? "px-4" : ""}`}>
         <div className={`text-2xl font-bold flex items-center gap-2 ${isCollapsed ? "justify-center" : ""}`}>
-          <div className={`${sidebarColor} p-1.5 rounded-lg text-white shadow-lg shadow-blue-900/20 shrink-0`}>
-            <Briefcase className="h-6 w-6" />
+          <div className={`bg-primary p-1.5 rounded-xl text-white shadow-lg shadow-primary/20 shrink-0`}>
+            <Building2 className="h-6 w-6" />
           </div>
-          {!isCollapsed && <span className="tracking-tight truncate font-bold">MuniGestión</span>}
+          {!isCollapsed && <span className="tracking-tight truncate font-bold text-primary">MuniGestión</span>}
         </div>
 
         {!isCollapsed && <GlobalSearch />}
