@@ -22,7 +22,7 @@ export async function getDashboardStats() {
     prisma.invoice.count({ where: { status: 'PENDIENTE' } }),
     prisma.supplyItem.count({ where: { stock: { lte: 0 } } }),
     prisma.vehicle.count(),
-    prisma.personalTask.count({ where: { completed: false, dueDate: { lte: now } } }),
+    prisma.task.count({ where: { status: 'PENDIENTE', dueDate: { lte: now } } }),
     prisma.case.count({ where: { priority: 'URGENTE', status: { in: ['ABIERTO', 'EN_PROCESO'] } } }),
   ]);
 
