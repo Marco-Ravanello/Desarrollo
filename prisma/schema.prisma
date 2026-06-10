@@ -263,6 +263,12 @@ enum RequestStatus {
   RECHAZADO
 }
 
+enum HRStatus {
+  ACTIVO
+  LICENCIA
+  BAJA
+}
+
 model HRRecord {
   id            String   @id @default(cuid())
   firstName     String
@@ -273,7 +279,8 @@ model HRRecord {
   position      String?
   areaId        String?
   area          Area?    @relation(fields: [areaId], references: [id])
-  status        String?
+  status        HRStatus @default(ACTIVO)
+  createdAt     DateTime @default(now())
 }
 
 model Document {
