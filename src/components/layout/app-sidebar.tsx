@@ -28,10 +28,10 @@ export function AppSidebar() {
   };
 
   const navigation = [
-    { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard, color: "text-slate-400" },
-    { title: "Mapa Social", url: "/maps", icon: MapPin, color: "text-slate-400" },
-    { title: "Mis Tareas", url: "/tasks", icon: CheckCircle2, color: "text-slate-400" },
-    { title: "Registro Único", url: "/people", icon: Users, color: "text-slate-400" },
+    { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard, color: "text-blue-500" },
+    { title: "Mapa Social", url: "/maps", icon: MapPin, color: "text-emerald-500" },
+    { title: "Mis Tareas", url: "/tasks", icon: CheckCircle2, color: "text-amber-500" },
+    { title: "Registro Único", url: "/people", icon: Users, color: "text-purple-500" },
   ];
 
   const adminNav = [
@@ -39,7 +39,10 @@ export function AppSidebar() {
     { title: "Vehículos y Logística", url: "/admin/vehicles", icon: Car, color: "text-slate-400" },
     { title: "Presupuesto", url: "/admin/budget", icon: Wallet, color: "text-slate-400" },
     { title: "Recursos Humanos", url: "/admin/hr", icon: UserCog, color: "text-slate-400" },
-    ...(user?.role === 'SUPERADMIN' ? [{ title: "Usuarios", url: "/admin/users", icon: UserCog, color: "text-slate-400" }] : []),
+    ...(user?.role === 'SUPERADMIN' ? [
+      { title: "Usuarios", url: "/admin/users", icon: UserCog, color: "text-slate-400" },
+      { title: "Auditoría", url: "/admin/audit", icon: ClipboardList, color: "text-slate-400" }
+    ] : []),
   ];
 
   const socialAreas = [
@@ -51,7 +54,7 @@ export function AppSidebar() {
   const sidebarColor = getAreaBgColor(user?.role === 'SUPERADMIN' ? 'slate' : (user as any)?.area?.color);
 
   return (
-    <div className={`${isCollapsed ? "w-20" : "w-64"} h-screen sticky top-0 bg-slate-950 text-white flex flex-col shrink-0 overflow-hidden transition-all duration-300 relative border-r border-slate-800`}>
+    <div className={`${isCollapsed ? "w-20" : "w-64"} h-screen sticky top-0 bg-card text-foreground flex flex-col shrink-0 overflow-hidden transition-all duration-300 relative border-r border-border`}>
       <Button
         variant="ghost"
         size="icon"
@@ -63,10 +66,10 @@ export function AppSidebar() {
 
       <div className={`p-6 space-y-6 ${isCollapsed ? "px-4" : ""}`}>
         <div className={`text-2xl font-bold flex items-center gap-2 ${isCollapsed ? "justify-center" : ""}`}>
-          <div className={`${sidebarColor} p-1.5 rounded-lg text-white shadow-lg shadow-blue-900/20 shrink-0`}>
-            <Briefcase className="h-6 w-6" />
+          <div className={`bg-primary p-1.5 rounded-xl text-white shadow-lg shadow-primary/20 shrink-0`}>
+            <Building2 className="h-6 w-6" />
           </div>
-          {!isCollapsed && <span className="tracking-tight truncate">MuniGestión</span>}
+          {!isCollapsed && <span className="tracking-tight truncate font-bold text-primary">MuniGestión</span>}
         </div>
 
         {!isCollapsed && <GlobalSearch />}
@@ -74,7 +77,7 @@ export function AppSidebar() {
 
       <nav className="flex-1 px-4 space-y-1 overflow-y-auto custom-scrollbar">
         <div className="pb-2">
-          {!isCollapsed && <p className="px-2 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Principal</p>}
+          {!isCollapsed && <p className="px-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Principal</p>}
           {navigation.map((item) => {
             const isActive = pathname === item.url;
             return (
@@ -85,10 +88,10 @@ export function AppSidebar() {
                 className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-all group mb-1 ${
                   isCollapsed ? "justify-center" : ""
                 } ${
-                  isActive ? "bg-blue-600 text-white" : "text-slate-300 hover:text-white hover:bg-slate-800"
+                  isActive ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground hover:bg-accent"
                 }`}
               >
-                <item.icon className={`h-5 w-5 shrink-0 ${isActive ? "text-white" : item.color} group-hover:text-white transition-colors`} />
+                <item.icon className={`h-5 w-5 shrink-0 ${isActive ? "text-primary-foreground" : item.color} group-hover:text-primary transition-colors`} />
                 {!isCollapsed && <span className="text-sm font-medium truncate">{item.title}</span>}
               </Link>
             );
@@ -96,7 +99,7 @@ export function AppSidebar() {
         </div>
 
         <div className="pt-4 pb-2">
-          {!isCollapsed && <p className="px-2 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Administración</p>}
+          {!isCollapsed && <p className="px-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Administración</p>}
           {adminNav.map((item) => {
             const isActive = pathname.startsWith(item.url);
             return (
@@ -107,10 +110,10 @@ export function AppSidebar() {
                 className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-all group mb-1 ${
                   isCollapsed ? "justify-center" : ""
                 } ${
-                  isActive ? "bg-slate-700 text-white" : "text-slate-300 hover:text-white hover:bg-slate-800"
+                  isActive ? "bg-accent text-accent-foreground font-bold" : "text-muted-foreground hover:text-foreground hover:bg-accent"
                 }`}
               >
-                <item.icon className={`h-5 w-5 shrink-0 ${isActive ? "text-white" : item.color} group-hover:text-white transition-colors`} />
+                <item.icon className={`h-5 w-5 shrink-0 ${isActive ? "text-primary" : "text-slate-400"} group-hover:text-primary transition-colors`} />
                 {!isCollapsed && <span className="text-sm font-medium truncate">{item.title}</span>}
               </Link>
             );
@@ -118,13 +121,13 @@ export function AppSidebar() {
         </div>
 
         <div className="pt-4 pb-2">
-          {!isCollapsed && <p className="px-2 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Áreas Sociales</p>}
+          {!isCollapsed && <p className="px-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Áreas Sociales</p>}
           {socialAreas.map((item) => (
             <Link
               key={item.title}
               href={item.url}
               title={isCollapsed ? item.title : ""}
-              className={`flex items-center gap-3 px-3 py-2 text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg transition-all group mb-1 ${
+              className={`flex items-center gap-3 px-3 py-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-all group mb-1 ${
                 isCollapsed ? "justify-center" : ""
               }`}
             >
@@ -137,26 +140,26 @@ export function AppSidebar() {
             <Link
               href="/areas/violence"
               title={isCollapsed ? "Violencia de Género" : ""}
-              className={`flex items-center gap-3 px-3 py-2 text-rose-400/80 hover:text-rose-400 hover:bg-rose-950/30 rounded-lg transition-all group mt-1 ${
+              className={`flex items-center gap-3 px-3 py-2 text-rose-500/80 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-lg transition-all group mt-1 ${
                 isCollapsed ? "justify-center" : ""
               }`}
             >
-              <ShieldAlert className="h-5 w-5 shrink-0 text-rose-400" />
+              <ShieldAlert className="h-5 w-5 shrink-0 text-rose-500" />
               {!isCollapsed && <span className="text-sm font-medium truncate">Violencia de Género</span>}
             </Link>
           )}
         </div>
       </nav>
 
-      <div className={`border-t border-slate-800 p-4 mt-auto flex items-center gap-3 ${isCollapsed ? "flex-col" : ""}`}>
+      <div className={`border-t border-border p-4 mt-auto flex items-center gap-3 ${isCollapsed ? "flex-col" : ""}`}>
         <Avatar className="h-8 w-8 shrink-0">
-          <AvatarFallback className="bg-slate-700 text-slate-200">{user?.name?.[0] || "U"}</AvatarFallback>
+          <AvatarFallback className="bg-accent text-accent-foreground">{user?.name?.[0] || "U"}</AvatarFallback>
         </Avatar>
 
         {!isCollapsed && (
           <div className="flex-1 overflow-hidden">
-            <p className="text-sm font-medium truncate">{user?.name || "Invitado"}</p>
-            <p className="text-xs text-slate-500 truncate">{user?.role || "Sin rol"}</p>
+            <p className="text-sm font-medium truncate text-foreground">{user?.name || "Invitado"}</p>
+            <p className="text-[10px] text-muted-foreground truncate uppercase font-bold">{user?.role || "Sin rol"}</p>
           </div>
         )}
 
@@ -166,7 +169,7 @@ export function AppSidebar() {
             variant="ghost"
             size="icon"
             onClick={() => signOut()}
-            className="text-slate-400 hover:text-white"
+            className="text-muted-foreground hover:text-foreground hover:bg-accent"
             title="Cerrar sesión"
           >
             <LogOut className="h-4 w-4" />

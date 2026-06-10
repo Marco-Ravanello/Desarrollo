@@ -15,18 +15,20 @@ export default async function PeoplePage({
   const { search } = await searchParams;
   const people = await getPeople(search);
   return (
-    <div className="space-y-6">
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-3xl font-bold">Registro Único</h2>
-          <p className="text-slate-500">Gestione la base de datos centralizada de personas y familias.</p>
+          <h2 className="text-4xl font-black tracking-tight text-foreground">Registro Único</h2>
+          <p className="text-muted-foreground text-lg">Base de datos centralizada de ciudadanos y familias.</p>
         </div>
-        <Button asChild><Link href="/people/new"><Plus className="mr-2 h-4 w-4"/> Nueva Persona</Link></Button>
+        <Button asChild className="rounded-2xl h-12 px-6 shadow-lg shadow-primary/20 transition-all hover:scale-105">
+          <Link href="/people/new"><Plus className="mr-2 h-5 w-5"/> Nueva Persona</Link>
+        </Button>
       </div>
-      <Card>
+      <Card className="border-none shadow-sm overflow-hidden rounded-3xl bg-card/50 backdrop-blur-sm">
         <Table>
-          <TableHeader>
-            <TableRow>
+          <TableHeader className="bg-muted/50">
+            <TableRow className="hover:bg-transparent border-none">
               <TableHead>Apellido y Nombre</TableHead>
               <TableHead>DNI</TableHead>
               <TableHead>Casos</TableHead>
@@ -35,13 +37,13 @@ export default async function PeoplePage({
           </TableHeader>
           <TableBody>
             {people.map(p => (
-              <TableRow key={p.id}>
-                <TableCell className="font-medium">{p.lastName}, {p.firstName}</TableCell>
+              <TableRow key={p.id} className="group transition-colors hover:bg-muted/30">
+                <TableCell className="font-bold text-base">{p.lastName}, {p.firstName}</TableCell>
                 <TableCell>{p.dni}</TableCell>
-                <TableCell><Badge variant="outline">{p._count.cases}</Badge></TableCell>
+                <TableCell><Badge variant="secondary" className="rounded-lg font-bold">{p._count.cases} Casos</Badge></TableCell>
                 <TableCell className="text-right">
-                  <Button variant="ghost" size="icon" asChild>
-                    <Link href={`/people/${p.id}`}><Eye className="h-4 w-4"/></Link>
+                  <Button variant="ghost" size="icon" asChild className="rounded-xl group-hover:bg-primary group-hover:text-white transition-all">
+                    <Link href={`/people/${p.id}`}><Eye className="h-5 w-5"/></Link>
                   </Button>
                 </TableCell>
               </TableRow>

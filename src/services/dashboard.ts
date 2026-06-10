@@ -2,6 +2,7 @@ import prisma from "@/lib/prisma";
 
 export async function getDashboardStats() {
   const now = new Date();
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
   const [
     peopleCount,
@@ -11,6 +12,8 @@ export async function getDashboardStats() {
     pendingInvoices,
     lowStockItems,
     vehicleCount,
+    todayTasks,
+    criticalCases,
   ] = await Promise.all([
     prisma.person.count(),
     prisma.case.count({ where: { status: { in: ['ABIERTO', 'EN_PROCESO'] } } }),
@@ -19,6 +22,8 @@ export async function getDashboardStats() {
     prisma.invoice.count({ where: { status: 'PENDIENTE' } }),
     prisma.supplyItem.count({ where: { stock: { lte: 0 } } }),
     prisma.vehicle.count(),
+    prisma.personalTask.count({ where: { completed: false, dueDate: { lte: now } } }),
+    prisma.case.count({ where: { priority: 'URGENTE', status: { in: ['ABIERTO', 'EN_PROCESO'] } } }),
   ]);
 
   // Contar vehículos REALMENTE ocupados ahora mismo
@@ -68,6 +73,8 @@ export async function getDashboardStats() {
     recentActivity,
     casesByAreaData,
     poStatusData,
+    todayTasks,
+    criticalCases,
     vehicleStats: {
       total: vehicleCount,
       occupied: occupiedVehicles,

@@ -8,3 +8,6 @@ export async function getVehicles() { const now = new Date(); return await prism
 export async function getVehicleWithHistory(id: string) { return await prisma.vehicle.findUnique({ where: { id }, include: { reservations: { orderBy: { startDate: 'desc' }, include: { user: { select: { name: true, area: { select: { name: true } } } } } }, fuelRecords: { orderBy: { date: 'desc' } } } }); }
 export async function createVehicle(data: any) { return await prisma.vehicle.create({ data: { plate: data.plate, brand: data.brand, model: data.model } }); }
 export async function getAllReservations() { return await prisma.vehicleReservation.findMany({ include: { vehicle: { select: { plate: true, brand: true, model: true } }, user: { select: { name: true, area: { select: { name: true } } } } }, orderBy: { startDate: 'asc' } }); }
+export async function getSupplies() { return await prisma.supplyItem.findMany({ include: { area: true }, orderBy: { name: 'asc' } }); }
+export async function createSupply(data: any) { return await prisma.supplyItem.create({ data: { name: data.name, description: data.description, stock: parseInt(data.stock), minStock: parseInt(data.minStock), areaId: data.areaId || null } }); }
+export async function updateSupplyStock(id: string, newStock: number) { return await prisma.supplyItem.update({ where: { id }, data: { stock: newStock } }); }
