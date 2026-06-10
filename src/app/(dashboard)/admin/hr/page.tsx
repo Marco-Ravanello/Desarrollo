@@ -11,6 +11,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu";
+import { Eye, Edit, UserMinus, History } from "lucide-react";
 
 export default async function HRPage() {
   const [records, areas, stats] = await Promise.all([
@@ -52,7 +61,7 @@ export default async function HRPage() {
                     <Plus className="h-5 w-5" /> Nuevo Agente
                 </Button>
               </SheetTrigger>
-              <SheetContent side="right" className="sm:max-w-md w-full border-l border-border bg-background rounded-l-[2rem] shadow-2xl p-8">
+              <SheetContent side="right" className="sm:max-w-md w-full border-l border-border bg-background rounded-l-[2rem] shadow-2xl p-8 overflow-y-auto">
                 <SheetHeader className="mb-8">
                   <SheetTitle className="text-2xl font-black">Nuevo Agente</SheetTitle>
                   <SheetDescription className="text-base">Complete los datos para crear el legajo municipal.</SheetDescription>
@@ -163,9 +172,30 @@ export default async function HRPage() {
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right pr-8">
-                    <Button variant="ghost" size="icon" className="rounded-xl hover:bg-primary hover:text-white transition-all">
-                       <MoreHorizontal className="h-5 w-5" />
-                    </Button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="rounded-xl hover:bg-primary hover:text-white transition-all">
+                           <MoreHorizontal className="h-5 w-5" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-56 rounded-2xl p-2 shadow-2xl border-border/50">
+                        <DropdownMenuLabel className="px-3 py-2 text-xs font-black uppercase tracking-widest text-muted-foreground">Opciones de Legajo</DropdownMenuLabel>
+                        <DropdownMenuSeparator className="bg-border/50" />
+                        <DropdownMenuItem className="rounded-xl px-3 py-2.5 gap-3 font-bold focus:bg-primary focus:text-white transition-all cursor-pointer">
+                          <Eye className="h-4 w-4" /> Ver Detalles
+                        </DropdownMenuItem>
+                        <DropdownMenuItem className="rounded-xl px-3 py-2.5 gap-3 font-bold focus:bg-primary focus:text-white transition-all cursor-pointer">
+                          <Edit className="h-4 w-4" /> Editar Legajo
+                        </DropdownMenuItem>
+                        <DropdownMenuItem className="rounded-xl px-3 py-2.5 gap-3 font-bold focus:bg-primary focus:text-white transition-all cursor-pointer">
+                          <History className="h-4 w-4" /> Historial de Áreas
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator className="bg-border/50" />
+                        <DropdownMenuItem className="rounded-xl px-3 py-2.5 gap-3 font-bold text-rose-600 focus:bg-rose-500 focus:text-white transition-all cursor-pointer">
+                          <UserMinus className="h-4 w-4" /> Dar de Baja
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </TableCell>
                 </TableRow>
               ))
