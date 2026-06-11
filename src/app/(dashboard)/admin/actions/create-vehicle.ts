@@ -16,6 +16,10 @@ export async function createVehicleAction(formData: FormData) {
   const fuelCardNumber = formData.get("fuelCardNumber") as string;
   const fuelMonthlyLimit = parseFloat(formData.get("fuelMonthlyLimit") as string) || 0;
 
+  const vtvExpiryStr = formData.get("vtvExpiry") as string;
+  const insuranceExpiryStr = formData.get("insuranceExpiry") as string;
+  const lastServiceKm = parseInt(formData.get("lastServiceKm") as string) || 0;
+
   try {
     const vehicle = await prisma.vehicle.create({
       data: {
@@ -23,7 +27,11 @@ export async function createVehicleAction(formData: FormData) {
         brand,
         model,
         fuelCardNumber,
-        fuelMonthlyLimit
+        fuelMonthlyLimit,
+        vtvExpiry: vtvExpiryStr ? new Date(vtvExpiryStr) : null,
+        insuranceExpiry: insuranceExpiryStr ? new Date(insuranceExpiryStr) : null,
+        lastServiceKm,
+        status: 'DISPONIBLE'
       }
     });
 

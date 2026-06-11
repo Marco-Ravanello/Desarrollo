@@ -203,8 +203,18 @@ model Vehicle {
   brand         String
   fuelCardNumber String?
   fuelMonthlyLimit Decimal? @default(0)
+  status        VehicleStatus @default(DISPONIBLE)
+  vtvExpiry     DateTime?
+  insuranceExpiry DateTime?
+  lastServiceKm Int?     @default(0)
   reservations  VehicleReservation[]
   fuelRecords   FuelRecord[]
+}
+
+enum VehicleStatus {
+  DISPONIBLE
+  EN_TALLER
+  FUERA_DE_SERVICIO
 }
 
 model VehicleReservation {
@@ -212,17 +222,23 @@ model VehicleReservation {
   vehicleId     String
   vehicle       Vehicle  @relation(fields: [vehicleId], references: [id])
   userId        String
+  areaId        String?
   startDate     DateTime
   endDate       DateTime
   reason        String?
-  status        ReservationStatus @default(RESERVADO)
+  status        ReservationStatus @default(PENDIENTE)
+  observations  String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }
 
 enum ReservationStatus {
-  RESERVADO
+  PENDIENTE
+  APROBADA
+  RECHAZADA
   EN_CURSO
-  FINALIZADO
-  CANCELADO
+  FINALIZADA
+  CANCELADA
 }
 
 model FuelRecord {
