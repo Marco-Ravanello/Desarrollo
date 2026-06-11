@@ -26,10 +26,10 @@ export async function getDashboardStats() {
     prisma.case.count({ where: { priority: 'URGENTE', status: { in: ['ABIERTO', 'EN_PROCESO'] } } }),
   ]);
 
-  // Contar vehículos REALMENTE ocupados ahora mismo
+  // Contar vehículos ocupados (solo los que tienen reserva APROBADA o EN_CURSO)
   const occupiedVehicles = await prisma.vehicleReservation.count({
     where: {
-      status: { in: ['RESERVADO', 'EN_CURSO'] },
+      status: { in: ['APROBADA', 'EN_CURSO'] },
       startDate: { lte: now },
       endDate: { gte: now }
     }
