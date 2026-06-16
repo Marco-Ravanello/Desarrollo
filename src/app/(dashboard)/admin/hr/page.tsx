@@ -75,8 +75,8 @@ export default async function HRPage() {
           <p className="text-muted-foreground text-lg font-medium">Gestión integral de la nómina y legajos municipales.</p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-           <Button variant="outline" className="rounded-xl h-11 px-4 gap-2 border-slate-200 hover:bg-slate-50 transition-all font-bold" asChild>
-              <a href="#" onClick={(e) => e.preventDefault()}><Download className="h-4 w-4" /> Exportar</a>
+           <Button variant="outline" className="rounded-xl h-11 px-4 gap-2 border-slate-200 hover:bg-slate-50 transition-all font-bold">
+              <Download className="h-4 w-4" /> Exportar
            </Button>
            <Sheet>
               <SheetTrigger asChild>
