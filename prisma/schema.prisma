@@ -285,6 +285,12 @@ enum HRStatus {
   BAJA
 }
 
+enum ContractType {
+  MONOTRIBUTISTA
+  MENSUALIZADO
+  PLANTA_PERMANENTE
+}
+
 model HRRecord {
   id            String   @id @default(cuid())
   firstName     String
@@ -296,6 +302,9 @@ model HRRecord {
   areaId        String?
   area          Area?    @relation(fields: [areaId], references: [id])
   status        HRStatus @default(ACTIVO)
+  contractType  ContractType @default(MENSUALIZADO)
+  salary        Decimal? @default(0)
+  tasks         String?  @db.Text
   createdAt     DateTime @default(now())
 }
 

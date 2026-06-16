@@ -1,16 +1,17 @@
 export const dynamic = "force-dynamic";
-import { getHRRecords } from "@/services/hr";
-import { getAreas } from "@/services/cases";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+
+import prisma from "@/lib/prisma";
+import { getHRRecords, getHRStats } from "@/services/hr";
+import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Briefcase, Users, Building2, TrendingUp, FileText, Plus, Search, Download, BarChart2, MoreHorizontal, Filter, X } from "lucide-react";
-import { CreateHRForm } from "./create-hr-form";
-import { getHRStats } from "@/services/hr";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import {
+  Users, UserPlus, Search, Filter,
+  MoreHorizontal, Download, BarChart2,
+  Plus, Eye, Edit, History, UserMinus
+} from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,41 +20,40 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
-import { Eye, Edit, UserMinus, History } from "lucide-react";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import { CreateHRForm } from "./create-hr-form";
+import { ViewHRDetail } from "./view-hr-detail";
 
 export default async function HRPage() {
-  const [records, areas, stats] = await Promise.all([
-    getHRRecords(),
-    getAreas(),
-    getHRStats()
-  ]);
+  const records = await getHRRecords();
+  const stats = await getHRStats();
+  const areas = await prisma.area.findMany();
 
   const kpis = [
-    { title: "Total Agentes", value: stats.total, sub: "En toda la municipalidad", icon: Users, bg: "bg-blue-50 dark:bg-blue-950/30", color: "text-blue-600" },
-    { title: "Áreas", value: stats.areaCount, sub: "Con personal asignado", icon: Building2, bg: "bg-emerald-50 dark:bg-emerald-950/30", color: "text-emerald-600" },
-    { title: "Altas este mes", value: stats.newThisMonth, sub: "Nuevos ingresos", icon: TrendingUp, bg: "bg-purple-50 dark:bg-purple-950/30", color: "text-purple-600" },
-    { title: "Legajos Activos", value: stats.active, sub: "Personal activo", icon: FileText, bg: "bg-orange-50 dark:bg-orange-950/30", color: "text-orange-600" },
+    { title: "Total Personal", value: stats.total, icon: Users, color: "text-blue-600", bg: "bg-blue-50", sub: "Agentes registrados" },
+    { title: "Personal Activo", value: stats.active, icon: CheckCircle2, color: "text-emerald-600", bg: "bg-emerald-50", sub: `${Math.round((stats.active/stats.total)*100)}% de la nómina` },
+    { title: "Nuevos (Mes)", value: stats.newThisMonth, icon: UserPlus, color: "text-purple-600", bg: "bg-purple-50", sub: "Altas este período" },
+    { title: "Áreas Cubiertas", value: stats.areaCount, icon: BarChart2, color: "text-amber-600", bg: "bg-amber-50", sub: "Distribución municipal" },
   ];
 
   return (
-    <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
-        <div className="flex items-center gap-4">
-           <div className="p-3 bg-primary rounded-2xl text-white shadow-xl shadow-primary/20">
-              <Users className="h-8 w-8" />
-           </div>
-           <div>
-              <h2 className="text-4xl font-black tracking-tight text-foreground">Recursos Humanos</h2>
-              <p className="text-muted-foreground text-lg">Gestión integral de personal municipal.</p>
-           </div>
+    <div className="space-y-10 pb-20">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+        <div className="space-y-1">
+          <h2 className="text-4xl font-black tracking-tight text-slate-900 uppercase">Recursos Humanos</h2>
+          <p className="text-muted-foreground text-lg font-medium">Gestión integral de la nómina y legajos municipales.</p>
         </div>
-
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
            <Button variant="outline" className="rounded-xl h-11 px-4 gap-2 border-slate-200 hover:bg-slate-50 transition-all font-bold">
               <Download className="h-4 w-4" /> Exportar
-           </Button>
-           <Button variant="outline" className="rounded-xl h-11 px-4 gap-2 border-slate-200 hover:bg-slate-50 transition-all font-bold">
-              <BarChart2 className="h-4 w-4" /> Reportes
            </Button>
            <Sheet>
               <SheetTrigger asChild>
@@ -103,9 +103,6 @@ export default async function HRPage() {
            <div className="flex items-center gap-3 w-full md:w-auto">
               <Button variant="ghost" className="rounded-xl h-12 px-4 gap-2 font-bold text-muted-foreground">
                  Todas las áreas <Filter className="h-3 w-3" />
-              </Button>
-              <Button variant="ghost" className="rounded-xl h-12 px-4 gap-2 font-bold text-muted-foreground">
-                 Todos los estados <Filter className="h-3 w-3" />
               </Button>
               <Button size="icon" variant="secondary" className="rounded-xl h-12 w-12 text-muted-foreground">
                  <Filter className="h-5 w-5" />
@@ -172,30 +169,38 @@ export default async function HRPage() {
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right pr-8">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="rounded-xl hover:bg-primary hover:text-white transition-all">
-                           <MoreHorizontal className="h-5 w-5" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-56 rounded-2xl p-2 shadow-2xl border-border/50">
-                        <DropdownMenuLabel className="px-3 py-2 text-xs font-black uppercase tracking-widest text-muted-foreground">Opciones de Legajo</DropdownMenuLabel>
-                        <DropdownMenuSeparator className="bg-border/50" />
-                        <DropdownMenuItem className="rounded-xl px-3 py-2.5 gap-3 font-bold focus:bg-primary focus:text-white transition-all cursor-pointer">
-                          <Eye className="h-4 w-4" /> Ver Detalles
-                        </DropdownMenuItem>
-                        <DropdownMenuItem className="rounded-xl px-3 py-2.5 gap-3 font-bold focus:bg-primary focus:text-white transition-all cursor-pointer">
-                          <Edit className="h-4 w-4" /> Editar Legajo
-                        </DropdownMenuItem>
-                        <DropdownMenuItem className="rounded-xl px-3 py-2.5 gap-3 font-bold focus:bg-primary focus:text-white transition-all cursor-pointer">
-                          <History className="h-4 w-4" /> Historial de Áreas
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator className="bg-border/50" />
-                        <DropdownMenuItem className="rounded-xl px-3 py-2.5 gap-3 font-bold text-rose-600 focus:bg-rose-500 focus:text-white transition-all cursor-pointer">
-                          <UserMinus className="h-4 w-4" /> Dar de Baja
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                    <Sheet>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="rounded-xl hover:bg-primary hover:text-white transition-all">
+                             <MoreHorizontal className="h-5 w-5" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-56 rounded-2xl p-2 shadow-2xl border-border/50">
+                          <DropdownMenuLabel className="px-3 py-2 text-xs font-black uppercase tracking-widest text-muted-foreground">Opciones de Legajo</DropdownMenuLabel>
+                          <DropdownMenuSeparator className="bg-border/50" />
+                          <SheetTrigger asChild>
+                            <DropdownMenuItem className="rounded-xl px-3 py-2.5 gap-3 font-bold focus:bg-primary focus:text-white transition-all cursor-pointer">
+                              <Eye className="h-4 w-4" /> Ver Detalles
+                            </DropdownMenuItem>
+                          </SheetTrigger>
+                          <DropdownMenuItem className="rounded-xl px-3 py-2.5 gap-3 font-bold focus:bg-primary focus:text-white transition-all cursor-pointer">
+                            <Edit className="h-4 w-4" /> Editar Legajo
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator className="bg-border/50" />
+                          <DropdownMenuItem className="rounded-xl px-3 py-2.5 gap-3 font-bold text-rose-600 focus:bg-rose-500 focus:text-white transition-all cursor-pointer">
+                            <UserMinus className="h-4 w-4" /> Dar de Baja
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                      <SheetContent side="right" className="sm:max-w-lg w-full border-l border-border bg-background rounded-l-[2rem] shadow-2xl p-8 overflow-y-auto">
+                        <SheetHeader className="mb-8">
+                          <SheetTitle className="text-2xl font-black">Detalle del Agente</SheetTitle>
+                          <SheetDescription className="text-base">Información completa y situación de revista.</SheetDescription>
+                        </SheetHeader>
+                        <ViewHRDetail agent={r} />
+                      </SheetContent>
+                    </Sheet>
                   </TableCell>
                 </TableRow>
               ))
@@ -204,18 +209,28 @@ export default async function HRPage() {
         </Table>
 
         <div className="p-6 border-t border-border/50 bg-muted/20 flex flex-col md:flex-row items-center justify-between gap-4">
-           <p className="text-xs font-bold text-muted-foreground italic">Mostrando 1 a {records.length} de {stats.total} agentes</p>
-           <div className="flex items-center gap-2">
-              <Button variant="outline" size="icon" disabled className="rounded-lg h-8 w-8 text-muted-foreground border-slate-200">
-                &lt;
-              </Button>
-              <Button variant="secondary" size="sm" className="rounded-lg h-8 px-3 font-bold bg-primary text-white">1</Button>
-              <Button variant="ghost" size="icon" disabled className="rounded-lg h-8 w-8 text-muted-foreground">
-                &gt;
-              </Button>
-           </div>
+           <p className="text-xs font-bold text-muted-foreground italic">Mostrando {records.length} agentes</p>
         </div>
       </div>
     </div>
   );
 }
+
+// Helper icon not imported
+const CheckCircle2 = (props: any) => (
+  <svg
+    {...props}
+    xmlns="http://www.w3.org/2000/svg"
+    width="24"
+    height="24"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z" />
+    <path d="m9 12 2 2 4-4" />
+  </svg>
+)

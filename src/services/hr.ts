@@ -1,9 +1,17 @@
 import prisma from "@/lib/prisma";
+import { ContractType, HRStatus } from "@prisma/client";
 
 export async function getHRRecords() {
   return await prisma.hRRecord.findMany({
     include: { area: true },
     orderBy: { lastName: 'asc' }
+  });
+}
+
+export async function getHRRecordById(id: string) {
+  return await prisma.hRRecord.findUnique({
+    where: { id },
+    include: { area: true }
   });
 }
 
@@ -40,7 +48,10 @@ export async function createHRRecord(data: any) {
       startDate: data.startDate ? new Date(data.startDate) : null,
       position: data.position,
       areaId: data.areaId || null,
-      status: data.status || 'ACTIVO'
+      status: (data.status as HRStatus) || 'ACTIVO',
+      contractType: (data.contractType as ContractType) || 'MENSUALIZADO',
+      salary: data.salary || 0,
+      tasks: data.tasks
     }
   });
 }
