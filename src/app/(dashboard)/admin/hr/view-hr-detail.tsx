@@ -2,19 +2,11 @@
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
-import { Briefcase, Calendar, CreditCard, FileText, User } from "lucide-react";
+import { Briefcase, Calendar, CreditCard, FileText } from "lucide-react";
 
 export function ViewHRDetail({ agent }: { agent: any }) {
   if (!agent) return null;
-
-  // Handle Prisma Decimal safely
-  const formattedSalary = agent.salary
-    ? (typeof agent.salary === 'object' && 'toNumber' in agent.salary
-        ? agent.salary.toNumber()
-        : parseFloat(agent.salary.toString()))
-    : 0;
 
   return (
     <div className="space-y-8 py-4">
@@ -54,7 +46,9 @@ export function ViewHRDetail({ agent }: { agent: any }) {
               </div>
               <div>
                 <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Fecha de Ingreso</p>
-                <p className="font-bold text-slate-900">{agent.startDate ? new Date(agent.startDate).toLocaleDateString('es-AR') : 'No registrada'}</p>
+                <p className="font-bold text-slate-900">
+                  {agent.startDate ? new Date(agent.startDate).toLocaleDateString('es-AR') : 'No registrada'}
+                </p>
               </div>
            </div>
         </div>
@@ -76,7 +70,9 @@ export function ViewHRDetail({ agent }: { agent: any }) {
               </div>
               <div>
                 <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Sueldo / Honorarios</p>
-                <p className="font-bold text-slate-900">${formattedSalary.toLocaleString('es-AR')}</p>
+                <p className="font-bold text-slate-900">
+                  ${(agent.salary || 0).toLocaleString('es-AR')}
+                </p>
               </div>
            </div>
         </div>

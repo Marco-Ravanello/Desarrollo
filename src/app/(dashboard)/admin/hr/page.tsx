@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import {
   Users, UserPlus, Search, Filter,
   MoreHorizontal, Download, BarChart2,
-  Plus, Eye
+  Plus, Eye, CheckCircle2
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -36,7 +36,16 @@ import { DeleteHRAction, EditHRAction } from "./actions-client";
 export default async function HRPage() {
   const records = await getHRRecords();
   const stats = await getHRStats();
-  const areas = await prisma.area.findMany();
+  const areasRaw = await prisma.area.findMany({
+    orderBy: { name: 'asc' }
+  });
+
+  // Sanitize areas for client components (Prisma Decimals are not serializable)
+  const sanitizedAreas = areasRaw.map(a => ({
+    id: a.id,
+    name: a.name,
+    color: a.color
+  }));
 
   const kpis = [
     { title: "Total Personal", value: stats.total, icon: Users, color: "text-blue-600", bg: "bg-blue-50", sub: "Agentes registrados" },
@@ -44,6 +53,19 @@ export default async function HRPage() {
     { title: "Nuevos (Mes)", value: stats.newThisMonth, icon: UserPlus, color: "text-purple-600", bg: "bg-purple-50", sub: "Altas este período" },
     { title: "Áreas Cubiertas", value: stats.areaCount, icon: BarChart2, color: "text-amber-600", bg: "bg-amber-50", sub: "Distribución municipal" },
   ];
+
+  // Sanitize records for client components (Convert Decimals to Numbers and Dates to Strings)
+  const sanitizedRecords = records.map(r => ({
+    ...r,
+    salary: r.salary ? Number(r.salary) : 0,
+    startDate: r.startDate ? r.startDate.toISOString() : null,
+    createdAt: r.createdAt.toISOString(),
+    area: r.area ? {
+      id: r.area.id,
+      name: r.area.name,
+      color: r.area.color
+    } : null
+  }));
 
   return (
     <div className="space-y-10 pb-20">
@@ -67,7 +89,7 @@ export default async function HRPage() {
                   <SheetTitle className="text-2xl font-black">Nuevo Agente</SheetTitle>
                   <SheetDescription className="text-base">Complete los datos para crear el legajo municipal.</SheetDescription>
                 </SheetHeader>
-                <CreateHRForm areas={areas} />
+                <CreateHRForm areas={sanitizedAreas} />
               </SheetContent>
            </Sheet>
         </div>
@@ -122,20 +144,20 @@ export default async function HRPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {records.length === 0 ? (
+            {sanitizedRecords.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={5} className="text-center py-20 text-muted-foreground italic font-medium">
                   No hay agentes registrados en la nómina municipal.
                 </TableCell>
               </TableRow>
             ) : (
-              records.map((r) => (
+              sanitizedRecords.map((r) => (
                 <TableRow key={r.id} className="group hover:bg-muted/20 transition-all border-none">
                   <TableCell className="py-4 px-6">
                     <div className="flex items-center gap-4">
                       <Avatar className="h-10 w-10 border-2 border-background shadow-sm">
                         <AvatarFallback className="bg-blue-50 text-blue-600 font-black text-xs uppercase">
-                          {r.firstName?.[0]}{r.lastName?.[0]}
+                          {r.firstName?.[0] || '?'}{r.lastName?.[0] || ''}
                         </AvatarFallback>
                       </Avatar>
                       <div>
@@ -209,28 +231,9 @@ export default async function HRPage() {
         </Table>
 
         <div className="p-6 border-t border-border/50 bg-muted/20 flex flex-col md:flex-row items-center justify-between gap-4">
-           <p className="text-xs font-bold text-muted-foreground italic">Mostrando {records.length} agentes</p>
+           <p className="text-xs font-bold text-muted-foreground italic">Mostrando {sanitizedRecords.length} agentes</p>
         </div>
       </div>
     </div>
   );
 }
-
-// Helper icon not imported
-const CheckCircle2 = (props: any) => (
-  <svg
-    {...props}
-    xmlns="http://www.w3.org/2000/svg"
-    width="24"
-    height="24"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z" />
-    <path d="m9 12 2 2 4-4" />
-  </svg>
-)
