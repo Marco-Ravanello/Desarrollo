@@ -11,6 +11,7 @@ import { Separator } from "@/components/ui/separator";
 
 export function CreateHRForm({ areas }: { areas: any[] }) {
   const [loading, setLoading] = useState(false);
+  const [status, setStatus] = useState("ACTIVO");
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -20,6 +21,7 @@ export function CreateHRForm({ areas }: { areas: any[] }) {
     if (res.success) {
       toast.success("Legajo creado correctamente");
       (e.target as HTMLFormElement).reset();
+      setStatus("ACTIVO");
     } else {
       toast.error(res.error);
     }
@@ -76,6 +78,31 @@ export function CreateHRForm({ areas }: { areas: any[] }) {
             <Label htmlFor="startDate" className="font-bold text-slate-700">Fecha de Ingreso</Label>
             <Input id="startDate" name="startDate" type="date" className="rounded-xl h-11 bg-slate-50 border-slate-200" />
           </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="status" className="font-bold text-slate-700">Estado Actual</Label>
+            <select
+              id="status"
+              name="status"
+              value={status}
+              onChange={(e) => setStatus(e.target.value)}
+              className="flex h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              required
+            >
+              <option value="ACTIVO">Activo</option>
+              <option value="LICENCIA">Licencia</option>
+              <option value="VACACIONES">Vacaciones</option>
+              <option value="BAJA">Baja</option>
+            </select>
+          </div>
+          {(status === "LICENCIA" || status === "VACACIONES") && (
+            <div className="space-y-2 animate-in fade-in slide-in-from-top-1">
+              <Label htmlFor="statusUntil" className="font-bold text-slate-700">Hasta el día</Label>
+              <Input id="statusUntil" name="statusUntil" type="date" className="rounded-xl h-11 bg-blue-50 border-blue-200" required />
+            </div>
+          )}
         </div>
 
         <div className="grid grid-cols-2 gap-4">

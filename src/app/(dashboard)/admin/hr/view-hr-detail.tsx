@@ -3,7 +3,7 @@
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Briefcase, Calendar, CreditCard, FileText } from "lucide-react";
+import { Briefcase, Calendar, CreditCard, FileText, Info } from "lucide-react";
 
 export function ViewHRDetail({ agent }: { agent: any }) {
   if (!agent) return null;
@@ -20,12 +20,21 @@ export function ViewHRDetail({ agent }: { agent: any }) {
           <h3 className="text-2xl font-black text-slate-900">{agent.firstName} {agent.lastName}</h3>
           <p className="text-sm font-bold text-muted-foreground uppercase tracking-widest">DNI {agent.dni} • Legajo {agent.fileNumber || 'N/A'}</p>
         </div>
-        <Badge className={`rounded-full px-4 py-1 text-xs font-black tracking-widest border-none ${
-          agent.status === 'ACTIVO' ? 'bg-emerald-50 text-emerald-600' :
-          agent.status === 'LICENCIA' ? 'bg-amber-50 text-amber-600' : 'bg-rose-50 text-rose-600'
-        }`}>
-          {agent.status || 'ACTIVO'}
-        </Badge>
+        <div className="flex flex-col items-center gap-2">
+          <Badge className={`rounded-full px-4 py-1 text-xs font-black tracking-widest border-none ${
+            agent.status === 'ACTIVO' ? 'bg-emerald-50 text-emerald-600' :
+            agent.status === 'LICENCIA' ? 'bg-amber-50 text-amber-600' :
+            agent.status === 'VACACIONES' ? 'bg-blue-50 text-blue-600' :
+            'bg-rose-50 text-rose-600'
+          }`}>
+            {agent.status || 'ACTIVO'}
+          </Badge>
+          {agent.statusUntil && (
+            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tighter flex items-center gap-1">
+              <Info className="h-3 w-3" /> Hasta el {new Date(agent.statusUntil).toLocaleDateString('es-AR')}
+            </span>
+          )}
+        </div>
       </div>
 
       <div className="grid gap-6">

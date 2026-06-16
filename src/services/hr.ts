@@ -49,6 +49,7 @@ export async function createHRRecord(data: any) {
       position: data.position,
       areaId: data.areaId || null,
       status: (data.status as HRStatus) || 'ACTIVO',
+      statusUntil: data.statusUntil ? new Date(data.statusUntil) : null,
       contractType: (data.contractType as ContractType) || 'MENSUALIZADO',
       salary: data.salary || 0,
       tasks: data.tasks

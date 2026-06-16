@@ -282,6 +282,7 @@ enum RequestStatus {
 enum HRStatus {
   ACTIVO
   LICENCIA
+  VACACIONES
   BAJA
 }
 
@@ -302,6 +303,7 @@ model HRRecord {
   areaId        String?
   area          Area?    @relation(fields: [areaId], references: [id])
   status        HRStatus @default(ACTIVO)
+  statusUntil   DateTime?
   contractType  ContractType @default(MENSUALIZADO)
   salary        Decimal? @default(0)
   tasks         String?  @db.Text

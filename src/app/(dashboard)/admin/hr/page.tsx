@@ -9,7 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   Users, UserPlus, Search, Filter,
-  Download, BarChart2, Plus, CheckCircle2
+  Download, BarChart2, Plus, CheckCircle2,
+  Calendar
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
@@ -49,6 +50,7 @@ export default async function HRPage() {
     ...r,
     salary: r.salary ? Number(r.salary) : 0,
     startDate: r.startDate ? r.startDate.toISOString() : null,
+    statusUntil: r.statusUntil ? r.statusUntil.toISOString() : null,
     createdAt: r.createdAt.toISOString(),
     area: r.area ? {
       id: r.area.id,
@@ -170,16 +172,27 @@ export default async function HRPage() {
                      </p>
                   </TableCell>
                   <TableCell>
-                    <Badge className={`rounded-full px-3 py-0.5 text-[10px] font-black tracking-widest border-none ${
-                      r.status === 'ACTIVO' ? 'bg-emerald-50 text-emerald-600' :
-                      r.status === 'LICENCIA' ? 'bg-amber-50 text-amber-600' : 'bg-rose-50 text-rose-600'
-                    }`}>
-                      <div className={`w-1.5 h-1.5 rounded-full mr-1.5 ${
-                        r.status === 'ACTIVO' ? 'bg-emerald-600' :
-                        r.status === 'LICENCIA' ? 'bg-amber-600' : 'bg-rose-600'
-                      }`} />
-                      {r.status || 'ACTIVO'}
-                    </Badge>
+                    <div className="flex flex-col gap-1">
+                      <Badge className={`rounded-full px-3 py-0.5 text-[10px] font-black tracking-widest border-none w-fit ${
+                        r.status === 'ACTIVO' ? 'bg-emerald-50 text-emerald-600' :
+                        r.status === 'LICENCIA' ? 'bg-amber-50 text-amber-600' :
+                        r.status === 'VACACIONES' ? 'bg-blue-50 text-blue-600' :
+                        'bg-rose-50 text-rose-600'
+                      }`}>
+                        <div className={`w-1.5 h-1.5 rounded-full mr-1.5 ${
+                          r.status === 'ACTIVO' ? 'bg-emerald-600' :
+                          r.status === 'LICENCIA' ? 'bg-amber-600' :
+                          r.status === 'VACACIONES' ? 'bg-blue-600' :
+                          'bg-rose-600'
+                        }`} />
+                        {r.status || 'ACTIVO'}
+                      </Badge>
+                      {r.statusUntil && (
+                        <span className="text-[9px] font-bold text-slate-400 flex items-center gap-0.5 italic">
+                           <Calendar className="h-2 w-2" /> Hasta {new Date(r.statusUntil).toLocaleDateString('es-AR')}
+                        </span>
+                      )}
+                    </div>
                   </TableCell>
                   <TableCell className="text-right pr-8">
                     <AgentActionsMenu agent={r} />
