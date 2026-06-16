@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import {
   Users, UserPlus, Search, Filter,
   MoreHorizontal, Download, BarChart2,
-  Plus, Eye, Edit, History, UserMinus
+  Plus, Eye
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -31,6 +31,7 @@ import {
 } from "@/components/ui/sheet";
 import { CreateHRForm } from "./create-hr-form";
 import { ViewHRDetail } from "./view-hr-detail";
+import { DeleteHRAction, EditHRAction } from "./actions-client";
 
 export default async function HRPage() {
   const records = await getHRRecords();
@@ -39,7 +40,7 @@ export default async function HRPage() {
 
   const kpis = [
     { title: "Total Personal", value: stats.total, icon: Users, color: "text-blue-600", bg: "bg-blue-50", sub: "Agentes registrados" },
-    { title: "Personal Activo", value: stats.active, icon: CheckCircle2, color: "text-emerald-600", bg: "bg-emerald-50", sub: `${Math.round((stats.active/stats.total)*100)}% de la nómina` },
+    { title: "Personal Activo", value: stats.active, icon: CheckCircle2, color: "text-emerald-600", bg: "bg-emerald-50", sub: `${Math.round((stats.active/(stats.total || 1))*100)}% de la nómina` },
     { title: "Nuevos (Mes)", value: stats.newThisMonth, icon: UserPlus, color: "text-purple-600", bg: "bg-purple-50", sub: "Altas este período" },
     { title: "Áreas Cubiertas", value: stats.areaCount, icon: BarChart2, color: "text-amber-600", bg: "bg-amber-50", sub: "Distribución municipal" },
   ];
@@ -52,8 +53,8 @@ export default async function HRPage() {
           <p className="text-muted-foreground text-lg font-medium">Gestión integral de la nómina y legajos municipales.</p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-           <Button variant="outline" className="rounded-xl h-11 px-4 gap-2 border-slate-200 hover:bg-slate-50 transition-all font-bold">
-              <Download className="h-4 w-4" /> Exportar
+           <Button variant="outline" className="rounded-xl h-11 px-4 gap-2 border-slate-200 hover:bg-slate-50 transition-all font-bold" asChild>
+              <a href="#" onClick={(e) => e.preventDefault()}><Download className="h-4 w-4" /> Exportar</a>
            </Button>
            <Sheet>
               <SheetTrigger asChild>
@@ -134,7 +135,7 @@ export default async function HRPage() {
                     <div className="flex items-center gap-4">
                       <Avatar className="h-10 w-10 border-2 border-background shadow-sm">
                         <AvatarFallback className="bg-blue-50 text-blue-600 font-black text-xs uppercase">
-                          {r.firstName[0]}{r.lastName[0]}
+                          {r.firstName?.[0]}{r.lastName?.[0]}
                         </AvatarFallback>
                       </Avatar>
                       <div>
@@ -180,17 +181,16 @@ export default async function HRPage() {
                           <DropdownMenuLabel className="px-3 py-2 text-xs font-black uppercase tracking-widest text-muted-foreground">Opciones de Legajo</DropdownMenuLabel>
                           <DropdownMenuSeparator className="bg-border/50" />
                           <SheetTrigger asChild>
-                            <DropdownMenuItem className="rounded-xl px-3 py-2.5 gap-3 font-bold focus:bg-primary focus:text-white transition-all cursor-pointer">
+                            <DropdownMenuItem
+                              className="rounded-xl px-3 py-2.5 gap-3 font-bold focus:bg-primary focus:text-white transition-all cursor-pointer"
+                              onSelect={(e) => e.preventDefault()}
+                            >
                               <Eye className="h-4 w-4" /> Ver Detalles
                             </DropdownMenuItem>
                           </SheetTrigger>
-                          <DropdownMenuItem className="rounded-xl px-3 py-2.5 gap-3 font-bold focus:bg-primary focus:text-white transition-all cursor-pointer">
-                            <Edit className="h-4 w-4" /> Editar Legajo
-                          </DropdownMenuItem>
+                          <EditHRAction />
                           <DropdownMenuSeparator className="bg-border/50" />
-                          <DropdownMenuItem className="rounded-xl px-3 py-2.5 gap-3 font-bold text-rose-600 focus:bg-rose-500 focus:text-white transition-all cursor-pointer">
-                            <UserMinus className="h-4 w-4" /> Dar de Baja
-                          </DropdownMenuItem>
+                          <DeleteHRAction agentId={r.id} />
                         </DropdownMenuContent>
                       </DropdownMenu>
                       <SheetContent side="right" className="sm:max-w-lg w-full border-l border-border bg-background rounded-l-[2rem] shadow-2xl p-8 overflow-y-auto">

@@ -3,17 +3,25 @@
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Button } from "@/components/ui/button";
 import { Briefcase, Calendar, CreditCard, FileText, User } from "lucide-react";
 
 export function ViewHRDetail({ agent }: { agent: any }) {
   if (!agent) return null;
+
+  // Handle Prisma Decimal safely
+  const formattedSalary = agent.salary
+    ? (typeof agent.salary === 'object' && 'toNumber' in agent.salary
+        ? agent.salary.toNumber()
+        : parseFloat(agent.salary.toString()))
+    : 0;
 
   return (
     <div className="space-y-8 py-4">
       <div className="flex flex-col items-center text-center space-y-4">
         <Avatar className="h-24 w-24 border-4 border-blue-50 shadow-xl">
           <AvatarFallback className="bg-blue-600 text-white font-black text-2xl">
-            {agent.firstName[0]}{agent.lastName[0]}
+            {agent.firstName?.[0] || '?'}{agent.lastName?.[0] || ''}
           </AvatarFallback>
         </Avatar>
         <div>
@@ -24,7 +32,7 @@ export function ViewHRDetail({ agent }: { agent: any }) {
           agent.status === 'ACTIVO' ? 'bg-emerald-50 text-emerald-600' :
           agent.status === 'LICENCIA' ? 'bg-amber-50 text-amber-600' : 'bg-rose-50 text-rose-600'
         }`}>
-          {agent.status}
+          {agent.status || 'ACTIVO'}
         </Badge>
       </div>
 
@@ -36,7 +44,7 @@ export function ViewHRDetail({ agent }: { agent: any }) {
               </div>
               <div>
                 <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Cargo y Área</p>
-                <p className="font-bold text-slate-900">{agent.position} en {agent.area?.name || "Sin Área"}</p>
+                <p className="font-bold text-slate-900">{agent.position || 'No definido'} en {agent.area?.name || "Sin Área"}</p>
               </div>
            </div>
 
@@ -58,7 +66,7 @@ export function ViewHRDetail({ agent }: { agent: any }) {
               </div>
               <div>
                 <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Tipo de Contrato</p>
-                <p className="font-bold text-slate-900 uppercase tracking-tight">{agent.contractType.replace('_', ' ')}</p>
+                <p className="font-bold text-slate-900 uppercase tracking-tight">{agent.contractType?.replace('_', ' ') || 'MENSUALIZADO'}</p>
               </div>
            </div>
 
@@ -68,7 +76,7 @@ export function ViewHRDetail({ agent }: { agent: any }) {
               </div>
               <div>
                 <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Sueldo / Honorarios</p>
-                <p className="font-bold text-slate-900">${Number(agent.salary || 0).toLocaleString('es-AR')}</p>
+                <p className="font-bold text-slate-900">${formattedSalary.toLocaleString('es-AR')}</p>
               </div>
            </div>
         </div>
