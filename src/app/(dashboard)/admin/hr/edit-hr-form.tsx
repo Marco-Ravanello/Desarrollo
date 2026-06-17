@@ -5,25 +5,23 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { createHRRecordAction } from "../actions/hr-actions";
+import { updateHRRecordAction } from "../actions/hr-actions";
 import { Combobox } from "@/components/ui/combobox";
 import { Separator } from "@/components/ui/separator";
 
-export function CreateHRForm({ areas }: { areas: any[] }) {
+export function EditHRForm({ agent, areas, onComplete }: { agent: any, areas: any[], onComplete: () => void }) {
   const [loading, setLoading] = useState(false);
-  const [status, setStatus] = useState("ACTIVO");
-  const [contractType, setContractType] = useState("MENSUALIZADO");
+  const [status, setStatus] = useState(agent.status || "ACTIVO");
+  const [contractType, setContractType] = useState(agent.contractType || "MENSUALIZADO");
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setLoading(true);
     const formData = new FormData(e.currentTarget);
-    const res = await createHRRecordAction(formData);
+    const res = await updateHRRecordAction(agent.id, formData);
     if (res.success) {
-      toast.success("Legajo creado correctamente");
-      (e.target as HTMLFormElement).reset();
-      setStatus("ACTIVO");
-      setContractType("MENSUALIZADO");
+      toast.success("Legajo actualizado correctamente");
+      onComplete();
     } else {
       toast.error(res.error);
     }
@@ -37,26 +35,26 @@ export function CreateHRForm({ areas }: { areas: any[] }) {
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label htmlFor="firstName" className="font-bold text-slate-700">Nombre</Label>
-            <Input id="firstName" name="firstName" placeholder="Nombre" required />
+            <Input id="firstName" name="firstName" defaultValue={agent.firstName} required />
           </div>
           <div className="space-y-2">
             <Label htmlFor="lastName" className="font-bold text-slate-700">Apellido</Label>
-            <Input id="lastName" name="lastName" placeholder="Apellido" required />
+            <Input id="lastName" name="lastName" defaultValue={agent.lastName} required />
           </div>
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label htmlFor="dni" className="font-bold text-slate-700">DNI</Label>
-            <Input id="dni" name="dni" placeholder="DNI" required />
+            <Input id="dni" name="dni" defaultValue={agent.dni} required />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="fileNumber" className="font-bold text-slate-700">N° Legajo / CUIT</Label>
-            <Input id="fileNumber" name="fileNumber" placeholder="Legajo o CUIT" />
+            <Label htmlFor="fileNumber" className="font-bold text-slate-700">N° Legajo/CUIT</Label>
+            <Input id="fileNumber" name="fileNumber" defaultValue={agent.fileNumber || ""} />
           </div>
         </div>
         <div className="space-y-2">
             <Label htmlFor="imageUrl" className="font-bold text-slate-700">URL de Foto de Perfil (Opcional)</Label>
-            <Input id="imageUrl" name="imageUrl" placeholder="https://..." />
+            <Input id="imageUrl" name="imageUrl" defaultValue={agent.imageUrl || ""} placeholder="https://..." />
         </div>
       </div>
 
@@ -68,8 +66,8 @@ export function CreateHRForm({ areas }: { areas: any[] }) {
           <Label className="font-bold text-slate-700">Área de Pertenencia</Label>
           <Combobox
             name="areaId"
-            placeholder="Seleccionar área..."
-            options={(areas || []).map(a => ({ value: a.id, label: a.name }))}
+            defaultValue={agent.area?.id}
+            options={areas.map(a => ({ value: a.id, label: a.name }))}
             required
           />
         </div>
@@ -77,11 +75,11 @@ export function CreateHRForm({ areas }: { areas: any[] }) {
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label htmlFor="position" className="font-bold text-slate-700">Cargo / Función</Label>
-            <Input id="position" name="position" placeholder="Ej: Administrativo" required />
+            <Input id="position" name="position" defaultValue={agent.position} required />
           </div>
           <div className="space-y-2">
             <Label htmlFor="startDate" className="font-bold text-slate-700">Fecha de Ingreso</Label>
-            <Input id="startDate" name="startDate" type="date" />
+            <Input id="startDate" name="startDate" type="date" defaultValue={agent.startDate ? agent.startDate.split('T')[0] : ""} />
           </div>
         </div>
 
@@ -93,7 +91,7 @@ export function CreateHRForm({ areas }: { areas: any[] }) {
               name="status"
               value={status}
               onChange={(e) => setStatus(e.target.value)}
-              className="flex h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary transition-all"
+              className="flex h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm"
               required
             >
               <option value="ACTIVO">Activo</option>
@@ -103,9 +101,9 @@ export function CreateHRForm({ areas }: { areas: any[] }) {
             </select>
           </div>
           {(status === "LICENCIA" || status === "VACACIONES") && (
-            <div className="space-y-2 animate-in fade-in slide-in-from-top-1">
+            <div className="space-y-2">
               <Label htmlFor="statusUntil" className="font-bold text-slate-700">Hasta el día</Label>
-              <Input id="statusUntil" name="statusUntil" type="date" className="bg-blue-50 border-blue-200" required />
+              <Input id="statusUntil" name="statusUntil" type="date" defaultValue={agent.statusUntil ? agent.statusUntil.split('T')[0] : ""} required />
             </div>
           )}
         </div>
@@ -118,7 +116,7 @@ export function CreateHRForm({ areas }: { areas: any[] }) {
               name="contractType"
               value={contractType}
               onChange={(e) => setContractType(e.target.value)}
-              className="flex h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary transition-all"
+              className="flex h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm"
               required
             >
               <option value="MENSUALIZADO">Mensualizado</option>
@@ -128,14 +126,14 @@ export function CreateHRForm({ areas }: { areas: any[] }) {
           </div>
           <div className="space-y-2">
             <Label htmlFor="salary" className="font-bold text-slate-700">Sueldo / Honorarios</Label>
-            <Input id="salary" name="salary" type="number" placeholder="0.00" />
+            <Input id="salary" name="salary" type="number" defaultValue={agent.salary} />
           </div>
         </div>
 
         {contractType === "MENSUALIZADO" && (
-           <div className="space-y-2 animate-in fade-in slide-in-from-top-1">
+           <div className="space-y-2">
               <Label htmlFor="category" className="font-bold text-slate-700">Categoría</Label>
-              <select name="category" id="category" className="flex h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary transition-all">
+              <select name="category" id="category" className="flex h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm" defaultValue={agent.category || ""}>
                  <option value="">Seleccionar Categoría</option>
                  {[...Array(10)].map((_, i) => (
                     <option key={i+1} value={i+1}>Categoría {i+1}</option>
@@ -147,8 +145,8 @@ export function CreateHRForm({ areas }: { areas: any[] }) {
 
       <div className="space-y-4">
         <div className="space-y-2">
-            <Label htmlFor="schedule" className="font-bold text-slate-700">Horario Cumplido</Label>
-            <Input id="schedule" name="schedule" placeholder="Ej: 08:00 a 14:00" />
+            <Label htmlFor="schedule" className="font-bold text-slate-700">Horario de Trabajo</Label>
+            <Input id="schedule" name="schedule" defaultValue={agent.schedule || ""} placeholder="Ej: 08:00 a 14:00" />
         </div>
         <div className="space-y-2">
             <Label htmlFor="tasks" className="font-bold text-slate-700">Tareas y Responsabilidades</Label>
@@ -156,15 +154,15 @@ export function CreateHRForm({ areas }: { areas: any[] }) {
             id="tasks"
             name="tasks"
             rows={3}
-            placeholder="Describa las tareas que realiza el agente..."
-            className="flex min-h-[80px] w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+            defaultValue={agent.tasks || ""}
+            className="flex min-h-[80px] w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm"
             />
         </div>
       </div>
 
-      <div className="flex flex-col gap-3 pt-4 pb-10">
-        <Button type="submit" className="w-full bg-[#004a80] hover:bg-[#00365d] text-white font-bold h-12 rounded-xl shadow-lg shadow-blue-600/20" disabled={loading}>
-          {loading ? "Guardando..." : "Registrar Agente"}
+      <div className="flex gap-3 pt-4 pb-10">
+        <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold h-12 rounded-xl" disabled={loading}>
+          {loading ? "Actualizando..." : "Guardar Cambios"}
         </Button>
       </div>
     </form>

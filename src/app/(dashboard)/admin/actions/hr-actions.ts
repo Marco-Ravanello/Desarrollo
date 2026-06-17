@@ -22,7 +22,10 @@ export async function createHRRecordAction(formData: FormData) {
     statusUntil: formData.get("statusUntil") as string,
     areaId: formData.get("areaId") as string || undefined,
     contractType: formData.get("contractType") as string,
+    category: parseInt(formData.get("category") as string) || null,
     salary: parseFloat(formData.get("salary") as string) || 0,
+    schedule: formData.get("schedule") as string,
+    imageUrl: formData.get("imageUrl") as string,
     tasks: formData.get("tasks") as string,
   };
 
@@ -33,27 +36,6 @@ export async function createHRRecordAction(formData: FormData) {
   } catch (error) {
     console.error(error);
     return { error: "Error al crear el legajo" };
-  }
-}
-
-export async function updateHRStatusAction(id: string, status: HRStatus, until?: string) {
-  const session = await auth();
-  if (!session?.user || (session.user.role !== 'SUPERADMIN' && session.user.role !== 'ADMIN_GENERAL')) {
-    return { error: "No autorizado" };
-  }
-
-  try {
-    await prisma.hRRecord.update({
-      where: { id },
-      data: {
-        status,
-        statusUntil: until ? new Date(until) : null
-      }
-    });
-    revalidatePath("/admin/hr");
-    return { success: true };
-  } catch (error) {
-    return { error: "Error al actualizar el estado" };
   }
 }
 
@@ -72,7 +54,10 @@ export async function updateHRRecordAction(id: string, formData: FormData) {
     position: formData.get("position") as string,
     areaId: formData.get("areaId") as string || null,
     contractType: formData.get("contractType") as any,
+    category: parseInt(formData.get("category") as string) || null,
     salary: parseFloat(formData.get("salary") as string) || 0,
+    schedule: formData.get("schedule") as string,
+    imageUrl: formData.get("imageUrl") as string,
     tasks: formData.get("tasks") as string,
     status: formData.get("status") as any,
     statusUntil: formData.get("statusUntil") as string ? new Date(formData.get("statusUntil") as string) : null,

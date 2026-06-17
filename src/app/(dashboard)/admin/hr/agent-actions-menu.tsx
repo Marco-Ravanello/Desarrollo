@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import {
   MoreHorizontal, Eye, Edit, UserMinus
 } from "lucide-react";
@@ -21,15 +22,28 @@ import {
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { ViewHRDetail } from "./view-hr-detail";
-import { DeleteHRAction, EditHRAction } from "./actions-client";
+import { DeleteHRAction } from "./actions-client";
+import { EditHRForm } from "./edit-hr-form";
 
 interface AgentActionsMenuProps {
   agent: any;
+  areas: any[];
 }
 
-export function AgentActionsMenu({ agent }: AgentActionsMenuProps) {
+export function AgentActionsMenu({ agent, areas }: AgentActionsMenuProps) {
+  const [open, setOpen] = useState(false);
+  const [mode, setMode] = useState<'view' | 'edit'>('view');
+
+  const handleOpenChange = (isOpen: boolean) => {
+    setOpen(isOpen);
+    // Focus restorer workaround: Ensure no active interaction lock
+    if (!isOpen) {
+        document.body.style.pointerEvents = 'auto';
+    }
+  };
+
   return (
-    <Sheet>
+    <Sheet open={open} onOpenChange={handleOpenChange}>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" size="icon" className="rounded-xl hover:bg-primary hover:text-white transition-all">
@@ -43,13 +57,20 @@ export function AgentActionsMenu({ agent }: AgentActionsMenuProps) {
           <SheetTrigger asChild>
             <DropdownMenuItem
               className="rounded-xl px-3 py-2.5 gap-3 font-bold focus:bg-primary focus:text-white transition-all cursor-pointer"
-              onSelect={(e) => e.preventDefault()}
+              onSelect={() => setMode('view')}
             >
               <Eye className="h-4 w-4" /> Ver Detalles
             </DropdownMenuItem>
           </SheetTrigger>
 
-          <EditHRAction />
+          <SheetTrigger asChild>
+            <DropdownMenuItem
+              className="rounded-xl px-3 py-2.5 gap-3 font-bold focus:bg-primary focus:text-white transition-all cursor-pointer"
+              onSelect={() => setMode('edit')}
+            >
+              <Edit className="h-4 w-4" /> Editar Legajo
+            </DropdownMenuItem>
+          </SheetTrigger>
 
           <DropdownMenuSeparator className="bg-border/50" />
 
@@ -59,10 +80,21 @@ export function AgentActionsMenu({ agent }: AgentActionsMenuProps) {
 
       <SheetContent side="right" className="sm:max-w-lg w-full border-l border-border bg-background rounded-l-[2rem] shadow-2xl p-8 overflow-y-auto">
         <SheetHeader className="mb-8">
-          <SheetTitle className="text-2xl font-black">Detalle del Agente</SheetTitle>
-          <SheetDescription className="text-base">Información completa y situación de revista.</SheetDescription>
+          <SheetTitle className="text-2xl font-black">
+            {mode === 'view' ? 'Detalle del Agente' : 'Editar Legajo'}
+          </SheetTitle>
+          <SheetDescription className="text-base">
+            {mode === 'view'
+              ? 'Información completa y situación de revista.'
+              : 'Actualice los datos del agente municipal.'}
+          </SheetDescription>
         </SheetHeader>
-        <ViewHRDetail agent={agent} />
+
+        {mode === 'view' ? (
+          <ViewHRDetail agent={agent} />
+        ) : (
+          <EditHRForm agent={agent} areas={areas} onComplete={() => setOpen(false)} />
+        )}
       </SheetContent>
     </Sheet>
   );

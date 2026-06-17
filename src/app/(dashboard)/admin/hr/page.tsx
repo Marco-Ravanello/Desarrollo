@@ -6,13 +6,11 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
-  Users, UserPlus, Search, Filter,
-  Download, BarChart2, Plus, CheckCircle2,
-  Calendar
+  Users, UserPlus, Download, BarChart2,
+  Plus, CheckCircle2, Calendar, Wallet, PieChart
 } from "lucide-react";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Sheet,
   SheetContent,
@@ -23,15 +21,21 @@ import {
 } from "@/components/ui/sheet";
 import { CreateHRForm } from "./create-hr-form";
 import { AgentActionsMenu } from "./agent-actions-menu";
+import { HRFilters } from "./hr-filters";
 
-export default async function HRPage() {
-  const records = await getHRRecords();
+export default async function HRPage({
+  searchParams
+}: {
+  searchParams: Promise<{ q?: string, area?: string, status?: string }>
+}) {
+  const { q, area, status } = await searchParams;
+
+  const records = await getHRRecords({ query: q, areaId: area, status });
   const stats = await getHRStats();
   const areasRaw = await prisma.area.findMany({
     orderBy: { name: 'asc' }
   });
 
-  // Sanitize areas for client components (Prisma Decimals are not serializable)
   const sanitizedAreas = areasRaw.map(a => ({
     id: a.id,
     name: a.name,
@@ -40,12 +44,11 @@ export default async function HRPage() {
 
   const kpis = [
     { title: "Total Personal", value: stats.total, icon: Users, color: "text-blue-600", bg: "bg-blue-50", sub: "Agentes registrados" },
-    { title: "Personal Activo", value: stats.active, icon: CheckCircle2, color: "text-emerald-600", bg: "bg-emerald-50", sub: `${Math.round((stats.active/(stats.total || 1))*100)}% de la nómina` },
+    { title: "Presupuesto Mensual", value: `$${stats.totalBudget.toLocaleString('es-AR')}`, icon: Wallet, color: "text-emerald-600", bg: "bg-emerald-50", sub: "Costo total de nómina" },
     { title: "Nuevos (Mes)", value: stats.newThisMonth, icon: UserPlus, color: "text-purple-600", bg: "bg-purple-50", sub: "Altas este período" },
     { title: "Áreas Cubiertas", value: stats.areaCount, icon: BarChart2, color: "text-amber-600", bg: "bg-amber-50", sub: "Distribución municipal" },
   ];
 
-  // Sanitize records for client components (Convert Decimals to Numbers and Dates to Strings)
   const sanitizedRecords = records.map(r => ({
     ...r,
     salary: r.salary ? Number(r.salary) : 0,
@@ -63,23 +66,23 @@ export default async function HRPage() {
     <div className="space-y-10 pb-20">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
         <div className="space-y-1">
-          <h2 className="text-4xl font-black tracking-tight text-slate-900 uppercase">Recursos Humanos</h2>
-          <p className="text-muted-foreground text-lg font-medium">Gestión integral de la nómina y legajos municipales.</p>
+          <h2 className="text-4xl font-black tracking-tight text-slate-900 uppercase tracking-tighter">Recursos Humanos</h2>
+          <p className="text-muted-foreground text-lg font-medium italic">Gestión integral y control presupuestario de la nómina.</p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
            <Button variant="outline" className="rounded-xl h-11 px-4 gap-2 border-slate-200 hover:bg-slate-50 transition-all font-bold">
-              <Download className="h-4 w-4" /> Exportar
+              <Download className="h-4 w-4" /> Exportar Planilla
            </Button>
            <Sheet>
               <SheetTrigger asChild>
-                <Button className="rounded-xl h-11 px-6 gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold shadow-lg shadow-blue-600/20 transition-all hover:scale-105">
+                <Button className="rounded-xl h-11 px-6 gap-2 bg-[#004a80] hover:bg-[#00365d] text-white font-bold shadow-lg shadow-blue-900/20 transition-all hover:scale-105">
                     <Plus className="h-5 w-5" /> Nuevo Agente
                 </Button>
               </SheetTrigger>
-              <SheetContent side="right" className="sm:max-w-md w-full border-l border-border bg-background rounded-l-[2rem] shadow-2xl p-8 overflow-y-auto">
+              <SheetContent side="right" className="sm:max-w-xl w-full border-l border-border bg-background rounded-l-[2rem] shadow-2xl p-8 overflow-y-auto">
                 <SheetHeader className="mb-8">
-                  <SheetTitle className="text-2xl font-black">Nuevo Agente</SheetTitle>
-                  <SheetDescription className="text-base">Complete los datos para crear el legajo municipal.</SheetDescription>
+                  <SheetTitle className="text-2xl font-black">Registrar Nuevo Agente</SheetTitle>
+                  <SheetDescription className="text-base font-medium">Complete los datos para crear el legajo municipal.</SheetDescription>
                 </SheetHeader>
                 <CreateHRForm areas={sanitizedAreas} />
               </SheetContent>
@@ -89,14 +92,14 @@ export default async function HRPage() {
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         {kpis.map((kpi) => (
-          <Card key={kpi.title} className="border-none shadow-sm overflow-hidden bg-card/50 backdrop-blur-sm rounded-3xl group transition-all hover:shadow-xl">
+          <Card key={kpi.title} className="border-none shadow-sm overflow-hidden bg-white rounded-3xl group transition-all hover:shadow-xl">
             <CardContent className="p-6">
               <div className="flex items-center gap-4">
                 <div className={`p-4 rounded-2xl ${kpi.bg} group-hover:scale-110 transition-transform`}>
                   <kpi.icon className={`h-6 w-6 ${kpi.color}`} />
                 </div>
                 <div>
-                  <p className="text-2xl font-black tracking-tighter">{kpi.value}</p>
+                  <p className="text-2xl font-black tracking-tighter text-slate-900">{kpi.value}</p>
                   <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">{kpi.title}</p>
                 </div>
               </div>
@@ -106,27 +109,31 @@ export default async function HRPage() {
         ))}
       </div>
 
-      <div className="bg-card/50 backdrop-blur-sm rounded-[2rem] border border-border/50 shadow-sm overflow-hidden transition-all hover:shadow-xl">
-        <div className="p-6 border-b border-border/50 flex flex-col md:flex-row gap-4 items-center justify-between">
-           <div className="relative w-full max-w-md">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Buscar agente por nombre, DNI o legajo..."
-                className="pl-11 h-12 rounded-2xl bg-muted/50 border-none focus-visible:ring-2 focus-visible:ring-primary font-medium"
-              />
-           </div>
-           <div className="flex items-center gap-3 w-full md:w-auto">
-              <Button variant="ghost" className="rounded-xl h-12 px-4 gap-2 font-bold text-muted-foreground">
-                 Todas las áreas <Filter className="h-3 w-3" />
-              </Button>
-              <Button size="icon" variant="secondary" className="rounded-xl h-12 w-12 text-muted-foreground">
-                 <Filter className="h-5 w-5" />
-              </Button>
-           </div>
-        </div>
+      {/* Area Budget Summary - New Section */}
+      <Card className="rounded-[2rem] border-none shadow-sm bg-slate-50/50">
+        <CardContent className="p-6">
+            <h3 className="text-sm font-black uppercase tracking-widest text-slate-400 mb-6 flex items-center gap-2">
+                <PieChart className="h-4 w-4" /> Distribución Salarial por Área
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                {sanitizedAreas.map(area => {
+                    const areaBudget = stats.budgetByArea[area.id] || 0;
+                    return (
+                        <div key={area.id} className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
+                            <p className="text-[9px] font-black text-muted-foreground uppercase truncate mb-1" title={area.name}>{area.name}</p>
+                            <p className="text-sm font-bold text-slate-900">${areaBudget.toLocaleString('es-AR')}</p>
+                        </div>
+                    )
+                })}
+            </div>
+        </CardContent>
+      </Card>
+
+      <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden transition-all hover:shadow-xl">
+        <HRFilters areas={sanitizedAreas} />
 
         <Table>
-          <TableHeader className="bg-muted/30">
+          <TableHeader className="bg-slate-50/50">
             <TableRow className="hover:bg-transparent border-none">
               <TableHead className="font-bold py-5 px-6">Agente</TableHead>
               <TableHead className="font-bold">Área / Cargo</TableHead>
@@ -139,30 +146,31 @@ export default async function HRPage() {
             {sanitizedRecords.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={5} className="text-center py-20 text-muted-foreground italic font-medium">
-                  No hay agentes registrados en la nómina municipal.
+                  No se encontraron agentes con los filtros aplicados.
                 </TableCell>
               </TableRow>
             ) : (
               sanitizedRecords.map((r) => (
-                <TableRow key={r.id} className="group hover:bg-muted/20 transition-all border-none">
+                <TableRow key={r.id} className="group hover:bg-slate-50/30 transition-all border-none">
                   <TableCell className="py-4 px-6">
                     <div className="flex items-center gap-4">
-                      <Avatar className="h-10 w-10 border-2 border-background shadow-sm">
-                        <AvatarFallback className="bg-blue-50 text-blue-600 font-black text-xs uppercase">
-                          {r.firstName?.[0] || '?'}{r.lastName?.[0] || ''}
+                      <Avatar className="h-12 w-12 border-2 border-white shadow-sm ring-1 ring-slate-100">
+                        <AvatarImage src={r.imageUrl || ""} alt={r.firstName} className="object-cover" />
+                        <AvatarFallback className="bg-[#004a80] text-white font-black text-sm uppercase">
+                          {r.firstName?.[0]}{r.lastName?.[0]}
                         </AvatarFallback>
                       </Avatar>
                       <div>
-                        <p className="font-black text-foreground group-hover:text-primary transition-colors">{r.firstName} {r.lastName}</p>
+                        <p className="font-black text-slate-800 group-hover:text-[#004a80] transition-colors">{r.firstName} {r.lastName}</p>
                         <p className="text-[10px] font-bold text-muted-foreground tracking-widest flex items-center gap-2">
-                           DNI {r.dni} <span className="text-slate-300">•</span> Leg. {r.fileNumber || '0000'}
+                           {r.fileNumber || 'S/L'} <span className="text-slate-200">•</span> DNI {r.dni}
                         </p>
                       </div>
                     </div>
                   </TableCell>
                   <TableCell>
                     <div className="space-y-0.5">
-                      <p className="font-bold text-sm">{r.area?.name || "Sin Área"}</p>
+                      <p className="font-bold text-sm text-slate-700">{r.area?.name || "Sin Área"}</p>
                       <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-tighter">{r.position || "Sin Cargo"}</p>
                     </div>
                   </TableCell>
@@ -189,13 +197,13 @@ export default async function HRPage() {
                       </Badge>
                       {r.statusUntil && (
                         <span className="text-[9px] font-bold text-slate-400 flex items-center gap-0.5 italic">
-                           <Calendar className="h-2 w-2" /> Hasta {new Date(r.statusUntil).toLocaleDateString('es-AR')}
+                           <Calendar className="h-2.5 w-2.5" /> Hasta {new Date(r.statusUntil).toLocaleDateString('es-AR')}
                         </span>
                       )}
                     </div>
                   </TableCell>
                   <TableCell className="text-right pr-8">
-                    <AgentActionsMenu agent={r} />
+                    <AgentActionsMenu agent={r} areas={sanitizedAreas} />
                   </TableCell>
                 </TableRow>
               ))
@@ -203,8 +211,8 @@ export default async function HRPage() {
           </TableBody>
         </Table>
 
-        <div className="p-6 border-t border-border/50 bg-muted/20 flex flex-col md:flex-row items-center justify-between gap-4">
-           <p className="text-xs font-bold text-muted-foreground italic">Mostrando {sanitizedRecords.length} agentes</p>
+        <div className="p-6 border-t border-slate-50 bg-slate-50/20 flex flex-col md:flex-row items-center justify-between gap-4">
+           <p className="text-xs font-bold text-muted-foreground italic">Mostrando {sanitizedRecords.length} agentes municipales</p>
         </div>
       </div>
     </div>

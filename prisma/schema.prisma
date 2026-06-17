@@ -305,7 +305,10 @@ model HRRecord {
   status        HRStatus @default(ACTIVO)
   statusUntil   DateTime?
   contractType  ContractType @default(MENSUALIZADO)
+  category      Int?
   salary        Decimal? @default(0)
+  schedule      String?
+  imageUrl      String?
   tasks         String?  @db.Text
   createdAt     DateTime @default(now())
 }
