@@ -3,11 +3,17 @@ export const dynamic = "force-dynamic";
 import prisma from "@/lib/prisma";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
 import { ReservationActions } from "./reservation-actions";
+import { auth } from "@/auth";
+import { redirect } from "next/navigation";
 
 export default async function VehicleRequestsPage() {
-  const requests = await prisma.vehicleReservation.findMany({
+  const session = await auth();
+  if (!session?.user || (session.user.role !== 'SUPERADMIN' && session.user.role !== 'ADMIN_GENERAL')) {
+    redirect("/dashboard");
+  }
+
+  const rawRequests = await prisma.vehicleReservation.findMany({
     where: { status: 'PENDIENTE' },
     include: {
       vehicle: true,
@@ -17,6 +23,18 @@ export default async function VehicleRequestsPage() {
     },
     orderBy: { startDate: 'asc' }
   });
+
+  // Sanitize data: Convert Dates and Decimals to plain serializable types
+  const requests = rawRequests.map(req => ({
+    id: req.id,
+    reason: req.reason,
+    startDate: req.startDate.toISOString(),
+    endDate: req.endDate.toISOString(),
+    userName: req.user?.name || "Desconocido",
+    userArea: req.user?.area?.name || "Sin área",
+    vehiclePlate: req.vehicle?.plate || "S/D",
+    vehicleInfo: `${req.vehicle?.brand} ${req.vehicle?.model}`
+  }));
 
   return (
     <div className="space-y-6">
@@ -54,14 +72,14 @@ export default async function VehicleRequestsPage() {
                   <TableRow key={req.id} className="hover:bg-slate-50/50 transition-colors">
                     <TableCell>
                       <div className="flex flex-col">
-                        <span className="font-semibold text-slate-900">{req.user.name}</span>
-                        <span className="text-xs text-slate-500">{req.user.area?.name || "Sin área"}</span>
+                        <span className="font-semibold text-slate-900">{req.userName}</span>
+                        <span className="text-xs text-slate-500">{req.userArea}</span>
                       </div>
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-col">
-                        <span className="font-mono font-bold text-[#004a80] uppercase">{req.vehicle.plate}</span>
-                        <span className="text-xs text-slate-500">{req.vehicle.brand} {req.vehicle.model}</span>
+                        <span className="font-mono font-bold text-[#004a80] uppercase">{req.vehiclePlate}</span>
+                        <span className="text-xs text-slate-500">{req.vehicleInfo}</span>
                       </div>
                     </TableCell>
                     <TableCell className="text-sm">
