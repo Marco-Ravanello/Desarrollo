@@ -43,6 +43,9 @@ export function MapView({ people }: MapViewProps) {
   const [viewMode, setViewMode] = useState<string>("markers");
   const [isExporting, setIsExporting] = useState(false);
 
+  // Coordenadas del centro del Municipio de Tres de Febrero
+  const TRES_DE_FEBRERO_CENTER: [number, number] = [-34.603, -58.558];
+
   const exportMap = async () => {
     const mapElement = document.getElementById("social-map-container");
     if (!mapElement) return;
@@ -71,10 +74,9 @@ export function MapView({ people }: MapViewProps) {
     return p.cases?.some((c: any) => c.areaId === filterArea);
   });
 
-  const defaultCenter: [number, number] = [-34.6037, -58.3816];
   const center = filteredPeople.length > 0
     ? [filteredPeople[0].latitude, filteredPeople[0].longitude] as [number, number]
-    : defaultCenter;
+    : TRES_DE_FEBRERO_CENTER;
 
   const areas = Array.from(new Set(
     people.flatMap(p => p.cases?.map((c: any) => ({ id: c.areaId, name: c.area?.name })) || [])

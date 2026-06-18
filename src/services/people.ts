@@ -43,17 +43,21 @@ export async function getPersonById(id: string) {
 }
 
 /**
- * Intenta geocodificar una dirección usando el servicio público de OSM Nominatim.
- * Retorna coordenadas por defecto (Muni) si falla.
+ * Geocodifica una dirección forzando el contexto de Tres de Febrero.
  */
 async function geocodeAddress(address: string) {
     try {
-        // Codificar la dirección para la URL
-        const query = encodeURIComponent(address);
-        // Nominatim requiere un User-Agent identificable
-        const response = await fetch(`https://nominatim.openstreetmap.org/search?q=${query}&format=json&limit=1`, {
+        // Añadimos contexto explícito para evitar búsquedas en otros países/provincias
+        const fullQuery = `${address}, Tres de Febrero, Buenos Aires, Argentina`;
+        const encodedQuery = encodeURIComponent(fullQuery);
+
+        // Parámetros: format=json, countrycodes=ar (Argentina), limit=1
+        // También podemos usar viewbox para priorizar el área de Tres de Febrero
+        const url = `https://nominatim.openstreetmap.org/search?q=${encodedQuery}&format=json&limit=1&countrycodes=ar`;
+
+        const response = await fetch(url, {
             headers: {
-                'User-Agent': 'MuniGestio-Platform/1.0'
+                'User-Agent': 'MuniGestio-TresDeFebrero/1.0'
             }
         });
 
@@ -71,10 +75,11 @@ async function geocodeAddress(address: string) {
         console.error("Geocoding error:", error);
     }
 
-    // Coordenadas por defecto si falla (Centro aproximado del municipio)
+    // Fallback: Si falla o no encuentra, ubicar aleatoriamente DENTRO de Tres de Febrero
+    // Coordenadas aproximadas del centro de Caseros
     return {
-        lat: -34.6037 + (Math.random() - 0.5) * 0.01,
-        lng: -58.3816 + (Math.random() - 0.5) * 0.01
+        lat: -34.603 + (Math.random() - 0.5) * 0.02,
+        lng: -58.558 + (Math.random() - 0.5) * 0.02
     };
 }
 
@@ -97,7 +102,6 @@ export async function createPerson(data: any) {
 }
 
 export async function updatePerson(id: string, data: any) {
-  // Si la dirección cambió, re-geocodificamos
   let coords = undefined;
   if (data.address) {
     coords = await geocodeAddress(data.address);
