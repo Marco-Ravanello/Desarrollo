@@ -6,7 +6,7 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('🌱 Starting seed...');
 
-  // Create Areas with new names
+  // Create Areas with NEW official names
   const areas = [
     { name: 'Dirección General de Desarrollo Humano y Hábitat' },
     { name: 'Dirección de Protección Social' },

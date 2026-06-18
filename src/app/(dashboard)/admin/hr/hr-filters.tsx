@@ -2,10 +2,9 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { Input } from "@/components/ui/input";
-import { Search, Filter, X } from "lucide-react";
+import { Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useEffect, useState } from "react";
-import { useDebounce } from "@/lib/hooks"; // Assuming this exists or we can implement inline
+import { useState } from "react";
 
 export function HRFilters({ areas }: { areas: any[] }) {
   const router = useRouter();

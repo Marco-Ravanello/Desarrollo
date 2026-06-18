@@ -33,7 +33,7 @@ export function CreateHRForm({ areas }: { areas: any[] }) {
   return (
     <form onSubmit={handleSubmit} className="space-y-6 py-4">
       <div className="space-y-4">
-        <h4 className="text-sm font-black uppercase tracking-widest text-blue-600">Información Personal</h4>
+        <h4 className="text-sm font-black uppercase tracking-widest text-[#004a80]">Información Personal</h4>
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label htmlFor="firstName" className="font-bold text-slate-700">Nombre</Label>
@@ -63,7 +63,7 @@ export function CreateHRForm({ areas }: { areas: any[] }) {
       <Separator />
 
       <div className="space-y-4">
-        <h4 className="text-sm font-black uppercase tracking-widest text-blue-600">Situación Revista</h4>
+        <h4 className="text-sm font-black uppercase tracking-widest text-[#004a80]">Situación Revista</h4>
         <div className="space-y-2">
           <Label className="font-bold text-slate-700">Área de Pertenencia</Label>
           <Combobox
@@ -163,7 +163,7 @@ export function CreateHRForm({ areas }: { areas: any[] }) {
       </div>
 
       <div className="flex flex-col gap-3 pt-4 pb-10">
-        <Button type="submit" className="w-full bg-[#004a80] hover:bg-[#00365d] text-white font-bold h-12 rounded-xl shadow-lg shadow-blue-600/20" disabled={loading}>
+        <Button type="submit" className="w-full bg-[#004a80] hover:bg-[#00365d] text-white font-bold h-12 rounded-xl shadow-lg shadow-blue-900/20" disabled={loading}>
           {loading ? "Guardando..." : "Registrar Agente"}
         </Button>
       </div>
