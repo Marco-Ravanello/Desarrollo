@@ -27,13 +27,13 @@ export default async function VehicleRequestsPage() {
   // Sanitize data: Convert Dates and Decimals to plain serializable types
   const requests = rawRequests.map(req => ({
     id: req.id,
-    reason: req.reason,
-    startDate: req.startDate.toISOString(),
-    endDate: req.endDate.toISOString(),
+    reason: req.reason || "Sin motivo",
+    startDate: req.startDate ? req.startDate.toISOString() : new Date().toISOString(),
+    endDate: req.endDate ? req.endDate.toISOString() : new Date().toISOString(),
     userName: req.user?.name || "Desconocido",
     userArea: req.user?.area?.name || "Sin área",
     vehiclePlate: req.vehicle?.plate || "S/D",
-    vehicleInfo: `${req.vehicle?.brand} ${req.vehicle?.model}`
+    vehicleInfo: req.vehicle ? `${req.vehicle.brand} ${req.vehicle.model}` : "Vehículo no identificado"
   }));
 
   return (

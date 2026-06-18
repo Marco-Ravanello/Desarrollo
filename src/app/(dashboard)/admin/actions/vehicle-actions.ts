@@ -84,6 +84,7 @@ export async function createVehicleReservationAction(formData: FormData) {
     }
 
     revalidatePath("/admin/vehicles");
+    revalidatePath("/admin/vehicles/requests");
     return { success: true };
   } catch (error) {
     console.error(error);
