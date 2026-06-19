@@ -43,14 +43,14 @@ export default async function VehicleRequestsPage() {
         <p className="text-slate-500 text-sm">Gestión y aprobación de uso de flota municipal.</p>
       </div>
 
-      <Card className="rounded-3xl shadow-lg border-none overflow-hidden">
-        <CardHeader className="bg-slate-50/50">
+      <Card className="rounded-3xl shadow-lg border-none overflow-hidden bg-card">
+        <CardHeader className="bg-muted/50">
           <CardTitle>Pendientes de Aprobación</CardTitle>
           <CardDescription>Revise las solicitudes antes de confirmar la reserva.</CardDescription>
         </CardHeader>
         <CardContent className="p-0">
           <Table>
-            <TableHeader className="bg-slate-100/50">
+            <TableHeader className="bg-muted/50">
               <TableRow>
                 <TableHead>Solicitante</TableHead>
                 <TableHead>Vehículo</TableHead>
@@ -69,17 +69,17 @@ export default async function VehicleRequestsPage() {
                 </TableRow>
               ) : (
                 requests.map((req) => (
-                  <TableRow key={req.id} className="hover:bg-slate-50/50 transition-colors">
+                  <TableRow key={req.id} className="hover:bg-muted/50 transition-colors">
                     <TableCell>
                       <div className="flex flex-col">
-                        <span className="font-semibold text-slate-900">{req.userName}</span>
-                        <span className="text-xs text-slate-500">{req.userArea}</span>
+                        <span className="font-semibold text-foreground">{req.userName}</span>
+                        <span className="text-xs text-muted-foreground">{req.userArea}</span>
                       </div>
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-col">
-                        <span className="font-mono font-bold text-[#004a80] uppercase">{req.vehiclePlate}</span>
-                        <span className="text-xs text-slate-500">{req.vehicleInfo}</span>
+                        <span className="font-mono font-bold text-primary uppercase">{req.vehiclePlate}</span>
+                        <span className="text-xs text-muted-foreground">{req.vehicleInfo}</span>
                       </div>
                     </TableCell>
                     <TableCell className="text-sm">

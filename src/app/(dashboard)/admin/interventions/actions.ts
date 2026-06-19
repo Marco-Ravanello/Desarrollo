@@ -37,14 +37,26 @@ export async function importInterventionsAction(data: any[]) {
 
   for (const row of data) {
     try {
-      const { DNI, Nombre, Apellido, Area, Caso, Descripcion, Fecha } = row;
+      // Intentar mapear nombres de columnas comunes
+      const DNI = String(row.DNI || row.dni || row.Documento || "");
+      const Nombre = String(row.Nombre || row.firstName || "");
+      const Apellido = String(row.Apellido || row.lastName || "");
+      const Area = String(row.Area || row.area || "");
+      const Caso = String(row.Caso || row.Asunto || row.title || "Caso Migrado");
+      const Descripcion = String(row.Descripcion || row.Observaciones || row.description || "Sin descripción");
+      const FechaStr = row.Fecha || row.date || null;
+
+      if (!DNI) {
+        errors.push("Fila saltada: DNI faltante");
+        continue;
+      }
 
       // 1. Find or create Person
-      let person = await prisma.person.findUnique({ where: { dni: String(DNI) } });
+      let person = await prisma.person.findUnique({ where: { dni: DNI } });
       if (!person) {
         person = await prisma.person.create({
           data: {
-            dni: String(DNI),
+            dni: DNI,
             firstName: Nombre || "S/N",
             lastName: Apellido || "S/A",
           }
@@ -87,14 +99,14 @@ export async function importInterventionsAction(data: any[]) {
           caseId: dbCase.id,
           personId: person.id,
           description: Descripcion,
-          date: Fecha ? new Date(Fecha) : new Date(),
+          date: FechaStr ? new Date(FechaStr) : new Date(),
           userId: session.user.id!
         }
       });
 
       createdCount++;
     } catch (e: any) {
-      errors.push(`Error en fila ${DNI}: ${e.message}`);
+      errors.push(`Error en fila: ${e.message}`);
     }
   }
 

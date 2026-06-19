@@ -4,8 +4,17 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { Eye, Plus } from "lucide-react";
+import { Eye, Plus, Upload } from "lucide-react";
 import Link from "next/link";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger
+} from "@/components/ui/sheet";
+import InterventionsAdminPage from "../admin/interventions/page";
 
 export default async function PeoplePage({
   searchParams,
@@ -21,9 +30,25 @@ export default async function PeoplePage({
           <h2 className="text-4xl font-black tracking-tight text-foreground">Registro Único</h2>
           <p className="text-muted-foreground text-lg">Base de datos centralizada de ciudadanos y familias.</p>
         </div>
-        <Button asChild className="rounded-2xl h-12 px-6 shadow-lg shadow-primary/20 transition-all hover:scale-105">
-          <Link href="/people/new"><Plus className="mr-2 h-5 w-5"/> Nueva Persona</Link>
-        </Button>
+        <div className="flex gap-2">
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button variant="outline" className="rounded-2xl h-12 px-6 transition-all hover:bg-accent">
+                <Upload className="mr-2 h-5 w-5"/> Importar
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="right" className="sm:max-w-xl w-full bg-background rounded-l-[2rem] shadow-2xl p-8 overflow-y-auto border-l border-border">
+              <SheetHeader className="mb-8">
+                <SheetTitle className="text-2xl font-black">Importación Masiva</SheetTitle>
+                <SheetDescription>Suba su archivo Excel para migrar intervenciones y ciudadanos.</SheetDescription>
+              </SheetHeader>
+              <InterventionsAdminPage />
+            </SheetContent>
+          </Sheet>
+          <Button asChild className="rounded-2xl h-12 px-6 shadow-lg shadow-primary/20 transition-all hover:scale-105">
+            <Link href="/people/new"><Plus className="mr-2 h-5 w-5"/> Nueva Persona</Link>
+          </Button>
+        </div>
       </div>
       <Card className="border-none shadow-sm overflow-hidden rounded-3xl bg-card/50 backdrop-blur-sm">
         <Table>

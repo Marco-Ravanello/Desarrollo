@@ -49,7 +49,7 @@ export function HRFilters({ areas }: { areas: any[] }) {
           onChange={(e) => setQuery(e.target.value)}
         />
         {query && (
-            <button type="button" onClick={() => {setQuery(""); updateFilters({q: ""})}} className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-slate-200 rounded-full">
+            <button type="button" onClick={() => {setQuery(""); updateFilters({q: ""})}} className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-accent rounded-full">
                 <X className="h-3 w-3" />
             </button>
         )}
@@ -57,7 +57,7 @@ export function HRFilters({ areas }: { areas: any[] }) {
 
       <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
         <select
-          className="h-12 px-4 rounded-xl bg-muted/50 border-none font-bold text-sm text-muted-foreground outline-none focus:ring-2 focus:ring-primary transition-all"
+          className="h-12 px-4 rounded-xl bg-muted border-none font-bold text-sm text-muted-foreground outline-none focus:ring-2 focus:ring-primary transition-all appearance-none"
           value={areaId}
           onChange={(e) => {
             setAreaId(e.target.value);
@@ -71,7 +71,7 @@ export function HRFilters({ areas }: { areas: any[] }) {
         </select>
 
         <select
-          className="h-12 px-4 rounded-xl bg-muted/50 border-none font-bold text-sm text-muted-foreground outline-none focus:ring-2 focus:ring-primary transition-all"
+          className="h-12 px-4 rounded-xl bg-muted border-none font-bold text-sm text-muted-foreground outline-none focus:ring-2 focus:ring-primary transition-all appearance-none"
           value={status}
           onChange={(e) => {
             setStatus(e.target.value);
@@ -86,7 +86,7 @@ export function HRFilters({ areas }: { areas: any[] }) {
         </select>
 
         {(query || areaId !== "all" || status !== "all") && (
-            <Button variant="ghost" onClick={clearFilters} className="text-rose-500 font-bold hover:text-rose-600 hover:bg-rose-50 rounded-xl">
+            <Button variant="ghost" onClick={clearFilters} className="text-rose-500 font-bold hover:text-rose-600 hover:bg-rose-500/10 rounded-xl">
                 Limpiar
             </Button>
         )}

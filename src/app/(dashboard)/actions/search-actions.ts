@@ -5,16 +5,17 @@ import { auth } from "@/auth";
 
 export async function searchGlobalAction(query: string) {
   const session = await auth();
-  if (!session || !query || query.length < 2) return { citizens: [], cases: [], hr: [] };
+  const trimmedQuery = query?.trim();
+  if (!session || !trimmedQuery || trimmedQuery.length < 2) return { citizens: [], cases: [], hr: [] };
 
   const [citizens, cases, hr] = await Promise.all([
     // Buscar Ciudadanos
     prisma.person.findMany({
       where: {
         OR: [
-          { firstName: { contains: query, mode: 'insensitive' } },
-          { lastName: { contains: query, mode: 'insensitive' } },
-          { dni: { contains: query } },
+          { firstName: { contains: trimmedQuery, mode: 'insensitive' } },
+          { lastName: { contains: trimmedQuery, mode: 'insensitive' } },
+          { dni: { contains: trimmedQuery } },
         ]
       },
       select: { id: true, firstName: true, lastName: true, dni: true },

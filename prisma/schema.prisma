@@ -19,6 +19,7 @@ model User {
   sessions      Session[]
   auditLogs     AuditLog[]
   tasks         Task[]
+  reservations  VehicleReservation[]
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 }
@@ -222,6 +223,7 @@ model VehicleReservation {
   vehicleId     String
   vehicle       Vehicle  @relation(fields: [vehicleId], references: [id])
   userId        String
+  user          User     @relation(fields: [userId], references: [id])
   areaId        String?
   startDate     DateTime
   endDate       DateTime

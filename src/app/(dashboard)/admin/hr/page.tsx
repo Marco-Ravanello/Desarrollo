@@ -66,11 +66,11 @@ export default async function HRPage({
     <div className="space-y-10 pb-20">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
         <div className="space-y-1">
-          <h2 className="text-4xl font-black tracking-tight text-slate-900 uppercase tracking-tighter">Recursos Humanos</h2>
+          <h2 className="text-4xl font-black tracking-tight text-slate-900 dark:text-white uppercase tracking-tighter">Recursos Humanos</h2>
           <p className="text-muted-foreground text-lg font-medium italic">Gestión integral y control presupuestario de la nómina.</p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-           <Button variant="outline" className="rounded-xl h-11 px-4 gap-2 border-slate-200 hover:bg-slate-50 transition-all font-bold">
+           <Button variant="outline" className="rounded-xl h-11 px-4 gap-2 border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-900 transition-all font-bold">
               <Download className="h-4 w-4" /> Exportar Planilla
            </Button>
            <Sheet>
@@ -92,14 +92,14 @@ export default async function HRPage({
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         {kpis.map((kpi) => (
-          <Card key={kpi.title} className="border-none shadow-sm overflow-hidden bg-white rounded-3xl group transition-all hover:shadow-xl">
+          <Card key={kpi.title} className="border-none shadow-sm overflow-hidden bg-card rounded-3xl group transition-all hover:shadow-xl">
             <CardContent className="p-6">
               <div className="flex items-center gap-4">
-                <div className={`p-4 rounded-2xl ${kpi.bg} group-hover:scale-110 transition-transform`}>
+                <div className={`p-4 rounded-2xl ${kpi.bg} dark:bg-slate-900 group-hover:scale-110 transition-transform`}>
                   <kpi.icon className={`h-6 w-6 ${kpi.color}`} />
                 </div>
                 <div>
-                  <p className="text-2xl font-black tracking-tighter text-slate-900">{kpi.value}</p>
+                  <p className="text-2xl font-black tracking-tighter text-card-foreground">{kpi.value}</p>
                   <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">{kpi.title}</p>
                 </div>
               </div>
@@ -110,18 +110,18 @@ export default async function HRPage({
       </div>
 
       {/* Area Budget Summary - New Section */}
-      <Card className="rounded-[2rem] border-none shadow-sm bg-slate-50/50">
+      <Card className="rounded-[2rem] border-none shadow-sm bg-muted/50">
         <CardContent className="p-6">
-            <h3 className="text-sm font-black uppercase tracking-widest text-slate-400 mb-6 flex items-center gap-2">
+            <h3 className="text-sm font-black uppercase tracking-widest text-muted-foreground mb-6 flex items-center gap-2">
                 <PieChart className="h-4 w-4" /> Distribución Salarial por Área
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
                 {sanitizedAreas.map(area => {
                     const areaBudget = stats.budgetByArea[area.id] || 0;
                     return (
-                        <div key={area.id} className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
+                        <div key={area.id} className="bg-card p-4 rounded-2xl border border-border shadow-sm">
                             <p className="text-[9px] font-black text-muted-foreground uppercase truncate mb-1" title={area.name}>{area.name}</p>
-                            <p className="text-sm font-bold text-slate-900">${areaBudget.toLocaleString('es-AR')}</p>
+                            <p className="text-sm font-bold text-card-foreground">${areaBudget.toLocaleString('es-AR')}</p>
                         </div>
                     )
                 })}
@@ -129,11 +129,11 @@ export default async function HRPage({
         </CardContent>
       </Card>
 
-      <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden transition-all hover:shadow-xl">
+      <div className="bg-card rounded-[2rem] border border-border shadow-sm overflow-hidden transition-all hover:shadow-xl">
         <HRFilters areas={sanitizedAreas} />
 
         <Table>
-          <TableHeader className="bg-slate-50/50">
+          <TableHeader className="bg-muted/50">
             <TableRow className="hover:bg-transparent border-none">
               <TableHead className="font-bold py-5 px-6">Agente</TableHead>
               <TableHead className="font-bold">Área / Cargo</TableHead>
@@ -151,41 +151,41 @@ export default async function HRPage({
               </TableRow>
             ) : (
               sanitizedRecords.map((r) => (
-                <TableRow key={r.id} className="group hover:bg-slate-50/30 transition-all border-none">
+                <TableRow key={r.id} className="group hover:bg-muted/30 transition-all border-none">
                   <TableCell className="py-4 px-6">
                     <div className="flex items-center gap-4">
-                      <Avatar className="h-12 w-12 border-2 border-white shadow-sm ring-1 ring-slate-100">
+                      <Avatar className="h-12 w-12 border-2 border-card shadow-sm ring-1 ring-border">
                         <AvatarImage src={r.imageUrl || ""} alt={r.firstName} className="object-cover" />
-                        <AvatarFallback className="bg-[#004a80] text-white font-black text-sm uppercase">
+                        <AvatarFallback className="bg-primary text-primary-foreground font-black text-sm uppercase">
                           {r.firstName?.[0]}{r.lastName?.[0]}
                         </AvatarFallback>
                       </Avatar>
                       <div>
-                        <p className="font-black text-slate-800 group-hover:text-[#004a80] transition-colors">{r.firstName} {r.lastName}</p>
+                        <p className="font-black text-foreground group-hover:text-primary transition-colors">{r.firstName} {r.lastName}</p>
                         <p className="text-[10px] font-bold text-muted-foreground tracking-widest flex items-center gap-2">
-                           {r.fileNumber || 'S/L'} <span className="text-slate-200">•</span> DNI {r.dni}
+                           {r.fileNumber || 'S/L'} <span className="text-border">•</span> DNI {r.dni}
                         </p>
                       </div>
                     </div>
                   </TableCell>
                   <TableCell>
                     <div className="space-y-0.5">
-                      <p className="font-bold text-sm text-slate-700">{r.area?.name || "Sin Área"}</p>
+                      <p className="font-bold text-sm text-foreground">{r.area?.name || "Sin Área"}</p>
                       <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-tighter">{r.position || "Sin Cargo"}</p>
                     </div>
                   </TableCell>
                   <TableCell>
-                     <p className="text-xs font-bold text-slate-600 italic">
+                     <p className="text-xs font-bold text-muted-foreground italic">
                         {r.startDate ? new Date(r.startDate).toLocaleDateString('es-AR') : '-'}
                      </p>
                   </TableCell>
                   <TableCell>
                     <div className="flex flex-col gap-1">
                       <Badge className={`rounded-full px-3 py-0.5 text-[10px] font-black tracking-widest border-none w-fit ${
-                        r.status === 'ACTIVO' ? 'bg-emerald-50 text-emerald-600' :
-                        r.status === 'LICENCIA' ? 'bg-amber-50 text-amber-600' :
-                        r.status === 'VACACIONES' ? 'bg-blue-50 text-blue-600' :
-                        'bg-rose-50 text-rose-600'
+                        r.status === 'ACTIVO' ? 'bg-emerald-500/10 text-emerald-600' :
+                        r.status === 'LICENCIA' ? 'bg-amber-500/10 text-amber-600' :
+                        r.status === 'VACACIONES' ? 'bg-blue-500/10 text-blue-600' :
+                        'bg-rose-500/10 text-rose-600'
                       }`}>
                         <div className={`w-1.5 h-1.5 rounded-full mr-1.5 ${
                           r.status === 'ACTIVO' ? 'bg-emerald-600' :
