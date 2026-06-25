@@ -35,10 +35,10 @@ export function AppSidebar() {
   ];
 
   const adminNav = [
-    { title: "Compras y OC", url: "/admin/purchase-orders", icon: Briefcase, color: "text-slate-400" },
+    { title: "Órdenes de compras", url: "/admin/purchase-orders", icon: Briefcase, color: "text-slate-400" },
     { title: "Vehículos y Logística", url: "/admin/vehicles", icon: Car, color: "text-slate-400" },
     { title: "Stock de Insumos", url: "/admin/stock", icon: ClipboardList, color: "text-slate-400" },
-    { title: "Presupuesto", url: "/admin/budget", icon: Wallet, color: "text-slate-400" },
+    { title: "Convenios", url: "/admin/budget", icon: Wallet, color: "text-slate-400" },
     { title: "Recursos Humanos", url: "/admin/hr", icon: UserCog, color: "text-slate-400" },
     ...(user?.role === 'SUPERADMIN' ? [
       { title: "Importar Datos", url: "/admin/interventions", icon: FileSpreadsheet, color: "text-slate-400" },

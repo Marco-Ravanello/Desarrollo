@@ -104,6 +104,7 @@ export function GlobalSearch() {
                       {results.citizens.map((c) => (
                         <Command.Item
                           key={c.id}
+                          value={`${c.title} ${c.subtitle}`}
                           onSelect={() => navigate(c.url)}
                           className="flex items-center gap-3 px-3 py-3 rounded-xl cursor-pointer hover:bg-accent aria-selected:bg-accent transition-all group"
                         >
@@ -204,7 +205,7 @@ export function GlobalSearch() {
                   className="flex items-center gap-2 px-2 py-3 rounded-md cursor-pointer hover:bg-accent aria-selected:bg-accent transition-colors"
                 >
                   <Briefcase className="h-4 w-4 text-slate-400" />
-                  <span>Compras y OC</span>
+                  <span>Órdenes de compras</span>
                 </Command.Item>
                 <Command.Item
                   onSelect={() => navigate("/admin/vehicles")}
@@ -218,7 +219,7 @@ export function GlobalSearch() {
                   className="flex items-center gap-2 px-2 py-3 rounded-md cursor-pointer hover:bg-accent aria-selected:bg-accent transition-colors"
                 >
                   <Wallet className="h-4 w-4 text-slate-400" />
-                  <span>Presupuesto</span>
+                  <span>Convenios</span>
                 </Command.Item>
                 <Command.Item
                   onSelect={() => navigate("/admin/hr")}

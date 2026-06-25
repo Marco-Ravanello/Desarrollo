@@ -36,14 +36,15 @@ export function AgentActionsMenu({ agent, areas }: AgentActionsMenuProps) {
 
   const handleOpenChange = (isOpen: boolean) => {
     setOpen(isOpen);
-    // Focus restorer workaround: Ensure no active interaction lock
     if (!isOpen) {
-        document.body.style.pointerEvents = 'auto';
+      setTimeout(() => {
+        document.body.style.pointerEvents = '';
+      }, 500);
     }
   };
 
   return (
-    <Sheet open={open} onOpenChange={handleOpenChange}>
+    <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" size="icon" className="rounded-xl hover:bg-primary hover:text-white transition-all">
@@ -54,23 +55,27 @@ export function AgentActionsMenu({ agent, areas }: AgentActionsMenuProps) {
           <DropdownMenuLabel className="px-3 py-2 text-xs font-black uppercase tracking-widest text-muted-foreground">Opciones de Legajo</DropdownMenuLabel>
           <DropdownMenuSeparator className="bg-border/50" />
 
-          <SheetTrigger asChild>
-            <DropdownMenuItem
-              className="rounded-xl px-3 py-2.5 gap-3 font-bold focus:bg-primary focus:text-white transition-all cursor-pointer"
-              onSelect={() => setMode('view')}
-            >
-              <Eye className="h-4 w-4" /> Ver Detalles
-            </DropdownMenuItem>
-          </SheetTrigger>
+          <DropdownMenuItem
+            className="rounded-xl px-3 py-2.5 gap-3 font-bold focus:bg-primary focus:text-white transition-all cursor-pointer"
+            onSelect={(e) => {
+              e.preventDefault();
+              setMode('view');
+              setOpen(true);
+            }}
+          >
+            <Eye className="h-4 w-4" /> Ver Detalles
+          </DropdownMenuItem>
 
-          <SheetTrigger asChild>
-            <DropdownMenuItem
-              className="rounded-xl px-3 py-2.5 gap-3 font-bold focus:bg-primary focus:text-white transition-all cursor-pointer"
-              onSelect={() => setMode('edit')}
-            >
-              <Edit className="h-4 w-4" /> Editar Legajo
-            </DropdownMenuItem>
-          </SheetTrigger>
+          <DropdownMenuItem
+            className="rounded-xl px-3 py-2.5 gap-3 font-bold focus:bg-primary focus:text-white transition-all cursor-pointer"
+            onSelect={(e) => {
+              e.preventDefault();
+              setMode('edit');
+              setOpen(true);
+            }}
+          >
+            <Edit className="h-4 w-4" /> Editar Legajo
+          </DropdownMenuItem>
 
           <DropdownMenuSeparator className="bg-border/50" />
 
@@ -78,7 +83,8 @@ export function AgentActionsMenu({ agent, areas }: AgentActionsMenuProps) {
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <SheetContent side="right" className="sm:max-w-lg w-full border-l border-border bg-background rounded-l-[2rem] shadow-2xl p-8 overflow-y-auto">
+      <Sheet open={open} onOpenChange={handleOpenChange}>
+        <SheetContent side="right" className="sm:max-w-lg w-full border-l border-border bg-background rounded-l-[2rem] shadow-2xl p-8 overflow-y-auto">
         <SheetHeader className="mb-8">
           <SheetTitle className="text-2xl font-black">
             {mode === 'view' ? 'Detalle del Agente' : 'Editar Legajo'}
@@ -96,6 +102,7 @@ export function AgentActionsMenu({ agent, areas }: AgentActionsMenuProps) {
           <EditHRForm agent={agent} areas={areas} onComplete={() => setOpen(false)} />
         )}
       </SheetContent>
-    </Sheet>
+      </Sheet>
+    </>
   );
 }
