@@ -8,6 +8,9 @@ export async function searchGlobalAction(query: string) {
   const trimmedQuery = query?.trim();
   if (!session || !trimmedQuery || trimmedQuery.length < 2) return { citizens: [], cases: [], hr: [] };
 
+  // Sanitizar DNI para búsqueda (quitar puntos o guiones)
+  const numericQuery = trimmedQuery.replace(/[^0-9]/g, '');
+
   const [citizens, cases, hr] = await Promise.all([
     // Buscar Ciudadanos
     prisma.person.findMany({
@@ -16,6 +19,7 @@ export async function searchGlobalAction(query: string) {
           { firstName: { contains: trimmedQuery, mode: 'insensitive' } },
           { lastName: { contains: trimmedQuery, mode: 'insensitive' } },
           { dni: { contains: trimmedQuery } },
+          ...(numericQuery ? [{ dni: { contains: numericQuery } }] : [])
         ]
       },
       select: { id: true, firstName: true, lastName: true, dni: true },

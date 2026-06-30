@@ -37,9 +37,17 @@ export function AgentActionsMenu({ agent, areas }: AgentActionsMenuProps) {
   const handleOpenChange = (isOpen: boolean) => {
     setOpen(isOpen);
     if (!isOpen) {
-      setTimeout(() => {
-        document.body.style.pointerEvents = '';
-      }, 500);
+      // Force cleanup of Radix/Shadcn pointer events lock
+      // We use a multi-stage approach to ensure it's cleared even after animations
+      const cleanup = () => {
+        document.body.style.pointerEvents = 'auto';
+        document.body.style.overflow = 'auto';
+        document.body.removeAttribute('data-radix-scroll-lock');
+      };
+
+      cleanup();
+      setTimeout(cleanup, 100);
+      setTimeout(cleanup, 500);
     }
   };
 

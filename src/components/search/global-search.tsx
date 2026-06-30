@@ -78,7 +78,10 @@ export function GlobalSearch() {
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="p-0 overflow-hidden max-w-2xl border-none shadow-2xl">
           <DialogTitle className="sr-only">Buscador Global</DialogTitle>
-          <Command className="flex h-full w-full flex-col overflow-hidden rounded-md bg-popover text-popover-foreground">
+          <Command
+            shouldFilter={false}
+            className="flex h-full w-full flex-col overflow-hidden rounded-md bg-popover text-popover-foreground"
+          >
             <div className="flex items-center border-b px-4 py-1" cmdk-input-wrapper="">
               <Search className="mr-2 h-5 w-5 shrink-0 opacity-50 text-primary" />
               <Command.Input
@@ -104,7 +107,7 @@ export function GlobalSearch() {
                       {results.citizens.map((c) => (
                         <Command.Item
                           key={c.id}
-                          value={`${c.title} ${c.subtitle}`}
+                          value={`${c.title} ${c.subtitle} ${c.subtitle.replace(/[^0-9]/g, '')}`}
                           onSelect={() => navigate(c.url)}
                           className="flex items-center gap-3 px-3 py-3 rounded-xl cursor-pointer hover:bg-accent aria-selected:bg-accent transition-all group"
                         >

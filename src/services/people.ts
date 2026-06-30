@@ -1,12 +1,15 @@
 import prisma from "@/lib/prisma";
 
 export async function getPeople(query?: string) {
+  const numericQuery = query ? query.replace(/[^0-9]/g, '') : null;
+
   return await prisma.person.findMany({
     where: query ? {
       OR: [
         { firstName: { contains: query, mode: 'insensitive' } },
         { lastName: { contains: query, mode: 'insensitive' } },
         { dni: { contains: query } },
+        ...(numericQuery ? [{ dni: { contains: numericQuery } }] : []),
       ]
     } : undefined,
     include: {
