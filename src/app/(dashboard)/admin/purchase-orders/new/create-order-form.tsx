@@ -24,15 +24,18 @@ export function CreatePurchaseOrderForm({ providers }: { providers: any[] }) {
     // Try to find provider by CUIT if found
     let matchedProviderId = "";
     if (data.cuit) {
-      const p = providers.find(p => p.cuit === data.cuit);
+      const p = providers.find(p =>
+        p.cuit === data.cuit ||
+        p.cuit.replace(/-/g, '') === data.cuit.replace(/-/g, '')
+      );
       if (p) matchedProviderId = p.id;
     }
 
-    setOrderData({
-      number: data.number || "",
-      amount: data.amount || "",
-      providerId: matchedProviderId
-    });
+    setOrderData(prev => ({
+      number: data.number || prev.number,
+      amount: data.amount || prev.amount,
+      providerId: matchedProviderId || prev.providerId
+    }));
 
     if (data.number || data.amount) {
         toast.info("Campos completados desde el escaneo");

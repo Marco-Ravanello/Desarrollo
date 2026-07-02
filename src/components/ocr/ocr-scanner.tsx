@@ -33,22 +33,30 @@ export function OCRScanner({ onScanComplete }: OCRScannerProps) {
       let date = "";
 
       // Look for Orden de Compra N°
-      const orderMatch = text.match(/(?:Orden de Compra|N°|Número)\s*(\d+)/i);
+      const orderMatch = text.match(/(?:Orden de Compra|N°|Número|O\/C)\s*[:.]?\s*(\d+)/i);
       if (orderMatch) number = orderMatch[1];
 
-      // Look for CUIT (format XX-XXXXXXXX-X)
-      const cuitMatch = text.match(/\d{2}-\d{8}-\d{1}/);
-      if (cuitMatch) cuit = cuitMatch[0];
+      // Look for CUIT (format XX-XXXXXXXX-X or XXXXXXXXXXX)
+      const cuitMatch = text.match(/(\d{2}-\d{8}-\d{1})|(\d{11})/);
+      if (cuitMatch) cuit = cuitMatch[0].replace(/-/g, '');
 
       // Look for Date (format DD/MM/YYYY)
       const dateMatch = text.match(/\d{2}\/\d{2}\/\d{4}/);
       if (dateMatch) date = dateMatch[0];
 
-      // Look for Total (simplified)
-      const totalMatch = text.match(/(?:Total|Importe|S)\s*\$?\s*([\d.,]+)/i);
+      // Look for Total (simplified) - prioritize lines near the bottom or containing '$'
+      const totalMatch = text.match(/(?:Total|Importe|Suma|Neto)\s*[:.]?\s*\$?\s*([\d.]+,\d{2})/i) ||
+                         text.match(/(?:Total|Importe|Suma|Neto)\s*[:.]?\s*\$?\s*([\d,.]+)/i);
+
       if (totalMatch) {
-          // Clean amount string to be numeric
-          amount = totalMatch[1].replace(/\./g, '').replace(',', '.');
+          // Clean amount string:
+          // If it ends in ,XX it's likely AR format (dots for thousands, comma for decimals)
+          let val = totalMatch[1];
+          if (val.includes(',') && val.split(',')[1].length === 2) {
+              amount = val.replace(/\./g, '').replace(',', '.');
+          } else {
+              amount = val.replace(/,/g, '');
+          }
       }
 
       onScanComplete({ number, amount, cuit, date });

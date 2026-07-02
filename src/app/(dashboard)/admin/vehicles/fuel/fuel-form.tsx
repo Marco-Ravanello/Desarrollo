@@ -14,17 +14,20 @@ export function FuelForm({ vehicles }: { vehicles: any[] }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [fuelData, setFuelData] = useState({
+    vehicleId: "",
     amount: "",
+    liters: "",
     ticketNumber: "",
     date: new Date().toISOString().split('T')[0]
   });
 
   const handleScanComplete = (data: any) => {
-    setFuelData({
-      amount: data.amount || "",
-      ticketNumber: data.number || "",
-      date: data.date ? data.date.split('/').reverse().join('-') : fuelData.date
-    });
+    setFuelData(prev => ({
+      ...prev,
+      amount: data.amount || prev.amount,
+      ticketNumber: data.number || prev.ticketNumber,
+      date: data.date ? data.date.split('/').reverse().join('-') : prev.date
+    }));
     toast.info("Campos completados desde el ticket");
   };
 
@@ -55,6 +58,8 @@ export function FuelForm({ vehicles }: { vehicles: any[] }) {
         <Label htmlFor="vehicleId" className="font-semibold">Vehículo</Label>
         <Combobox
           name="vehicleId"
+          value={fuelData.vehicleId}
+          onValueChange={(val) => setFuelData({...fuelData, vehicleId: val})}
           placeholder="Buscar vehículo por patente..."
           options={vehicles.map(v => ({ value: v.id, label: `${v.plate} - ${v.brand} ${v.model}` }))}
           required
@@ -92,7 +97,17 @@ export function FuelForm({ vehicles }: { vehicles: any[] }) {
         <div className="space-y-2">
           <Label htmlFor="liters" className="font-semibold">Litros Cargados</Label>
           <div className="relative">
-            <Input id="liters" name="liters" type="number" step="0.01" placeholder="0.00" required className="rounded-xl pr-10" />
+            <Input
+                id="liters"
+                name="liters"
+                type="number"
+                step="0.01"
+                placeholder="0.00"
+                required
+                value={fuelData.liters}
+                onChange={(e) => setFuelData({...fuelData, liters: e.target.value})}
+                className="rounded-xl pr-10"
+            />
             <span className="absolute right-3 top-2.5 text-slate-400 text-sm font-bold">Lts</span>
           </div>
         </div>
