@@ -8,10 +8,25 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { createFuelRecordAction } from "../../actions/vehicle-actions";
 import { Combobox } from "@/components/ui/combobox";
+import { OCRScanner } from "@/components/ocr/ocr-scanner";
 
 export function FuelForm({ vehicles }: { vehicles: any[] }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [fuelData, setFuelData] = useState({
+    amount: "",
+    ticketNumber: "",
+    date: new Date().toISOString().split('T')[0]
+  });
+
+  const handleScanComplete = (data: any) => {
+    setFuelData({
+      amount: data.amount || "",
+      ticketNumber: data.number || "",
+      date: data.date ? data.date.split('/').reverse().join('-') : fuelData.date
+    });
+    toast.info("Campos completados desde el ticket");
+  };
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -29,7 +44,13 @@ export function FuelForm({ vehicles }: { vehicles: any[] }) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <div className="space-y-8">
+      <div className="bg-amber-50 dark:bg-amber-950/20 p-4 rounded-2xl border border-amber-200 dark:border-amber-900/30">
+           <h4 className="text-xs font-black text-amber-600 dark:text-amber-400 uppercase tracking-widest mb-3">Asistente de Carga Rápida (Foto Ticket)</h4>
+           <OCRScanner onScanComplete={handleScanComplete} />
+      </div>
+
+      <form onSubmit={handleSubmit} className="space-y-6">
       <div className="space-y-2">
         <Label htmlFor="vehicleId" className="font-semibold">Vehículo</Label>
         <Combobox
@@ -43,11 +64,27 @@ export function FuelForm({ vehicles }: { vehicles: any[] }) {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-2">
           <Label htmlFor="date" className="font-semibold">Fecha de Carga</Label>
-          <Input id="date" name="date" type="date" required defaultValue={new Date().toISOString().split('T')[0]} className="rounded-xl" />
+          <Input
+            id="date"
+            name="date"
+            type="date"
+            required
+            value={fuelData.date}
+            onChange={(e) => setFuelData({...fuelData, date: e.target.value})}
+            className="rounded-xl"
+          />
         </div>
         <div className="space-y-2">
           <Label htmlFor="ticketNumber" className="font-semibold">N° de Ticket / Operación</Label>
-          <Input id="ticketNumber" name="ticketNumber" placeholder="Ej: 0001-12345" required className="rounded-xl font-mono uppercase" />
+          <Input
+            id="ticketNumber"
+            name="ticketNumber"
+            placeholder="Ej: 0001-12345"
+            required
+            value={fuelData.ticketNumber}
+            onChange={(e) => setFuelData({...fuelData, ticketNumber: e.target.value})}
+            className="rounded-xl font-mono uppercase"
+          />
         </div>
       </div>
 
@@ -63,7 +100,17 @@ export function FuelForm({ vehicles }: { vehicles: any[] }) {
           <Label htmlFor="amount" className="font-semibold">Importe Total</Label>
           <div className="relative">
              <span className="absolute left-3 top-2.5 text-slate-400 text-sm font-bold">$</span>
-             <Input id="amount" name="amount" type="number" step="0.01" placeholder="0.00" required className="rounded-xl pl-8" />
+             <Input
+                id="amount"
+                name="amount"
+                type="number"
+                step="0.01"
+                placeholder="0.00"
+                required
+                value={fuelData.amount}
+                onChange={(e) => setFuelData({...fuelData, amount: e.target.value})}
+                className="rounded-xl pl-8"
+             />
           </div>
         </div>
       </div>
@@ -77,5 +124,6 @@ export function FuelForm({ vehicles }: { vehicles: any[] }) {
         </Button>
       </div>
     </form>
+    </div>
   );
 }

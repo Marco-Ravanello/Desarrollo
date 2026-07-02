@@ -9,10 +9,35 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { createPurchaseOrderAction } from "../../actions/create-purchase-order";
 import { Combobox } from "@/components/ui/combobox";
+import { OCRScanner } from "@/components/ocr/ocr-scanner";
 
 export function CreatePurchaseOrderForm({ providers }: { providers: any[] }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [orderData, setOrderData] = useState({
+    number: "",
+    amount: "",
+    providerId: ""
+  });
+
+  const handleScanComplete = (data: any) => {
+    // Try to find provider by CUIT if found
+    let matchedProviderId = "";
+    if (data.cuit) {
+      const p = providers.find(p => p.cuit === data.cuit);
+      if (p) matchedProviderId = p.id;
+    }
+
+    setOrderData({
+      number: data.number || "",
+      amount: data.amount || "",
+      providerId: matchedProviderId
+    });
+
+    if (data.number || data.amount) {
+        toast.info("Campos completados desde el escaneo");
+    }
+  };
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -39,25 +64,48 @@ export function CreatePurchaseOrderForm({ providers }: { providers: any[] }) {
       <CardHeader>
         <CardTitle>Nueva Orden</CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="space-y-8">
+        <div className="bg-slate-50 dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800">
+           <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-3">Asistente de Carga Rápida</h4>
+           <OCRScanner onScanComplete={handleScanComplete} />
+        </div>
+
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="number">Número de Orden</Label>
-              <Input id="number" name="number" placeholder="Ej: OC-2026-001" required />
+              <Input
+                id="number"
+                name="number"
+                placeholder="Ej: OC-2026-001"
+                required
+                value={orderData.number}
+                onChange={(e) => setOrderData({...orderData, number: e.target.value})}
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="providerId">Proveedor</Label>
               <Combobox
                 name="providerId"
                 placeholder="Buscar proveedor..."
+                value={orderData.providerId}
+                onValueChange={(val) => setOrderData({...orderData, providerId: val})}
                 options={providers.map(p => ({ value: p.id, label: `${p.name} (${p.cuit})` }))}
                 required
               />
             </div>
             <div className="space-y-2">
               <Label htmlFor="amount">Importe Total ($)</Label>
-              <Input id="amount" name="amount" type="number" step="0.01" placeholder="0.00" required />
+              <Input
+                id="amount"
+                name="amount"
+                type="number"
+                step="0.01"
+                placeholder="0.00"
+                required
+                value={orderData.amount}
+                onChange={(e) => setOrderData({...orderData, amount: e.target.value})}
+              />
             </div>
             <div className="md:col-span-2 space-y-2">
               <Label htmlFor="description">Descripción / Motivo</Label>

@@ -11,6 +11,7 @@ import { auth } from "@/auth";
 import { getAreas } from "@/services/cases";
 import { CreateCaseForm } from "./create-case-form";
 import { UploadDocumentForm } from "./upload-document-form";
+import { CitizenTimeline } from "@/components/timeline/citizen-timeline";
 import { CloseCaseButton } from "./close-case-button";
 import { AddFamilyMemberForm } from "./add-family-member-form";
 import { removeFromFamily } from "../actions/family-actions";
@@ -41,6 +42,39 @@ export default async function PersonDetailPage({ params }: { params: Promise<{ i
   // Obtener familiares (excluyendo a la persona actual)
   const familyMembers = person.family?.members.filter(m => m.id !== person.id) || [];
 
+  // Construir eventos de línea de tiempo
+  const timelineEvents: any[] = [
+    ...person.cases.map(c => ({
+      id: `case-start-${c.id}`,
+      type: 'CASE_CREATED',
+      date: c.createdAt.toISOString(),
+      title: `Apertura de Expediente: ${c.title}`,
+      area: c.area.name,
+      description: c.description
+    })),
+    ...person.cases.filter(c => c.status === 'CERRADO').map(c => ({
+        id: `case-end-${c.id}`,
+        type: 'CASE_CLOSED',
+        date: c.updatedAt.toISOString(),
+        title: `Cierre de Caso: ${c.title}`,
+        area: c.area.name
+    })),
+    ...person.interventions.map(i => ({
+      id: i.id,
+      type: 'INTERVENTION',
+      date: i.date.toISOString(),
+      title: `Intervención Social`,
+      description: i.description,
+      // area: i.case.area.name // No está en el include de interventions de getPersonById
+    })),
+    ...person.documents.map(d => ({
+        id: d.id,
+        type: 'DOCUMENT',
+        date: d.createdAt.toISOString(),
+        title: `Documento Adjuntado: ${d.name}`
+    }))
+  ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4">
@@ -69,13 +103,23 @@ export default async function PersonDetailPage({ params }: { params: Promise<{ i
         </Card>
 
         <Card className="col-span-2 border-none shadow-sm">
-          <Tabs defaultValue="cases">
+          <Tabs defaultValue="timeline">
             <TabsList className="m-4 bg-muted/50 p-1">
+              <TabsTrigger value="timeline">Línea de Tiempo</TabsTrigger>
               <TabsTrigger value="cases">Casos</TabsTrigger>
               <TabsTrigger value="family">Familia</TabsTrigger>
               <TabsTrigger value="history">Historial</TabsTrigger>
               <TabsTrigger value="docs">Documentos</TabsTrigger>
             </TabsList>
+
+            <TabsContent value="timeline" className="p-6 pt-0">
+               <div className="flex justify-between items-center mb-6">
+                <h3 className="text-sm font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                   <History className="h-4 w-4" /> Evolución del Ciudadano
+                </h3>
+              </div>
+              <CitizenTimeline events={timelineEvents} />
+            </TabsContent>
 
             <TabsContent value="cases" className="p-4 pt-0">
               <div className="flex justify-between items-center mb-4">
