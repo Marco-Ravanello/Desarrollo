@@ -167,6 +167,13 @@ model PurchaseOrder {
   amount        Decimal
   description   String?
   status        OrderStatus @default(BORRADOR)
+
+  // Nuevos campos para OCR y cumplimiento
+  expediente    String?
+  deliveryDate  DateTime?
+  deliveryPlace String?
+  paymentTerms  String?
+
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
 }

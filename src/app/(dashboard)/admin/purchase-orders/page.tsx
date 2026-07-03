@@ -56,7 +56,12 @@ export default async function PurchaseOrdersPage({
           <TableBody>
             {orders.map(o => (
               <TableRow key={o.id}>
-                <TableCell className="font-mono">{o.number}</TableCell>
+                <TableCell className="font-mono">
+                    <div className="flex flex-col">
+                        <span className="font-bold">{o.number}</span>
+                        {o.expediente && <span className="text-[10px] text-muted-foreground uppercase">Exp: {o.expediente}</span>}
+                    </div>
+                </TableCell>
                 <TableCell>{o.provider.name}</TableCell>
                 <TableCell>${Number(o.amount).toLocaleString()}</TableCell>
                 <TableCell>

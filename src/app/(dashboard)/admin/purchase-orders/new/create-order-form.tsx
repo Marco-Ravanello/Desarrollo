@@ -17,7 +17,12 @@ export function CreatePurchaseOrderForm({ providers }: { providers: any[] }) {
   const [orderData, setOrderData] = useState({
     number: "",
     amount: "",
-    providerId: ""
+    providerId: "",
+    expediente: "",
+    deliveryDate: "",
+    deliveryPlace: "",
+    paymentTerms: "",
+    description: ""
   });
 
   const handleScanComplete = (data: any) => {
@@ -32,9 +37,15 @@ export function CreatePurchaseOrderForm({ providers }: { providers: any[] }) {
     }
 
     setOrderData(prev => ({
+      ...prev,
       number: data.number || prev.number,
       amount: data.amount || prev.amount,
-      providerId: matchedProviderId || prev.providerId
+      providerId: matchedProviderId || prev.providerId,
+      expediente: data.expediente || prev.expediente,
+      deliveryDate: data.deliveryDate ? data.deliveryDate.split('/').reverse().join('-') : prev.deliveryDate,
+      deliveryPlace: data.deliveryPlace || prev.deliveryPlace,
+      paymentTerms: data.paymentTerms || prev.paymentTerms,
+      description: data.description || prev.description
     }));
 
     if (data.number || data.amount) {
@@ -110,6 +121,46 @@ export function CreatePurchaseOrderForm({ providers }: { providers: any[] }) {
                 onChange={(e) => setOrderData({...orderData, amount: e.target.value})}
               />
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="expediente">N° Expediente</Label>
+              <Input
+                id="expediente"
+                name="expediente"
+                placeholder="Ej: 312/2026"
+                value={orderData.expediente}
+                onChange={(e) => setOrderData({...orderData, expediente: e.target.value})}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="deliveryDate">Fecha Estimada de Entrega</Label>
+              <Input
+                id="deliveryDate"
+                name="deliveryDate"
+                type="date"
+                value={orderData.deliveryDate}
+                onChange={(e) => setOrderData({...orderData, deliveryDate: e.target.value})}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="deliveryPlace">Lugar de Entrega</Label>
+              <Input
+                id="deliveryPlace"
+                name="deliveryPlace"
+                placeholder="Ej: Palacio Municipal"
+                value={orderData.deliveryPlace}
+                onChange={(e) => setOrderData({...orderData, deliveryPlace: e.target.value})}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="paymentTerms">Condición de Pago</Label>
+              <Input
+                id="paymentTerms"
+                name="paymentTerms"
+                placeholder="Ej: 1 Mes"
+                value={orderData.paymentTerms}
+                onChange={(e) => setOrderData({...orderData, paymentTerms: e.target.value})}
+              />
+            </div>
             <div className="md:col-span-2 space-y-2">
               <Label htmlFor="description">Descripción / Motivo</Label>
               <textarea
@@ -118,6 +169,8 @@ export function CreatePurchaseOrderForm({ providers }: { providers: any[] }) {
                 rows={3}
                 className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                 placeholder="Detalle de la compra..."
+                value={orderData.description}
+                onChange={(e) => setOrderData({...orderData, description: e.target.value})}
               />
             </div>
           </div>

@@ -4,7 +4,7 @@ import { OrderStatus } from "@prisma/client";
 export async function getPurchaseOrders(status?: string) {
   return await prisma.purchaseOrder.findMany({
     where: status ? { status: status as OrderStatus } : {},
-    include: { provider: true },
+    include: { provider: true, area: true },
     orderBy: { createdAt: 'desc' }
   });
 }
@@ -16,6 +16,10 @@ export async function createPurchaseOrder(data: any) {
       providerId: data.providerId,
       amount: data.amount,
       description: data.description,
+      expediente: data.expediente || null,
+      deliveryDate: data.deliveryDate ? new Date(data.deliveryDate) : null,
+      deliveryPlace: data.deliveryPlace || null,
+      paymentTerms: data.paymentTerms || null,
       status: 'PENDIENTE_APROBACION'
     }
   });

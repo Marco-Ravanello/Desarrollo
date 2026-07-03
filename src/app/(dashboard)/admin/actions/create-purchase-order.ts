@@ -11,6 +11,10 @@ export async function createPurchaseOrderAction(formData: FormData) {
   const providerId = formData.get("providerId") as string;
   const amount = parseFloat(formData.get("amount") as string);
   const description = formData.get("description") as string;
+  const expediente = formData.get("expediente") as string;
+  const deliveryDate = formData.get("deliveryDate") as string;
+  const deliveryPlace = formData.get("deliveryPlace") as string;
+  const paymentTerms = formData.get("paymentTerms") as string;
 
   if (!number || !providerId || isNaN(amount)) {
     return { success: false, error: "Número, proveedor e importe son requeridos" };
@@ -22,6 +26,10 @@ export async function createPurchaseOrderAction(formData: FormData) {
       providerId,
       amount,
       description,
+      expediente,
+      deliveryDate,
+      deliveryPlace,
+      paymentTerms
     });
 
     if (session?.user?.id) {
