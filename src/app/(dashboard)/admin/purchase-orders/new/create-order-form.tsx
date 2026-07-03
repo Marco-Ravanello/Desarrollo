@@ -18,6 +18,8 @@ export function CreatePurchaseOrderForm({ providers }: { providers: any[] }) {
     number: "",
     amount: "",
     providerId: "",
+    providerName: "",
+    providerCuit: "",
     expediente: "",
     deliveryDate: "",
     deliveryPlace: "",
@@ -41,6 +43,8 @@ export function CreatePurchaseOrderForm({ providers }: { providers: any[] }) {
       number: data.number || prev.number,
       amount: data.amount || prev.amount,
       providerId: matchedProviderId || prev.providerId,
+      providerName: data.providerName || prev.providerName,
+      providerCuit: data.cuit || prev.providerCuit,
       expediente: data.expediente || prev.expediente,
       deliveryDate: data.deliveryDate ? data.deliveryDate.split('/').reverse().join('-') : prev.deliveryDate,
       deliveryPlace: data.deliveryPlace || prev.deliveryPlace,
@@ -98,14 +102,25 @@ export function CreatePurchaseOrderForm({ providers }: { providers: any[] }) {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="providerId">Proveedor</Label>
-              <Combobox
-                name="providerId"
-                placeholder="Buscar proveedor..."
-                value={orderData.providerId}
-                onValueChange={(val) => setOrderData({...orderData, providerId: val})}
-                options={providers.map(p => ({ value: p.id, label: `${p.name} (${p.cuit})` }))}
+              <Label htmlFor="providerName">Nombre del Proveedor</Label>
+              <Input
+                id="providerName"
+                name="providerName"
+                placeholder="Ej: Duarte Fernando Gabriel"
                 required
+                value={orderData.providerName}
+                onChange={(e) => setOrderData({...orderData, providerName: e.target.value})}
+              />
+              <input type="hidden" name="providerId" value={orderData.providerId} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="providerCuit">CUIT del Proveedor</Label>
+              <Input
+                id="providerCuit"
+                name="providerCuit"
+                placeholder="Ej: 23-25249967-9"
+                value={orderData.providerCuit}
+                onChange={(e) => setOrderData({...orderData, providerCuit: e.target.value})}
               />
             </div>
             <div className="space-y-2">

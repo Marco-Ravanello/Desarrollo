@@ -7,7 +7,18 @@ import { createWorker } from "tesseract.js";
 import { toast } from "sonner";
 
 interface OCRScannerProps {
-  onScanComplete: (data: { number?: string; amount?: string; cuit?: string; date?: string }) => void;
+  onScanComplete: (data: {
+    number?: string;
+    amount?: string;
+    cuit?: string;
+    date?: string;
+    expediente?: string;
+    deliveryDate?: string;
+    deliveryPlace?: string;
+    paymentTerms?: string;
+    description?: string;
+    providerName?: string;
+  }) => void;
 }
 
 export function OCRScanner({ onScanComplete }: OCRScannerProps) {
@@ -38,15 +49,22 @@ export function OCRScanner({ onScanComplete }: OCRScannerProps) {
       let deliveryPlace = "";
       let paymentTerms = "";
       let description = "";
+      let providerName = "";
 
-      // Look for Orden de Compra N° - Prioritize title
-      const orderMatch = text.match(/Orden de Compra\s*N°\s*(\d+)/i) ||
-                         text.match(/(?:Orden de Compra|N°|Número|O\/C)\s*[:.]?\s*(\d+)/i);
+      // Look for Orden de Compra N° - Prioritize title with potential multi-line/gaps
+      const orderMatch = text.match(/Orden\s*de\s*Compra\s*(?:N[°º]|Nro\.?)\s*(\d+)/i) ||
+                         text.match(/(?:Orden de Compra|N[°º]|Número|O\/C)\s*[:.]?\s*(\d+)/i);
       if (orderMatch) number = orderMatch[1];
 
       // Look for CUIT (format XX-XXXXXXXX-X or XXXXXXXXXXX)
-      const cuitMatch = text.match(/(\d{2}-\d{8}-\d{1})|(\d{11})/);
-      if (cuitMatch) cuit = cuitMatch[0].trim();
+      const cuitMatch = text.match(/(?:C\.U\.I\.T\.(?: Proveedor)?[:.]?\s*)?(\d{2}-\d{8}-\d{1})|(\d{11})/i);
+      if (cuitMatch) cuit = cuitMatch[1] || cuitMatch[2];
+
+      // Look for Provider Name (usually after "Proveedor:" and before CUIT or local info)
+      const providerMatch = text.match(/Proveedor\s*[:.-]?\s*(\d+)?\s*[-]?\s*([A-Z\s]+)/i);
+      if (providerMatch) {
+          providerName = providerMatch[2].trim();
+      }
 
       // Look for Date (format DD/MM/YYYY)
       const dateMatch = text.match(/\d{2}\/\d{2}\/\d{4}/);
@@ -77,8 +95,8 @@ export function OCRScanner({ onScanComplete }: OCRScannerProps) {
       if (contratacionMatch) description = contratacionMatch[1].trim();
 
       // Look for Total (simplified) - prioritize lines near the bottom or containing '$'
-      const totalMatch = text.match(/(?:Total|Importe Total|Suma|Neto)\s*[:.]?\s*\$?\s*([\d\s.]+,\d{2})/i) ||
-                         text.match(/(?:Total|Importe Total|Suma|Neto)\s*[:.]?\s*\$?\s*([\d\s,.]+)/i);
+      const totalMatch = text.match(/(?:Total|Importe Total|Suma|Neto|TOTALES?)\s*[:.]?\s*\$?\s*([\d\s.]+,\d{2})/i) ||
+                         text.match(/(?:Total|Importe Total|Suma|Neto|TOTALES?)\s*[:.]?\s*\$?\s*([\d\s,.]+)/i);
 
       if (totalMatch) {
           let val = totalMatch[1].trim().replace(/\s/g, '');
@@ -111,7 +129,8 @@ export function OCRScanner({ onScanComplete }: OCRScannerProps) {
         deliveryDate,
         deliveryPlace,
         paymentTerms,
-        description
+        description,
+        providerName
       });
       toast.success("Análisis completado", { id: toastId });
     } catch (error) {

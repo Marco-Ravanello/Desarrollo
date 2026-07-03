@@ -160,8 +160,10 @@ model Provider {
 model PurchaseOrder {
   id            String      @id @default(cuid())
   number        String      @unique
-  providerId    String
-  provider      Provider    @relation(fields: [providerId], references: [id])
+  providerId    String?
+  provider      Provider?   @relation(fields: [providerId], references: [id])
+  providerName  String?
+  providerCuit  String?
   areaId        String?
   area          Area?       @relation(fields: [areaId], references: [id])
   amount        Decimal

@@ -13,7 +13,9 @@ export async function createPurchaseOrder(data: any) {
   return await prisma.purchaseOrder.create({
     data: {
       number: data.number,
-      providerId: data.providerId,
+      providerId: data.providerId || null,
+      providerName: data.providerName || null,
+      providerCuit: data.providerCuit || null,
       amount: data.amount,
       description: data.description,
       expediente: data.expediente || null,

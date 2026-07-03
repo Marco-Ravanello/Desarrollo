@@ -62,7 +62,9 @@ export default async function PurchaseOrdersPage({
                         {o.expediente && <span className="text-[10px] text-muted-foreground uppercase">Exp: {o.expediente}</span>}
                     </div>
                 </TableCell>
-                <TableCell>{o.provider.name}</TableCell>
+                <TableCell>
+                    {o.provider?.name || o.providerName || "No especificado"}
+                </TableCell>
                 <TableCell>${Number(o.amount).toLocaleString()}</TableCell>
                 <TableCell>
                   <Badge variant={o.status === 'APROBADA' ? 'default' : o.status === 'RECHAZADA' ? 'destructive' : 'secondary'}>
