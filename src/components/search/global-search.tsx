@@ -14,10 +14,11 @@ export function GlobalSearch() {
   const [open, setOpen] = React.useState(false);
   const [query, setQuery] = React.useState("");
   const [loading, setLoading] = React.useState(false);
-  const [results, setResults] = React.useState<{ citizens: any[], cases: any[], hr: any[] }>({
+  const [results, setResults] = React.useState<{ citizens: any[], cases: any[], hr: any[], agreements: any[] }>({
     citizens: [],
     cases: [],
-    hr: []
+    hr: [],
+    agreements: []
   });
 
   React.useEffect(() => {
@@ -35,7 +36,7 @@ export function GlobalSearch() {
   // Debounced search
   React.useEffect(() => {
     if (query.length < 2) {
-      setResults({ citizens: [], cases: [], hr: [] });
+      setResults({ citizens: [], cases: [], hr: [], agreements: [] });
       return;
     }
 
@@ -163,7 +164,27 @@ export function GlobalSearch() {
                     </Command.Group>
                   )}
 
-                  {(results.citizens.length > 0 || results.cases.length > 0 || results.hr.length > 0) && (
+                  {results.agreements.length > 0 && (
+                    <Command.Group heading="Convenios">
+                      {results.agreements.map((a) => (
+                        <Command.Item
+                          key={a.id}
+                          onSelect={() => navigate(a.url)}
+                          className="flex items-center gap-3 px-3 py-3 rounded-xl cursor-pointer hover:bg-accent aria-selected:bg-accent transition-all group"
+                        >
+                          <div className="h-9 w-9 bg-orange-50 dark:bg-orange-900/30 text-orange-600 rounded-full flex items-center justify-center group-aria-selected:bg-orange-600 group-aria-selected:text-white transition-colors">
+                            <Wallet className="h-4 w-4" />
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="font-bold text-sm text-foreground">{a.title}</span>
+                            <span className="text-[10px] text-muted-foreground font-bold tracking-widest uppercase">{a.subtitle}</span>
+                          </div>
+                        </Command.Item>
+                      ))}
+                    </Command.Group>
+                  )}
+
+                  {(results.citizens.length > 0 || results.cases.length > 0 || results.hr.length > 0 || results.agreements.length > 0) && (
                     <Command.Separator className="my-4 h-px bg-border/50" />
                   )}
                 </>
@@ -218,7 +239,7 @@ export function GlobalSearch() {
                   <span>Vehículos</span>
                 </Command.Item>
                 <Command.Item
-                  onSelect={() => navigate("/admin/budget")}
+                  onSelect={() => navigate("/admin/agreements")}
                   className="flex items-center gap-2 px-2 py-3 rounded-md cursor-pointer hover:bg-accent aria-selected:bg-accent transition-colors"
                 >
                   <Wallet className="h-4 w-4 text-slate-400" />

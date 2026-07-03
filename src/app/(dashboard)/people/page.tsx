@@ -1,5 +1,5 @@
 export const dynamic = "force-dynamic";
-import { getPeople } from "@/services/people";
+import { getPeople, getPeopleStats } from "@/services/people";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -22,7 +22,11 @@ export default async function PeoplePage({
   searchParams: Promise<{ search?: string }>;
 }) {
   const { search } = await searchParams;
-  const people = await getPeople(search);
+  const [people, stats] = await Promise.all([
+    getPeople(search),
+    getPeopleStats()
+  ]);
+
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
       <div className="flex justify-between items-center">
@@ -50,6 +54,25 @@ export default async function PeoplePage({
           </Button>
         </div>
       </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Card className="p-6 border-none shadow-sm bg-blue-600 text-white rounded-3xl">
+          <p className="text-xs font-bold uppercase tracking-widest opacity-80 mb-1">Total Registrados</p>
+          <div className="text-4xl font-black">{stats.total}</div>
+          <p className="text-[10px] mt-2 opacity-70 italic">Vecinos con legajo digital</p>
+        </Card>
+        <Card className="p-6 border-none shadow-sm bg-white dark:bg-slate-900 rounded-3xl">
+          <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-1">Edad Promedio</p>
+          <div className="text-4xl font-black text-slate-900 dark:text-white">{stats.avgAge} años</div>
+          <p className="text-[10px] mt-2 text-muted-foreground italic">Datos basados en fecha de nacimiento</p>
+        </Card>
+        <Card className="p-6 border-none shadow-sm bg-white dark:bg-slate-900 rounded-3xl">
+          <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-1">Área más Activa</p>
+          <div className="text-2xl font-black text-slate-900 dark:text-white truncate">{stats.topArea}</div>
+          <p className="text-[10px] mt-2 text-muted-foreground italic">Por volumen de casos registrados</p>
+        </Card>
+      </div>
+
       <Card className="border-none shadow-sm overflow-hidden rounded-3xl bg-card/50 backdrop-blur-sm">
         <Table>
           <TableHeader className="bg-muted/50">

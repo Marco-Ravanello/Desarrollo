@@ -45,6 +45,37 @@ export async function getPersonById(id: string) {
   });
 }
 
+export async function getPeopleStats() {
+  const people = await prisma.person.findMany({
+    select: {
+      birthDate: true,
+      cases: { select: { area: { select: { name: true } } } }
+    }
+  });
+
+  const now = new Date();
+  let totalAge = 0;
+  let withAge = 0;
+  const areaCounts: Record<string, number> = {};
+
+  people.forEach(p => {
+    if (p.birthDate) {
+      const age = now.getFullYear() - p.birthDate.getFullYear();
+      totalAge += age;
+      withAge++;
+    }
+    p.cases.forEach(c => {
+      areaCounts[c.area.name] = (areaCounts[c.area.name] || 0) + 1;
+    });
+  });
+
+  return {
+    total: people.length,
+    avgAge: withAge > 0 ? Math.round(totalAge / withAge) : 0,
+    topArea: Object.entries(areaCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || 'N/A'
+  };
+}
+
 /**
  * Geocodifica una dirección forzando el contexto de Tres de Febrero.
  */

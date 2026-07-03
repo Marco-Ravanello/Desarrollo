@@ -133,3 +133,27 @@ export async function updateSupplyStock(id: string, newStock: number) {
     data: { stock: newStock }
   });
 }
+
+export async function getAgreements() {
+  return await prisma.agreement.findMany({
+    include: { area: true },
+    orderBy: { createdAt: 'desc' }
+  });
+}
+
+export async function createAgreement(data: any) {
+  return await prisma.agreement.create({
+    data: {
+      number: data.number,
+      title: data.title,
+      description: data.description,
+      parties: data.parties,
+      amount: data.amount,
+      startDate: data.startDate ? new Date(data.startDate) : null,
+      endDate: data.endDate ? new Date(data.endDate) : null,
+      status: data.status || 'VIGENTE',
+      areaId: data.areaId || null,
+      fileUrl: data.fileUrl || null
+    }
+  });
+}

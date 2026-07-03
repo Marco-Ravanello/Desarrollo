@@ -47,6 +47,7 @@ model Area {
   derivationsFrom Derivation[] @relation("FromArea")
   supplies    SupplyItem[]
   purchaseOrders PurchaseOrder[]
+  agreements  Agreement[]
 }
 
 model Person {
@@ -187,6 +188,31 @@ enum OrderStatus {
   RECHAZADA
   CUMPLIDA
   CANCELADA
+}
+
+model Agreement {
+  id            String          @id @default(cuid())
+  number        String?         @unique
+  title         String
+  description   String?
+  parties       String?         // Partes intervinientes
+  amount        Decimal?        @default(0)
+  startDate     DateTime?
+  endDate       DateTime?
+  status        AgreementStatus @default(VIGENTE)
+  areaId        String?
+  area          Area?           @relation(fields: [areaId], references: [id])
+  fileUrl       String?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+}
+
+enum AgreementStatus {
+  EN_REVISION
+  VIGENTE
+  VENCIDO
+  RESCINDIDO
+  FINALIZADO
 }
 
 model Invoice {

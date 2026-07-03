@@ -11,7 +11,7 @@ export async function searchGlobalAction(query: string) {
   // Sanitizar DNI para búsqueda (quitar puntos o guiones)
   const numericQuery = trimmedQuery.replace(/[^0-9]/g, '');
 
-  const [citizens, cases, hr] = await Promise.all([
+  const [citizens, cases, hr, agreements] = await Promise.all([
     // Buscar Ciudadanos
     prisma.person.findMany({
       where: {
@@ -50,6 +50,19 @@ export async function searchGlobalAction(query: string) {
       },
       include: { area: { select: { name: true } } },
       take: 5
+    }),
+
+    // Buscar Convenios
+    prisma.agreement.findMany({
+      where: {
+        OR: [
+          { title: { contains: query, mode: 'insensitive' } },
+          { number: { contains: query, mode: 'insensitive' } },
+          { parties: { contains: query, mode: 'insensitive' } },
+        ]
+      },
+      include: { area: { select: { name: true } } },
+      take: 5
     })
   ]);
 
@@ -71,6 +84,12 @@ export async function searchGlobalAction(query: string) {
       title: `${h.lastName}, ${h.firstName}`,
       subtitle: `${h.area?.name || 'Sin Área'} • Leg. ${h.fileNumber || '---'}`,
       url: `/admin/hr` // Link directly to HR list for now, or specific view if it existed
+    })),
+    agreements: agreements.map(a => ({
+      id: a.id,
+      title: a.title,
+      subtitle: `${a.area?.name || 'Global'} • ${a.number || 'No. Registro'}`,
+      url: `/admin/agreements`
     }))
   };
 }
