@@ -6,8 +6,13 @@ import { Button } from "@/components/ui/button";
 import { Plus, FileText, Calendar, Building2, User } from "lucide-react";
 import Link from "next/link";
 
-export default async function AgreementsPage() {
-  const agreements = await getAgreements();
+export default async function AgreementsPage({ searchParams }: { searchParams: Promise<{ areaId?: string }> }) {
+  const { areaId } = await searchParams;
+  let agreements = await getAgreements();
+
+  if (areaId) {
+    agreements = agreements.filter(a => a.areaId === areaId);
+  }
 
   return (
     <div className="space-y-6">

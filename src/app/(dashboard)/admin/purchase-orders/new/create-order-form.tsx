@@ -52,8 +52,10 @@ export function CreatePurchaseOrderForm({ providers }: { providers: any[] }) {
       description: data.description || prev.description
     }));
 
-    if (data.number || data.amount) {
-        toast.info("Campos completados desde el escaneo");
+    if (data.number || data.amount || data.cuit || data.providerName || data.expediente) {
+        toast.success("Campos detectados y completados");
+    } else {
+        toast.warning("No se detectaron campos conocidos en la imagen");
     }
   };
 

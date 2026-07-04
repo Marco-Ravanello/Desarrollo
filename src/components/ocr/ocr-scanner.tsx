@@ -39,7 +39,6 @@ export function OCRScanner({ onScanComplete }: OCRScannerProps) {
       console.log("OCR Text Detected:", text);
 
       // Simple regex patterns for common fields
-      const lines = text.split("\n");
       let number = "";
       let amount = "";
       let cuit = "";
@@ -51,17 +50,18 @@ export function OCRScanner({ onScanComplete }: OCRScannerProps) {
       let description = "";
       let providerName = "";
 
-      // Look for Orden de Compra N° - Prioritize title with potential multi-line/gaps
-      const orderMatch = text.match(/Orden\s*de\s*Compra\s*(?:N[°º]|Nro\.?)\s*(\d+)/i) ||
-                         text.match(/(?:Orden de Compra|N[°º]|Número|O\/C)\s*[:.]?\s*(\d+)/i);
+      // Look for Orden de Compra N° - Handling common OCR errors and multi-line titles
+      const orderMatch = text.match(/Orden\s*de\s*Compra\s*(?:N[°º]|Nro\.?|N)\s*(\d+)/i) ||
+                         text.match(/N[°º]\s*(\d+)\s*\n\s*Unidad de Compra/i) ||
+                         text.match(/(?:Orden de Compra|N[°º]|Número|O\/C|Ticket|Comprobante)\s*[:.]?\s*(\d+[-\d]*)/i);
       if (orderMatch) number = orderMatch[1];
 
       // Look for CUIT (format XX-XXXXXXXX-X or XXXXXXXXXXX)
-      const cuitMatch = text.match(/(?:C\.U\.I\.T\.(?: Proveedor)?[:.]?\s*)?(\d{2}-\d{8}-\d{1})|(\d{11})/i);
-      if (cuitMatch) cuit = cuitMatch[1] || cuitMatch[2];
+      const cuitMatch = text.match(/(\d{2}-\d{8}-\d{1})/i) || text.match(/(\d{11})/i);
+      if (cuitMatch) cuit = cuitMatch[1];
 
-      // Look for Provider Name (usually after "Proveedor:" and before CUIT or local info)
-      const providerMatch = text.match(/Proveedor\s*[:.-]?\s*(\d+)?\s*[-]?\s*([A-Z\s]+)/i);
+      // Look for Provider Name (usually after "Proveedor:" or similar)
+      const providerMatch = text.match(/Proveedor\s*[:.-]?\s*(\d+)?\s*[-]?\s*([A-Z0-9\s]+)/i);
       if (providerMatch) {
           providerName = providerMatch[2].trim();
       }
@@ -70,9 +70,10 @@ export function OCRScanner({ onScanComplete }: OCRScannerProps) {
       const dateMatch = text.match(/\d{2}\/\d{2}\/\d{4}/);
       if (dateMatch) date = dateMatch[0];
 
-      // Look for Expediente (Improved for 312/2026 format)
+      // Look for Expediente (Improved for 312/2026 format from images)
       const expedienteMatch = text.match(/(?:Expediente|Suministro)\s*[:.]?\s*(?:Suministro\s+)?(?:Nro[:.]?\s*)?(\d+\/\d{4})/i) ||
-                             text.match(/(?:Expediente|Suministro)\s*Nro(?:\/Año)?:\s*([^\s\n]+)/i);
+                             text.match(/Nro\/Año[:.]?\s*(\d+\/\d{4})/i) ||
+                             text.match(/Contratación tipo.*?(\d+\/\d{4})/i);
       if (expedienteMatch) expediente = expedienteMatch[1];
 
       // Look for Fecha de entrega
@@ -94,28 +95,24 @@ export function OCRScanner({ onScanComplete }: OCRScannerProps) {
       const contratacionMatch = text.match(/Contratación tipo:\s*([^\n]+)/i);
       if (contratacionMatch) description = contratacionMatch[1].trim();
 
-      // Look for Total (simplified) - prioritize lines near the bottom or containing '$'
-      const totalMatch = text.match(/(?:Total|Importe Total|Suma|Neto|TOTALES?)\s*[:.]?\s*\$?\s*([\d\s.]+,\d{2})/i) ||
-                         text.match(/(?:Total|Importe Total|Suma|Neto|TOTALES?)\s*[:.]?\s*\$?\s*([\d\s,.]+)/i);
+      // Look for Total (Argentine format: 6.950.000,00 or 6950000.00)
+      // We look for "Total" or similar, then a value with potential dots as thousands separator and a comma for decimals
+      const totalMatch = text.match(/(?:Total|Importe Total|Suma|Neto|TOTALES?|Importe|Pagado|S)\s*[:.]?\s*\$?\s*([\d\s.,]+)/i);
 
       if (totalMatch) {
           let val = totalMatch[1].trim().replace(/\s/g, '');
-          // Clean amount string:
-          // If it ends in ,XX it's likely AR format (dots for thousands, comma for decimals)
-          if (val.includes(',') && (val.split(',')[1].length === 2 || val.split(',')[1] === '00')) {
-              amount = val.replace(/\./g, '').replace(',', '.');
+          // If it ends in ,XX or .XX it's likely decimal
+          if (val.match(/[,.]\d{2}$/)) {
+              const decimals = val.slice(-2);
+              const whole = val.slice(0, -3).replace(/[.,]/g, '');
+              amount = `${whole}.${decimals}`;
           } else {
-              // Fallback: remove everything except digits
+              // Fallback: keep only digits and last two as decimals if many digits
               const digits = val.replace(/[^0-9]/g, '');
-              if (val.includes(',') || val.includes('.')) {
-                  // If there was a separator, assume last 2 are decimals if length > 2
-                  if (digits.length > 2) {
-                    amount = (parseInt(digits) / 100).toFixed(2);
-                  } else {
-                    amount = digits;
-                  }
+              if (digits.length > 2) {
+                  amount = (parseFloat(digits) / 100).toFixed(2);
               } else {
-                amount = digits;
+                  amount = digits;
               }
           }
       }

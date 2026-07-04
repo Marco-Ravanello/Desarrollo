@@ -28,7 +28,12 @@ export function FuelForm({ vehicles }: { vehicles: any[] }) {
       ticketNumber: data.number || prev.ticketNumber,
       date: data.date ? data.date.split('/').reverse().join('-') : prev.date
     }));
-    toast.info("Campos completados desde el ticket");
+
+    if (data.amount || data.number) {
+        toast.info("Campos completados desde el ticket");
+    } else {
+        toast.warning("El análisis no detectó campos específicos, intente una foto más clara.");
+    }
   };
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {

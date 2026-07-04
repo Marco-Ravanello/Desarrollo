@@ -34,7 +34,12 @@ export function CreateAgreementForm({ areas }: { areas: any[] }) {
       startDate: data.date ? data.date.split('/').reverse().join('-') : prev.startDate,
       description: data.description || prev.description
     }));
-    toast.info("Campos completados desde el escaneo");
+
+    if (data.number || data.amount || data.description) {
+      toast.success("Campos detectados y completados");
+    } else {
+      toast.warning("No se detectaron campos conocidos en la imagen");
+    }
   };
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
