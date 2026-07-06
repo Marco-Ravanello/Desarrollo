@@ -22,14 +22,24 @@ export function FuelForm({ vehicles }: { vehicles: any[] }) {
   });
 
   const handleScanComplete = (data: any) => {
+    let matchedVehicleId = "";
+    if (data.patente) {
+      const v = vehicles.find(v =>
+        v.plate.toUpperCase().replace(/\s/g, '') === data.patente.toUpperCase().replace(/\s/g, '')
+      );
+      if (v) matchedVehicleId = v.id;
+    }
+
     setFuelData(prev => ({
       ...prev,
       amount: data.amount || prev.amount,
+      liters: data.liters || prev.liters,
       ticketNumber: data.number || prev.ticketNumber,
+      vehicleId: matchedVehicleId || prev.vehicleId,
       date: data.date ? data.date.split('/').reverse().join('-') : prev.date
     }));
 
-    if (data.amount || data.number) {
+    if (data.amount || data.number || data.patente || data.liters) {
         toast.info("Campos completados desde el ticket");
     } else {
         toast.warning("El análisis no detectó campos específicos, intente una foto más clara.");
