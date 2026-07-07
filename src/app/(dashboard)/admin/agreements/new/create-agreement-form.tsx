@@ -8,7 +8,11 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { createAgreementAction } from "../../actions/agreement-actions";
-import { OCRScanner } from "@/components/ocr/ocr-scanner";
+import dynamic from "next/dynamic";
+
+const OCRScanner = dynamic(() => import("@/components/ocr/ocr-scanner").then(mod => mod.OCRScanner), {
+  ssr: false,
+});
 
 export function CreateAgreementForm({ areas }: { areas: any[] }) {
   const router = useRouter();

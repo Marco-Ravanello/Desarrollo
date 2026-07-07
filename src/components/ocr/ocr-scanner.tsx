@@ -5,10 +5,6 @@ import { Button } from "@/components/ui/button";
 import { FileText, Loader2, Camera } from "lucide-react";
 import { createWorker } from "tesseract.js";
 import { toast } from "sonner";
-import * as pdfjs from "pdfjs-dist";
-
-// Configure PDF.js worker
-pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
 interface OCRScannerProps {
   onScanComplete: (data: {
@@ -54,6 +50,9 @@ export function OCRScanner({ onScanComplete }: OCRScannerProps) {
   };
 
   const processPDF = async (file: File): Promise<string> => {
+    const pdfjs = await import("pdfjs-dist");
+    pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+
     const arrayBuffer = await file.arrayBuffer();
     const pdf = await pdfjs.getDocument({ data: arrayBuffer }).promise;
     let fullText = "";

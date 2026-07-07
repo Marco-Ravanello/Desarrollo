@@ -8,7 +8,11 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { createFuelRecordAction } from "../../actions/vehicle-actions";
 import { Combobox } from "@/components/ui/combobox";
-import { OCRScanner } from "@/components/ocr/ocr-scanner";
+import dynamic from "next/dynamic";
+
+const OCRScanner = dynamic(() => import("@/components/ocr/ocr-scanner").then(mod => mod.OCRScanner), {
+  ssr: false,
+});
 
 export function FuelForm({ vehicles }: { vehicles: any[] }) {
   const router = useRouter();

@@ -9,7 +9,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { createPurchaseOrderAction } from "../../actions/create-purchase-order";
 import { Combobox } from "@/components/ui/combobox";
-import { OCRScanner } from "@/components/ocr/ocr-scanner";
+import dynamic from "next/dynamic";
+
+const OCRScanner = dynamic(() => import("@/components/ocr/ocr-scanner").then(mod => mod.OCRScanner), {
+  ssr: false,
+});
 
 export function CreatePurchaseOrderForm({ providers }: { providers: any[] }) {
   const router = useRouter();
