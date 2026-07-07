@@ -6,7 +6,7 @@ import { auth } from "@/auth";
 export async function searchGlobalAction(query: string) {
   const session = await auth();
   const trimmedQuery = query?.trim();
-  if (!session || !trimmedQuery || trimmedQuery.length < 2) return { citizens: [], cases: [], hr: [] };
+  if (!session || !trimmedQuery || trimmedQuery.length < 2) return { citizens: [], cases: [], hr: [], agreements: [] };
 
   // Sanitizar DNI para búsqueda (quitar puntos o guiones)
   const numericQuery = trimmedQuery.replace(/[^0-9]/g, '');
@@ -39,7 +39,7 @@ export async function searchGlobalAction(query: string) {
     }),
 
     // Buscar RRHH
-    prisma.hrRecord.findMany({
+    prisma.hRRecord.findMany({
       where: {
         OR: [
           { firstName: { contains: query, mode: 'insensitive' } },
@@ -67,25 +67,25 @@ export async function searchGlobalAction(query: string) {
   ]);
 
   return {
-    citizens: citizens.map(c => ({
+    citizens: citizens.map((c: any) => ({
       id: c.id,
       title: `${c.lastName}, ${c.firstName}`,
       subtitle: `DNI ${c.dni}`,
       url: `/people/${c.id}`
     })),
-    cases: cases.map(c => ({
+    cases: cases.map((c: any) => ({
       id: c.id,
       title: c.title,
       subtitle: `${c.area.name} • ID: ${c.id.substring(0, 8)}`,
       url: `/cases/${c.id}`
     })),
-    hr: hr.map(h => ({
+    hr: hr.map((h: any) => ({
       id: h.id,
       title: `${h.lastName}, ${h.firstName}`,
       subtitle: `${h.area?.name || 'Sin Área'} • Leg. ${h.fileNumber || '---'}`,
       url: `/admin/hr` // Link directly to HR list for now, or specific view if it existed
     })),
-    agreements: agreements.map(a => ({
+    agreements: agreements.map((a: any) => ({
       id: a.id,
       title: a.title,
       subtitle: `${a.area?.name || 'Global'} • ${a.number || 'No. Registro'}`,
