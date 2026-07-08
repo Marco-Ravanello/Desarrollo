@@ -6,8 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Plus, Filter } from "lucide-react";
 import Link from "next/link";
-import { OrderStatusActions } from "./order-status-actions";
 import { TableFilter } from "@/components/ui/table-filter";
+import { OrderTableRow } from "./order-table-row";
 
 export default async function PurchaseOrdersPage({
   searchParams,
@@ -55,26 +55,7 @@ export default async function PurchaseOrdersPage({
           </TableHeader>
           <TableBody>
             {orders.map(o => (
-              <TableRow key={o.id}>
-                <TableCell className="font-mono">
-                    <div className="flex flex-col">
-                        <span className="font-bold">{o.number}</span>
-                        {o.expediente && <span className="text-[10px] text-muted-foreground uppercase">Exp: {o.expediente}</span>}
-                    </div>
-                </TableCell>
-                <TableCell>
-                    {o.provider?.name || o.providerName || "No especificado"}
-                </TableCell>
-                <TableCell>${Number(o.amount).toLocaleString()}</TableCell>
-                <TableCell>
-                  <Badge variant={o.status === 'APROBADA' ? 'default' : o.status === 'RECHAZADA' ? 'destructive' : 'secondary'}>
-                    {o.status.replace('_', ' ')}
-                  </Badge>
-                </TableCell>
-                <TableCell className="text-right">
-                  <OrderStatusActions orderId={o.id} currentStatus={o.status} />
-                </TableCell>
-              </TableRow>
+              <OrderTableRow key={o.id} o={o} />
             ))}
           </TableBody>
         </Table>

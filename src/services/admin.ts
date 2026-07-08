@@ -9,6 +9,20 @@ export async function getPurchaseOrders(status?: string) {
   });
 }
 
+export async function getAgreementById(id: string) {
+  return await prisma.agreement.findUnique({
+    where: { id },
+    include: { area: true }
+  });
+}
+
+export async function getPurchaseOrderById(id: string) {
+  return await prisma.purchaseOrder.findUnique({
+    where: { id },
+    include: { provider: true, area: true }
+  });
+}
+
 export async function createPurchaseOrder(data: any) {
   return await prisma.purchaseOrder.create({
     data: {

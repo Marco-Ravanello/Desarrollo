@@ -38,7 +38,8 @@ export default async function AgreementsPage({ searchParams }: { searchParams: P
           </Card>
         ) : (
           agreements.map((agreement) => (
-            <Card key={agreement.id} className="overflow-hidden hover:shadow-md transition-all border-none shadow-sm bg-card">
+            <Link key={agreement.id} href={`/admin/agreements/${agreement.id}`}>
+            <Card className="overflow-hidden hover:shadow-md transition-all border-none shadow-sm bg-card cursor-pointer group">
               <CardContent className="p-6">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                   <div className="space-y-2">
@@ -78,6 +79,7 @@ export default async function AgreementsPage({ searchParams }: { searchParams: P
                 </div>
               </CardContent>
             </Card>
+            </Link>
           ))
         )}
       </div>
