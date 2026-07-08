@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { createPurchaseOrderAction } from "../../actions/create-purchase-order";
 import { Combobox } from "@/components/ui/combobox";
+import { Plus, Trash2, Info } from "lucide-react";
 import dynamic from "next/dynamic";
 
 const OCRScanner = dynamic(() => import("@/components/ocr/ocr-scanner").then(mod => mod.OCRScanner), {
@@ -30,6 +31,8 @@ export function CreatePurchaseOrderForm({ providers }: { providers: any[] }) {
     paymentTerms: "",
     description: ""
   });
+
+  const [items, setItems] = useState<any[]>([]);
 
   const handleScanComplete = (data: any) => {
     // Try to find provider by CUIT if found
@@ -56,17 +59,54 @@ export function CreatePurchaseOrderForm({ providers }: { providers: any[] }) {
       description: data.description || prev.description
     }));
 
-    if (data.number || data.amount || data.cuit || data.providerName || data.expediente || data.description) {
+    if (data.items && data.items.length > 0) {
+      setItems(data.items);
+    }
+
+    if (data.number || data.amount || data.cuit || data.providerName || data.expediente || data.description || (data.items && data.items.length > 0)) {
         toast.success("Datos extraídos correctamente");
     } else {
         toast.warning("No se detectaron campos conocidos en el documento");
     }
   };
 
+  const addItem = () => {
+    setItems([...items, { quantity: "1", unitOfMeasure: "UNIDAD", description: "", unitPrice: "0", totalPrice: "0" }]);
+  };
+
+  const removeItem = (index: number) => {
+    setItems(items.filter((_, i) => i !== index));
+  };
+
+  const updateItem = (index: number, field: string, value: string) => {
+    const newItems = [...items];
+    newItems[index][field] = value;
+
+    // Auto-calculate total price if quantity or unit price changes
+    if (field === "quantity" || field === "unitPrice") {
+      const q = parseFloat(newItems[index].quantity) || 0;
+      const p = parseFloat(newItems[index].unitPrice) || 0;
+      newItems[index].totalPrice = (q * p).toFixed(2);
+    }
+
+    setItems(newItems);
+  };
+
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+
+    // Validation
+    const itemsTotal = items.reduce((acc, item) => acc + (parseFloat(item.totalPrice) || 0), 0);
+    const orderTotal = parseFloat(orderData.amount) || 0;
+
+    if (items.length > 0 && Math.abs(itemsTotal - orderTotal) > 0.01) {
+      toast.error(`El total de los ítems ($${itemsTotal.toLocaleString()}) no coincide con el total de la orden ($${orderTotal.toLocaleString()})`);
+      return;
+    }
+
     setLoading(true);
     const formData = new FormData(e.currentTarget);
+    formData.append("items", JSON.stringify(items));
 
     try {
       const result = await createPurchaseOrderAction(formData);
@@ -187,13 +227,113 @@ export function CreatePurchaseOrderForm({ providers }: { providers: any[] }) {
               <textarea
                 id="description"
                 name="description"
-                rows={3}
-                className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                placeholder="Detalle de la compra..."
+                rows={2}
+                className="flex min-h-[60px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                placeholder="Detalle general de la compra..."
                 value={orderData.description}
                 onChange={(e) => setOrderData({...orderData, description: e.target.value})}
               />
             </div>
+          </div>
+
+          <div className="space-y-4">
+             <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-lg font-semibold">Ítems de la Orden</h3>
+                  <div className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full text-xs font-bold">
+                    {items.length} {items.length === 1 ? 'renglón' : 'renglones'}
+                  </div>
+                </div>
+                <Button type="button" variant="outline" size="sm" onClick={addItem} className="text-blue-600 border-blue-200">
+                  <Plus className="h-4 w-4 mr-1" /> Agregar Ítem
+                </Button>
+             </div>
+
+             {items.length === 0 ? (
+               <div className="border-2 border-dashed rounded-xl p-8 text-center text-slate-500 bg-slate-50/50">
+                  <Info className="h-8 w-8 mx-auto mb-2 opacity-20" />
+                  <p className="text-sm">No hay ítems cargados. Usa el asistente de OCR o agrega uno manualmente.</p>
+               </div>
+             ) : (
+               <div className="border rounded-xl overflow-hidden">
+                 <table className="w-full text-sm">
+                   <thead className="bg-slate-50 border-b">
+                     <tr>
+                       <th className="text-left p-3 font-medium text-slate-600">Cant.</th>
+                       <th className="text-left p-3 font-medium text-slate-600">Unidad</th>
+                       <th className="text-left p-3 font-medium text-slate-600 w-full">Descripción</th>
+                       <th className="text-left p-3 font-medium text-slate-600 text-right">Unitario</th>
+                       <th className="text-left p-3 font-medium text-slate-600 text-right">Total</th>
+                       <th className="p-3"></th>
+                     </tr>
+                   </thead>
+                   <tbody className="divide-y">
+                     {items.map((item, index) => (
+                       <tr key={index} className="hover:bg-slate-50/50 transition-colors">
+                         <td className="p-2">
+                           <Input
+                            className="w-16 h-8 text-center"
+                            type="number"
+                            value={item.quantity}
+                            onChange={(e) => updateItem(index, "quantity", e.target.value)}
+                           />
+                         </td>
+                         <td className="p-2">
+                           <Input
+                            className="w-24 h-8"
+                            value={item.unitOfMeasure}
+                            onChange={(e) => updateItem(index, "unitOfMeasure", e.target.value)}
+                           />
+                         </td>
+                         <td className="p-2">
+                           <Input
+                            className="h-8"
+                            value={item.description}
+                            onChange={(e) => updateItem(index, "description", e.target.value)}
+                           />
+                         </td>
+                         <td className="p-2">
+                           <Input
+                            className="w-24 h-8 text-right"
+                            type="number"
+                            value={item.unitPrice}
+                            onChange={(e) => updateItem(index, "unitPrice", e.target.value)}
+                           />
+                         </td>
+                         <td className="p-2">
+                           <Input
+                            className="w-24 h-8 text-right font-medium bg-slate-50"
+                            type="number"
+                            readOnly
+                            value={item.totalPrice}
+                           />
+                         </td>
+                         <td className="p-2">
+                           <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50"
+                            onClick={() => removeItem(index)}
+                           >
+                             <Trash2 className="h-4 w-4" />
+                           </Button>
+                         </td>
+                       </tr>
+                     ))}
+                   </tbody>
+                   <tfoot className="bg-slate-50/50">
+                      <tr>
+                        <td colSpan={4} className="p-3 text-right font-bold text-slate-600">Total Ítems:</td>
+                        <td className="p-3 text-right font-bold text-blue-700">
+                          ${items.reduce((acc, item) => acc + (parseFloat(item.totalPrice) || 0), 0).toLocaleString()}
+                        </td>
+                        <td></td>
+                      </tr>
+                   </tfoot>
+                 </table>
+               </div>
+             )}
           </div>
 
           <div className="flex justify-end gap-3 pt-4 border-t">

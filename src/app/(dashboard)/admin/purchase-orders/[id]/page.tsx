@@ -65,6 +65,36 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
               </div>
             </div>
 
+            {order.items && order.items.length > 0 && (
+              <div className="space-y-4 border-t pt-4">
+                <Label className="text-xs text-muted-foreground uppercase font-bold">Renglones Detallados</Label>
+                <div className="border rounded-xl overflow-hidden">
+                  <table className="w-full text-sm">
+                    <thead className="bg-slate-50 border-b">
+                      <tr>
+                        <th className="text-left p-3 font-medium text-slate-600">Cant.</th>
+                        <th className="text-left p-3 font-medium text-slate-600">Unidad</th>
+                        <th className="text-left p-3 font-medium text-slate-600 w-full">Descripción</th>
+                        <th className="text-left p-3 font-medium text-slate-600 text-right">Unitario</th>
+                        <th className="text-left p-3 font-medium text-slate-600 text-right">Total</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y">
+                      {order.items.map((item: any, idx: number) => (
+                        <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
+                          <td className="p-3 font-medium">{Number(item.quantity).toLocaleString()}</td>
+                          <td className="p-3 text-slate-500">{item.unitOfMeasure}</td>
+                          <td className="p-3 text-slate-700 font-medium">{item.description}</td>
+                          <td className="p-3 text-right text-slate-500">${Number(item.unitPrice).toLocaleString()}</td>
+                          <td className="p-3 text-right font-bold text-slate-900">${Number(item.totalPrice).toLocaleString()}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 border-t pt-4">
               <div className="flex items-start gap-3">
                 <Calendar className="h-5 w-5 text-slate-400 shrink-0 mt-1" />

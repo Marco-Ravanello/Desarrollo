@@ -20,6 +20,13 @@ interface OCRScannerProps {
     providerName?: string;
     patente?: string;
     liters?: string;
+    items?: Array<{
+      quantity: string;
+      unitOfMeasure: string;
+      description: string;
+      unitPrice: string;
+      totalPrice: string;
+    }>;
   }) => void;
 }
 
@@ -159,6 +166,7 @@ export function OCRScanner({ onScanComplete }: OCRScannerProps) {
       let providerName = "";
       let patente = "";
       let liters = "";
+      let items: any[] = [];
 
       // Extraction Logic
       const orderMatch = text.match(/Orden\s*de\s*Compra\s*(?:N[°º]|Nro\.?|N)?\s*(\d+)/i) ||
@@ -216,19 +224,54 @@ export function OCRScanner({ onScanComplete }: OCRScannerProps) {
           }
       }
 
-      // Items Extraction (Experimental)
-      const itemsHeaderMatch = text.match(/(?:Detalle|Concepto|Descripci[óo]n|Art[íi]culo).*?(?:Precio|Unitario|Importe|Total)/i);
-      if (itemsHeaderMatch) {
-          const afterHeader = text.substring(itemsHeaderMatch.index! + itemsHeaderMatch[0].length);
-          // Try to get lines that look like items (number + text + number)
-          const itemLines = afterHeader.split('\n')
-            .map(line => line.trim())
-            .filter(line => line.length > 10 && /\d+/.test(line))
-            .slice(0, 10);
+      // Structured Items Extraction (Multi-line support)
+      // Pattern: Reng. | Código | Cantidad | U. Medida | Cat.Prog. | Descripción | Importe unitario | Importe total
+      // Example: 1 | 2.7.9.10703.0001 | 200,000 | SERVICIO | 24.00.00 | CONFECCIÓN Y COLOCACIÓN... | $ 11.440,00 | 2.288.000,00
 
-          if (itemLines.length > 0) {
-              description = "Ítems detectados:\n" + itemLines.join('\n');
+      const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+      let itemsStarted = false;
+      let currentItem: any = null;
+
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+
+        // Detect header
+        if (line.match(/Reng\.?\s*C[oó]digo\s*Cant/i)) {
+          itemsStarted = true;
+          continue;
+        }
+
+        if (itemsStarted) {
+          // Detect end of items (e.g., "Total: $")
+          if (line.match(/Total\s*[:$]/i) || line.match(/Cl[áa]usulas especiales/i)) {
+            if (currentItem) items.push(currentItem);
+            itemsStarted = false;
+            break;
           }
+
+          // Try to match a new item line (Starts with a number, then a code-like pattern)
+          const itemStartMatch = line.match(/^(\d+)\s+([\d.]+)\s+([\d.,]+)\s+([A-Z\s]+)\s+([\d.]+)\s+(.+)/);
+
+          if (itemStartMatch) {
+            if (currentItem) items.push(currentItem);
+
+            const rawDescription = itemStartMatch[6];
+            // The description might be cut off or contain the prices at the end
+            // Prices pattern: $ 11.440,00000 $ 2.288.000,00
+            const priceMatch = rawDescription.match(/(.*?)\$?\s*([\d.\s,]+)\s*\$?\s*([\d.\s,]+)$/);
+
+            currentItem = {
+              quantity: itemStartMatch[3].replace(/\./g, '').replace(',', '.'),
+              unitOfMeasure: itemStartMatch[4].trim(),
+              description: priceMatch ? priceMatch[1].trim() : rawDescription.trim(),
+              unitPrice: priceMatch ? priceMatch[2].replace(/\./g, '').replace(',', '.') : "0",
+              totalPrice: priceMatch ? priceMatch[3].replace(/\./g, '').replace(',', '.') : "0"
+            };
+          } else if (currentItem && !line.match(/^\d+/) && line.length > 5) {
+            // Continuation of description
+            currentItem.description += " " + line;
+          }
+        }
       }
 
       onScanComplete({
@@ -243,7 +286,8 @@ export function OCRScanner({ onScanComplete }: OCRScannerProps) {
         description,
         providerName,
         patente,
-        liters
+        liters,
+        items
       });
       toast.success("Análisis completado", { id: toastId });
     } catch (error) {

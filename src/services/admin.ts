@@ -19,7 +19,7 @@ export async function getAgreementById(id: string) {
 export async function getPurchaseOrderById(id: string) {
   return await prisma.purchaseOrder.findUnique({
     where: { id },
-    include: { provider: true, area: true }
+    include: { provider: true, area: true, items: true }
   });
 }
 
@@ -36,7 +36,16 @@ export async function createPurchaseOrder(data: any) {
       deliveryDate: data.deliveryDate ? new Date(data.deliveryDate) : null,
       deliveryPlace: data.deliveryPlace || null,
       paymentTerms: data.paymentTerms || null,
-      status: 'PENDIENTE_APROBACION'
+      status: 'PENDIENTE_APROBACION',
+      items: data.items ? {
+        create: data.items.map((item: any) => ({
+          quantity: item.quantity,
+          unitOfMeasure: item.unitOfMeasure,
+          description: item.description,
+          unitPrice: item.unitPrice,
+          totalPrice: item.totalPrice
+        }))
+      } : undefined
     }
   });
 }
