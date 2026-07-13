@@ -111,21 +111,20 @@ export function OCRScanner({ onScanComplete }: OCRScannerProps) {
       const sanitizePrice = (val: string) => {
         if (!val) return "0";
         val = val.trim().replace(/^\$/, '').trim();
-        // Handle Argentine format: 1.234,56 -> 1234.56 or 11.440,00000 -> 11440.00
         if (val.includes('.') && val.includes(',')) {
           const parts = val.split(',');
-          const decimals = parts.pop();
+          const decimals = parts.pop() || "00";
           const integer = parts.join('').replace(/\./g, '');
           return `${integer}.${decimals}`;
         }
-        // Case for high precision prices that might only have commas
-        if (val.includes(',') && val.split(',').pop()?.length >= 2) return val.replace(',', '.');
+        if (val.includes(',') && val.split(',').pop()?.length <= 3) return val.replace(',', '.');
         return val.replace(/[.\s]/g, '');
       };
 
-      // 1. Order Number - Specific to top label
-      const number = (text.match(/Orden\s+de\s+Compra(?:\s+N[°º]|\s+Nro\.?|\s+N)?\s*(\d+)/i)?.[1]) ||
-                     (text.match(/N[°º]\s*(\d+)\s*\n\s*Unidad de Compra/i)?.[1]) || "";
+      // 1. Order Number
+      const orderNumMatch = text.match(/Orden\s+de\s+Compra.*?N[°º]\s*(\d+)/i) ||
+                            text.match(/N[°º]\s*(\d+)\s*\n\s*Unidad de Compra/i);
+      const number = orderNumMatch?.[1] || "";
 
       // 2. Order Total
       let amount = "";
@@ -135,9 +134,14 @@ export function OCRScanner({ onScanComplete }: OCRScannerProps) {
       if (totalMatch) amount = sanitizePrice(totalMatch[1].trim().split(/\s{2,}/)[0]);
 
       // 3. Metadata
-      const cuit = (text.match(/C\.?U\.?I\.?T\.?.*?(\d{2}-\d{8}-\d{1}|\d{11})/i)?.[1]) || "";
-      const providerName = (text.match(/Proveedor\s*[:.-]?\s*(\d+)?\s*[-]?\s*([A-Z0-9\s.]{3,})/i)?.[2]?.split('\n')[0].trim()) || "";
-      const expediente = (text.match(/(?:Expediente|Suministro).*?(\d+\/\d{4})/i)?.[1]) || "";
+      const cuitMatch = text.match(/C\.?U\.?I\.?T\.?.*?(\d{2}-\d{8}-\d{1}|\d{11})/i);
+      const cuit = cuitMatch?.[1] || "";
+
+      const providerMatch = text.match(/Proveedor\s*[:.-]?\s*(\d+)?\s*[-]?\s*([A-Z0-9\s.]{3,})/i);
+      const providerName = providerMatch?.[2]?.split('\n')[0].trim() || "";
+
+      const expMatch = text.match(/(?:Expediente|Suministro).*?(\d+\/\d{4})/i);
+      const expediente = expMatch?.[1] || "";
 
       const dateMatches = text.match(/\d{2}\/\d{2}\/\d{4}/g);
       const date = dateMatches?.[0] || "";
@@ -146,8 +150,11 @@ export function OCRScanner({ onScanComplete }: OCRScannerProps) {
           deliveryDate = (dateMatches[1].includes("2026") && dateMatches.length > 2) ? dateMatches[2] : dateMatches[1];
       }
 
-      const deliveryPlace = (text.match(/(?:S[íi]rvase entregar a|Lugar de entrega)[:.-]?\s*(.*?)(?=\s*(?:C\.?U\.?I\.?T\.?|Con domicilio|Localidad|C\.P\.|Fecha|Condici[óo]n|Aprobado|$))/is)?.[1]?.replace(/\n/g, ' ').trim() || "";
-      const paymentTerms = (text.match(/Condici[óo]n de pago[:.-]?\s*(.*?)(?=\s*(?:Plazo de entrega|Aprobado por|Suministro|Fecha|N[°º] Solicitud|Expediente|$))/is)?.[1]?.replace(/\n/g, ' ').trim() || "";
+      const delivPlaceMatch = text.match(/(?:S[íi]rvase entregar a|Lugar de entrega)[:.-]?\s*(.*?)(?=\s*(?:C\.?U\.?I\.?T\.?|Con domicilio|Localidad|C\.P\.|Fecha|Condici[óo]n|Aprobado|$))/i);
+      const deliveryPlace = delivPlaceMatch?.[1]?.replace(/\n/g, ' ').trim() || "";
+
+      const payTermsMatch = text.match(/Condici[óo]n de pago[:.-]?\s*(.*?)(?=\s*(?:Plazo de entrega|Aprobado por|Suministro|Fecha|N[°º] Solicitud|Expediente|$))/i);
+      const paymentTerms = payTermsMatch?.[1]?.replace(/\n/g, ' ').trim() || "";
 
       // 4. Items Extraction
       const items: any[] = [];
@@ -160,13 +167,11 @@ export function OCRScanner({ onScanComplete }: OCRScannerProps) {
         if (itemsStarted) {
           if (line.match(/Total\s*[:$]/i) || line.match(/Cl[áa]usulas especiales/i) || line.match(/Autorizado por/i)) {
             if (currentItem) items.push(currentItem);
-            currentItem = null;
-            itemsStarted = false;
-            break;
+            itemsStarted = false; break;
           }
           const quantityMatch = line.match(/^([\d.,]+)\s+/);
-          const prices = Array.from(line.matchAll(/\$\s*([\d.\s,]{3,})/g)).map(m => sanitizePrice(m[1]));
-          if (quantityMatch && prices.length >= 2) {
+          const priceMatches = Array.from(line.matchAll(/\$\s*([\d.\s,]{3,})/g)).map(m => sanitizePrice(m[1]));
+          if (quantityMatch && priceMatches.length >= 2) {
             if (currentItem) items.push(currentItem);
             const startOfPrices = line.indexOf('$');
             const endOfQuantity = quantityMatch[0].length;
@@ -175,8 +180,8 @@ export function OCRScanner({ onScanComplete }: OCRScannerProps) {
               quantity: quantityMatch[1].replace(/\./g, '').replace(',', '.'),
               unitOfMeasure: line.match(/(?:SERVICIO|UNIDAD|KG|MT|LTS|PAQUETE)$/i)?.[0] || "UNIDAD",
               description: desc,
-              unitPrice: parseFloat(prices[0]).toString(),
-              totalPrice: parseFloat(prices[1]).toString()
+              unitPrice: parseFloat(priceMatches[0]).toString(),
+              totalPrice: parseFloat(priceMatches[1]).toString()
             };
           } else if (currentItem && line.length > 5 && !line.match(/Total\s*[:$]/i)) {
             currentItem.description += " " + line;
@@ -184,7 +189,11 @@ export function OCRScanner({ onScanComplete }: OCRScannerProps) {
         }
       }
 
-      onScanComplete({ number, amount, cuit, date, expediente, deliveryDate, deliveryPlace, paymentTerms, description: "", providerName, items });
+      onScanComplete({
+        number, amount, cuit, date, expediente,
+        deliveryDate, deliveryPlace, paymentTerms,
+        description: "", providerName, items
+      });
       toast.success("Análisis completado", { id: toastId });
     } catch (error) {
       console.error(error);
