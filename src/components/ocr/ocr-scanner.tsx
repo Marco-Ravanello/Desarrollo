@@ -70,9 +70,24 @@ export function OCRScanner({ onScanComplete }: OCRScannerProps) {
 
       // Attempt text extraction first
       const textContent = await page.getTextContent();
-      const pageText = textContent.items
-        .map((item: any) => item.str)
-        .join(" ");
+      // Group items by vertical position (y coordinate)
+      const textItems = textContent.items as any[];
+      const lines: { [key: number]: any[] } = {};
+
+      textItems.forEach(item => {
+        const y = Math.round(item.transform[5]);
+        if (!lines[y]) lines[y] = [];
+        lines[y].push(item);
+      });
+
+      // Sort lines top to bottom and items left to right
+      const sortedY = Object.keys(lines).map(Number).sort((a, b) => b - a);
+      const pageText = sortedY.map(y => {
+        return lines[y]
+          .sort((a, b) => a.transform[4] - b.transform[4])
+          .map(item => item.str)
+          .join(" ");
+      }).join("\n");
 
       if (pageText.trim().length > 100) {
         fullText += pageText + "\n";
@@ -194,11 +209,13 @@ export function OCRScanner({ onScanComplete }: OCRScannerProps) {
 
       const delivPlaceMatch = text.match(/(?:S[íi]rvase entregar a|Lugar de entrega)[:.-]?\s*([^\n]+)/i);
       if (delivPlaceMatch) {
-        deliveryPlace = delivPlaceMatch[1].split(/(?:C\.U\.I\.T\.|Con domicilio|Localidad|C\.P\.)/i)[0].trim();
+        deliveryPlace = delivPlaceMatch[1].split(/(?:C\.U\.I\.T\.|Con domicilio|Localidad|C\.P\.|Fecha de entrega)/i)[0].trim();
       }
 
       const paymentMatch = text.match(/Condici[óo]n de pago[:.-]?\s*([^\n]+)/i);
-      if (paymentMatch) paymentTerms = paymentMatch[1].trim();
+      if (paymentMatch) {
+        paymentTerms = paymentMatch[1].split(/(?:Plazo de entrega|Aprobado por|Suministro)/i)[0].trim();
+      }
 
       const patenteMatch = text.match(/Patente[:.-]?\s*([A-Z]{2}\s?\d{3}\s?[A-Z]{2}|[A-Z]{3}\s?\d{3})/i);
       if (patenteMatch) patente = patenteMatch[1].replace(/\s/g, '').toUpperCase();
@@ -235,40 +252,55 @@ export function OCRScanner({ onScanComplete }: OCRScannerProps) {
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i];
 
-        // Detect header
-        if (line.match(/Reng\.?\s*C[oó]digo\s*Cant/i)) {
+        // Detect header (flexible order)
+        if (line.match(/Reng\.?/i) && line.match(/Cant/i) && line.match(/Descrip/i)) {
           itemsStarted = true;
           continue;
         }
 
         if (itemsStarted) {
           // Detect end of items (e.g., "Total: $")
-          if (line.match(/Total\s*[:$]/i) || line.match(/Cl[áa]usulas especiales/i)) {
+          if (line.match(/Total\s*[:$]/i) || line.match(/Cl[áa]usulas especiales/i) || line.match(/Autorizado por/i)) {
             if (currentItem) items.push(currentItem);
             itemsStarted = false;
             break;
           }
 
-          // Try to match a new item line (Starts with a number, then a code-like pattern)
-          const itemStartMatch = line.match(/^(\d+)\s+([\d.]+)\s+([\d.,]+)\s+([A-Z\s]+)\s+([\d.]+)\s+(.+)/);
+          // Case 1: Standard line [Quantity] [Description] [Reng] $ [UnitPrice] $ [TotalPrice] [Rest...]
+          // This matches the user's "Extracted Text" format
+          const userFormatMatch = line.match(/^([\d.,]+)\s+(.*?)\s+(\d+)\s+\$\s+([\d.\s,]+)\s+\$\s+([\d.\s,]+)/);
 
-          if (itemStartMatch) {
+          // Case 2: Old format [Reng] [Code] [Quantity] [UOM] [CatProg] [Description] [Prices]
+          const originalFormatMatch = line.match(/^(\d+)\s+([\d.]+)\s+([\d.,]+)\s+([A-Z\s]+)\s+([\d.]+)\s+(.+)/);
+
+          if (userFormatMatch) {
             if (currentItem) items.push(currentItem);
 
-            const rawDescription = itemStartMatch[6];
-            // The description might be cut off or contain the prices at the end
-            // Prices pattern: $ 11.440,00000 $ 2.288.000,00
-            const priceMatch = rawDescription.match(/(.*?)\$?\s*([\d.\s,]+)\s*\$?\s*([\d.\s,]+)$/);
+            // Extract UOM from the end of the line if possible
+            const uomMatch = line.match(/(?:SERVICIO|UNIDAD|KG|MT|LTS|PAQUETE)$/i);
 
             currentItem = {
-              quantity: itemStartMatch[3].replace(/\./g, '').replace(',', '.'),
-              unitOfMeasure: itemStartMatch[4].trim(),
-              description: priceMatch ? priceMatch[1].trim() : rawDescription.trim(),
-              unitPrice: priceMatch ? priceMatch[2].replace(/\./g, '').replace(',', '.') : "0",
-              totalPrice: priceMatch ? priceMatch[3].replace(/\./g, '').replace(',', '.') : "0"
+              quantity: userFormatMatch[1].replace(/\./g, '').replace(',', '.'),
+              unitOfMeasure: uomMatch ? uomMatch[0] : "UNIDAD",
+              description: userFormatMatch[2].trim(),
+              unitPrice: userFormatMatch[4].replace(/[.\s]/g, '').replace(',', '.'),
+              totalPrice: userFormatMatch[5].replace(/[.\s]/g, '').replace(',', '.')
             };
-          } else if (currentItem && !line.match(/^\d+/) && line.length > 5) {
-            // Continuation of description
+          } else if (originalFormatMatch) {
+            if (currentItem) items.push(currentItem);
+
+            const rawDescription = originalFormatMatch[6];
+            const priceMatch = rawDescription.match(/(.*?)\$?\s*([\d.\s,]+)\s*\$?\s*([\d.\s,]+)/);
+
+            currentItem = {
+              quantity: originalFormatMatch[3].replace(/\./g, '').replace(',', '.'),
+              unitOfMeasure: originalFormatMatch[4].trim(),
+              description: priceMatch ? priceMatch[1].trim() : rawDescription.trim(),
+              unitPrice: priceMatch ? priceMatch[2].replace(/[.\s]/g, '').replace(',', '.') : "0",
+              totalPrice: priceMatch ? priceMatch[3].replace(/[.\s]/g, '').replace(',', '.') : "0"
+            };
+          } else if (currentItem && line.length > 5 && !line.match(/Total\s*[:$]/i)) {
+            // Continuation of description (avoiding total lines)
             currentItem.description += " " + line;
           }
         }
