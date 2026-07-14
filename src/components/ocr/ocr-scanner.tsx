@@ -154,13 +154,26 @@ export function OCRScanner({ onScanComplete }: OCRScannerProps) {
       let deliveryPlace = "";
       const delivIndex = linesForSearch.findIndex(l => l.toLowerCase().includes("sirvase entregar a"));
       if (delivIndex > 0) {
-          deliveryPlace = linesForSearch[delivIndex - 1];
+          // Search upwards for the first non-empty line that isn't just a phone number or email
+          for (let i = delivIndex - 1; i >= 0; i--) {
+              const line = linesForSearch[i];
+              if (!line) continue;
+              if (line.match(/^(?:CEL|T\.E|FAX|E-Mail|TEL)[:.\s]*[\d\s-]+$/i)) continue;
+              if (line.match(/^[\d\s-]+$/)) continue; // Only digits (likely phone)
+              deliveryPlace = line;
+              break;
+          }
       }
 
       let paymentTerms = "";
       const payIndex = linesForSearch.findIndex(l => l.toLowerCase().includes("condición de pago") || l.toLowerCase().includes("condicion de pago"));
       if (payIndex > 0) {
-          paymentTerms = linesForSearch[payIndex - 1];
+          for (let i = payIndex - 1; i >= 0; i--) {
+              const line = linesForSearch[i];
+              if (!line) continue;
+              paymentTerms = line;
+              break;
+          }
       }
 
       // 4. Items Extraction (Tres de Febrero PDF format)
