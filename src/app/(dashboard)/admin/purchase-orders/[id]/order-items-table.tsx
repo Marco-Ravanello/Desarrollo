@@ -29,17 +29,17 @@ export function OrderItemsTable({ orderId, orderStatus, items }: OrderItemsTable
         )}
       </div>
 
-      <div className="border rounded-2xl overflow-hidden bg-white shadow-sm">
-        <table className="w-full text-sm">
+      <div className="border rounded-2xl overflow-x-auto bg-white shadow-sm scrollbar-thin scrollbar-thumb-slate-200">
+        <table className="w-full text-sm min-w-[800px] table-fixed">
           <thead className="bg-slate-50 border-b">
             <tr>
-              <th className="text-left p-4 font-bold text-slate-500 uppercase text-[10px] tracking-widest">Cant.</th>
-              <th className="text-left p-4 font-bold text-slate-500 uppercase text-[10px] tracking-widest">Unidad</th>
-              <th className="text-left p-4 font-bold text-slate-500 uppercase text-[10px] tracking-widest w-full">Descripción</th>
-              <th className="text-left p-4 font-bold text-slate-500 uppercase text-[10px] tracking-widest">Ejecución</th>
-              <th className="text-right p-4 font-bold text-slate-500 uppercase text-[10px] tracking-widest">Unitario</th>
-              <th className="text-right p-4 font-bold text-slate-500 uppercase text-[10px] tracking-widest">Total</th>
-              {canEdit && <th className="p-4"></th>}
+              <th className="w-[60px] text-left p-4 font-bold text-slate-400 uppercase text-[9px] tracking-widest">Cant.</th>
+              <th className="w-[80px] text-left p-4 font-bold text-slate-400 uppercase text-[9px] tracking-widest">Unidad</th>
+              <th className="text-left p-4 font-bold text-slate-400 uppercase text-[9px] tracking-widest">Descripción</th>
+              <th className="w-[140px] text-left p-4 font-bold text-slate-400 uppercase text-[9px] tracking-widest">Ejecución</th>
+              <th className="w-[110px] text-right p-4 font-bold text-slate-400 uppercase text-[9px] tracking-widest">Unitario</th>
+              <th className="w-[120px] text-right p-4 font-bold text-slate-400 uppercase text-[9px] tracking-widest">Total</th>
+              {canEdit && <th className="w-[100px] p-4"></th>}
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -51,39 +51,41 @@ export function OrderItemsTable({ orderId, orderStatus, items }: OrderItemsTable
 
               return (
                 <tr key={idx} className="group hover:bg-slate-50/50 transition-colors">
-                  <td className="p-4">
+                  <td className="p-4 align-top">
                     <span className="font-black text-slate-700">{q.toLocaleString()}</span>
                   </td>
-                  <td className="p-4">
-                    <span className="text-[10px] font-bold bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded uppercase">{item.unitOfMeasure || "UNID"}</span>
+                  <td className="p-4 align-top">
+                    <span className="text-[9px] font-black bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full border border-blue-100 uppercase inline-block whitespace-nowrap">
+                      {item.unitOfMeasure || "UNID"}
+                    </span>
                   </td>
-                  <td className="p-4">
-                    <p className="text-slate-800 font-medium leading-tight">{item.description}</p>
+                  <td className="p-4 align-top">
+                    <p className="text-slate-700 text-xs font-medium leading-relaxed">{item.description}</p>
                   </td>
-                  <td className="p-4 min-w-[140px]">
+                  <td className="p-4 align-top">
                     <div className="space-y-1.5">
-                      <div className="flex justify-between text-[10px] font-bold">
+                      <div className="flex justify-between text-[9px] font-black">
                         <span className={isFulfilled ? "text-green-600" : "text-blue-600"}>
                           {f.toLocaleString()} / {q.toLocaleString()}
                         </span>
                         <span className="text-slate-400">{Math.round(progress)}%</span>
                       </div>
-                      <Progress value={progress} className={`h-1.5 ${isFulfilled ? "[&>div]:bg-green-500" : "[&>div]:bg-blue-500"}`} />
+                      <Progress value={progress} className={`h-1.5 ${isFulfilled ? "[&>div]:bg-green-500" : "[&>div]:bg-blue-500"} bg-slate-100`} />
                     </div>
                   </td>
-                  <td className="p-4 text-right tabular-nums text-slate-500">
+                  <td className="p-4 text-right tabular-nums text-slate-500 font-medium align-top">
                     ${Number(item.unitPrice).toLocaleString()}
                   </td>
-                  <td className="p-4 text-right tabular-nums font-black text-slate-900">
+                  <td className="p-4 text-right tabular-nums font-black text-slate-900 align-top">
                     ${Number(item.totalPrice).toLocaleString()}
                   </td>
                   {canEdit && (
-                    <td className="p-4 text-right">
+                    <td className="p-4 text-right align-top">
                       {!isFulfilled ? (
                         <Button
                           variant="outline"
                           size="sm"
-                          className="h-8 px-3 text-[10px] font-black uppercase tracking-widest border-blue-200 text-blue-600 hover:bg-blue-600 hover:text-white transition-all shadow-sm"
+                          className="h-8 px-3 text-[9px] font-black uppercase tracking-widest border-blue-200 text-blue-600 hover:bg-blue-600 hover:text-white transition-all shadow-sm"
                           onClick={() => {
                             setSelectedItem(item);
                             setIsSheetOpen(true);
@@ -92,8 +94,8 @@ export function OrderItemsTable({ orderId, orderStatus, items }: OrderItemsTable
                           Registrar
                         </Button>
                       ) : (
-                        <div className="flex items-center justify-end gap-1.5 text-green-600 font-bold text-[10px] uppercase">
-                           <PackageCheck className="h-4 w-4" /> Completo
+                        <div className="flex items-center justify-end gap-1.5 text-green-600 font-black text-[9px] uppercase">
+                           <PackageCheck className="h-4 w-4" /> Listo
                         </div>
                       )}
                     </td>
