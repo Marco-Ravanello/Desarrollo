@@ -59,14 +59,25 @@ export function OCRScanner({ onScanComplete }: OCRScannerProps) {
       const page = await pdf.getPage(i);
       const textContent = await page.getTextContent();
       const textItems = textContent.items as any[];
+
       const linesMap: { [key: number]: any[] } = {};
+      const threshold = 3; // Tightened threshold
+
       textItems.forEach(item => {
         const y = Math.round(item.transform[5]);
-        if (!linesMap[y]) linesMap[y] = [];
-        linesMap[y].push(item);
+        const existingY = Object.keys(linesMap).find(ly => Math.abs(Number(ly) - y) <= threshold);
+        const groupY = existingY ? Number(existingY) : y;
+        if (!linesMap[groupY]) linesMap[groupY] = [];
+        linesMap[groupY].push(item);
       });
+
       const sortedY = Object.keys(linesMap).map(Number).sort((a, b) => b - a);
-      fullText += sortedY.map(y => linesMap[y].sort((a, b) => a.transform[4] - b.transform[4]).map(item => item.str).join(" ")).join("\n") + "\n";
+      fullText += sortedY.map(y => {
+        return linesMap[y]
+          .sort((a, b) => a.transform[4] - b.transform[4])
+          .map(item => item.str)
+          .join("  "); // Use double space to separate items on same line
+      }).join("\n") + "\n";
     }
     return fullText;
   };
@@ -110,90 +121,85 @@ export function OCRScanner({ onScanComplete }: OCRScannerProps) {
 
       const sanitizePrice = (val: string) => {
         if (!val) return "0";
-        val = val.trim().replace(/^\$/, '').trim();
-        if (val.includes('.') && val.includes(',')) {
-          const parts = val.split(',');
-          const decimals = parts.pop() || "00";
-          const integer = parts.join('').replace(/\./g, '');
-          return `${integer}.${decimals}`;
-        }
-        if (val.includes(',') && val.split(',').pop()?.length <= 3) return val.replace(',', '.');
-        return val.replace(/[.\s]/g, '');
+        // Remove dots (thousands) and replace comma with dot (decimal)
+        let sanitized = val.replace(/\./g, '').replace(',', '.');
+        const num = parseFloat(sanitized);
+        return isNaN(num) ? "0" : num.toString();
       };
 
-      // 1. Order Number
-      const orderNumMatch = text.match(/Orden\s+de\s+Compra.*?N[°º]\s*(\d+)/i) ||
-                            text.match(/N[°º]\s*(\d+)\s*\n\s*Unidad de Compra/i);
-      const number = orderNumMatch?.[1] || "";
+      // 1. Order Number - Matches "N° 253"
+      const number = (text.match(/N[°º]\s*(\d+)/i)?.[1]) || "";
 
       // 2. Order Total
       let amount = "";
-      const totalMatch = text.match(/Total:\s*\$?\s*([\d.\s,]{3,})/i) ||
-                         text.match(/Total\s*\$?\s*([\d.\s,]{3,})/i) ||
-                         text.match(/Importe\s+total\s*\$?\s*([\d.\s,]{3,})/i);
-      if (totalMatch) amount = sanitizePrice(totalMatch[1].trim().split(/\s{2,}/)[0]);
+      const totalMatch = text.match(/Total\s*[:$]\s*\$?\s*([\d.\s,]{3,})/i) ||
+                         text.match(/Importe\s+total\s*[:$]?\s*\$?\s*([\d.\s,]{3,})/i) ||
+                         text.match(/TOTAL[:\s]*\$?\s*([\d.\s,]{3,})/i);
+      if (totalMatch) amount = sanitizePrice(totalMatch[1].trim());
 
       // 3. Metadata
-      const cuitMatch = text.match(/C\.?U\.?I\.?T\.?.*?(\d{2}-\d{8}-\d{1}|\d{11})/i);
-      const cuit = cuitMatch?.[1] || "";
-
+      const cuit = (text.match(/C\.?U\.?I\.?T\.?[\s\S]*?(\d{2}-\d{8}-\d{1}|\d{11})/i)?.[1]) || "";
       const providerMatch = text.match(/Proveedor\s*[:.-]?\s*(\d+)?\s*[-]?\s*([A-Z0-9\s.]{3,})/i);
       const providerName = providerMatch?.[2]?.split('\n')[0].trim() || "";
 
-      const expMatch = text.match(/(?:Expediente|Suministro).*?(\d+\/\d{4})/i);
-      const expediente = expMatch?.[1] || "";
+      const expediente = (text.match(/(?:Expediente|Suministro)[\s\S]*?(\d+\/\d{4})/i)?.[1]) || "";
 
       const dateMatches = text.match(/\d{2}\/\d{2}\/\d{4}/g);
       const date = dateMatches?.[0] || "";
-      let deliveryDate = "";
-      if (dateMatches && dateMatches.length > 1) {
-          deliveryDate = (dateMatches[1].includes("2026") && dateMatches.length > 2) ? dateMatches[2] : dateMatches[1];
+      const deliveryDate = (dateMatches && dateMatches.length > 1) ? dateMatches[dateMatches.length - 1] : "";
+
+      // Improved Place and Payment - handle "label below value"
+      const linesForSearch = text.split('\n').map(l => l.trim());
+
+      let deliveryPlace = "";
+      const delivIndex = linesForSearch.findIndex(l => l.toLowerCase().includes("sirvase entregar a"));
+      if (delivIndex > 0) {
+          deliveryPlace = linesForSearch[delivIndex - 1];
       }
 
-      const delivPlaceMatch = text.match(/(?:S[íi]rvase entregar a|Lugar de entrega)[:.-]?\s*(.*?)(?=\s*(?:C\.?U\.?I\.?T\.?|Con domicilio|Localidad|C\.P\.|Fecha|Condici[óo]n|Aprobado|$))/i);
-      const deliveryPlace = delivPlaceMatch?.[1]?.replace(/\n/g, ' ').trim() || "";
+      let paymentTerms = "";
+      const payIndex = linesForSearch.findIndex(l => l.toLowerCase().includes("condición de pago") || l.toLowerCase().includes("condicion de pago"));
+      if (payIndex > 0) {
+          paymentTerms = linesForSearch[payIndex - 1];
+      }
 
-      const payTermsMatch = text.match(/Condici[óo]n de pago[:.-]?\s*(.*?)(?=\s*(?:Plazo de entrega|Aprobado por|Suministro|Fecha|N[°º] Solicitud|Expediente|$))/i);
-      const paymentTerms = payTermsMatch?.[1]?.replace(/\n/g, ' ').trim() || "";
-
-      // 4. Items Extraction
+      // 4. Items Extraction (Tres de Febrero PDF format)
       const items: any[] = [];
       const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
       let itemsStarted = false;
       let currentItem: any = null;
 
       for (const line of lines) {
-        if (line.match(/Reng\.?/i) && line.match(/Cant/i) && line.match(/Descrip/i)) { itemsStarted = true; continue; }
+        if (line.match(/Reng\.?/i) && line.match(/Cant/i) && line.match(/Descrip/i)) {
+            itemsStarted = true;
+            continue;
+        }
         if (itemsStarted) {
-          if (line.match(/Total\s*[:$]/i) || line.match(/Cl[áa]usulas especiales/i) || line.match(/Autorizado por/i)) {
+          if (line.match(/Total\s*[:$]/i) || line.match(/Cl[áa]usulas/i) || line.match(/Autorizado/i)) {
             if (currentItem) items.push(currentItem);
-            itemsStarted = false; break;
+            itemsStarted = false;
+            break;
           }
-          const quantityMatch = line.match(/^([\d.,]+)\s+/);
-          const priceMatches = Array.from(line.matchAll(/\$\s*([\d.\s,]{3,})/g)).map(m => sanitizePrice(m[1]));
-          if (quantityMatch && priceMatches.length >= 2) {
+
+          // Format: [Renglon] [Codigo] [Quantity] [U.Medida] [CatProg] [Description] $ [UnitPrice] $ [TotalPrice]
+          const rowMatch = line.match(/^(\d+)\s+([\d.]+)\s+([\d.,]+)\s+([A-Z\s]{3,})\s+([\d.]+)\s+(.*?)\$\s*([\d.\s,]+)\s*\$\s*([\d.\s,]+)/);
+
+          if (rowMatch) {
             if (currentItem) items.push(currentItem);
-            const startOfPrices = line.indexOf('$');
-            const endOfQuantity = quantityMatch[0].length;
-            let desc = line.substring(endOfQuantity, startOfPrices).trim().replace(/\s+\d+$/, '').trim();
             currentItem = {
-              quantity: quantityMatch[1].replace(/\./g, '').replace(',', '.'),
-              unitOfMeasure: line.match(/(?:SERVICIO|UNIDAD|KG|MT|LTS|PAQUETE)$/i)?.[0] || "UNIDAD",
-              description: desc,
-              unitPrice: parseFloat(priceMatches[0]).toString(),
-              totalPrice: parseFloat(priceMatches[1]).toString()
+              quantity: sanitizePrice(rowMatch[3]),
+              unitOfMeasure: rowMatch[4].trim(),
+              description: rowMatch[6].trim(),
+              unitPrice: sanitizePrice(rowMatch[7]),
+              totalPrice: sanitizePrice(rowMatch[8])
             };
-          } else if (currentItem && line.length > 5 && !line.match(/Total\s*[:$]/i)) {
-            currentItem.description += " " + line;
+          } else if (currentItem && line.length > 5) {
+             currentItem.description += " " + line;
           }
         }
       }
 
-      onScanComplete({
-        number, amount, cuit, date, expediente,
-        deliveryDate, deliveryPlace, paymentTerms,
-        description: "", providerName, items
-      });
+      onScanComplete({ number, amount, cuit, date, expediente, deliveryDate, deliveryPlace, paymentTerms, description: "", providerName, items });
       toast.success("Análisis completado", { id: toastId });
     } catch (error) {
       console.error(error);
