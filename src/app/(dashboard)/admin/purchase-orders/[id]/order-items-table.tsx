@@ -36,9 +36,9 @@ export function OrderItemsTable({ orderId, orderStatus, items }: OrderItemsTable
               <th className="text-left p-4 font-bold text-slate-500 uppercase text-[10px] tracking-widest">Cant.</th>
               <th className="text-left p-4 font-bold text-slate-500 uppercase text-[10px] tracking-widest">Unidad</th>
               <th className="text-left p-4 font-bold text-slate-500 uppercase text-[10px] tracking-widest w-full">Descripción</th>
-              <th className="text-left p-4 font-bold text-slate-500 uppercase text-[10px] tracking-widest text-right">Ejecución</th>
-              <th className="text-left p-4 font-bold text-slate-500 uppercase text-[10px] tracking-widest text-right">Unitario</th>
-              <th className="text-left p-4 font-bold text-slate-500 uppercase text-[10px] tracking-widest text-right">Total</th>
+              <th className="text-left p-4 font-bold text-slate-500 uppercase text-[10px] tracking-widest">Ejecución</th>
+              <th className="text-right p-4 font-bold text-slate-500 uppercase text-[10px] tracking-widest">Unitario</th>
+              <th className="text-right p-4 font-bold text-slate-500 uppercase text-[10px] tracking-widest">Total</th>
               {canEdit && <th className="p-4"></th>}
             </tr>
           </thead>
@@ -78,21 +78,23 @@ export function OrderItemsTable({ orderId, orderStatus, items }: OrderItemsTable
                     ${Number(item.totalPrice).toLocaleString()}
                   </td>
                   {canEdit && (
-                    <td className="p-4">
+                    <td className="p-4 text-right">
                       {!isFulfilled ? (
                         <Button
-                          variant="ghost"
+                          variant="outline"
                           size="sm"
-                          className="h-8 w-8 p-0 rounded-full hover:bg-blue-100 hover:text-blue-600 transition-all opacity-0 group-hover:opacity-100"
+                          className="h-8 px-3 text-[10px] font-black uppercase tracking-widest border-blue-200 text-blue-600 hover:bg-blue-600 hover:text-white transition-all shadow-sm"
                           onClick={() => {
                             setSelectedItem(item);
                             setIsSheetOpen(true);
                           }}
                         >
-                          <ChevronRight className="h-4 w-4" />
+                          Registrar
                         </Button>
                       ) : (
-                        <PackageCheck className="h-5 w-5 text-green-500 mx-auto" />
+                        <div className="flex items-center justify-end gap-1.5 text-green-600 font-bold text-[10px] uppercase">
+                           <PackageCheck className="h-4 w-4" /> Completo
+                        </div>
                       )}
                     </td>
                   )}
