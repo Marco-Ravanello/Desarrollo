@@ -19,7 +19,28 @@ export async function getAgreementById(id: string) {
 export async function getPurchaseOrderById(id: string) {
   return await prisma.purchaseOrder.findUnique({
     where: { id },
-    include: { provider: true, area: true, items: true }
+    include: {
+      provider: {
+        include: {
+          orders: {
+            take: 5,
+            orderBy: { createdAt: 'desc' },
+            select: { id: true, number: true, amount: true, createdAt: true, status: true }
+          },
+          _count: { select: { orders: true } }
+        }
+      },
+      area: true,
+      items: true
+    }
+  });
+}
+
+export async function getOrderAuditLogs(id: string) {
+  return await prisma.auditLog.findMany({
+    where: { entityId: id, entity: 'PurchaseOrder' },
+    include: { user: true },
+    orderBy: { createdAt: 'desc' }
   });
 }
 

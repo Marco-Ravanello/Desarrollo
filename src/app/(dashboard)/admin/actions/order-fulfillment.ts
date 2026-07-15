@@ -25,6 +25,19 @@ export async function updateItemFulfillmentAction(itemId: string, increment: num
       }
     });
 
+    const session = await (await import("@/auth")).auth();
+    if (session?.user?.id) {
+        await prisma.auditLog.create({
+            data: {
+                userId: session.user.id,
+                action: 'UPDATE_FULFILLMENT',
+                entity: 'PurchaseOrder',
+                entityId: item.orderId,
+                details: `Registrada entrega de ${increment} ${item.unitOfMeasure || 'unidades'} para "${item.description.substring(0, 30)}..."`
+            }
+        });
+    }
+
     // Check if all items are fulfilled to update order status
     const allItems = await prisma.purchaseOrderItem.findMany({
       where: { orderId: item.orderId }
