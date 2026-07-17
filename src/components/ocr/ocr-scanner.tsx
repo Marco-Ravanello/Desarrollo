@@ -40,7 +40,8 @@ export function OCRScanner({ onScanComplete }: OCRScannerProps) {
     const data = imageData.data;
     for (let i = 0; i < data.length; i += 4) {
       const avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
-      const contrast = 1.3;
+      // Slightly lower contrast factor for low-res screenshots to prevent pixelating anti-aliased text
+      const contrast = canvas.width < 1000 ? 1.1 : 1.3;
       let newValue = (avg - 128) * contrast + 128;
       newValue = Math.max(0, Math.min(255, newValue));
       data[i] = newValue; data[i + 1] = newValue; data[i + 2] = newValue;
@@ -101,7 +102,8 @@ export function OCRScanner({ onScanComplete }: OCRScannerProps) {
               const ctx = canvas.getContext("2d");
               if (!ctx) { resolve(re.target?.result as string); return; }
               let w = img.width, h = img.height;
-              if (w < 1500) { h = h * (1500 / w); w = 1500; }
+              // Smart upscale for low-res screenshots
+              if (w < 1800) { h = h * (1800 / w); w = 1800; }
               canvas.width = w; canvas.height = h;
               ctx.drawImage(img, 0, 0, w, h);
               resolve(preprocessImage(canvas));
@@ -111,7 +113,8 @@ export function OCRScanner({ onScanComplete }: OCRScannerProps) {
           reader.readAsDataURL(file);
         });
         const processedImage = await imgPromise;
-        const worker = await createWorker(["spa", "eng"]);
+        // Use "spa" as primary language for superior speed and Spanish vocabulary accuracy
+        const worker = await createWorker(["spa"]);
         const { data: { text: ocrText } } = await worker.recognize(processedImage);
         text = ocrText;
         await worker.terminate();
@@ -121,14 +124,16 @@ export function OCRScanner({ onScanComplete }: OCRScannerProps) {
 
       const sanitizePrice = (val: string) => {
         if (!val) return "0";
+        // Remove spaces
+        let cleaned = val.replace(/\s+/g, '');
         // Remove dots (thousands) and replace comma with dot (decimal)
-        let sanitized = val.replace(/\./g, '').replace(',', '.');
+        let sanitized = cleaned.replace(/\./g, '').replace(',', '.');
         const num = parseFloat(sanitized);
         return isNaN(num) ? "0" : num.toString();
       };
 
-      // 1. Order Number - Matches "N° 253"
-      const number = (text.match(/N[°º]\s*(\d+)/i)?.[1]) || "";
+      // 1. Order Number - Matches "N° 253", "Nro 253", "N 253", "No 253"
+      const number = (text.match(/N(?:°|º|ro\.?|o\.?|\s+)?\s*[:.-]?\s*(\d+)/i)?.[1]) || "";
 
       // 2. Order Total
       let amount = "";
@@ -138,49 +143,116 @@ export function OCRScanner({ onScanComplete }: OCRScannerProps) {
       if (totalMatch) amount = sanitizePrice(totalMatch[1].trim());
 
       // 3. Metadata
-      const cuit = (text.match(/C\.?U\.?I\.?T\.?[\s\S]*?(\d{2}-\d{8}-\d{1}|\d{11})/i)?.[1]) || "";
-      const providerMatch = text.match(/Proveedor\s*[:.-]?\s*(\d+)?\s*[-]?\s*([A-Z0-9\s.]{3,})/i);
-      const providerName = providerMatch?.[2]?.split('\n')[0].trim() || "";
-
-      const expediente = (text.match(/(?:Expediente|Suministro)[\s\S]*?(\d+\/\d{4})/i)?.[1]) || "";
-
-      const dateMatches = text.match(/\d{2}\/\d{2}\/\d{4}/g);
-      const date = dateMatches?.[0] || "";
-      const deliveryDate = (dateMatches && dateMatches.length > 1) ? dateMatches[dateMatches.length - 1] : "";
-
-      // Improved Place and Payment - handle "label below value"
       const linesForSearch = text.split('\n').map(l => l.trim());
 
+      // Extract CUIT robustly
+      let cuit = "";
+      const providerLineWithCuit = linesForSearch.find(l => (l.toLowerCase().includes("provedor") || l.toLowerCase().includes("proveedor") || l.toLowerCase().includes("promador") || l.toLowerCase().includes("cuit") || l.toLowerCase().includes("cult")) && l.match(/(\d{2}-\d{8}-\d{1}|\d{11})/));
+      if (providerLineWithCuit) {
+          const match = providerLineWithCuit.match(/(\d{2}-\d{8}-\d{1}|\d{11})/);
+          if (match) cuit = match[1];
+      }
+      if (!cuit) {
+          // Fallback to any CUIT in the document
+          const match = text.match(/(\d{2}-\d{8}-\d{1}|\d{11})/);
+          if (match) cuit = match[1];
+      }
+
+      // Extract Provider Name robustly from line containing Provider / Proveedor / Promador keywords
+      let providerName = "";
+      const providerLine = linesForSearch.find(l => l.toLowerCase().includes("provedor") || l.toLowerCase().includes("proveedor") || l.toLowerCase().includes("promador"));
+      if (providerLine) {
+          const nameMatch = providerLine.match(/[A-Z]{3,}(?:\s+[A-Z.]{2,})+/);
+          if (nameMatch) {
+              providerName = nameMatch[0].trim();
+              providerName = providerName.replace(/\s*(?:C\.?U\.?I\.?T\.?|C\.?U\.?L\.?T\.?|PROVEEDOR|FANTASIA).*$/i, "").trim();
+          }
+      }
+      if (!providerName) {
+          const providerMatch = text.match(/Proveedor\s*[:.-]?\s*(\d+)?\s*[-]?\s*([A-Z0-9\s.]{3,})/i);
+          providerName = providerMatch?.[2]?.split('\n')[0].trim() || "";
+          providerName = providerName.replace(/\s*(?:C\.?U\.?I\.?T\.?|C\.?U\.?L\.?T\.?).*$/i, "").trim();
+      }
+
+      const expediente = (text.match(/(?:Expediente|Suministro|Nesto)[\s\S]*?(\d+\/\d{4})/i)?.[1]) || "";
+
+      // Improved Date Extraction
+      let date = "";
+      let deliveryDate = "";
+
+      // Find date of order (Fecha or Fecha de emisión)
+      const orderDateLine = linesForSearch.find(l => l.match(/fecha\s*:\s*\d{2}\/\d{2}\/\d{4}/i));
+      if (orderDateLine) {
+          const match = orderDateLine.match(/(\d{2}\/\d{2}\/\d{4})/);
+          if (match) date = match[1];
+      }
+
+      // Find delivery date (Fecha de entrega)
+      const deliveryDateLine = linesForSearch.find(l => l.toLowerCase().includes("fecha de entrega") || l.toLowerCase().includes("plazo de entrega"));
+      if (deliveryDateLine) {
+          const match = deliveryDateLine.match(/(\d{2}\/\d{2}\/\d{4})/);
+          if (match) deliveryDate = match[1];
+      }
+
+      // Date fallback
+      if (!date || !deliveryDate) {
+          const dateMatches = text.match(/\d{2}\/\d{2}\/\d{4}/g) || [];
+          if (!date && dateMatches.length > 0) date = dateMatches[0];
+          if (!deliveryDate && dateMatches.length > 1) {
+              // Usually the delivery date is different from order date, or near the end depending on format
+              deliveryDate = dateMatches.find(d => d !== date) || dateMatches[dateMatches.length - 1];
+          }
+      }
+
+      // Improved Place and Payment - avoid searching upwards into headers and handle word misreadings
       let deliveryPlace = "";
-      const delivIndex = linesForSearch.findIndex(l => l.toLowerCase().includes("sirvase entregar a"));
-      if (delivIndex > 0) {
-          // Search upwards for the first non-empty line that isn't just a phone number or email
-          for (let i = delivIndex - 1; i >= 0; i--) {
-              const line = linesForSearch[i];
-              if (!line) continue;
-              if (line.match(/^(?:CEL|T\.E|FAX|E-Mail|TEL)[:.\s]*[\d\s-]+$/i)) continue;
-              if (line.match(/^[\d\s-]+$/)) continue; // Only digits (likely phone)
-              deliveryPlace = line;
-              break;
+      const delivIndex = linesForSearch.findIndex(l =>
+          l.toLowerCase().includes("sirva") ||
+          l.toLowerCase().includes("entregar") ||
+          l.toLowerCase().includes("emrteegar")
+      );
+      if (delivIndex >= 0) {
+          const line = linesForSearch[delivIndex];
+          if (line.includes(":") && line.split(":")[1].trim().length > 0) {
+              deliveryPlace = line.split(":")[1].trim();
+          } else {
+              // Try checking the line above (common in pdfjs-dist / OCR layout rendering)
+              if (delivIndex > 0 && linesForSearch[delivIndex - 1].trim().length > 0 && !linesForSearch[delivIndex - 1].toLowerCase().includes("domicilio") && !linesForSearch[delivIndex - 1].toLowerCase().includes("cuit") && !linesForSearch[delivIndex - 1].match(/^(?:CEL|T\.E|FAX|E-Mail|TEL)[:.\s]*/i)) {
+                  deliveryPlace = linesForSearch[delivIndex - 1].trim();
+              } else {
+                  // Check the lines immediately below
+                  for (let i = delivIndex + 1; i < delivIndex + 4 && i < linesForSearch.length; i++) {
+                      const nextLine = linesForSearch[i];
+                      if (nextLine && !nextLine.toLowerCase().includes("domicilio") && !nextLine.toLowerCase().includes("cuit") && !nextLine.toLowerCase().includes("lugar")) {
+                          deliveryPlace = nextLine;
+                          break;
+                      }
+                  }
+              }
           }
       }
 
       let paymentTerms = "";
-      const payIndex = linesForSearch.findIndex(l => l.toLowerCase().includes("condición de pago") || l.toLowerCase().includes("condicion de pago"));
-      if (payIndex > 0) {
-          for (let i = payIndex - 1; i >= 0; i--) {
-              const line = linesForSearch[i];
-              if (!line) continue;
+      const payIndex = linesForSearch.findIndex(l =>
+          l.toLowerCase().includes("condici") ||
+          l.toLowerCase().includes("condic") ||
+          l.toLowerCase().includes("consic") ||
+          (l.toLowerCase().includes("pago") && l.toLowerCase().includes("condi")) ||
+          (l.toLowerCase().includes("pago") && l.toLowerCase().includes("consi"))
+      );
+      if (payIndex >= 0) {
+          const line = linesForSearch[payIndex];
+          if (line.includes(":")) {
+              paymentTerms = line.split(":")[1].trim();
+          } else {
               paymentTerms = line;
-              break;
           }
       }
 
-      // 4. Items Extraction (Tres de Febrero PDF format)
+      // 4. Items Extraction (Tres de Febrero PDF/Image format)
       const items: any[] = [];
       const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
       let itemsStarted = false;
-      let currentItem: any = null;
 
       for (const line of lines) {
         if (line.match(/Reng\.?/i) && line.match(/Cant/i) && line.match(/Descrip/i)) {
@@ -189,25 +261,34 @@ export function OCRScanner({ onScanComplete }: OCRScannerProps) {
         }
         if (itemsStarted) {
           if (line.match(/Total\s*[:$]/i) || line.match(/Cl[áa]usulas/i) || line.match(/Autorizado/i)) {
-            if (currentItem) items.push(currentItem);
-            itemsStarted = false;
-            break;
+              itemsStarted = false;
+              break;
           }
 
           // Format: [Renglon] [Codigo] [Quantity] [U.Medida] [CatProg] [Description] $ [UnitPrice] $ [TotalPrice]
-          const rowMatch = line.match(/^(\d+)\s+([\d.]+)\s+([\d.,]+)\s+([A-Z\s]{3,})\s+([\d.]+)\s+(.*?)\$\s*([\d.\s,]+)\s*\$\s*([\d.\s,]+)/);
+          // Handles misread row indices, quantity words/letters, and various currency symbols
+          const rowMatch = line.match(/^([0-9\x27\"jJ\s]+)\s+([\d.]+)\s+([A-Z0-9.,\s\-—]+)\s+(SERVICIO|UNIDAD|U\.?\s*MEDIDA|[A-Z]{3,})\s+([-\w\d.]+)?\s*(.*?)(?:[\$\£\ES5]\s*)?([\d.,\s]+)\s*[\$\£\ES5]\s*([\d.,\s]+)$/) ||
+                           line.match(/^([0-9\x27\"jJ\s]+)\s+([\d.]+)\s+([A-Z0-9.,\s\-—]+)\s+(SERVICIO|UNIDAD|U\.?\s*MEDIDA|[A-Z]{3,})\s*(.*?)(?:[\$\£\ES5]\s*)?([\d.,\s]+)\s*[\$\£\ES5]\s*([\d.,\s]+)$/);
 
           if (rowMatch) {
-            if (currentItem) items.push(currentItem);
-            currentItem = {
-              quantity: sanitizePrice(rowMatch[3]),
+            const qtyRaw = rowMatch[3].trim();
+            let quantity = qtyRaw.replace(/[oO]/g, '0');
+            const qtyNumMatch = quantity.match(/[\d.,]+/);
+            quantity = qtyNumMatch ? sanitizePrice(qtyNumMatch[0]) : "1";
+
+            const description = rowMatch[6] || rowMatch[5] || "";
+            const unitPrice = sanitizePrice(rowMatch[rowMatch.length - 2]);
+            const totalPrice = sanitizePrice(rowMatch[rowMatch.length - 1]);
+
+            items.push({
+              quantity,
               unitOfMeasure: rowMatch[4].trim(),
-              description: rowMatch[6].trim(),
-              unitPrice: sanitizePrice(rowMatch[7]),
-              totalPrice: sanitizePrice(rowMatch[8])
-            };
-          } else if (currentItem && line.length > 5) {
-             currentItem.description += " " + line;
+              description: description.trim(),
+              unitPrice,
+              totalPrice
+            });
+          } else if (items.length > 0 && line.length > 5 && !line.includes("$") && !line.includes("Total") && !line.toLowerCase().includes("cláusulas")) {
+             items[items.length - 1].description += " " + line;
           }
         }
       }
