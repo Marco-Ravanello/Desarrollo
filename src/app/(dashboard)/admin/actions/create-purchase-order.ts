@@ -11,6 +11,7 @@ export async function createPurchaseOrderAction(formData: FormData) {
   const providerId = formData.get("providerId") as string;
   const providerName = formData.get("providerName") as string;
   const providerCuit = formData.get("providerCuit") as string;
+  const providerNumber = formData.get("providerNumber") as string;
   const amount = parseFloat(formData.get("amount") as string);
   const description = formData.get("description") as string;
   const expediente = formData.get("expediente") as string;
@@ -30,6 +31,7 @@ export async function createPurchaseOrderAction(formData: FormData) {
       providerId,
       providerName,
       providerCuit,
+      providerNumber,
       amount,
       description,
       expediente,

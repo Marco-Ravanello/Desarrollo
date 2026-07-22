@@ -25,6 +25,7 @@ export function CreatePurchaseOrderForm({ providers }: { providers: any[] }) {
     providerId: "",
     providerName: "",
     providerCuit: "",
+    providerNumber: "",
     expediente: "",
     deliveryDate: "",
     deliveryPlace: "",
@@ -52,6 +53,7 @@ export function CreatePurchaseOrderForm({ providers }: { providers: any[] }) {
       providerId: matchedProviderId || prev.providerId,
       providerName: data.providerName || prev.providerName,
       providerCuit: data.cuit || prev.providerCuit,
+      providerNumber: data.providerNumber || prev.providerNumber,
       expediente: data.expediente || prev.expediente,
       deliveryDate: data.deliveryDate ? data.deliveryDate.split('/').reverse().join('-') : prev.deliveryDate,
       deliveryPlace: data.deliveryPlace || prev.deliveryPlace,
@@ -63,7 +65,7 @@ export function CreatePurchaseOrderForm({ providers }: { providers: any[] }) {
       setItems(data.items);
     }
 
-    if (data.number || data.amount || data.cuit || data.providerName || data.expediente || data.description || (data.items && data.items.length > 0)) {
+    if (data.number || data.amount || data.cuit || data.providerName || data.providerNumber || data.expediente || data.description || (data.items && data.items.length > 0)) {
         toast.success("Datos extraídos correctamente");
     } else {
         toast.warning("No se detectaron campos conocidos en el documento");
@@ -145,6 +147,16 @@ export function CreatePurchaseOrderForm({ providers }: { providers: any[] }) {
                 required
                 value={orderData.number}
                 onChange={(e) => setOrderData({...orderData, number: e.target.value})}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="providerNumber">N° de Proveedor</Label>
+              <Input
+                id="providerNumber"
+                name="providerNumber"
+                placeholder="Ej: 20264"
+                value={orderData.providerNumber}
+                onChange={(e) => setOrderData({...orderData, providerNumber: e.target.value})}
               />
             </div>
             <div className="space-y-2">

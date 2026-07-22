@@ -165,6 +165,7 @@ model PurchaseOrder {
   provider      Provider?   @relation(fields: [providerId], references: [id])
   providerName  String?
   providerCuit  String?
+  providerNumber String?
   areaId        String?
   area          Area?       @relation(fields: [areaId], references: [id])
   amount        Decimal

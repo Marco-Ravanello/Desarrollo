@@ -51,6 +51,7 @@ export async function createPurchaseOrder(data: any) {
       providerId: data.providerId || null,
       providerName: data.providerName || null,
       providerCuit: data.providerCuit || null,
+      providerNumber: data.providerNumber || null,
       amount: data.amount,
       description: data.description,
       expediente: data.expediente || null,
