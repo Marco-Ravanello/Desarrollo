@@ -92,10 +92,10 @@ export default async function HRPage({
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         {kpis.map((kpi) => (
-          <Card key={kpi.title} className="border-none shadow-sm overflow-hidden bg-card rounded-3xl group transition-all hover:shadow-xl">
+          <Card key={kpi.title} className="border border-border/40 shadow-municipal hover:shadow-municipal-lg overflow-hidden bg-white/75 dark:bg-card/75 backdrop-blur-md rounded-3xl group transition-all">
             <CardContent className="p-6">
               <div className="flex items-center gap-4">
-                <div className={`p-4 rounded-2xl ${kpi.bg} dark:bg-slate-900 group-hover:scale-110 transition-transform`}>
+                <div className={`p-4 rounded-2xl ${kpi.bg} dark:bg-slate-900/50 group-hover:scale-110 transition-transform`}>
                   <kpi.icon className={`h-6 w-6 ${kpi.color}`} />
                 </div>
                 <div>
@@ -110,7 +110,7 @@ export default async function HRPage({
       </div>
 
       {/* Area Budget Summary - New Section */}
-      <Card className="rounded-[2rem] border-none shadow-sm bg-muted/50">
+      <Card className="rounded-[2rem] border border-border/40 shadow-municipal bg-white/75 dark:bg-card/75 backdrop-blur-md">
         <CardContent className="p-6">
             <h3 className="text-sm font-black uppercase tracking-widest text-muted-foreground mb-6 flex items-center gap-2">
                 <PieChart className="h-4 w-4" /> Distribución Salarial por Área
@@ -119,7 +119,7 @@ export default async function HRPage({
                 {sanitizedAreas.map(area => {
                     const areaBudget = stats.budgetByArea[area.id] || 0;
                     return (
-                        <div key={area.id} className="bg-card p-4 rounded-2xl border border-border shadow-sm">
+                        <div key={area.id} className="bg-slate-50/50 dark:bg-slate-900/30 p-4 rounded-2xl border border-border/40 shadow-sm">
                             <p className="text-[9px] font-black text-muted-foreground uppercase truncate mb-1" title={area.name}>{area.name}</p>
                             <p className="text-sm font-bold text-card-foreground">${areaBudget.toLocaleString('es-AR')}</p>
                         </div>
@@ -129,7 +129,7 @@ export default async function HRPage({
         </CardContent>
       </Card>
 
-      <div className="bg-card rounded-[2rem] border border-border shadow-sm overflow-hidden transition-all hover:shadow-xl">
+      <div className="bg-white/75 dark:bg-card/75 backdrop-blur-md rounded-[2rem] border border-border/40 shadow-municipal overflow-hidden transition-all hover:shadow-municipal-lg">
         <HRFilters areas={sanitizedAreas} />
 
         <Table>

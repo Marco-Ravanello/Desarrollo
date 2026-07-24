@@ -126,12 +126,12 @@ export function CreatePurchaseOrderForm({ providers }: { providers: any[] }) {
   }
 
   return (
-    <Card>
+    <Card className="bg-white/75 dark:bg-card/75 backdrop-blur-md border border-border/40 shadow-municipal">
       <CardHeader>
         <CardTitle>Nueva Orden</CardTitle>
       </CardHeader>
       <CardContent className="space-y-8">
-        <div className="bg-slate-50 dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800">
+        <div className="bg-slate-50/50 dark:bg-slate-900/30 p-4 rounded-2xl border border-slate-200/50 dark:border-slate-800/50">
            <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-3">Asistente de Carga Rápida</h4>
            <OCRScanner onScanComplete={handleScanComplete} />
         </div>

@@ -26,7 +26,7 @@ export default async function PurchaseOrdersPage({
         <Button asChild><Link href="/admin/purchase-orders/new"><Plus className="mr-2 h-4 w-4"/> Nueva Orden</Link></Button>
       </div>
 
-      <Card className="p-4 bg-slate-50/50 flex items-center gap-4">
+      <Card className="p-4 bg-white/75 dark:bg-card/75 backdrop-blur-md border border-border/40 shadow-municipal flex items-center gap-4">
         <div className="flex items-center gap-2 text-slate-500 mr-2">
           <Filter className="h-4 w-4" />
           <span className="text-xs font-bold uppercase tracking-wider">Filtros</span>
@@ -42,7 +42,7 @@ export default async function PurchaseOrdersPage({
         />
       </Card>
 
-      <Card>
+      <Card className="bg-white/75 dark:bg-card/75 backdrop-blur-md border border-border/40 shadow-municipal">
         <Table>
           <TableHeader>
             <TableRow>

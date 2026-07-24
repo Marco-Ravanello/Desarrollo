@@ -29,24 +29,27 @@
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
+    /* Beautiful deep blue-slate/graphite background color #0B0F19 */
+    --background: 223 39% 7%;
     --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
+    /* Sleek card color slightly lighter #131B2E */
+    --card: 223 41% 12%;
     --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
+    --popover: 223 41% 12%;
     --popover-foreground: 210 40% 98%;
     --primary: 205 100% 45%;
     --primary-foreground: 210 40% 98%;
-    --secondary: 217.2 32.6% 17.5%;
+    --secondary: 223 30% 18%;
     --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
+    --muted: 223 30% 18%;
     --muted-foreground: 215 20.2% 65.1%;
     --accent: 37 91% 45%;
     --accent-foreground: 210 40% 98%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
+    /* Fine elegant border color */
+    --border: 223 30% 18%;
+    --input: 223 30% 18%;
     --ring: 205 100% 45%;
   }
 }

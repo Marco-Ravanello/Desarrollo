@@ -56,7 +56,7 @@ export function AppSidebar() {
   const sidebarColor = getAreaBgColor(user?.role === 'SUPERADMIN' ? 'slate' : (user as any)?.area?.color);
 
   return (
-    <div className={`${isCollapsed ? "w-20" : "w-64"} h-screen sticky top-0 bg-card text-foreground flex flex-col shrink-0 overflow-hidden transition-all duration-300 relative border-r border-border`}>
+    <div className={`${isCollapsed ? "w-20" : "w-64"} h-screen sticky top-0 bg-white/75 dark:bg-card/75 backdrop-blur-md text-foreground flex flex-col shrink-0 overflow-hidden transition-all duration-300 relative border-r border-border/40 shadow-municipal`}>
       <Button
         variant="ghost"
         size="icon"
