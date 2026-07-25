@@ -396,6 +396,7 @@ model Task {
   description String?
   dueDate     DateTime?
   status      TaskStatus @default(PENDIENTE)
+  viewerIds   String?   // Comma-separated list of User IDs allowed to view this task/event
   createdAt   DateTime  @default(now())
 }
 
