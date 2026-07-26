@@ -1,8 +1,36 @@
 import prisma from "@/lib/prisma";
 
-export async function getDashboardStats() {
+export function parseDateRange(range?: string, fromStr?: string, toStr?: string) {
   const now = new Date();
-  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+  // Default to last 30 days
+  let from = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 30);
+  let to = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+
+  if (range === "today") {
+    from = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+  } else if (range === "7days") {
+    from = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7, 0, 0, 0, 0);
+  } else if (range === "30days") {
+    from = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 30, 0, 0, 0, 0);
+  } else if (range === "thismonth") {
+    from = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+  } else if (range === "year") {
+    from = new Date(now.getFullYear(), 0, 1, 0, 0, 0, 0);
+  } else if (range === "custom" && fromStr && toStr) {
+    from = new Date(fromStr);
+    from.setHours(0, 0, 0, 0);
+    to = new Date(toStr);
+    to.setHours(23, 59, 59, 999);
+  }
+
+  return { from, to };
+}
+
+export async function getDashboardStats(filters?: { from: Date; to: Date }) {
+  const { from, to } = filters || parseDateRange("30days");
+
+  const dateFilter = { gte: from, lte: to };
 
   const [
     peopleCount,
@@ -15,35 +43,37 @@ export async function getDashboardStats() {
     todayTasks,
     criticalCases,
   ] = await Promise.all([
-    prisma.person.count(),
-    prisma.case.count({ where: { status: { in: ['ABIERTO', 'EN_PROCESO'] } } }),
-    prisma.derivation.count({ where: { status: 'PENDIENTE' } }),
-    prisma.purchaseOrder.count({ where: { status: 'PENDIENTE_APROBACION' } }),
-    prisma.invoice.count({ where: { status: 'PENDIENTE' } }),
-    prisma.supplyItem.count({ where: { stock: { lte: 0 } } }),
-    prisma.vehicle.count(),
-    prisma.task.count({ where: { status: 'PENDIENTE', dueDate: { lte: now } } }),
-    prisma.case.count({ where: { priority: 'URGENTE', status: { in: ['ABIERTO', 'EN_PROCESO'] } } }),
+    prisma.person.count({ where: { createdAt: dateFilter } }),
+    prisma.case.count({ where: { status: { in: ['ABIERTO', 'EN_PROCESO'] }, createdAt: dateFilter } }),
+    prisma.derivation.count({ where: { status: 'PENDIENTE', createdAt: dateFilter } }),
+    prisma.purchaseOrder.count({ where: { status: 'PENDIENTE_APROBACION', createdAt: dateFilter } }),
+    prisma.invoice.count({ where: { status: 'PENDIENTE', createdAt: dateFilter } }),
+    prisma.supplyItem.count({ where: { stock: { lte: 0 } } }), // Stock doesn't have temporal filter naturally
+    prisma.vehicle.count(), // Vehicle count is flat
+    prisma.task.count({ where: { status: 'PENDIENTE', dueDate: { gte: from, lte: to } } }),
+    prisma.case.count({ where: { priority: 'URGENTE', status: { in: ['ABIERTO', 'EN_PROCESO'] }, createdAt: dateFilter } }),
   ]);
 
-  // Contar vehículos ocupados (solo los que tienen reserva APROBADA o EN_CURSO)
+  // Contar vehículos ocupados (reservas activas durante el período seleccionado)
   const occupiedVehicles = await prisma.vehicleReservation.count({
     where: {
       status: { in: ['APROBADA', 'EN_CURSO'] },
-      startDate: { lte: now },
-      endDate: { gte: now }
+      startDate: { lte: to },
+      endDate: { gte: from }
     }
   });
 
   const recentActivity = await prisma.auditLog.findMany({
+    where: { createdAt: dateFilter },
     take: 5,
     orderBy: { createdAt: 'desc' },
     include: { user: true }
   });
 
-  // Aggregated data for charts
+  // Aggregated data for charts, scoped by date filter
   const casesByArea = await prisma.case.groupBy({
     by: ['areaId'],
+    where: { createdAt: dateFilter },
     _count: { _all: true },
   });
 
@@ -55,6 +85,7 @@ export async function getDashboardStats() {
 
   const poByStatus = await prisma.purchaseOrder.groupBy({
     by: ['status'],
+    where: { createdAt: dateFilter },
     _count: { _all: true },
   });
 
@@ -78,51 +109,88 @@ export async function getDashboardStats() {
     vehicleStats: {
       total: vehicleCount,
       occupied: occupiedVehicles,
-      available: vehicleCount - occupiedVehicles
+      available: Math.max(0, vehicleCount - occupiedVehicles)
     },
-    trends: await getTrendData()
+    trends: await getTrendData(from, to)
   };
 }
 
-async function getTrendData() {
-  const sixMonthsAgo = new Date();
-  sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 5);
-  sixMonthsAgo.setDate(1);
-
+async function getTrendData(from: Date, to: Date) {
   // Casos por mes
   const cases = await prisma.case.findMany({
-    where: { createdAt: { gte: sixMonthsAgo } },
+    where: { createdAt: { gte: from, lte: to } },
     select: { createdAt: true }
   });
 
   // Gastos combustible por mes
   const fuel = await prisma.fuelRecord.findMany({
-    where: { date: { gte: sixMonthsAgo } },
+    where: { date: { gte: from, lte: to } },
     select: { date: true, amount: true }
   });
 
+  // Dynamically calculate months between from and to dates
   const months = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
   const result = [];
 
-  for (let i = 0; i < 6; i++) {
-    const d = new Date();
-    d.setMonth(d.getMonth() - (5 - i));
-    const monthIndex = d.getMonth();
-    const monthYear = `${months[monthIndex]}`;
+  const startMonth = from.getMonth();
+  const startYear = from.getFullYear();
+  const endMonth = to.getMonth();
+  const endYear = to.getFullYear();
+
+  let currentMonth = startMonth;
+  let currentYear = startYear;
+
+  while (currentYear < endYear || (currentYear === endYear && currentMonth <= endMonth)) {
+    const monthName = months[currentMonth];
 
     const monthlyCases = cases.filter(c =>
-      c.createdAt.getMonth() === monthIndex && c.createdAt.getFullYear() === d.getFullYear()
+      c.createdAt.getMonth() === currentMonth && c.createdAt.getFullYear() === currentYear
     ).length;
 
     const monthlyFuel = fuel.filter(f =>
-      f.date.getMonth() === monthIndex && f.date.getFullYear() === d.getFullYear()
+      f.date.getMonth() === currentMonth && f.date.getFullYear() === currentYear
     ).reduce((acc, curr) => acc + Number(curr.amount), 0);
 
     result.push({
-      month: monthYear,
+      month: `${monthName} ${currentYear.toString().substring(2)}`,
       casos: monthlyCases,
       combustible: monthlyFuel
     });
+
+    currentMonth++;
+    if (currentMonth > 11) {
+      currentMonth = 0;
+      currentYear++;
+    }
+  }
+
+  // If the selection is less than 2 months (e.g., today or 7 days), just map the days instead of months to keep charts informative!
+  if (result.length <= 1) {
+    const dayResult = [];
+    const tempDate = new Date(from);
+    while (tempDate <= to) {
+      const dayStr = tempDate.toLocaleDateString('es-AR', { day: 'numeric', month: 'short' });
+      const dayIndex = tempDate.getDate();
+      const monthIndex = tempDate.getMonth();
+      const yearIndex = tempDate.getFullYear();
+
+      const dailyCases = cases.filter(c =>
+        c.createdAt.getDate() === dayIndex && c.createdAt.getMonth() === monthIndex && c.createdAt.getFullYear() === yearIndex
+      ).length;
+
+      const dailyFuel = fuel.filter(f =>
+        f.date.getDate() === dayIndex && f.date.getMonth() === monthIndex && f.date.getFullYear() === yearIndex
+      ).reduce((acc, curr) => acc + Number(curr.amount), 0);
+
+      dayResult.push({
+        month: dayStr,
+        casos: dailyCases,
+        combustible: dailyFuel
+      });
+
+      tempDate.setDate(tempDate.getDate() + 1);
+    }
+    return dayResult;
   }
 
   return result;
