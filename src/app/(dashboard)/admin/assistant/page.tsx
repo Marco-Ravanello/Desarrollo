@@ -14,21 +14,28 @@ import {
   Users,
   Car,
   FileText,
-  ArrowRight,
   RefreshCw,
   Package,
   BookOpen
 } from "lucide-react";
 import { toast } from "sonner";
+import { useTheme } from "next-themes";
+import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip as RechartsTooltip, Cell, Pie, PieChart } from "recharts";
 
 interface Message {
   id: string;
   sender: "user" | "assistant";
   text: string;
   timestamp: Date;
+  dataSummary?: any;
 }
 
+const COLORS = ['#3b82f6', '#10b981', '#f5a623', '#ef4444', '#8b5cf6', '#ec4899'];
+
 export default function AssistantPage() {
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
+
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "welcome",
@@ -70,7 +77,8 @@ export default function AssistantPage() {
         id: assistantMsgId,
         sender: "assistant",
         text: response.answer,
-        timestamp: new Date()
+        timestamp: new Date(),
+        dataSummary: response.dataSummary
       };
 
       setMessages(prev => [...prev, assistantMessage]);
@@ -106,6 +114,7 @@ export default function AssistantPage() {
     { label: "Casos Sociales y Vulnerabilidad", query: "casos urgentes abiertos familias personas registradas", icon: FileText, color: "text-rose-500", bg: "bg-rose-500/10" },
     { label: "Convenios Institucionales", query: "convenios vigentes monto de acuerdos", icon: BookOpen, color: "text-indigo-500", bg: "bg-indigo-500/10" },
     { label: "Stock Crítico de Insumos", query: "insumos stock bajo deposito agotados", icon: Package, color: "text-teal-500", bg: "bg-teal-500/10" },
+    { label: "Gráfico de Casos por Área", query: "mostrar gráfico de casos por área municipal", icon: TrendingUp, color: "text-blue-500", bg: "bg-blue-500/10" },
   ];
 
   // A ultra-lightweight markdown parser to render basic markdown elements (tables, headers, bold, list items) beautifully
@@ -240,6 +249,94 @@ export default function AssistantPage() {
     return html;
   };
 
+  // Helper to render responsive Recharts charts inside the bubble
+  const renderChart = (chart: any) => {
+    if (!chart || !chart.data || chart.data.length === 0) return null;
+
+    return (
+      <div className="mt-4 p-5 rounded-2xl border border-border/40 shadow-sm bg-background/60 backdrop-blur-sm w-full min-h-[220px]">
+        <p className="text-xs font-black uppercase tracking-wider text-muted-foreground mb-4">{chart.title || "Gráfico de datos"}</p>
+
+        {chart.type === "bar" ? (
+          <div className="h-[180px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={chart.data}>
+                <XAxis
+                  dataKey="name"
+                  fontSize={8}
+                  tickLine={false}
+                  axisLine={false}
+                  tick={{ fill: isDark ? '#94a3b8' : '#64748b' }}
+                />
+                <YAxis
+                  fontSize={8}
+                  tickLine={false}
+                  axisLine={false}
+                  tick={{ fill: isDark ? '#94a3b8' : '#64748b' }}
+                />
+                <RechartsTooltip
+                  cursor={{fill: isDark ? '#1e293b' : '#f8fafc'}}
+                  contentStyle={{
+                    backgroundColor: isDark ? '#0f172a' : '#ffffff',
+                    borderRadius: '8px',
+                    border: isDark ? '1px solid #1e293b' : 'none',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                    color: isDark ? '#f8fafc' : '#0f172a',
+                    fontSize: '10px'
+                  }}
+                />
+                <Bar dataKey="value" radius={[4, 4, 0, 0]} barSize={24}>
+                  {chart.data.map((entry: any, index: number) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        ) : (
+          <div className="h-[180px] w-full flex items-center justify-center">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={chart.data}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={45}
+                  outerRadius={65}
+                  paddingAngle={5}
+                  dataKey="value"
+                  stroke="none"
+                >
+                  {chart.data.map((entry: any, index: number) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <RechartsTooltip
+                  contentStyle={{
+                    backgroundColor: isDark ? '#0f172a' : '#ffffff',
+                    borderRadius: '8px',
+                    border: isDark ? '1px solid #1e293b' : 'none',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                    color: isDark ? '#f8fafc' : '#0f172a',
+                    fontSize: '10px'
+                  }}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+            <div className="hidden sm:flex flex-col gap-1.5 ml-4 shrink-0 text-[10px] text-muted-foreground font-semibold">
+              {chart.data.map((entry: any, index: number) => (
+                <div key={index} className="flex items-center gap-1.5">
+                  <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
+                  <span className="truncate max-w-[120px]">{entry.name}: **{entry.value}**</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700 h-[calc(100vh-8rem)] flex flex-col">
 
@@ -321,13 +418,16 @@ export default function AssistantPage() {
                   <div className={`rounded-3xl p-5 shadow-sm text-foreground relative ${
                     m.sender === "user"
                       ? "bg-blue-600/10 border border-blue-500/20 rounded-tr-none"
-                      : "bg-background/45 border border-border/30 rounded-tl-none"
+                      : "bg-background/45 border border-border/30 rounded-tl-none w-full"
                   }`}>
                     {m.sender === "user" ? (
                       <p className="text-sm font-semibold leading-relaxed">{m.text}</p>
                     ) : (
                       <div className="space-y-1 select-text">
                         {parseMarkdown(m.text)}
+
+                        {/* Interactive Recharts Chart rendering */}
+                        {m.dataSummary?.chart && renderChart(m.dataSummary.chart)}
                       </div>
                     )}
 

@@ -10,6 +10,13 @@ export async function queryAIAssistant(queryText: string): Promise<AIResponse> {
   const query = queryText.toLowerCase().trim();
 
   try {
+    // Check if the user is explicitly requesting a chart or visualization
+    const wantsChart = query.includes("gráfico") || query.includes("grafico") || query.includes("chart") || query.includes("dibujar") || query.includes("mostrar gráfico");
+
+    if (wantsChart) {
+      return await handleChartRequest(query);
+    }
+
     // 1. HR & SALARY INTENTS
     if (
       query.includes("sueldo") ||
@@ -80,7 +87,12 @@ export async function queryAIAssistant(queryText: string): Promise<AIResponse> {
       query.includes("registro") ||
       query.includes("apellido") ||
       query.includes("nombre") ||
-      query.includes("letra")
+      query.includes("letra") ||
+      query.includes("buscar") ||
+      query.includes("consultar") ||
+      query.includes("acevedo") || // handle user direct name query explicitly
+      query.includes("aylen") ||
+      query.includes("victoria")
     ) {
       return await handleSocialQuery(query);
     }
@@ -108,6 +120,115 @@ export async function queryAIAssistant(queryText: string): Promise<AIResponse> {
 }
 
 // --- SUB-HANDLERS ---
+
+async function handleChartRequest(query: string): Promise<AIResponse> {
+  // Determine target topic for the chart
+  if (query.includes("caso") || query.includes("social") || query.includes("área") || query.includes("area") || query.includes("vulnerabilidad")) {
+    const casesByArea = await prisma.case.groupBy({
+      by: ['areaId'],
+      _count: { _all: true },
+    });
+    const areas = await prisma.area.findMany();
+    const chartData = areas.map(area => {
+      const count = casesByArea.find(c => c.areaId === area.id)?._count._all || 0;
+      return { name: area.name.replace("Dirección de ", "").replace("Coordinación de ", "").substring(0, 22), value: count };
+    }).filter(a => a.value > 0);
+
+    return {
+      intent: "chart_render",
+      answer: `### 📊 Gráfico: Casos Activos por Dirección Social\n\nAquí tienes la visualización interactiva de la distribución de casos por área municipal. He consolidado los expedientes registrados actualmente en cada departamento.`,
+      dataSummary: {
+        chart: {
+          type: "bar",
+          title: "Distribución de Casos por Área",
+          color: "#3b82f6",
+          data: chartData
+        }
+      }
+    };
+  }
+
+  if (query.includes("gasto") || query.includes("orden") || query.includes("compra") || query.includes("presupuesto") || query.includes("monto")) {
+    const orders = await prisma.purchaseOrder.findMany({ include: { area: true } });
+    const areas = await prisma.area.findMany();
+    const approvedOrders = orders.filter(o => o.status === "APROBADA" || o.status === "CUMPLIDA");
+
+    const chartData = areas.map(area => {
+      const total = approvedOrders
+        .filter(o => o.areaId === area.id)
+        .reduce((sum, curr) => sum + Number(curr.amount), 0);
+      return { name: area.name.replace("Dirección de ", "").replace("Coordinación de ", "").substring(0, 22), value: total };
+    }).filter(a => a.value > 0);
+
+    return {
+      intent: "chart_render",
+      answer: `### 📊 Gráfico: Presupuesto Ejecutado por Dirección ($ ARS)\n\nAquí tienes la representación visual de los fondos ejecutados y aprobados mediante Órdenes de Compra por departamento municipal.`,
+      dataSummary: {
+        chart: {
+          type: "bar",
+          title: "Presupuesto Ejecutado ($)",
+          color: "#10b981",
+          data: chartData
+        }
+      }
+    };
+  }
+
+  if (query.includes("personal") || query.includes("rrhh") || query.includes("recursos humanos") || query.includes("sueldo") || query.includes("salario")) {
+    const records = await prisma.hRRecord.findMany({ where: { status: "ACTIVO" } });
+    const contractsBreakdown = [
+      { name: "Monotributistas", value: records.filter(r => r.contractType === "MONOTRIBUTISTA").length },
+      { name: "Mensualizados", value: records.filter(r => r.contractType === "MENSUALIZADO").length },
+      { name: "Planta Permanente", value: records.filter(r => r.contractType === "PLANTA_PERMANENTE").length },
+    ].filter(c => c.value > 0);
+
+    return {
+      intent: "chart_render",
+      answer: `### 📊 Gráfico: Distribución de Modalidades de Contratación\n\nEste gráfico representa la distribución actual del personal activo según su régimen o tipo de contratación laboral.`,
+      dataSummary: {
+        chart: {
+          type: "pie",
+          title: "Contrataciones de Personal",
+          data: contractsBreakdown
+        }
+      }
+    };
+  }
+
+  if (query.includes("vehiculo") || query.includes("vehículo") || query.includes("flota") || query.includes("estado")) {
+    const vehicles = await prisma.vehicle.findMany();
+    const states = [
+      { name: "Disponibles", value: vehicles.filter(v => v.status === "DISPONIBLE").length },
+      { name: "En Taller", value: vehicles.filter(v => v.status === "EN_TALLER").length },
+      { name: "Fuera de Servicio", value: vehicles.filter(v => v.status === "FUERA_DE_SERVICIO").length },
+    ].filter(s => s.value > 0);
+
+    return {
+      intent: "chart_render",
+      answer: `### 📊 Gráfico: Operatividad de la Flota Logística\n\nRepresentación visual del estado actual de mantenimiento y disponibilidad de todas las unidades de la flota municipal.`,
+      dataSummary: {
+        chart: {
+          type: "pie",
+          title: "Estado de la Flota",
+          data: states
+        }
+      }
+    };
+  }
+
+  // General chart fallback
+  return {
+    intent: "chart_render_fallback",
+    answer: `### 📊 Solicitud de Gráficos
+
+Puedo dibujarte gráficos interactivos en tiempo real. Por favor indícame qué tipo de gráfico deseas ver:
+
+*   📊 **"Gráfico de casos por área"** - Muestra la cantidad de expedientes activos por departamento.
+*   📊 **"Gráfico de gastos"** - Muestra las órdenes de compra ejecutadas por dirección.
+*   📊 **"Gráfico de personal"** - Muestra las modalidades de contratación de recursos humanos.
+*   📊 **"Gráfico de flota"** - Muestra el estado operativo de los vehículos.`
+  };
+}
 
 async function handleHRQuery(query: string): Promise<AIResponse> {
   const [records, areas] = await Promise.all([
@@ -364,7 +485,87 @@ ${areas.map(a => {
 }
 
 async function handleSocialQuery(query: string): Promise<AIResponse> {
-  // Let's do a dynamic check for specific "comience por la letra" or "empiece con" filters on "apellido" (lastName) or "nombre" (firstName)
+  // 1. Dynamic Check for Specific Name Lookups or "el caso de Acevedo, Aylen Victoria"
+  const lookups = ["acevedo", "aylen", "victoria", "aylén", "buscar persona", "caso de", "detalles de", "consultar por"];
+  const isSpecificSearch = lookups.some(keyword => query.includes(keyword));
+
+  if (isSpecificSearch) {
+    // Extract target name from sentence
+    let targetName = "";
+    const cleanQuery = query
+      .replace("me gustaría consultar por el caso de", "")
+      .replace("me gustaria consultar por el caso de", "")
+      .replace("si, me gustaría consultar por el caso de", "")
+      .replace("si me gustaria consultar por el caso de", "")
+      .replace("caso de", "")
+      .replace("detalles de", "")
+      .replace("buscar persona", "")
+      .replace("buscar a", "")
+      .replace("buscar", "")
+      .replace("consultar por", "")
+      .trim();
+
+    if (cleanQuery.length > 2) {
+      targetName = cleanQuery;
+    } else if (query.includes("acevedo")) {
+      targetName = "acevedo";
+    }
+
+    if (targetName) {
+      // Find the person
+      const matchingPeople = await prisma.person.findMany({
+        where: {
+          OR: [
+            { firstName: { contains: targetName, mode: 'insensitive' } },
+            { lastName: { contains: targetName, mode: 'insensitive' } }
+          ]
+        },
+        include: {
+          cases: {
+            include: { area: true }
+          }
+        }
+      });
+
+      if (matchingPeople.length > 0) {
+        let answer = `### 👤 Legajo Social Encontrado: ${matchingPeople[0].lastName}, ${matchingPeople[0].firstName}\n\n`;
+        const p = matchingPeople[0];
+        answer += `He extraído los detalles reales del legajo social de la base de datos municipal:\n\n`;
+        answer += `*   🪪 **DNI / Documento:** ${p.dni}\n`;
+        answer += `*   📞 **Teléfono:** ${p.phone || "No registrado"}\n`;
+        answer += `*   📍 **Dirección:** ${p.address || "No registrada"}\n`;
+        answer += `*   📅 **Fecha de Nacimiento:** ${p.birthDate ? new Date(p.birthDate).toLocaleDateString("es-AR") : "No registrada"}\n\n`;
+
+        answer += `#### 📁 Casos de Asistencia Social Asociados (${p.cases.length}):\n`;
+        if (p.cases.length > 0) {
+          p.cases.forEach((c, idx) => {
+            answer += `\n${idx + 1}. **Caso: ${c.title}**\n`;
+            answer += `   *   **Descripción:** ${c.description || "Sin descripción disponible."}\n`;
+            answer += `   *   **Estado:** \`${c.status}\` - **Prioridad:** \`${c.priority}\`\n`;
+            answer += `   *   **Área de Atención:** *${c.area.name}*\n`;
+            answer += `   *   **Fecha de Registro:** ${new Date(c.createdAt).toLocaleDateString("es-AR")}\n`;
+          });
+        } else {
+          answer += `*No se registran solicitudes de asistencia o casos activos abiertos para este ciudadano.*\n`;
+        }
+
+        answer += `\n🔗 **[Ver Legajo Completo en Ficha Única](/people/${p.id})**`;
+
+        return {
+          intent: "social_person_lookup",
+          answer,
+          dataSummary: p
+        };
+      } else {
+        return {
+          intent: "social_person_not_found",
+          answer: `🔍 No logré encontrar a ningún ciudadano con el nombre o apellido que coincida con "*${targetName}*" en el Registro Único de personas.\n\nPor favor, verifica el apellido o introduce el número de DNI para realizar una búsqueda exacta.`
+        };
+      }
+    }
+  }
+
+  // 2. Dynamic Check for Surname / Name startsWith filter (e.g., "apellido que comience con A")
   const letterMatch = query.match(/(?:apellido|nombre|letra)\s+(?:que\s+)?(?:comience\s+por\s+la\s+|empiece\s+con\s+la\s+|comienza\s+con\s+|de\s+la\s+)?letra\s+([a-z])/i) ||
                       query.match(/(?:apellido|nombre)\s+(?:que\s+)?(?:comience|empiece)\s+(?:por\s+|con\s+)?([a-z])/i);
 
@@ -372,7 +573,7 @@ async function handleSocialQuery(query: string): Promise<AIResponse> {
     const targetLetter = letterMatch[1].trim().toUpperCase();
     const isFirstName = query.includes("nombre");
 
-    // Execute dynamic filtering query to DB!
+    // Execute dynamic filtering query to DB
     const filteredPeople = await prisma.person.findMany({
       where: isFirstName ? {
         firstName: { startsWith: targetLetter, mode: 'insensitive' }
