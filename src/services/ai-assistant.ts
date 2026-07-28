@@ -76,7 +76,11 @@ export async function queryAIAssistant(queryText: string): Promise<AIResponse> {
       query.includes("persona") ||
       query.includes("ciudadano") ||
       query.includes("deriva") ||
-      query.includes("abierto")
+      query.includes("abierto") ||
+      query.includes("registro") ||
+      query.includes("apellido") ||
+      query.includes("nombre") ||
+      query.includes("letra")
     ) {
       return await handleSocialQuery(query);
     }
@@ -110,6 +114,27 @@ async function handleHRQuery(query: string): Promise<AIResponse> {
     prisma.hRRecord.findMany({ include: { area: true } }),
     prisma.area.findMany()
   ]);
+
+  // Micro-parser: specific agent salary or lookup
+  const nameMatch = query.match(/(?:buscar|quien|quién|agente|empleado)\s+([a-zA-Z\s]+)/i);
+  if (nameMatch && nameMatch[1] && !query.includes("presupuesto") && !query.includes("sueldos")) {
+    const searchName = nameMatch[1].trim().toLowerCase();
+    const matchedAgents = records.filter(r =>
+      `${r.firstName} ${r.lastName}`.toLowerCase().includes(searchName) ||
+      r.lastName.toLowerCase().includes(searchName)
+    );
+
+    if (matchedAgents.length > 0) {
+      let answer = `### 👥 Resultados de Búsqueda de Agentes\n\nSe encontraron **${matchedAgents.length}** agentes que coinciden con "*${searchName}*":\n\n`;
+      matchedAgents.forEach(a => {
+        answer += `*   **${a.firstName} ${a.lastName}** (${a.dni}) - *${a.position || "Sin puesto definido"}*\n`;
+        answer += `    *   **Área:** ${a.area?.name || "Sin área"}\n`;
+        answer += `    *   **Contrato:** ${a.contractType} - **Sueldo:** $${Number(a.salary || 0).toLocaleString("es-AR")} ARS\n`;
+        answer += `    *   **Horario:** ${a.schedule || "No especificado"} - **Estado:** ${a.status}\n\n`;
+      });
+      return { intent: "hr_agent_lookup", answer, dataSummary: matchedAgents };
+    }
+  }
 
   const totalPersonnel = records.length;
   const activePersonnel = records.filter(r => r.status === "ACTIVO").length;
@@ -276,7 +301,7 @@ ${vehicles.map(v => {
 
 El municipio cuenta con **${totalVehicles} vehículos registrados**.
 
-#### 📊 Estado de Operación de Unidades:
+#### 📊 Estado de Ocupación de Unidades:
 *   🟢 **Disponibles:** ${available} unidades
 *   🔧 **En Taller mecánico:** ${inWorkshop} unidades
 *   🔴 **Fuera de Servicio:** ${outOfService} unidades
@@ -339,6 +364,48 @@ ${areas.map(a => {
 }
 
 async function handleSocialQuery(query: string): Promise<AIResponse> {
+  // Let's do a dynamic check for specific "comience por la letra" or "empiece con" filters on "apellido" (lastName) or "nombre" (firstName)
+  const letterMatch = query.match(/(?:apellido|nombre|letra)\s+(?:que\s+)?(?:comience\s+por\s+la\s+|empiece\s+con\s+la\s+|comienza\s+con\s+|de\s+la\s+)?letra\s+([a-z])/i) ||
+                      query.match(/(?:apellido|nombre)\s+(?:que\s+)?(?:comience|empiece)\s+(?:por\s+|con\s+)?([a-z])/i);
+
+  if (letterMatch && letterMatch[1]) {
+    const targetLetter = letterMatch[1].trim().toUpperCase();
+    const isFirstName = query.includes("nombre");
+
+    // Execute dynamic filtering query to DB!
+    const filteredPeople = await prisma.person.findMany({
+      where: isFirstName ? {
+        firstName: { startsWith: targetLetter, mode: 'insensitive' }
+      } : {
+        lastName: { startsWith: targetLetter, mode: 'insensitive' }
+      },
+      orderBy: isFirstName ? { firstName: 'asc' } : { lastName: 'asc' }
+    });
+
+    const totalCount = filteredPeople.length;
+    const targetField = isFirstName ? "Nombre" : "Apellido";
+
+    let answer = `### 🔍 Búsqueda de Ciudadanos por Inicial\n\n`;
+    answer += `Se encontraron **${totalCount} personas** en el Registro Único con **${targetField}** que comienza por la letra **"${targetLetter}"**.\n\n`;
+
+    if (totalCount > 0) {
+      answer += `| Ciudadano | Nro Documento (DNI) | Teléfono / Contacto | Dirección |\n`;
+      answer += `| :--- | :---: | :---: | :--- |\n`;
+      filteredPeople.forEach(p => {
+        answer += `| **${p.lastName}, ${p.firstName}** | ${p.dni} | ${p.phone || "No registrado"} | ${p.address || "No registrado"} |\n`;
+      });
+    } else {
+      answer += `*No se registraron personas cuya inicial coincida con la búsqueda.*`;
+    }
+
+    return {
+      intent: "social_letter_filter",
+      answer,
+      dataSummary: { targetLetter, totalCount, isFirstName }
+    };
+  }
+
+  // Fallback to general social statistics
   const [cases, people, families, areas] = await Promise.all([
     prisma.case.findMany({ include: { area: true, person: true } }),
     prisma.person.findMany(),
