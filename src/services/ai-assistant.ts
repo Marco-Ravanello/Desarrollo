@@ -123,7 +123,147 @@ export async function queryAIAssistant(queryText: string): Promise<AIResponse> {
 
 async function handleChartRequest(query: string): Promise<AIResponse> {
   // Determine target topic for the chart
-  if (query.includes("caso") || query.includes("social") || query.includes("área") || query.includes("area") || query.includes("vulnerabilidad")) {
+  if (query.includes("caso") || query.includes("social") || query.includes("área") || query.includes("area") || query.includes("vulnerabilidad") || query.includes("edad") || query.includes("género") || query.includes("genero") || query.includes("prioridad") || query.includes("estado")) {
+
+    // Dynamic Case Variable Sub-routing
+    if (query.includes("edad") || query.includes("año") || query.includes("nacimiento") || query.includes("rango")) {
+      const casesWithPeople = await prisma.case.findMany({
+        include: { person: true }
+      });
+
+      const ageBuckets = {
+        "Niños (0-12)": 0,
+        "Adolescentes (13-17)": 0,
+        "Jóvenes (18-29)": 0,
+        "Adultos (30-59)": 0,
+        "Adultos Mayores (60+)": 0,
+        "No registrado": 0,
+      };
+
+      const now = new Date();
+      casesWithPeople.forEach(c => {
+        if (c.person && c.person.birthDate) {
+          const birth = new Date(c.person.birthDate);
+          let age = now.getFullYear() - birth.getFullYear();
+          const monthDiff = now.getMonth() - birth.getMonth();
+          if (monthDiff < 0 || (monthDiff === 0 && now.getDate() < birth.getDate())) {
+            age--;
+          }
+          if (age <= 12) ageBuckets["Niños (0-12)"]++;
+          else if (age <= 17) ageBuckets["Adolescentes (13-17)"]++;
+          else if (age <= 29) ageBuckets["Jóvenes (18-29)"]++;
+          else if (age <= 59) ageBuckets["Adultos (30-59)"]++;
+          else ageBuckets["Adultos Mayores (60+)"]++;
+        } else {
+          ageBuckets["No registrado"]++;
+        }
+      });
+
+      const chartData = Object.entries(ageBuckets)
+        .map(([name, value]) => ({ name, value }))
+        .filter(item => item.value > 0);
+
+      return {
+        intent: "chart_render",
+        answer: `### 📊 Gráfico: Casos Sociales por Rango de Edad\n\nAquí tienes la visualización de los casos de asistencia social clasificados según el rango de edad de los ciudadanos afectados.`,
+        dataSummary: {
+          chart: {
+            type: "bar",
+            title: "Casos por Rango de Edad",
+            color: "#3b82f6",
+            data: chartData
+          }
+        }
+      };
+    }
+
+    if (query.includes("género") || query.includes("genero") || query.includes("sexo")) {
+      const casesWithPeople = await prisma.case.findMany({
+        include: { person: true }
+      });
+
+      const genderCounts: Record<string, number> = {};
+      casesWithPeople.forEach(c => {
+        const g = c.person?.gender ? c.person.gender.toUpperCase() : "NO ESPECIFICADO";
+        genderCounts[g] = (genderCounts[g] || 0) + 1;
+      });
+
+      const chartData = Object.entries(genderCounts)
+        .map(([name, value]) => ({
+          name: name === "FEMENINO" ? "Femenino" : name === "MASCULINO" ? "Masculino" : name === "OTRO" ? "Otro" : "No especificado",
+          value
+        }));
+
+      return {
+        intent: "chart_render",
+        answer: `### 📊 Gráfico: Casos por Género del Ciudadano\n\nEste gráfico circular representa la distribución de casos sociales registrados según la identidad de género declarada en el legajo único.`,
+        dataSummary: {
+          chart: {
+            type: "pie",
+            title: "Distribución por Género",
+            data: chartData
+          }
+        }
+      };
+    }
+
+    if (query.includes("prioridad") || query.includes("urgencia") || query.includes("severidad")) {
+      const cases = await prisma.case.findMany();
+      const priorityCounts: Record<string, number> = {
+        "BAJA": 0,
+        "MEDIA": 0,
+        "ALTA": 0,
+        "URGENTE": 0
+      };
+      cases.forEach(c => {
+        if (c.priority) {
+          priorityCounts[c.priority] = (priorityCounts[c.priority] || 0) + 1;
+        }
+      });
+      const chartData = Object.entries(priorityCounts)
+        .map(([name, value]) => ({ name: name.charAt(0) + name.slice(1).toLowerCase(), value }))
+        .filter(item => item.value > 0);
+
+      return {
+        intent: "chart_render",
+        answer: `### 📊 Gráfico: Casos por Nivel de Prioridad\n\nAquí tienes la distribución de los expedientes municipales clasificados por nivel de severidad y prioridad asignada.`,
+        dataSummary: {
+          chart: {
+            type: "bar",
+            title: "Prioridad de Casos",
+            color: "#f5a623",
+            data: chartData
+          }
+        }
+      };
+    }
+
+    if (query.includes("estado") || query.includes("status") || query.includes("etapa")) {
+      const cases = await prisma.case.findMany();
+      const statusCounts: Record<string, number> = {};
+      cases.forEach(c => {
+        if (c.status) {
+          statusCounts[c.status] = (statusCounts[c.status] || 0) + 1;
+        }
+      });
+      const chartData = Object.entries(statusCounts)
+        .map(([name, value]) => ({ name: name.replace("_", " ").charAt(0) + name.replace("_", " ").slice(1).toLowerCase(), value }))
+        .filter(item => item.value > 0);
+
+      return {
+        intent: "chart_render",
+        answer: `### 📊 Gráfico: Casos por Estado de Gestión\n\nVisualización interactiva sobre el estado administrativo de resolución de los casos de asistencia municipal.`,
+        dataSummary: {
+          chart: {
+            type: "pie",
+            title: "Estado de Casos",
+            data: chartData
+          }
+        }
+      };
+    }
+
+    // Default to cases by area
     const casesByArea = await prisma.case.groupBy({
       by: ['areaId'],
       _count: { _all: true },
@@ -221,9 +361,13 @@ async function handleChartRequest(query: string): Promise<AIResponse> {
     intent: "chart_render_fallback",
     answer: `### 📊 Solicitud de Gráficos
 
-Puedo dibujarte gráficos interactivos en tiempo real. Por favor indícame qué tipo de gráfico deseas ver:
+Puedo dibujarte gráficos interactivos en tiempo real con diferentes variables. Por favor indícame qué tipo de gráfico deseas ver:
 
 *   📊 **"Gráfico de casos por área"** - Muestra la cantidad de expedientes activos por departamento.
+*   📊 **"Gráfico de casos por género"** - Muestra los casos según la identidad de género declarada.
+*   📊 **"Gráfico de casos por edad"** - Clasifica los casos según el rango de edad.
+*   📊 **"Gráfico de casos por prioridad"** - Clasifica por nivel de urgencia o severidad.
+*   📊 **"Gráfico de casos por estado"** - Muestra el estado administrativo de resolución.
 *   📊 **"Gráfico de gastos"** - Muestra las órdenes de compra ejecutadas por dirección.
 *   📊 **"Gráfico de personal"** - Muestra las modalidades de contratación de recursos humanos.
 *   📊 **"Gráfico de flota"** - Muestra el estado operativo de los vehículos.`

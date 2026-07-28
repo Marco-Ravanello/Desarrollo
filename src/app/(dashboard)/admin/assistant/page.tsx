@@ -111,9 +111,9 @@ export default function AssistantPage() {
     { label: "Nómina de Personal y RRHH", query: "presupuesto total sueldos personal activo", icon: Users, color: "text-blue-500", bg: "bg-blue-500/10" },
     { label: "Ejecución Presupuestaria", query: "gasto total ordenes de compra presupuestos", icon: TrendingUp, color: "text-emerald-500", bg: "bg-emerald-500/10" },
     { label: "Estado de la Flota Vehicular", query: "estado vehiculos taller nafta combustible", icon: Car, color: "text-amber-500", bg: "bg-amber-500/10" },
-    { label: "Casos Sociales y Vulnerabilidad", query: "casos urgentes abiertos familias personas registradas", icon: FileText, color: "text-rose-500", bg: "bg-rose-500/10" },
-    { label: "Convenios Institucionales", query: "convenios vigentes monto de acuerdos", icon: BookOpen, color: "text-indigo-500", bg: "bg-indigo-500/10" },
-    { label: "Stock Crítico de Insumos", query: "insumos stock bajo deposito agotados", icon: Package, color: "text-teal-500", bg: "bg-teal-500/10" },
+    { label: "Casos por Edad", query: "mostrar un gráfico de casos por edad", icon: TrendingUp, color: "text-rose-500", bg: "bg-rose-500/10" },
+    { label: "Casos por Género", query: "dibujar gráfico de casos por género", icon: Users, color: "text-indigo-500", bg: "bg-indigo-500/10" },
+    { label: "Casos por Prioridad", query: "mostrar gráfico de casos por prioridad", icon: FileText, color: "text-amber-500", bg: "bg-amber-500/10" },
     { label: "Gráfico de Casos por Área", query: "mostrar gráfico de casos por área municipal", icon: TrendingUp, color: "text-blue-500", bg: "bg-blue-500/10" },
   ];
 
