@@ -28,11 +28,14 @@ interface UnifiedCalendarProps {
   currentUserId: string;
 }
 
-type CalendarViewType = "month" | "week" | "agenda";
+type CalendarViewType = "month" | "week" | "day" | "agenda";
+
+// Active administrative hours
+const HOURS = Array.from({ length: 15 }, (_, i) => i + 7); // 7:00 AM to 9:00 PM
 
 export function UnifiedCalendar({ reservations, purchaseOrders, tasks, users, currentUserId }: UnifiedCalendarProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [view, setView] = useState<CalendarViewType>("month");
+  const [view, setView] = useState<CalendarViewType>("week");
 
   // Filtering States
   const [showReservations, setShowReservations] = useState(true);
@@ -45,20 +48,24 @@ export function UnifiedCalendar({ reservations, purchaseOrders, tasks, users, cu
   const [showAddModal, setShowAddModal] = useState(false);
   const [isRescheduling, setIsRescheduling] = useState(false);
   const [rescheduleDate, setRescheduleDate] = useState("");
-  const [rescheduleEndDate, setRescheduleEndDate] = useState(""); // For reservations only
+  const [rescheduleTime, setRescheduleTime] = useState("08:00");
+  const [rescheduleEndTime, setRescheduleEndTime] = useState("10:00"); // For reservations only
 
   // Add Task Form States
   const [newTaskTitle, setNewTaskTitle] = useState("");
   const [newTaskDesc, setNewTaskDescription] = useState("");
   const [newTaskDueDate, setNewTaskDueDate] = useState("");
+  const [newTaskDueTime, setNewTaskDueTime] = useState("09:00");
   const [newTaskViewerIds, setNewTaskViewerIds] = useState<string[]>([]);
   const [isSaving, setIsSaving] = useState(false);
 
-  // Month navigation helpers
+  // Month & Day navigation helpers
   const prevMonth = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
   const nextMonth = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
   const prevWeek = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate() - 7));
   const nextWeek = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate() + 7));
+  const prevDay = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate() - 1));
+  const nextDay = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate() + 1));
   const monthNames = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
 
   // Normalize all calendar items
@@ -100,7 +107,6 @@ export function UnifiedCalendar({ reservations, purchaseOrders, tasks, users, cu
   if (showTasks) {
     tasks.forEach(t => {
       if (t.dueDate) {
-        // Shared visibility filter: User is creator OR user's ID is in viewerIds JSON array / comma-separated string
         const isOwner = t.userId === currentUserId;
         const isAllowedViewer = t.viewerIds && t.viewerIds.split(",").map((s: string) => s.trim()).includes(currentUserId);
 
@@ -143,6 +149,50 @@ export function UnifiedCalendar({ reservations, purchaseOrders, tasks, users, cu
     weekDays.push(d);
   }
 
+  // HTML5 Drag & Drop Logic
+  const handleDragStart = (e: React.DragEvent, eventItem: any) => {
+    e.dataTransfer.setData("text/plain", JSON.stringify({ id: eventItem.id, type: eventItem.type }));
+    e.dataTransfer.effectAllowed = "move";
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+  };
+
+  const handleDropOnSlot = async (e: React.DragEvent, targetDate: Date, targetHour: number, targetMinute: number) => {
+    e.preventDefault();
+    try {
+      const dataStr = e.dataTransfer.getData("text/plain");
+      if (!dataStr) return;
+      const { id, type } = JSON.parse(dataStr);
+
+      const computedStart = new Date(targetDate);
+      computedStart.setHours(targetHour, targetMinute, 0, 0);
+
+      const toastId = toast.loading("Actualizando horario del evento...");
+      let res;
+
+      if (type === "task") {
+        res = await rescheduleTaskAction(id, computedStart.toISOString());
+      } else if (type === "order") {
+        res = await reschedulePurchaseOrderAction(id, computedStart.toISOString());
+      } else if (type === "reservation") {
+        // For reservations, default to 2 hours reservation length
+        const computedEnd = new Date(computedStart);
+        computedEnd.setHours(computedStart.getHours() + 2);
+        res = await rescheduleReservationAction(id, computedStart.toISOString(), computedEnd.toISOString());
+      }
+
+      if (res?.success) {
+        toast.success("Evento reprogramado con éxito", { id: toastId });
+      } else {
+        toast.error(res?.error || "Error al reprogramar el evento", { id: toastId });
+      }
+    } catch (err: any) {
+      toast.error("Error al procesar el arrastre: " + err.message);
+    }
+  };
+
   // Handle Rescheduling Submission
   const handleReschedule = async () => {
     if (!selectedEvent) return;
@@ -151,17 +201,19 @@ export function UnifiedCalendar({ reservations, purchaseOrders, tasks, users, cu
 
     try {
       let res;
+      const computedStart = new Date(`${rescheduleDate}T${rescheduleTime}:00`);
+
       if (selectedEvent.type === "task") {
-        res = await rescheduleTaskAction(selectedEvent.id, rescheduleDate);
+        res = await rescheduleTaskAction(selectedEvent.id, computedStart.toISOString());
       } else if (selectedEvent.type === "reservation") {
-        res = await rescheduleReservationAction(selectedEvent.id, rescheduleDate, rescheduleEndDate);
+        const computedEnd = new Date(`${rescheduleDate}T${rescheduleEndTime}:00`);
+        res = await rescheduleReservationAction(selectedEvent.id, computedStart.toISOString(), computedEnd.toISOString());
       } else if (selectedEvent.type === "order") {
-        res = await reschedulePurchaseOrderAction(selectedEvent.id, rescheduleDate);
+        res = await reschedulePurchaseOrderAction(selectedEvent.id, computedStart.toISOString());
       }
 
       if (res?.success) {
         toast.success("Fecha reprogramada con éxito", { id: toastId });
-        // Refresh local cache/state
         setSelectedEvent(null);
       } else {
         toast.error(res?.error || "Error al reprogramar el evento", { id: toastId });
@@ -185,11 +237,11 @@ export function UnifiedCalendar({ reservations, purchaseOrders, tasks, users, cu
 
     try {
       const viewerIdsStr = newTaskViewerIds.join(",");
-      const res = await createSharedTaskAction(newTaskTitle, newTaskDesc, newTaskDueDate, viewerIdsStr);
+      const computedDueDate = new Date(`${newTaskDueDate}T${newTaskDueTime}:00`);
+      const res = await createSharedTaskAction(newTaskTitle, newTaskDesc, computedDueDate.toISOString(), viewerIdsStr);
       if (res.success) {
         toast.success("Tarea registrada y compartida correctamente", { id: toastId });
         setShowAddModal(false);
-        // Reset fields
         setNewTaskTitle("");
         setNewTaskDescription("");
         setNewTaskDueDate("");
@@ -210,6 +262,10 @@ export function UnifiedCalendar({ reservations, purchaseOrders, tasks, users, cu
     } else {
       setNewTaskViewerIds([...newTaskViewerIds, userId]);
     }
+  };
+
+  const formatTime = (date: Date) => {
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
   return (
@@ -238,7 +294,7 @@ export function UnifiedCalendar({ reservations, purchaseOrders, tasks, users, cu
                   className="rounded text-blue-600 focus:ring-blue-500 h-4 w-4 border-slate-300"
                 />
                 <span className="group-hover:text-blue-500 transition-colors flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-blue-500" />
+                  <div className="w-2.5 h-2.5 rounded-full bg-blue-500" />
                   Reservas de Vehículos
                 </span>
               </label>
@@ -251,7 +307,7 @@ export function UnifiedCalendar({ reservations, purchaseOrders, tasks, users, cu
                   className="rounded text-emerald-600 focus:ring-emerald-500 h-4 w-4 border-slate-300"
                 />
                 <span className="group-hover:text-emerald-500 transition-colors flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                  <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
                   Entregas de Órdenes
                 </span>
               </label>
@@ -264,11 +320,17 @@ export function UnifiedCalendar({ reservations, purchaseOrders, tasks, users, cu
                   className="rounded text-amber-600 focus:ring-amber-500 h-4 w-4 border-slate-300"
                 />
                 <span className="group-hover:text-amber-500 transition-colors flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-amber-500" />
+                  <div className="w-2.5 h-2.5 rounded-full bg-amber-500" />
                   Mis Tareas & Eventos
                 </span>
               </label>
             </div>
+          </div>
+
+          {/* Drag and Drop instructions */}
+          <div className="p-3.5 rounded-xl bg-blue-500/10 border border-blue-200 text-[10px] text-blue-700 font-bold space-y-1">
+             <p className="uppercase tracking-widest text-blue-800">💡 Tip de Productividad</p>
+             <p className="leading-relaxed">¡Puedes arrastrar y soltar cualquier reserva o tarea a otra hora o día del calendario para reagendarla al instante!</p>
           </div>
 
           <div className="pt-4 border-t border-border/40">
@@ -284,7 +346,7 @@ export function UnifiedCalendar({ reservations, purchaseOrders, tasks, users, cu
 
       {/* Main Calendar Space */}
       <div className="xl:col-span-3 space-y-6">
-        <Card className="bg-white/75 dark:bg-card/75 backdrop-blur-md border border-border/40 shadow-municipal overflow-hidden">
+        <Card className="bg-white/75 dark:bg-card/75 backdrop-blur-md border border-border/40 shadow-municipal overflow-hidden rounded-[2rem]">
           {/* Calendar Header Controls */}
           <div className="p-6 border-b border-border/40 flex flex-col md:flex-row justify-between items-center gap-4 bg-slate-50/40 dark:bg-slate-900/10">
             <div className="flex items-center gap-3">
@@ -293,7 +355,8 @@ export function UnifiedCalendar({ reservations, purchaseOrders, tasks, users, cu
               </div>
               <h3 className="font-black text-xl text-foreground">
                 {view === "month" && `${monthNames[currentDate.getMonth()]} ${currentDate.getFullYear()}`}
-                {view === "week" && `Semana de ${weekDays[0].toLocaleDateString('es-AR', {day: 'numeric', month: 'short'})}`}
+                {view === "week" && `Semana del ${weekDays[0].getDate()} de ${monthNames[weekDays[0].getMonth()]}`}
+                {view === "day" && `${currentDate.toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' })}`}
                 {view === "agenda" && `Agenda General`}
               </h3>
             </div>
@@ -304,7 +367,7 @@ export function UnifiedCalendar({ reservations, purchaseOrders, tasks, users, cu
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={view === "month" ? prevMonth : prevWeek}
+                  onClick={view === "month" ? prevMonth : view === "week" ? prevWeek : view === "day" ? prevDay : prevWeek}
                   className="h-8 w-8 rounded-lg"
                 >
                   <ChevronLeft className="h-4 w-4" />
@@ -320,7 +383,7 @@ export function UnifiedCalendar({ reservations, purchaseOrders, tasks, users, cu
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={view === "month" ? nextMonth : nextWeek}
+                  onClick={view === "month" ? nextMonth : view === "week" ? nextWeek : view === "day" ? nextDay : nextWeek}
                   className="h-8 w-8 rounded-lg"
                 >
                   <ChevronRight className="h-4 w-4" />
@@ -344,6 +407,14 @@ export function UnifiedCalendar({ reservations, purchaseOrders, tasks, users, cu
                   className={`h-8 text-xs font-bold px-3 rounded-lg uppercase tracking-wider ${view === "week" ? "bg-white dark:bg-card shadow-sm" : ""}`}
                 >
                   Semana
+                </Button>
+                <Button
+                  onClick={() => setView("day")}
+                  variant={view === "day" ? "secondary" : "ghost"}
+                  size="sm"
+                  className={`h-8 text-xs font-bold px-3 rounded-lg uppercase tracking-wider ${view === "day" ? "bg-white dark:bg-card shadow-sm" : ""}`}
+                >
+                  Día
                 </Button>
                 <Button
                   onClick={() => setView("agenda")}
@@ -389,15 +460,8 @@ export function UnifiedCalendar({ reservations, purchaseOrders, tasks, users, cu
                   return (
                     <div
                       key={d}
-                      onClick={() => {
-                        if (dayEvents.length > 0) {
-                          setSelectedEvent(dayEvents[0]);
-                          setRescheduleDate(dayEvents[0].startDate.toISOString().split("T")[0]);
-                          if (dayEvents[0].type === "reservation") {
-                            setRescheduleEndDate(dayEvents[0].endDate.toISOString().split("T")[0]);
-                          }
-                        }
-                      }}
+                      onDragOver={handleDragOver}
+                      onDrop={(ev) => handleDropOnSlot(ev, date, 9, 0)}
                       className={`h-32 border-b border-r border-border/30 p-1.5 flex flex-col overflow-y-auto cursor-pointer relative group transition-colors hover:bg-slate-50/30 dark:hover:bg-slate-900/10 ${
                         isToday ? "bg-blue-50/20 dark:bg-blue-950/10" : ""
                       }`}
@@ -412,17 +476,21 @@ export function UnifiedCalendar({ reservations, purchaseOrders, tasks, users, cu
                         {dayEvents.map(e => (
                           <div
                             key={e.id}
+                            draggable
+                            onDragStart={(ev) => handleDragStart(ev, e)}
                             onClick={(ev) => {
                               ev.stopPropagation();
                               setSelectedEvent(e);
                               setRescheduleDate(e.startDate.toISOString().split("T")[0]);
+                              setRescheduleTime(e.startDate.toTimeString().split(" ")[0].substring(0, 5));
                               if (e.type === "reservation") {
-                                setRescheduleEndDate(e.endDate.toISOString().split("T")[0]);
+                                setRescheduleEndTime(e.endDate.toTimeString().split(" ")[0].substring(0, 5));
                               }
                             }}
-                            className={`text-[9px] px-1.5 py-1 rounded-lg border font-bold truncate leading-tight shadow-sm transition-all hover:scale-102 ${e.color}`}
-                            title={e.title}
+                            className={`text-[9px] px-1.5 py-1 rounded-lg border font-bold truncate leading-tight shadow-sm cursor-grab active:cursor-grabbing transition-all hover:scale-102 ${e.color}`}
+                            title={`${e.title} (${formatTime(e.startDate)})`}
                           >
+                            <span className="opacity-75 font-mono mr-1">{formatTime(e.startDate)}</span>
                             {e.title}
                           </div>
                         ))}
@@ -434,60 +502,158 @@ export function UnifiedCalendar({ reservations, purchaseOrders, tasks, users, cu
             </div>
           )}
 
-          {/* Week View Grid */}
+          {/* Hourly Week View (Split by Hour and Half Hour Rows) */}
           {view === "week" && (
-            <div className="grid grid-cols-7 border-b border-border/30">
-              {weekDays.map((date, i) => {
-                const isToday = new Date().toDateString() === date.toDateString();
-                const dayEvents = filteredEvents.filter(e => {
-                  const start = new Date(e.startDate);
-                  start.setHours(0,0,0,0);
-                  const end = new Date(e.endDate);
-                  end.setHours(23,59,59,999);
-                  return start <= date && end >= date;
-                });
+            <div className="overflow-x-auto">
+              <div className="min-w-[800px]">
+                {/* Header Row */}
+                <div className="grid grid-cols-8 border-b border-border/30 bg-slate-50/10 py-3 text-center">
+                  <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 border-r border-border/30">Horario</div>
+                  {weekDays.map((date, idx) => {
+                    const isToday = new Date().toDateString() === date.toDateString();
+                    return (
+                      <div key={idx} className="flex flex-col items-center justify-center border-r border-border/30 last:border-r-0">
+                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                          {["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"][idx]}
+                        </span>
+                        <span className={`text-sm font-black w-7 h-7 rounded-full flex items-center justify-center mt-1 ${
+                          isToday ? "bg-primary text-white" : "text-foreground"
+                        }`}>
+                          {date.getDate()}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
 
-                return (
-                  <div
-                    key={i}
-                    className={`min-h-[400px] border-r border-border/30 p-3 flex flex-col gap-2 ${
-                      isToday ? "bg-blue-50/15 dark:bg-blue-950/5" : ""
-                    }`}
-                  >
-                    <div className="text-center pb-2 border-b border-border/20">
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                        {["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"][i]}
-                      </p>
-                      <p className={`text-lg font-black w-7 h-7 rounded-full flex items-center justify-center mx-auto mt-1 ${
-                        isToday ? "bg-primary text-white" : "text-foreground"
-                      }`}>
-                        {date.getDate()}
-                      </p>
-                    </div>
+                {/* Grid Rows */}
+                <div className="divide-y divide-border/20 max-h-[600px] overflow-y-auto">
+                  {HOURS.map(hour => {
+                    return [0, 30].map(minute => {
+                      const timeStr = `${hour.toString().padStart(2, "0")}:${minute.toString().padStart(2, "0")}`;
 
-                    <div className="space-y-2 flex-1 overflow-y-auto">
-                      {dayEvents.map(e => (
-                        <div
-                          key={e.id}
-                          onClick={() => {
-                            setSelectedEvent(e);
-                            setRescheduleDate(e.startDate.toISOString().split("T")[0]);
-                            if (e.type === "reservation") {
-                              setRescheduleEndDate(e.endDate.toISOString().split("T")[0]);
-                            }
-                          }}
-                          className={`p-2.5 rounded-xl border font-bold text-[10px] leading-snug cursor-pointer shadow-sm transition-all hover:scale-102 ${e.color}`}
-                        >
-                          <div className="truncate mb-1">{e.title}</div>
-                          <div className="flex items-center gap-1 opacity-70 text-[8px] font-black uppercase tracking-wider">
-                            <Clock className="h-2.5 w-2.5" />
-                            {e.type === "reservation" ? "Reserva" : e.type === "order" ? "Entrega OC" : "Tarea"}
+                      return (
+                        <div key={timeStr} className="grid grid-cols-8 hover:bg-slate-50/10 dark:hover:bg-slate-900/5">
+                          {/* Time Column */}
+                          <div className="text-[10px] font-mono font-bold text-muted-foreground p-2 border-r border-border/30 flex items-center justify-center bg-slate-50/30 dark:bg-slate-900/5 select-none">
+                            {timeStr}
                           </div>
+
+                          {/* Day Columns */}
+                          {weekDays.map((date, dayIdx) => {
+                            const currentSlotStart = new Date(date);
+                            currentSlotStart.setHours(hour, minute, 0, 0);
+                            const currentSlotEnd = new Date(currentSlotStart);
+                            currentSlotEnd.setMinutes(currentSlotStart.getMinutes() + 30);
+
+                            // Find events overlapping with this specific 30-min window
+                            const slotEvents = filteredEvents.filter(e => {
+                              const start = new Date(e.startDate);
+                              const end = new Date(e.endDate);
+                              return (start < currentSlotEnd && end > currentSlotStart) ||
+                                     (start.getTime() === currentSlotStart.getTime() && e.type !== "reservation");
+                            });
+
+                            return (
+                              <div
+                                key={dayIdx}
+                                onDragOver={handleDragOver}
+                                onDrop={(ev) => handleDropOnSlot(ev, date, hour, minute)}
+                                className="border-r border-border/30 last:border-r-0 p-1.5 min-h-[44px] relative group flex flex-col gap-1 transition-all"
+                              >
+                                {slotEvents.map(e => {
+                                  const isExactStart = new Date(e.startDate).getHours() === hour && new Date(e.startDate).getMinutes() === minute;
+                                  return (
+                                    <div
+                                      key={e.id}
+                                      draggable
+                                      onDragStart={(ev) => handleDragStart(ev, e)}
+                                      onClick={() => {
+                                        setSelectedEvent(e);
+                                        setRescheduleDate(e.startDate.toISOString().split("T")[0]);
+                                        setRescheduleTime(e.startDate.toTimeString().split(" ")[0].substring(0, 5));
+                                        if (e.type === "reservation") {
+                                          setRescheduleEndTime(e.endDate.toTimeString().split(" ")[0].substring(0, 5));
+                                        }
+                                      }}
+                                      className={`p-1 px-2 rounded-lg border text-[9px] font-black leading-tight cursor-grab active:cursor-grabbing shadow-sm transition-transform hover:scale-102 ${e.color}`}
+                                      title={`${e.title} (${formatTime(e.startDate)} - ${formatTime(e.endDate)})`}
+                                    >
+                                      {isExactStart && <span className="font-mono text-[8px] mr-1 opacity-75">{formatTime(e.startDate)}</span>}
+                                      <span className="truncate block">{e.title}</span>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            );
+                          })}
                         </div>
-                      ))}
+                      );
+                    });
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Hourly Day View */}
+          {view === "day" && (
+            <div className="grid grid-cols-1 divide-y divide-border/20 max-h-[600px] overflow-y-auto">
+              {HOURS.map(hour => {
+                return [0, 30].map(minute => {
+                  const timeStr = `${hour.toString().padStart(2, "0")}:${minute.toString().padStart(2, "0")}`;
+                  const currentSlotStart = new Date(currentDate);
+                  currentSlotStart.setHours(hour, minute, 0, 0);
+                  const currentSlotEnd = new Date(currentSlotStart);
+                  currentSlotEnd.setMinutes(currentSlotStart.getMinutes() + 30);
+
+                  const slotEvents = filteredEvents.filter(e => {
+                    const start = new Date(e.startDate);
+                    const end = new Date(e.endDate);
+                    return (start < currentSlotEnd && end > currentSlotStart) ||
+                           (start.getTime() === currentSlotStart.getTime() && e.type !== "reservation");
+                  });
+
+                  return (
+                    <div
+                      key={timeStr}
+                      onDragOver={handleDragOver}
+                      onDrop={(ev) => handleDropOnSlot(ev, currentDate, hour, minute)}
+                      className="grid grid-cols-12 hover:bg-slate-50/10 dark:hover:bg-slate-900/5 min-h-[50px]"
+                    >
+                      {/* Time Code */}
+                      <div className="col-span-2 text-xs font-mono font-bold text-muted-foreground p-3 border-r border-border/30 flex items-center justify-center bg-slate-50/30 dark:bg-slate-900/5 select-none">
+                        {timeStr}
+                      </div>
+
+                      {/* Event Holder */}
+                      <div className="col-span-10 p-2 flex flex-wrap gap-2 items-center">
+                        {slotEvents.map(e => (
+                          <div
+                            key={e.id}
+                            draggable
+                            onDragStart={(ev) => handleDragStart(ev, e)}
+                            onClick={() => {
+                              setSelectedEvent(e);
+                              setRescheduleDate(e.startDate.toISOString().split("T")[0]);
+                              setRescheduleTime(e.startDate.toTimeString().split(" ")[0].substring(0, 5));
+                              if (e.type === "reservation") {
+                                setRescheduleEndTime(e.endDate.toTimeString().split(" ")[0].substring(0, 5));
+                              }
+                            }}
+                            className={`p-2 rounded-xl border text-[10px] font-black cursor-grab active:cursor-grabbing shadow-sm flex items-center gap-2 transition-transform hover:scale-102 ${e.color}`}
+                          >
+                            <Clock className="h-3.5 w-3.5 shrink-0 opacity-70" />
+                            <span>
+                              <span className="font-mono opacity-80 mr-1">{formatTime(e.startDate)} - {formatTime(e.endDate)}</span>
+                              {e.title}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                );
+                  );
+                });
               })}
             </div>
           )}
@@ -508,8 +674,9 @@ export function UnifiedCalendar({ reservations, purchaseOrders, tasks, users, cu
                       onClick={() => {
                         setSelectedEvent(e);
                         setRescheduleDate(e.startDate.toISOString().split("T")[0]);
+                        setRescheduleTime(e.startDate.toTimeString().split(" ")[0].substring(0, 5));
                         if (e.type === "reservation") {
-                          setRescheduleEndDate(e.endDate.toISOString().split("T")[0]);
+                          setRescheduleEndTime(e.endDate.toTimeString().split(" ")[0].substring(0, 5));
                         }
                       }}
                       className="py-4 flex items-start md:items-center justify-between gap-4 group cursor-pointer hover:bg-slate-50/50 dark:hover:bg-slate-900/10 px-4 rounded-xl transition-all"
@@ -542,7 +709,7 @@ export function UnifiedCalendar({ reservations, purchaseOrders, tasks, users, cu
                       <div className="flex items-center gap-2">
                         <span className="text-[10px] font-black text-slate-400 flex items-center gap-1 uppercase tracking-wider italic">
                           <Clock className="h-3 w-3" />
-                          {e.startDate.toLocaleDateString('es-AR', {month: 'long', year: 'numeric'})}
+                          {formatTime(e.startDate)}
                         </span>
                       </div>
                     </div>
@@ -581,7 +748,7 @@ export function UnifiedCalendar({ reservations, purchaseOrders, tasks, users, cu
                 <>
                   <div className="flex items-center gap-2.5 text-sm font-semibold">
                     <Clock className="h-4 w-4 text-blue-500" />
-                    <span>Período: <span className="text-muted-foreground font-medium">{selectedEvent.startDate.toLocaleDateString('es-AR')} al {selectedEvent.endDate.toLocaleDateString('es-AR')}</span></span>
+                    <span>Período: <span className="text-muted-foreground font-medium">{selectedEvent.startDate.toLocaleString('es-AR')} al {selectedEvent.endDate.toLocaleString('es-AR')}</span></span>
                   </div>
                   <div className="flex items-center gap-2.5 text-sm font-semibold">
                     <User className="h-4 w-4 text-blue-500" />
@@ -603,7 +770,7 @@ export function UnifiedCalendar({ reservations, purchaseOrders, tasks, users, cu
                 <>
                   <div className="flex items-center gap-2.5 text-sm font-semibold">
                     <Clock className="h-4 w-4 text-emerald-500" />
-                    <span>Entrega Pactada: <span className="text-muted-foreground font-medium">{selectedEvent.startDate.toLocaleDateString('es-AR')}</span></span>
+                    <span>Entrega Pactada: <span className="text-muted-foreground font-medium">{selectedEvent.startDate.toLocaleString('es-AR')}</span></span>
                   </div>
                   <div className="flex items-center gap-2.5 text-sm font-semibold">
                     <User className="h-4 w-4 text-emerald-500" />
@@ -626,7 +793,7 @@ export function UnifiedCalendar({ reservations, purchaseOrders, tasks, users, cu
                 <>
                   <div className="flex items-center gap-2.5 text-sm font-semibold">
                     <Clock className="h-4 w-4 text-amber-500" />
-                    <span>Vencimiento: <span className="text-muted-foreground font-medium">{selectedEvent.startDate.toLocaleDateString('es-AR')}</span></span>
+                    <span>Vencimiento: <span className="text-muted-foreground font-medium">{selectedEvent.startDate.toLocaleString('es-AR')}</span></span>
                   </div>
                   {selectedEvent.raw.description && (
                     <div className="pt-2 border-t border-border/20 text-xs text-muted-foreground italic font-medium">
@@ -645,13 +812,13 @@ export function UnifiedCalendar({ reservations, purchaseOrders, tasks, users, cu
             {/* Rescheduling Form */}
             <div className="space-y-4 pt-4 border-t border-border/20">
               <h4 className="text-xs font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
-                <Edit2 className="h-3.5 w-3.5" /> Reprogramar Fecha de Logística
+                <Edit2 className="h-3.5 w-3.5" /> Reprogramar Horarios de Logística
               </h4>
 
               <div className="flex flex-col gap-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label className="text-xs font-bold uppercase tracking-wider">{selectedEvent.type === "reservation" ? "Fecha Inicio" : "Nueva Fecha"}</Label>
+                    <Label className="text-xs font-bold uppercase tracking-wider">Fecha</Label>
                     <Input
                       type="date"
                       value={rescheduleDate}
@@ -660,13 +827,23 @@ export function UnifiedCalendar({ reservations, purchaseOrders, tasks, users, cu
                     />
                   </div>
 
+                  <div className="space-y-2">
+                    <Label className="text-xs font-bold uppercase tracking-wider">{selectedEvent.type === "reservation" ? "Hora Inicio" : "Hora"}</Label>
+                    <Input
+                      type="time"
+                      value={rescheduleTime}
+                      onChange={e => setRescheduleTime(e.target.value)}
+                      className="bg-slate-50/50 dark:bg-slate-900/30 rounded-xl"
+                    />
+                  </div>
+
                   {selectedEvent.type === "reservation" && (
-                    <div className="space-y-2">
-                      <Label className="text-xs font-bold uppercase tracking-wider">Fecha Fin</Label>
+                    <div className="space-y-2 col-span-2">
+                      <Label className="text-xs font-bold uppercase tracking-wider">Hora Fin</Label>
                       <Input
-                        type="date"
-                        value={rescheduleEndDate}
-                        onChange={e => setRescheduleEndDate(e.target.value)}
+                        type="time"
+                        value={rescheduleEndTime}
+                        onChange={e => setRescheduleEndTime(e.target.value)}
                         className="bg-slate-50/50 dark:bg-slate-900/30 rounded-xl"
                       />
                     </div>
@@ -753,16 +930,30 @@ export function UnifiedCalendar({ reservations, purchaseOrders, tasks, users, cu
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="dueDate" className="text-xs font-bold uppercase tracking-widest text-slate-400">Fecha de Vencimiento</Label>
-                <Input
-                  id="dueDate"
-                  type="date"
-                  value={newTaskDueDate}
-                  onChange={e => setNewTaskDueDate(e.target.value)}
-                  required
-                  className="bg-slate-50/50 dark:bg-slate-900/30 rounded-xl h-11"
-                />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="dueDate" className="text-xs font-bold uppercase tracking-widest text-slate-400">Fecha de Vencimiento</Label>
+                  <Input
+                    id="dueDate"
+                    type="date"
+                    value={newTaskDueDate}
+                    onChange={e => setNewTaskDueDate(e.target.value)}
+                    required
+                    className="bg-slate-50/50 dark:bg-slate-900/30 rounded-xl h-11"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="dueTime" className="text-xs font-bold uppercase tracking-widest text-slate-400">Hora de Vencimiento</Label>
+                  <Input
+                    id="dueTime"
+                    type="time"
+                    value={newTaskDueTime}
+                    onChange={e => setNewTaskDueTime(e.target.value)}
+                    required
+                    className="bg-slate-50/50 dark:bg-slate-900/30 rounded-xl h-11"
+                  />
+                </div>
               </div>
 
               {/* Shared Visibility Invites Checklist */}
