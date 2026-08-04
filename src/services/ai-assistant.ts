@@ -10,30 +10,204 @@ export async function queryAIAssistant(queryText: string): Promise<AIResponse> {
   const query = queryText.toLowerCase().trim();
 
   try {
-    // 1. CHART INTENT ROUTER (Direct preset to ensure interactive visual charts)
+    // Check if the user is explicitly requesting a chart or visualization
     const wantsChart = query.includes("gráfico") || query.includes("grafico") || query.includes("chart") || query.includes("dibujar") || query.includes("mostrar gráfico");
 
     if (wantsChart) {
       return await handleChartRequest(query);
     }
 
-    // 2. OLLAMA LLM LOCAL ATTEMPT
-    try {
-      const context = await buildSystemContext(query);
-      const llmResponse = await queryOllama(queryText, context);
+    // --- DYNAMIC RAG CONTEXT COLLECTION ---
+    let dynamicContext = "";
 
-      return {
-        intent: "local_llm_ollama",
-        answer: llmResponse,
-        dataSummary: { usedOllama: true }
-      };
-    } catch (ollamaError: any) {
-      console.warn("⚠️ Local Ollama unreachable or failed, falling back to structured intent handlers.", ollamaError.message || ollamaError);
+    // 1. HR Context
+    if (
+      query.includes("sueldo") ||
+      query.includes("salario") ||
+      query.includes("rrhh") ||
+      query.includes("recursos humanos") ||
+      query.includes("personal") ||
+      query.includes("empleado") ||
+      query.includes("agente") ||
+      query.includes("contrato") ||
+      query.includes("nómina") ||
+      query.includes("nomina")
+    ) {
+      const records = await prisma.hRRecord.findMany({
+        where: { status: { not: "BAJA" } },
+        include: { area: true },
+        take: 20
+      });
+      dynamicContext += "\n--- CONTEXTO DE RECURSOS HUMANOS (PERSONAL ACTIVO) ---\n" + records.map(r =>
+        `- Agente: ${r.lastName}, ${r.firstName} | DNI: ${r.dni} | Legajo/CUIT: ${r.fileNumber || "N/A"} | Puesto: ${r.position || "N/A"} | Área: ${r.area?.name || "Sin área"} | Contrato: ${r.contractType} | Sueldo: $${Number(r.salary || 0).toLocaleString("es-AR")} ARS | Horario: ${r.schedule || "N/A"} | Estado: ${r.status}`
+      ).join("\n") + "\n";
     }
 
-    // 3. STRUCTURED INTENTS FALLBACK (Runs if Ollama is offline or times out)
+    // 2. Budget & Purchase Orders Context
+    if (
+      query.includes("orden") ||
+      query.includes("compras") ||
+      query.includes("gasto") ||
+      query.includes("presupuesto") ||
+      query.includes("comprar") ||
+      query.includes("monto") ||
+      query.includes("factura")
+    ) {
+      const orders = await prisma.purchaseOrder.findMany({
+        include: { area: true },
+        orderBy: { createdAt: "desc" },
+        take: 15
+      });
+      dynamicContext += "\n--- CONTEXTO DE ÓRDENES DE COMPRA ---\n" + orders.map(o =>
+        `- OC #${o.number} | Proveedor: ${o.providerName || "N/A"} | CUIT: ${o.providerCuit || "N/A"} | Área: ${o.area?.name || "Sin área"} | Monto: $${Number(o.amount || 0).toLocaleString("es-AR")} ARS | Estado: ${o.status} | Expediente: ${o.expediente || "N/A"} | Entrega: ${o.deliveryPlace || "N/A"}`
+      ).join("\n") + "\n";
+    }
 
-    // A. HR & SALARY INTENTS
+    // 3. Vehicles & Fleet Logistics Context
+    if (
+      query.includes("vehiculo") ||
+      query.includes("vehículo") ||
+      query.includes("auto") ||
+      query.includes("camioneta") ||
+      query.includes("flota") ||
+      query.includes("taller") ||
+      query.includes("reserva") ||
+      query.includes("combustible") ||
+      query.includes("nafta") ||
+      query.includes("litro")
+    ) {
+      const [vehicles, fuel] = await Promise.all([
+        prisma.vehicle.findMany(),
+        prisma.fuelRecord.findMany({ include: { vehicle: true }, orderBy: { date: "desc" }, take: 10 })
+      ]);
+      dynamicContext += "\n--- CONTEXTO DE VEHÍCULOS (FLOTA) ---\n" + vehicles.map(v =>
+        `- Vehículo: ${v.brand} ${v.model} (${v.plate}) | Estado: ${v.status} | Seguro Vence: ${v.insuranceExpiry ? new Date(v.insuranceExpiry).toLocaleDateString("es-AR") : "N/A"} | VTV Vence: ${v.vtvExpiry ? new Date(v.vtvExpiry).toLocaleDateString("es-AR") : "N/A"}`
+      ).join("\n") + "\n";
+
+      dynamicContext += "\n--- REGISTROS RECIENTES DE COMBUSTIBLE ---\n" + fuel.map(f =>
+        `- Carga: Vehículo ${f.vehicle.brand} ${f.vehicle.model} (${f.vehicle.plate}) | Cantidad: ${f.liters} Lts | Monto: $${Number(f.amount || 0).toLocaleString("es-AR")} ARS | Ticket: ${f.ticketNumber || "N/A"}`
+      ).join("\n") + "\n";
+    }
+
+    // 4. Agreements (Convenios) Context
+    if (
+      query.includes("convenio") ||
+      query.includes("acuerdo") ||
+      query.includes("parties") ||
+      query.includes("institucional")
+    ) {
+      const agreements = await prisma.agreement.findMany({ include: { area: true }, take: 15 });
+      dynamicContext += "\n--- CONTEXTO DE CONVENIOS INSTITUCIONALES ---\n" + agreements.map(a =>
+        `- Convenio #${a.number || "Sin nro"}: ${a.title} | Partes: ${a.parties || "N/A"} | Monto: $${Number(a.amount || 0).toLocaleString("es-AR")} ARS | Estado: ${a.status} | Área: ${a.area?.name || "Sin área"}`
+      ).join("\n") + "\n";
+    }
+
+    // 5. Social Demands & Citizen Directory Context
+    if (
+      query.includes("caso") ||
+      query.includes("urgente") ||
+      query.includes("critico") ||
+      query.includes("crítico") ||
+      query.includes("social") ||
+      query.includes("familia") ||
+      query.includes("persona") ||
+      query.includes("ciudadano") ||
+      query.includes("deriva") ||
+      query.includes("abierto") ||
+      query.includes("registro") ||
+      query.includes("apellido") ||
+      query.includes("nombre") ||
+      query.includes("buscar") ||
+      query.includes("consultar") ||
+      query.includes("acevedo") ||
+      query.includes("aylen") ||
+      query.includes("victoria")
+    ) {
+      const [cases, people] = await Promise.all([
+        prisma.case.findMany({ include: { person: true, area: true }, take: 15 }),
+        prisma.person.findMany({ take: 15 })
+      ]);
+      dynamicContext += "\n--- CONTEXTO DE CASOS SOCIALES ACTIVOS ---\n" + cases.map(c =>
+        `- Caso: ${c.title} | Ciudadano: ${c.person.lastName}, ${c.person.firstName} (DNI: ${c.person.dni}) | Área: ${c.area.name} | Estado: ${c.status} | Prioridad: ${c.priority}`
+      ).join("\n") + "\n";
+
+      dynamicContext += "\n--- REGISTRO ÚNICO DE PERSONAS (MUESTRA) ---\n" + people.map(p =>
+        `- Ciudadano: ${p.lastName}, ${p.firstName} | DNI: ${p.dni} | Teléfono: ${p.phone || "N/A"} | Dirección: ${p.address || "N/A"}`
+      ).join("\n") + "\n";
+    }
+
+    // 6. Stock & Inventory Context
+    if (
+      query.includes("insumo") ||
+      query.includes("stock") ||
+      query.includes("inventario") ||
+      query.includes("deposito") ||
+      query.includes("depósito")
+    ) {
+      const supplies = await prisma.supplyItem.findMany({ include: { area: true } });
+      dynamicContext += "\n--- CONTEXTO DE STOCK E INVENTARIO EN DEPÓSITO ---\n" + supplies.map(s =>
+        `- Insumo: ${s.name} | Stock actual: ${s.stock} | Stock mínimo: ${s.minStock} | Área: ${s.area?.name || "Global"}`
+      ).join("\n") + "\n";
+    }
+
+    // --- SYSTEM PROMPT RESTRICTING DOMAIN ---
+    const systemPrompt = `Eres el Asistente Inteligente Municipal de MuniGestión, una plataforma de administración de datos públicos, recursos humanos, presupuesto y asistencia social de un municipio argentino.
+Tu especialización absoluta es la gestión municipal, administración de bases de datos, logística, stock, convenios, recursos humanos y la modernización del Estado.
+
+REGLAS DE COMPORTAMIENTO:
+1. Responde de forma profesional, clara, precisa y concisa en español (con modismos argentinos amables si es oportuno, pero siempre profesional).
+2. Tienes acceso en tiempo real a los registros actuales del sistema (inyectados a continuación como contexto RAG). Utiliza estos datos para dar respuestas 100% verídicas y basadas únicamente en el contexto provisto. ¡No inventes datos ni alucines bajo ninguna circunstancia!
+3. Si la base de datos no contiene la información para responder, indícalo amablemente sin inventar registros.
+4. RESTRICCIÓN DE ALCANCE: Si el usuario te realiza una pregunta que no pertenece al dominio de la gestión municipal, administración pública, soporte técnico de la plataforma o análisis de los datos del municipio (por ejemplo, recetas de cocina, deportes, cultura pop general, temas personales o chistes no relacionados), debes DECLINAR AMABLEMENTE responder y redirigir con amabilidad la conversación hacia las tareas administrativas, de recursos humanos, inventario, presupuesto o casos sociales de la municipalidad.
+5. Usa formato Markdown bien estructurado en tus respuestas.
+
+CONTEXTO REAL DE LA BASE DE DATOS MUNICIPAL EN TIEMPO REAL:
+${dynamicContext || "No se ha extraído contexto específico para esta consulta."}
+`;
+
+    // --- CALL OLLAMA LOCAL LLM WITH TIMEOUT ---
+    const ollamaUrl = process.env.OLLAMA_URL || "http://localhost:11434";
+    const ollamaModel = process.env.OLLAMA_MODEL || "llama3:8b";
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10-second timeout as requested
+
+    try {
+      const response = await fetch(`${ollamaUrl}/api/chat`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: ollamaModel,
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: queryText }
+          ],
+          stream: false
+        }),
+        signal: controller.signal
+      });
+
+      clearTimeout(timeoutId);
+
+      if (response.ok) {
+        const data = await response.json();
+        const assistantMessage = data.message?.content || "";
+        if (assistantMessage) {
+          return {
+            intent: "ollama_llm",
+            answer: assistantMessage
+          };
+        }
+      }
+    } catch (ollamaErr: any) {
+      console.warn("Ollama interaction failed or timed out. Falling back to deterministic sub-handlers. Error:", ollamaErr?.message || ollamaErr);
+    } finally {
+      clearTimeout(timeoutId);
+    }
+
+    // --- DETERMINISTIC FALLBACK SUB-HANDLERS ---
+
+    // 1. HR & SALARY INTENTS
     if (
       query.includes("sueldo") ||
       query.includes("salario") ||
@@ -49,7 +223,7 @@ export async function queryAIAssistant(queryText: string): Promise<AIResponse> {
       return await handleHRQuery(query);
     }
 
-    // B. PURCHASE ORDERS & BUDGET INTENTS
+    // 2. PURCHASE ORDERS & BUDGET INTENTS
     if (
       query.includes("orden") ||
       query.includes("compras") ||
@@ -62,7 +236,7 @@ export async function queryAIAssistant(queryText: string): Promise<AIResponse> {
       return await handleBudgetQuery(query);
     }
 
-    // C. VEHICLES & FUEL INTENTS
+    // 3. VEHICLES & FUEL INTENTS
     if (
       query.includes("vehiculo") ||
       query.includes("vehículo") ||
@@ -78,7 +252,7 @@ export async function queryAIAssistant(queryText: string): Promise<AIResponse> {
       return await handleVehicleQuery(query);
     }
 
-    // D. AGREEMENTS (CONVENIOS) INTENTS
+    // 4. AGREEMENTS (CONVENIOS) INTENTS
     if (
       query.includes("convenio") ||
       query.includes("acuerdo") ||
@@ -88,7 +262,7 @@ export async function queryAIAssistant(queryText: string): Promise<AIResponse> {
       return await handleAgreementQuery(query);
     }
 
-    // E. CASES & SOCIAL MONITORING INTENTS
+    // 5. CASES & SOCIAL MONITORING INTENTS
     if (
       query.includes("caso") ||
       query.includes("urgente") ||
@@ -106,14 +280,14 @@ export async function queryAIAssistant(queryText: string): Promise<AIResponse> {
       query.includes("letra") ||
       query.includes("buscar") ||
       query.includes("consultar") ||
-      query.includes("acevedo") ||
+      query.includes("acevedo") || // handle user direct name query explicitly
       query.includes("aylen") ||
       query.includes("victoria")
     ) {
       return await handleSocialQuery(query);
     }
 
-    // F. SUPPLY & INVENTORY INTENTS
+    // 6. SUPPLY & INVENTORY INTENTS
     if (
       query.includes("insumo") ||
       query.includes("stock") ||
@@ -124,7 +298,7 @@ export async function queryAIAssistant(queryText: string): Promise<AIResponse> {
       return await handleSupplyQuery(query);
     }
 
-    // G. DEFAULT FALLBACK
+    // 7. DEFAULT FALLBACK
     return handleGeneralFallback(queryText);
   } catch (error: any) {
     console.error("AI Assistant query processing error:", error);
@@ -132,219 +306,6 @@ export async function queryAIAssistant(queryText: string): Promise<AIResponse> {
       intent: "error",
       answer: `⚠️ Ocurrió un error al consultar la base de datos municipal: **${error.message || error}**. Por favor, intenta reformular tu pregunta.`
     };
-  }
-}
-
-// --- OLLAMA LOCAL HELPERS ---
-
-async function buildSystemContext(query: string): Promise<string> {
-  let context = "MUNICIPALITY REAL-TIME DATABASE RECORDS:\n\n";
-
-  // Check keywords for HR
-  if (
-    query.includes("sueldo") ||
-    query.includes("salario") ||
-    query.includes("rrhh") ||
-    query.includes("recursos humanos") ||
-    query.includes("personal") ||
-    query.includes("empleado") ||
-    query.includes("agente") ||
-    query.includes("contrato") ||
-    query.includes("nómina") ||
-    query.includes("nomina")
-  ) {
-    const records = await prisma.hRRecord.findMany({ include: { area: true } });
-    context += `[RECURSOS HUMANOS / AGENTES MUNICIPALES]:\n`;
-    records.forEach(r => {
-      context += `- Agente: ${r.firstName} ${r.lastName}, DNI: ${r.dni}, Puesto: ${r.position || "N/A"}, Contrato: ${r.contractType}, Sueldo: $${Number(r.salary || 0)} ARS, Horario: ${r.schedule || "N/A"}, Estado: ${r.status}, Área: ${r.area?.name || "N/A"}\n`;
-    });
-    context += `\n`;
-  }
-
-  // Check keywords for Purchase Orders
-  if (
-    query.includes("orden") ||
-    query.includes("compras") ||
-    query.includes("gasto") ||
-    query.includes("presupuesto") ||
-    query.includes("comprar") ||
-    query.includes("monto") ||
-    query.includes("factura")
-  ) {
-    const orders = await prisma.purchaseOrder.findMany({ include: { area: true } });
-    context += `[ÓRDENES DE COMPRA / PRESUPUESTO]:\n`;
-    orders.forEach(o => {
-      context += `- Orden #${o.number}, Proveedor: ${o.providerName} (CUIT: ${o.providerCuit}), Expediente: ${o.expediente || "N/A"}, Monto: $${Number(o.amount)} ARS, Fecha Entrega: ${o.deliveryDate ? new Date(o.deliveryDate).toLocaleDateString() : "N/A"}, Estado: ${o.status}, Área: ${o.area?.name || "N/A"}\n`;
-    });
-    context += `\n`;
-  }
-
-  // Check keywords for Vehicles
-  if (
-    query.includes("vehiculo") ||
-    query.includes("vehículo") ||
-    query.includes("auto") ||
-    query.includes("camioneta") ||
-    query.includes("flota") ||
-    query.includes("taller") ||
-    query.includes("reserva") ||
-    query.includes("combustible") ||
-    query.includes("nafta") ||
-    query.includes("litro")
-  ) {
-    const [vehicles, reservations, fuel] = await Promise.all([
-      prisma.vehicle.findMany(),
-      prisma.vehicleReservation.findMany({ include: { vehicle: true } }),
-      prisma.fuelRecord.findMany()
-    ]);
-    context += `[FLOTA DE VEHÍCULOS MUNICIPALES]:\n`;
-    vehicles.forEach(v => {
-      context += `- Vehículo: ${v.brand} ${v.model}, Patente: ${v.plate}, Estado: ${v.status}, VTV Vence: ${v.vtvExpiry ? new Date(v.vtvExpiry).toLocaleDateString() : "N/A"}, Seguro Vence: ${v.insuranceExpiry ? new Date(v.insuranceExpiry).toLocaleDateString() : "N/A"}\n`;
-    });
-    context += `\n[RESERVAS DE VEHÍCULOS]:\n`;
-    reservations.forEach(r => {
-      context += `- Reserva #${r.id}, Vehículo: ${r.vehicle.brand} ${r.vehicle.model} (${r.vehicle.plate}), Fecha: ${new Date(r.startDate).toLocaleDateString()} a ${new Date(r.endDate).toLocaleDateString()}, Estado: ${r.status}\n`;
-    });
-    context += `\n[REGISTROS DE COMBUSTIBLE]:\n`;
-    fuel.forEach(f => {
-      context += `- Carga Combustible, Litros: ${f.liters}, Monto: $${Number(f.amount)} ARS\n`;
-    });
-    context += `\n`;
-  }
-
-  // Check keywords for Agreements
-  if (
-    query.includes("convenio") ||
-    query.includes("acuerdo") ||
-    query.includes("parties") ||
-    query.includes("institucional")
-  ) {
-    const agreements = await prisma.agreement.findMany({ include: { area: true } });
-    context += `[CONVENIOS INSTITUCIONALES]:\n`;
-    agreements.forEach(a => {
-      context += `- Convenio: ${a.title} (#${a.number}), Partes: ${a.parties}, Monto: $${Number(a.amount || 0)} ARS, Estado: ${a.status}, Vigencia: ${a.startDate ? new Date(a.startDate).toLocaleDateString() : "N/A"} a ${a.endDate ? new Date(a.endDate).toLocaleDateString() : "N/A"}, Área: ${a.area?.name || "N/A"}\n`;
-    });
-    context += `\n`;
-  }
-
-  // Check keywords for Social Cases
-  if (
-    query.includes("caso") ||
-    query.includes("urgente") ||
-    query.includes("critico") ||
-    query.includes("crítico") ||
-    query.includes("social") ||
-    query.includes("familia") ||
-    query.includes("persona") ||
-    query.includes("ciudadano") ||
-    query.includes("deriva") ||
-    query.includes("abierto") ||
-    query.includes("registro") ||
-    query.includes("apellido") ||
-    query.includes("nombre") ||
-    query.includes("letra") ||
-    query.includes("buscar") ||
-    query.includes("consultar") ||
-    query.includes("acevedo") ||
-    query.includes("aylen") ||
-    query.includes("victoria")
-  ) {
-    const [cases, people] = await Promise.all([
-      prisma.case.findMany({ include: { area: true, person: true } }),
-      prisma.person.findMany()
-    ]);
-    context += `[REGISTRO ÚNICO / CIUDADANOS]:\n`;
-    people.slice(0, 30).forEach(p => {
-      context += `- Ciudadano: ${p.firstName} ${p.lastName}, DNI: ${p.dni}, Teléfono: ${p.phone || "N/A"}, Dirección: ${p.address || "N/A"}, Nacimiento: ${p.birthDate ? new Date(p.birthDate).toLocaleDateString() : "N/A"}, Género: ${p.gender}\n`;
-    });
-    context += `\n[CASOS DE ASISTENCIA SOCIAL]:\n`;
-    cases.forEach(c => {
-      context += `- Caso: ${c.title}, Ciudadano: ${c.person ? `${c.person.firstName} ${c.person.lastName}` : "N/A"}, Área: ${c.area.name}, Estado: ${c.status}, Prioridad: ${c.priority}, Descripción: ${c.description || "N/A"}\n`;
-    });
-    context += `\n`;
-  }
-
-  // Check keywords for Supply/Inventory
-  if (
-    query.includes("insumo") ||
-    query.includes("stock") ||
-    query.includes("inventario") ||
-    query.includes("deposito") ||
-    query.includes("depósito")
-  ) {
-    const [items, requests] = await Promise.all([
-      prisma.supplyItem.findMany({ include: { area: true } }),
-      prisma.supplyRequest.findMany({ include: { supply: true } })
-    ]);
-    context += `[INVENTARIO DE INSUMOS]:\n`;
-    items.forEach(i => {
-      context += `- Insumo: ${i.name}, Stock Actual: ${i.stock}, Stock Mínimo: ${i.minStock}, Área: ${i.area?.name || "Global"}\n`;
-    });
-    context += `\n[SOLICITUDES DE INSUMOS]:\n`;
-    requests.forEach(r => {
-      context += `- Solicitud #${r.id}, Insumo: ${r.supply.name}, Cantidad: ${r.quantity}, Estado: ${r.status}\n`;
-    });
-    context += `\n`;
-  }
-
-  // Fetch quick general metrics
-  const [peopleCount, casesCount, itemsCount] = await Promise.all([
-    prisma.person.count(),
-    prisma.case.count(),
-    prisma.supplyItem.count()
-  ]);
-  context += `[INFORMACIÓN GENERAL DEL MUNICIPIO]:
-- Cantidad total de ciudadanos registrados: ${peopleCount}
-- Cantidad total de casos sociales: ${casesCount}
-- Cantidad total de insumos en depósito: ${itemsCount}
-\n`;
-
-  return context;
-}
-
-async function queryOllama(queryText: string, context: string): Promise<string> {
-  const OLLAMA_URL = process.env.OLLAMA_URL || "http://127.0.0.1:11434";
-  const OLLAMA_MODEL = process.env.OLLAMA_MODEL || "llama3:8b";
-
-  const systemPrompt = `Eres el Asistente de IA de la Municipalidad de Gestión Social.
-Tienes acceso a registros de la base de datos municipal en tiempo real.
-Usa la siguiente información para responder la pregunta del usuario con total veracidad, amabilidad, claridad y precisión técnica en español.
-Si el usuario pregunta por un ciudadano, agente, insumo u orden específica, busca los datos correspondientes en el contexto provisto.
-No inventes datos que no estén en el contexto. Si no hay datos relevantes en el contexto para responder la pregunta del usuario, indícalo amablemente sin inventar.
-
-CONTEXTO REAL DE LA BASE DE DATOS MUNICIPAL:
-${context}
-`;
-
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 2500); // 2.5 second timeout for fail-fast behavior
-
-  try {
-    const response = await fetch(`${OLLAMA_URL}/api/generate`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        model: OLLAMA_MODEL,
-        prompt: queryText,
-        system: systemPrompt,
-        stream: false
-      }),
-      signal: controller.signal
-    });
-
-    clearTimeout(timeoutId);
-
-    if (!response.ok) {
-      throw new Error(`Ollama HTTP Error: ${response.status}`);
-    }
-
-    const data = await response.json();
-    return data.response;
-  } catch (error) {
-    clearTimeout(timeoutId);
-    throw error;
   }
 }
 
@@ -858,11 +819,12 @@ ${areas.map(a => {
 }
 
 async function handleSocialQuery(query: string): Promise<AIResponse> {
-  // 1. Dynamic Check for Specific Name Lookups
+  // 1. Dynamic Check for Specific Name Lookups or "el caso de Acevedo, Aylen Victoria"
   const lookups = ["acevedo", "aylen", "victoria", "aylén", "buscar persona", "caso de", "detalles de", "consultar por"];
   const isSpecificSearch = lookups.some(keyword => query.includes(keyword));
 
   if (isSpecificSearch) {
+    // Extract target name from sentence
     let targetName = "";
     const cleanQuery = query
       .replace("me gustaría consultar por el caso de", "")
@@ -884,6 +846,7 @@ async function handleSocialQuery(query: string): Promise<AIResponse> {
     }
 
     if (targetName) {
+      // Find the person
       const matchingPeople = await prisma.person.findMany({
         where: {
           OR: [
@@ -936,7 +899,7 @@ async function handleSocialQuery(query: string): Promise<AIResponse> {
     }
   }
 
-  // 2. Dynamic Check for Surname / Name startsWith filter
+  // 2. Dynamic Check for Surname / Name startsWith filter (e.g., "apellido que comience con A")
   const letterMatch = query.match(/(?:apellido|nombre|letra)\s+(?:que\s+)?(?:comience\s+por\s+la\s+|empiece\s+con\s+la\s+|comienza\s+con\s+|de\s+la\s+)?letra\s+([a-z])/i) ||
                       query.match(/(?:apellido|nombre)\s+(?:que\s+)?(?:comience|empiece)\s+(?:por\s+|con\s+)?([a-z])/i);
 
@@ -944,6 +907,7 @@ async function handleSocialQuery(query: string): Promise<AIResponse> {
     const targetLetter = letterMatch[1].trim().toUpperCase();
     const isFirstName = query.includes("nombre");
 
+    // Execute dynamic filtering query to DB
     const filteredPeople = await prisma.person.findMany({
       where: isFirstName ? {
         firstName: { startsWith: targetLetter, mode: 'insensitive' }
@@ -966,7 +930,7 @@ async function handleSocialQuery(query: string): Promise<AIResponse> {
         answer += `| **${p.lastName}, ${p.firstName}** | ${p.dni} | ${p.phone || "No registrado"} | ${p.address || "No registrado"} |\n`;
       });
     } else {
-      answer += `*No se registran personas cuya inicial coincida con la búsqueda.*`;
+      answer += `*No se registraron personas cuya inicial coincida con la búsqueda.*`;
     }
 
     return {
@@ -989,6 +953,7 @@ async function handleSocialQuery(query: string): Promise<AIResponse> {
   const closedCases = cases.filter(c => c.status === "CERRADO").length;
   const criticalCases = cases.filter(c => c.priority === "URGENTE" && c.status !== "CERRADO").length;
 
+  // Breakdown of cases by priority
   const priorities = {
     URGENTE: cases.filter(c => c.priority === "URGENTE").length,
     ALTA: cases.filter(c => c.priority === "ALTA").length,
