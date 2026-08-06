@@ -35,7 +35,7 @@ step1_source = [
     "",
     "print(\"📥 Instalando dependencias del sistema...\")",
     "subprocess.run([\"apt-get\", \"-y\", \"update\"], capture_output=True)",
-    "subprocess.run([\"apt-get\", \"-y\", \"install\", \"postgresql\", \"postgresql-client\"], capture_output=True)",
+    "subprocess.run([\"apt-get\", \"-y\", \"install\", \"postgresql\", \"postgresql-client\", \"zstd\"], capture_output=True)",
     "subprocess.run([\"curl\", \"-L\", \"https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb\", \"-o\", \"cloudflared.deb\"], capture_output=True)",
     "subprocess.run([\"dpkg\", \"-i\", \"cloudflared.deb\"], capture_output=True)",
     "",
