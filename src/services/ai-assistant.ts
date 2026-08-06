@@ -6,7 +6,54 @@ export interface AIResponse {
   dataSummary?: any;
 }
 
-export async function queryAIAssistant(queryText: string): Promise<AIResponse> {
+export interface Message {
+  role: "user" | "assistant" | "system";
+  content: string;
+}
+
+async function callOllama(messages: Message[]): Promise<string> {
+  const host = process.env.OLLAMA_HOST || "http://127.0.0.1:11434";
+  const model = process.env.OLLAMA_MODEL || "llama3:8b";
+  const url = `${host.replace(/\/$/, "")}/api/chat`;
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 15000);
+
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model,
+        messages,
+        stream: false,
+        options: {
+          temperature: 0.3,
+        }
+      }),
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!res.ok) {
+      throw new Error(`Ollama API returned status ${res.status}`);
+    }
+
+    const data = await res.json();
+    return data.message?.content || "";
+  } catch (error) {
+    clearTimeout(timeoutId);
+    throw error;
+  }
+}
+
+export async function queryAIAssistant(
+  queryText: string,
+  history?: { role: "user" | "assistant"; content: string }[]
+): Promise<AIResponse> {
   const query = queryText.toLowerCase().trim();
 
   try {
@@ -16,6 +63,8 @@ export async function queryAIAssistant(queryText: string): Promise<AIResponse> {
     if (wantsChart) {
       return await handleChartRequest(query);
     }
+
+    let dbResponse: AIResponse;
 
     // 1. HR & SALARY INTENTS
     if (
@@ -30,11 +79,10 @@ export async function queryAIAssistant(queryText: string): Promise<AIResponse> {
       query.includes("nómina") ||
       query.includes("nomina")
     ) {
-      return await handleHRQuery(query);
+      dbResponse = await handleHRQuery(query);
     }
-
     // 2. PURCHASE ORDERS & BUDGET INTENTS
-    if (
+    else if (
       query.includes("orden") ||
       query.includes("compras") ||
       query.includes("gasto") ||
@@ -43,11 +91,10 @@ export async function queryAIAssistant(queryText: string): Promise<AIResponse> {
       query.includes("monto") ||
       query.includes("factura")
     ) {
-      return await handleBudgetQuery(query);
+      dbResponse = await handleBudgetQuery(query);
     }
-
     // 3. VEHICLES & FUEL INTENTS
-    if (
+    else if (
       query.includes("vehiculo") ||
       query.includes("vehículo") ||
       query.includes("auto") ||
@@ -59,21 +106,19 @@ export async function queryAIAssistant(queryText: string): Promise<AIResponse> {
       query.includes("nafta") ||
       query.includes("litro")
     ) {
-      return await handleVehicleQuery(query);
+      dbResponse = await handleVehicleQuery(query);
     }
-
     // 4. AGREEMENTS (CONVENIOS) INTENTS
-    if (
+    else if (
       query.includes("convenio") ||
       query.includes("acuerdo") ||
       query.includes("parties") ||
       query.includes("institucional")
     ) {
-      return await handleAgreementQuery(query);
+      dbResponse = await handleAgreementQuery(query);
     }
-
     // 5. CASES & SOCIAL MONITORING INTENTS
-    if (
+    else if (
       query.includes("caso") ||
       query.includes("urgente") ||
       query.includes("critico") ||
@@ -94,22 +139,77 @@ export async function queryAIAssistant(queryText: string): Promise<AIResponse> {
       query.includes("aylen") ||
       query.includes("victoria")
     ) {
-      return await handleSocialQuery(query);
+      dbResponse = await handleSocialQuery(query);
     }
-
     // 6. SUPPLY & INVENTORY INTENTS
-    if (
+    else if (
       query.includes("insumo") ||
       query.includes("stock") ||
       query.includes("inventario") ||
       query.includes("deposito") ||
       query.includes("depósito")
     ) {
-      return await handleSupplyQuery(query);
+      dbResponse = await handleSupplyQuery(query);
+    }
+    // 7. DEFAULT FALLBACK
+    else {
+      dbResponse = handleGeneralFallback(queryText);
     }
 
-    // 7. DEFAULT FALLBACK
-    return handleGeneralFallback(queryText);
+    // Try to synthesize the response using Ollama
+    try {
+      const systemPrompt = `Eres el Asistente Inteligente Municipal de la plataforma MuniGestión.
+Tu objetivo es ayudar a los funcionarios y directores municipales a consultar información de la base de datos municipal.
+Sé profesional, conciso y preciso. Siempre responde en español de Argentina/latinoamericano.
+Utiliza un tono administrativo pero servicial. Usa markdown para dar formato a tus respuestas (tablas, listas, negritas) cuando sea apropiado.`;
+
+      const ollamaMessages: Message[] = [
+        { role: "system", content: systemPrompt }
+      ];
+
+      // Add conversation history if provided
+      if (history && history.length > 0) {
+        history.forEach(msg => {
+          ollamaMessages.push({
+            role: msg.role === "user" ? "user" : "assistant",
+            content: msg.content
+          });
+        });
+      }
+
+      let userPrompt = "";
+      if (dbResponse.intent !== "fallback") {
+        userPrompt = `[CONTEXTO DE LA BASE DE DATOS MUNICIPAL]:
+${dbResponse.answer}
+
+[PREGUNTA DEL USUARIO]:
+${queryText}
+
+Por favor, responde a la pregunta del usuario utilizando la información del contexto de la base de datos municipal anterior de forma natural y conversacional. Mantén el formato de tablas o listas si ayuda a presentar los datos de forma clara y profesional. Si te preguntan algo específico que no está en el contexto, indícalo de forma educada y servicial sin inventar datos.`;
+      } else {
+        userPrompt = `[PREGUNTA DEL USUARIO]:
+${queryText}
+
+Por favor, responde de forma inteligente y útil. Si la pregunta es sobre el municipio o la aplicación, menciónale qué tipo de consultas sobre Recursos Humanos, Presupuesto, Vehículos, Convenios o Stock puedes responder en tiempo real en MuniGestión.`;
+      }
+
+      ollamaMessages.push({ role: "user", content: userPrompt });
+
+      const ollamaAnswer = await callOllama(ollamaMessages);
+
+      if (ollamaAnswer && ollamaAnswer.trim() !== "") {
+        return {
+          intent: dbResponse.intent,
+          answer: ollamaAnswer,
+          dataSummary: dbResponse.dataSummary
+        };
+      }
+    } catch (ollamaError) {
+      console.warn("Ollama is not available or timed out. Falling back to structured response.", ollamaError);
+    }
+
+    return dbResponse;
+
   } catch (error: any) {
     console.error("AI Assistant query processing error:", error);
     return {

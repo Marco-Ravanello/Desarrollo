@@ -66,12 +66,20 @@ export default function AssistantPage() {
       timestamp: new Date()
     };
 
+    // Prepare history to send (excluding the welcome message to keep prompt focused)
+    const historyToSend = messages
+      .filter(m => m.id !== "welcome")
+      .map(m => ({
+        role: m.sender,
+        content: m.text
+      }));
+
     setMessages(prev => [...prev, userMessage]);
     setInput("");
     setLoading(true);
 
     try {
-      const response = await queryAssistantAction(text);
+      const response = await queryAssistantAction(text, historyToSend);
 
       const assistantMessage: Message = {
         id: assistantMsgId,

@@ -3,7 +3,10 @@
 import { auth } from "@/auth";
 import { queryAIAssistant, AIResponse } from "@/services/ai-assistant";
 
-export async function queryAssistantAction(queryText: string): Promise<AIResponse> {
+export async function queryAssistantAction(
+  queryText: string,
+  history?: { role: "user" | "assistant"; content: string }[]
+): Promise<AIResponse> {
   const session = await auth();
 
   if (!session || !session.user) {
@@ -11,7 +14,7 @@ export async function queryAssistantAction(queryText: string): Promise<AIRespons
   }
 
   try {
-    return await queryAIAssistant(queryText);
+    return await queryAIAssistant(queryText, history);
   } catch (error: any) {
     console.error("Error running queryAssistantAction:", error);
     return {
