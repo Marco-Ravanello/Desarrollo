@@ -46,6 +46,12 @@ const config: Config = {
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
       },
+      boxShadow: {
+        'municipal': '0 10px 30px -10px rgba(0, 74, 128, 0.04), 0 1px 3px rgba(0, 74, 128, 0.01)',
+        'municipal-lg': '0 20px 40px -15px rgba(0, 74, 128, 0.06), 0 1px 4px rgba(0, 74, 128, 0.02)',
+        'glass-light': '0 8px 32px 0 rgba(31, 38, 135, 0.04)',
+        'glass-dark': '0 8px 32px 0 rgba(0, 0, 0, 0.3)',
+      },
     },
   },
   plugins: [],

@@ -1,17 +1,25 @@
 "use client";
 
 import * as React from "react";
-import { Search, Users, FileText, CheckCircle2, LayoutDashboard, MapPin, Briefcase, Car, Wallet, Building2, UserCog, ShieldAlert } from "lucide-react";
+import { Search, Users, FileText, CheckCircle2, LayoutDashboard, MapPin, Briefcase, Car, Wallet, Building2, UserCog, ShieldAlert, Loader2 } from "lucide-react";
 import { Command } from "cmdk";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { searchGlobalAction } from "@/app/(dashboard)/actions/search-actions";
 
 export function GlobalSearch() {
   const router = useRouter();
   const { data: session } = useSession();
   const [open, setOpen] = React.useState(false);
   const [query, setQuery] = React.useState("");
+  const [loading, setLoading] = React.useState(false);
+  const [results, setResults] = React.useState<{ citizens: any[], cases: any[], hr: any[], agreements: any[] }>({
+    citizens: [],
+    cases: [],
+    hr: [],
+    agreements: []
+  });
 
   React.useEffect(() => {
     const down = (e: KeyboardEvent) => {
@@ -24,6 +32,28 @@ export function GlobalSearch() {
     document.addEventListener("keydown", down);
     return () => document.removeEventListener("keydown", down);
   }, []);
+
+  // Debounced search
+  React.useEffect(() => {
+    if (query.length < 2) {
+      setResults({ citizens: [], cases: [], hr: [], agreements: [] });
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      setLoading(true);
+      try {
+        const data = await searchGlobalAction(query);
+        setResults(data);
+      } catch (err) {
+        console.error("Search error:", err);
+      } finally {
+        setLoading(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [query]);
 
   const navigate = (url: string) => {
     router.push(url);
@@ -49,20 +79,118 @@ export function GlobalSearch() {
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="p-0 overflow-hidden max-w-2xl border-none shadow-2xl">
           <DialogTitle className="sr-only">Buscador Global</DialogTitle>
-          <Command className="flex h-full w-full flex-col overflow-hidden rounded-md bg-popover text-popover-foreground">
-            <div className="flex items-center border-b px-3" cmdk-input-wrapper="">
-              <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+          <Command
+            shouldFilter={false}
+            className="flex h-full w-full flex-col overflow-hidden rounded-md bg-popover text-popover-foreground"
+          >
+            <div className="flex items-center border-b px-4 py-1" cmdk-input-wrapper="">
+              <Search className="mr-2 h-5 w-5 shrink-0 opacity-50 text-primary" />
               <Command.Input
-                placeholder="Busca por DNI, expediente, sección..."
-                className="flex h-12 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
+                placeholder="Busca ciudadanos, expedientes o personal..."
+                className="flex h-14 w-full rounded-md bg-transparent py-3 text-base outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
                 value={query}
                 onValueChange={setQuery}
               />
+              {loading && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
             </div>
-            <Command.List className="max-h-[400px] overflow-y-auto overflow-x-hidden p-2 custom-scrollbar">
-              <Command.Empty className="py-6 text-center text-sm">No se encontraron resultados.</Command.Empty>
+            <Command.List className="max-h-[450px] overflow-y-auto overflow-x-hidden p-3 custom-scrollbar">
+              <Command.Empty className="py-12 text-center text-sm flex flex-col items-center gap-2">
+                 <div className="p-3 bg-muted rounded-full">
+                    <Search className="h-6 w-6 text-muted-foreground opacity-20" />
+                 </div>
+                 <p className="font-medium text-muted-foreground">No se encontraron resultados para "{query}"</p>
+              </Command.Empty>
 
-              <Command.Group heading="Navegación">
+              {query.length >= 2 && (
+                <>
+                  {results.citizens.length > 0 && (
+                    <Command.Group heading="Ciudadanos">
+                      {results.citizens.map((c) => (
+                        <Command.Item
+                          key={c.id}
+                          value={`${c.title} ${c.subtitle} ${c.subtitle.replace(/[^0-9]/g, '')}`}
+                          onSelect={() => navigate(c.url)}
+                          className="flex items-center gap-3 px-3 py-3 rounded-xl cursor-pointer hover:bg-accent aria-selected:bg-accent transition-all group"
+                        >
+                          <div className="h-9 w-9 bg-blue-50 dark:bg-blue-900/30 text-blue-600 rounded-full flex items-center justify-center font-bold text-xs uppercase group-aria-selected:bg-blue-600 group-aria-selected:text-white transition-colors">
+                            {c.title[0]}
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="font-bold text-sm text-foreground">{c.title}</span>
+                            <span className="text-[10px] text-muted-foreground font-bold tracking-widest uppercase">{c.subtitle}</span>
+                          </div>
+                        </Command.Item>
+                      ))}
+                    </Command.Group>
+                  )}
+
+                  {results.cases.length > 0 && (
+                    <Command.Group heading="Expedientes y Casos">
+                      {results.cases.map((c) => (
+                        <Command.Item
+                          key={c.id}
+                          onSelect={() => navigate(c.url)}
+                          className="flex items-center gap-3 px-3 py-3 rounded-xl cursor-pointer hover:bg-accent aria-selected:bg-accent transition-all group"
+                        >
+                          <div className="h-9 w-9 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 rounded-full flex items-center justify-center group-aria-selected:bg-emerald-600 group-aria-selected:text-white transition-colors">
+                            <FileText className="h-4 w-4" />
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="font-bold text-sm text-foreground">{c.title}</span>
+                            <span className="text-[10px] text-muted-foreground font-bold tracking-widest uppercase">{c.subtitle}</span>
+                          </div>
+                        </Command.Item>
+                      ))}
+                    </Command.Group>
+                  )}
+
+                  {results.hr.length > 0 && (
+                    <Command.Group heading="Personal Municipal">
+                      {results.hr.map((h) => (
+                        <Command.Item
+                          key={h.id}
+                          onSelect={() => navigate(h.url)}
+                          className="flex items-center gap-3 px-3 py-3 rounded-xl cursor-pointer hover:bg-accent aria-selected:bg-accent transition-all group"
+                        >
+                          <div className="h-9 w-9 bg-purple-50 dark:bg-purple-900/30 text-purple-600 rounded-full flex items-center justify-center group-aria-selected:bg-purple-600 group-aria-selected:text-white transition-colors">
+                            <Users className="h-4 w-4" />
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="font-bold text-sm text-foreground">{h.title}</span>
+                            <span className="text-[10px] text-muted-foreground font-bold tracking-widest uppercase">{h.subtitle}</span>
+                          </div>
+                        </Command.Item>
+                      ))}
+                    </Command.Group>
+                  )}
+
+                  {results.agreements.length > 0 && (
+                    <Command.Group heading="Convenios">
+                      {results.agreements.map((a) => (
+                        <Command.Item
+                          key={a.id}
+                          onSelect={() => navigate(a.url)}
+                          className="flex items-center gap-3 px-3 py-3 rounded-xl cursor-pointer hover:bg-accent aria-selected:bg-accent transition-all group"
+                        >
+                          <div className="h-9 w-9 bg-orange-50 dark:bg-orange-900/30 text-orange-600 rounded-full flex items-center justify-center group-aria-selected:bg-orange-600 group-aria-selected:text-white transition-colors">
+                            <Wallet className="h-4 w-4" />
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="font-bold text-sm text-foreground">{a.title}</span>
+                            <span className="text-[10px] text-muted-foreground font-bold tracking-widest uppercase">{a.subtitle}</span>
+                          </div>
+                        </Command.Item>
+                      ))}
+                    </Command.Group>
+                  )}
+
+                  {(results.citizens.length > 0 || results.cases.length > 0 || results.hr.length > 0 || results.agreements.length > 0) && (
+                    <Command.Separator className="my-4 h-px bg-border/50" />
+                  )}
+                </>
+              )}
+
+              <Command.Group heading="Navegación Rápida">
                 <Command.Item
                   onSelect={() => navigate("/dashboard")}
                   className="flex items-center gap-2 px-2 py-3 rounded-md cursor-pointer hover:bg-accent aria-selected:bg-accent transition-colors"
@@ -101,7 +229,7 @@ export function GlobalSearch() {
                   className="flex items-center gap-2 px-2 py-3 rounded-md cursor-pointer hover:bg-accent aria-selected:bg-accent transition-colors"
                 >
                   <Briefcase className="h-4 w-4 text-slate-400" />
-                  <span>Compras y OC</span>
+                  <span>Órdenes de compras</span>
                 </Command.Item>
                 <Command.Item
                   onSelect={() => navigate("/admin/vehicles")}
@@ -111,11 +239,11 @@ export function GlobalSearch() {
                   <span>Vehículos</span>
                 </Command.Item>
                 <Command.Item
-                  onSelect={() => navigate("/admin/budget")}
+                  onSelect={() => navigate("/admin/agreements")}
                   className="flex items-center gap-2 px-2 py-3 rounded-md cursor-pointer hover:bg-accent aria-selected:bg-accent transition-colors"
                 >
                   <Wallet className="h-4 w-4 text-slate-400" />
-                  <span>Presupuesto</span>
+                  <span>Convenios</span>
                 </Command.Item>
                 <Command.Item
                   onSelect={() => navigate("/admin/hr")}

@@ -5,6 +5,7 @@ import { Users, FileText, ArrowRightLeft, ShoppingBag, Receipt, TrendingUp, Acti
 import { DashboardCharts } from "@/components/dashboard/dashboard-charts";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { ExecutiveReportButton } from "../admin/reports/executive-report-button";
 
 export default async function DashboardPage() {
   const stats = await getDashboardStats();
@@ -24,14 +25,17 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
-      <div className="flex flex-col gap-2">
-        <h2 className="text-4xl font-black tracking-tight text-foreground">Panel de Control</h2>
-        <p className="text-muted-foreground text-lg">Resumen estratégico de la gestión municipal.</p>
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div className="flex flex-col gap-2">
+          <h2 className="text-4xl font-black tracking-tight text-foreground">Panel de Control</h2>
+          <p className="text-muted-foreground text-lg">Resumen estratégico de la gestión municipal.</p>
+        </div>
+        <ExecutiveReportButton />
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         {mainCards.map((card) => (
-          <Card key={card.title} className="border-none shadow-sm hover:shadow-xl transition-all duration-300 group overflow-hidden bg-card/50 backdrop-blur-sm">
+          <Card key={card.title} className="border border-border/40 shadow-municipal hover:shadow-municipal-lg transition-all duration-300 group overflow-hidden bg-white/75 dark:bg-card/75 backdrop-blur-md">
             <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0 relative z-10">
               <div className="space-y-1">
                 <CardTitle className="text-xs font-bold text-muted-foreground uppercase tracking-widest">{card.title}</CardTitle>
@@ -56,7 +60,7 @@ export default async function DashboardPage() {
 
       <div className="grid gap-4 md:grid-cols-3">
         {adminCards.map((card) => (
-           <div key={card.title} className="flex items-center gap-4 p-4 rounded-2xl bg-card border border-border/50 shadow-sm">
+           <div key={card.title} className="flex items-center gap-4 p-4 rounded-2xl bg-white/75 dark:bg-card/75 backdrop-blur-md border border-border/40 shadow-municipal">
               <div className="p-2 rounded-xl bg-muted">
                 <card.icon className="h-5 w-5 text-muted-foreground" />
               </div>
@@ -75,7 +79,7 @@ export default async function DashboardPage() {
       />
 
       <div className="grid gap-6 lg:grid-cols-1">
-        <Card className="border-none shadow-sm">
+        <Card className="bg-white/75 dark:bg-card/75 backdrop-blur-md border border-border/40 shadow-municipal">
           <CardHeader className="flex flex-row items-center gap-2">
             <Activity className="h-5 w-5 text-blue-600" />
             <div className="space-y-1">

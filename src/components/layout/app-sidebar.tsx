@@ -1,6 +1,6 @@
 "use client";
 import * as React from "react";
-import { LayoutDashboard, Users, ShieldAlert, ClipboardList, LogOut, Briefcase, Car, UserCog, ChevronLeft, ChevronRight, CheckCircle2, MapPin, Wallet, Building2 } from "lucide-react";
+import { LayoutDashboard, Users, ShieldAlert, ClipboardList, LogOut, Briefcase, Car, UserCog, ChevronLeft, ChevronRight, CheckCircle2, MapPin, Wallet, Building2, FileSpreadsheet, Calendar, Sparkles } from "lucide-react";
 import { useSession, signOut } from "next-auth/react";
 import { getAreaNavColor, getAreaBgColor } from "@/lib/area-theme";
 import { Button } from "@/components/ui/button";
@@ -35,11 +35,15 @@ export function AppSidebar() {
   ];
 
   const adminNav = [
-    { title: "Compras y OC", url: "/admin/purchase-orders", icon: Briefcase, color: "text-slate-400" },
+    { title: "Agenda Unificada", url: "/admin/calendar", icon: Calendar, color: "text-slate-400" },
+    { title: "Asistente de IA", url: "/admin/assistant", icon: Sparkles, color: "text-slate-400 animate-pulse text-blue-500" },
+    { title: "Órdenes de compras", url: "/admin/purchase-orders", icon: Briefcase, color: "text-slate-400" },
     { title: "Vehículos y Logística", url: "/admin/vehicles", icon: Car, color: "text-slate-400" },
-    { title: "Presupuesto", url: "/admin/budget", icon: Wallet, color: "text-slate-400" },
+    { title: "Stock de Insumos", url: "/admin/stock", icon: ClipboardList, color: "text-slate-400" },
+    { title: "Convenios y Presupuesto", url: "/admin/budget", icon: Wallet, color: "text-slate-400" },
     { title: "Recursos Humanos", url: "/admin/hr", icon: UserCog, color: "text-slate-400" },
     ...(user?.role === 'SUPERADMIN' ? [
+      { title: "Importar Datos", url: "/admin/interventions", icon: FileSpreadsheet, color: "text-slate-400" },
       { title: "Usuarios", url: "/admin/users", icon: UserCog, color: "text-slate-400" },
       { title: "Auditoría", url: "/admin/audit", icon: ClipboardList, color: "text-slate-400" }
     ] : []),
@@ -54,7 +58,7 @@ export function AppSidebar() {
   const sidebarColor = getAreaBgColor(user?.role === 'SUPERADMIN' ? 'slate' : (user as any)?.area?.color);
 
   return (
-    <div className={`${isCollapsed ? "w-20" : "w-64"} h-screen sticky top-0 bg-card text-foreground flex flex-col shrink-0 overflow-hidden transition-all duration-300 relative border-r border-border`}>
+    <div className={`${isCollapsed ? "w-20" : "w-64"} h-screen sticky top-0 bg-white/75 dark:bg-card/75 backdrop-blur-md text-foreground flex flex-col shrink-0 overflow-hidden transition-all duration-300 relative border-r border-border/40 shadow-municipal`}>
       <Button
         variant="ghost"
         size="icon"

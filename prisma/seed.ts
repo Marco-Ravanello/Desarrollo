@@ -6,13 +6,14 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('🌱 Starting seed...');
 
-  // Create Areas
+  // Create Areas with NEW official names
   const areas = [
-    { name: 'Administración' },
-    { name: 'Protección Social' },
-    { name: 'Niñez, Adolescencia y Familia' },
-    { name: 'Hábitat y Vivienda' },
-    { name: 'Violencia de Género' },
+    { name: 'Dirección General de Desarrollo Humano y Hábitat' },
+    { name: 'Dirección de Protección Social' },
+    { name: 'Dirección de Niñez, Adolescencia y Familia' },
+    { name: 'Dirección de Hábitat, Vivienda y Regularización Dominial' },
+    { name: 'Coordinación de Asistencia y Protección a Mujeres Víctimas de Violencia' },
+    { name: 'Coordinación Centro de Formación' },
   ];
 
   for (const area of areas) {
@@ -23,7 +24,7 @@ async function main() {
     });
   }
 
-  const adminArea = await prisma.area.findUnique({ where: { name: 'Administración' } });
+  const adminArea = await prisma.area.findUnique({ where: { name: 'Dirección General de Desarrollo Humano y Hábitat' } });
 
   // Create Admin User
   const hashedPassword = await bcrypt.hash('admin123', 10);

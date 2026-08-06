@@ -54,6 +54,9 @@ export function HeatmapView({ people, filterArea }: HeatmapViewProps) {
     );
   }
 
+  // Coordenadas del centro del Municipio de Tres de Febrero
+  const TRES_DE_FEBRERO_CENTER: [number, number] = [-34.603, -58.558];
+
   // Filtrar personas con coordenadas y por área
   const filteredPeople = people.filter((p) => {
     if (!p.latitude || !p.longitude) return false;
@@ -70,7 +73,7 @@ export function HeatmapView({ people, filterArea }: HeatmapViewProps) {
 
   const center: [number, number] = heatPoints.length > 0
     ? [heatPoints[0][0], heatPoints[0][1]]
-    : [-34.6037, -58.3816];
+    : TRES_DE_FEBRERO_CENTER;
 
   return (
     <MapContainer

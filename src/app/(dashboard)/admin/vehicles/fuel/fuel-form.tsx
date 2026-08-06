@@ -7,10 +7,48 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { createFuelRecordAction } from "../../actions/vehicle-actions";
+import { Combobox } from "@/components/ui/combobox";
+import dynamic from "next/dynamic";
+
+const OCRScanner = dynamic(() => import("@/components/ocr/ocr-scanner").then(mod => mod.OCRScanner), {
+  ssr: false,
+});
 
 export function FuelForm({ vehicles }: { vehicles: any[] }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [fuelData, setFuelData] = useState({
+    vehicleId: "",
+    amount: "",
+    liters: "",
+    ticketNumber: "",
+    date: new Date().toISOString().split('T')[0]
+  });
+
+  const handleScanComplete = (data: any) => {
+    let matchedVehicleId = "";
+    if (data.patente) {
+      const v = vehicles.find(v =>
+        v.plate.toUpperCase().replace(/\s/g, '') === data.patente.toUpperCase().replace(/\s/g, '')
+      );
+      if (v) matchedVehicleId = v.id;
+    }
+
+    setFuelData(prev => ({
+      ...prev,
+      amount: data.amount || prev.amount,
+      liters: data.liters || prev.liters,
+      ticketNumber: data.number || prev.ticketNumber,
+      vehicleId: matchedVehicleId || prev.vehicleId,
+      date: data.date ? data.date.split('/').reverse().join('-') : prev.date
+    }));
+
+    if (data.amount || data.number || data.patente || data.liters) {
+        toast.info("Campos completados desde el ticket");
+    } else {
+        toast.warning("El análisis no detectó campos específicos, intente una foto más clara.");
+    }
+  };
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -28,48 +66,98 @@ export function FuelForm({ vehicles }: { vehicles: any[] }) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <div className="space-y-8">
+      <div className="bg-amber-50 dark:bg-amber-950/20 p-4 rounded-2xl border border-amber-200 dark:border-amber-900/30">
+           <h4 className="text-xs font-black text-amber-600 dark:text-amber-400 uppercase tracking-widest mb-3">Asistente de Carga Rápida (Foto Ticket)</h4>
+           <OCRScanner onScanComplete={handleScanComplete} />
+      </div>
+
+      <form onSubmit={handleSubmit} className="space-y-6">
       <div className="space-y-2">
-        <Label htmlFor="vehicleId">Vehículo</Label>
-        <select
-          id="vehicleId"
+        <Label htmlFor="vehicleId" className="font-semibold">Vehículo</Label>
+        <Combobox
           name="vehicleId"
+          value={fuelData.vehicleId}
+          onValueChange={(val) => setFuelData({...fuelData, vehicleId: val})}
+          placeholder="Buscar vehículo por patente..."
+          options={vehicles.map(v => ({ value: v.id, label: `${v.plate} - ${v.brand} ${v.model}` }))}
           required
-          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          <option value="">Seleccione vehículo</option>
-          {vehicles.map(v => (
-            <option key={v.id} value={v.id}>{v.plate} - {v.brand} {v.model}</option>
-          ))}
-        </select>
+        />
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-2">
-          <Label htmlFor="date">Fecha</Label>
-          <Input id="date" name="date" type="date" required defaultValue={new Date().toISOString().split('T')[0]} />
+          <Label htmlFor="date" className="font-semibold">Fecha de Carga</Label>
+          <Input
+            id="date"
+            name="date"
+            type="date"
+            required
+            value={fuelData.date}
+            onChange={(e) => setFuelData({...fuelData, date: e.target.value})}
+            className="rounded-xl"
+          />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="ticketNumber">N° de Ticket / Comprobante</Label>
-          <Input id="ticketNumber" name="ticketNumber" placeholder="Ej: 0001-12345" required />
+          <Label htmlFor="ticketNumber" className="font-semibold">N° de Ticket / Operación</Label>
+          <Input
+            id="ticketNumber"
+            name="ticketNumber"
+            placeholder="Ej: 0001-12345"
+            required
+            value={fuelData.ticketNumber}
+            onChange={(e) => setFuelData({...fuelData, ticketNumber: e.target.value})}
+            className="rounded-xl font-mono uppercase"
+          />
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-2">
-          <Label htmlFor="liters">Litros Cargados</Label>
-          <Input id="liters" name="liters" type="number" step="0.01" placeholder="0.00" required />
+          <Label htmlFor="liters" className="font-semibold">Litros Cargados</Label>
+          <div className="relative">
+            <Input
+                id="liters"
+                name="liters"
+                type="number"
+                step="0.01"
+                placeholder="0.00"
+                required
+                value={fuelData.liters}
+                onChange={(e) => setFuelData({...fuelData, liters: e.target.value})}
+                className="rounded-xl pr-10"
+            />
+            <span className="absolute right-3 top-2.5 text-slate-400 text-sm font-bold">Lts</span>
+          </div>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="amount">Importe Total ($)</Label>
-          <Input id="amount" name="amount" type="number" step="0.01" placeholder="0.00" required />
+          <Label htmlFor="amount" className="font-semibold">Importe Total</Label>
+          <div className="relative">
+             <span className="absolute left-3 top-2.5 text-slate-400 text-sm font-bold">$</span>
+             <Input
+                id="amount"
+                name="amount"
+                type="number"
+                step="0.01"
+                placeholder="0.00"
+                required
+                value={fuelData.amount}
+                onChange={(e) => setFuelData({...fuelData, amount: e.target.value})}
+                className="rounded-xl pl-8"
+             />
+          </div>
         </div>
       </div>
 
-      <div className="flex gap-3 pt-4 justify-end">
-        <Button type="button" variant="ghost" onClick={() => router.back()}>Cancelar</Button>
-        <Button type="submit" disabled={loading}>{loading ? "Registrando..." : "Guardar Rendición"}</Button>
+      <div className="flex gap-4 pt-4">
+        <Button type="button" variant="ghost" className="flex-1 rounded-xl" onClick={() => router.back()}>
+          Cancelar
+        </Button>
+        <Button type="submit" disabled={loading} className="flex-1 bg-[#004a80] hover:bg-[#00365d] text-white rounded-xl shadow-lg shadow-blue-900/20">
+          {loading ? "Registrando..." : "Guardar Carga"}
+        </Button>
       </div>
     </form>
+    </div>
   );
 }

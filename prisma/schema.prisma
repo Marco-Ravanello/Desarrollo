@@ -19,6 +19,7 @@ model User {
   sessions      Session[]
   auditLogs     AuditLog[]
   tasks         Task[]
+  reservations  VehicleReservation[]
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 }
@@ -46,6 +47,7 @@ model Area {
   derivationsFrom Derivation[] @relation("FromArea")
   supplies    SupplyItem[]
   purchaseOrders PurchaseOrder[]
+  agreements  Agreement[]
 }
 
 model Person {
@@ -159,15 +161,40 @@ model Provider {
 model PurchaseOrder {
   id            String      @id @default(cuid())
   number        String      @unique
-  providerId    String
-  provider      Provider    @relation(fields: [providerId], references: [id])
+  providerId    String?
+  provider      Provider?   @relation(fields: [providerId], references: [id])
+  providerName  String?
+  providerCuit  String?
+  providerNumber String?
   areaId        String?
   area          Area?       @relation(fields: [areaId], references: [id])
   amount        Decimal
   description   String?
   status        OrderStatus @default(BORRADOR)
+
+  // Nuevos campos para OCR y cumplimiento
+  expediente    String?
+  deliveryDate  DateTime?
+  deliveryPlace String?
+  paymentTerms  String?
+  items         PurchaseOrderItem[]
+
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
+}
+
+model PurchaseOrderItem {
+  id              String        @id @default(cuid())
+  orderId         String
+  order           PurchaseOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  quantity        Decimal
+  unitOfMeasure   String?
+  description     String
+  unitPrice       Decimal
+  totalPrice      Decimal
+  fulfilledQuantity Decimal    @default(0)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
 }
 
 enum OrderStatus {
@@ -177,6 +204,31 @@ enum OrderStatus {
   RECHAZADA
   CUMPLIDA
   CANCELADA
+}
+
+model Agreement {
+  id            String          @id @default(cuid())
+  number        String?         @unique
+  title         String
+  description   String?
+  parties       String?         // Partes intervinientes
+  amount        Decimal?        @default(0)
+  startDate     DateTime?
+  endDate       DateTime?
+  status        AgreementStatus @default(VIGENTE)
+  areaId        String?
+  area          Area?           @relation(fields: [areaId], references: [id])
+  fileUrl       String?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+}
+
+enum AgreementStatus {
+  EN_REVISION
+  VIGENTE
+  VENCIDO
+  RESCINDIDO
+  FINALIZADO
 }
 
 model Invoice {
@@ -203,8 +255,18 @@ model Vehicle {
   brand         String
   fuelCardNumber String?
   fuelMonthlyLimit Decimal? @default(0)
+  status        VehicleStatus @default(DISPONIBLE)
+  vtvExpiry     DateTime?
+  insuranceExpiry DateTime?
+  lastServiceKm Int?     @default(0)
   reservations  VehicleReservation[]
   fuelRecords   FuelRecord[]
+}
+
+enum VehicleStatus {
+  DISPONIBLE
+  EN_TALLER
+  FUERA_DE_SERVICIO
 }
 
 model VehicleReservation {
@@ -212,17 +274,24 @@ model VehicleReservation {
   vehicleId     String
   vehicle       Vehicle  @relation(fields: [vehicleId], references: [id])
   userId        String
+  user          User     @relation(fields: [userId], references: [id])
+  areaId        String?
   startDate     DateTime
   endDate       DateTime
   reason        String?
-  status        ReservationStatus @default(RESERVADO)
+  status        ReservationStatus @default(PENDIENTE)
+  observations  String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }
 
 enum ReservationStatus {
-  RESERVADO
+  PENDIENTE
+  APROBADA
+  RECHAZADA
   EN_CURSO
-  FINALIZADO
-  CANCELADO
+  FINALIZADA
+  CANCELADA
 }
 
 model FuelRecord {
@@ -263,6 +332,19 @@ enum RequestStatus {
   RECHAZADO
 }
 
+enum HRStatus {
+  ACTIVO
+  LICENCIA
+  VACACIONES
+  BAJA
+}
+
+enum ContractType {
+  MONOTRIBUTISTA
+  MENSUALIZADO
+  PLANTA_PERMANENTE
+}
+
 model HRRecord {
   id            String   @id @default(cuid())
   firstName     String
@@ -273,7 +355,15 @@ model HRRecord {
   position      String?
   areaId        String?
   area          Area?    @relation(fields: [areaId], references: [id])
-  status        String?
+  status        HRStatus @default(ACTIVO)
+  statusUntil   DateTime?
+  contractType  ContractType @default(MENSUALIZADO)
+  category      Int?
+  salary        Decimal? @default(0)
+  schedule      String?
+  imageUrl      String?
+  tasks         String?  @db.Text
+  createdAt     DateTime @default(now())
 }
 
 model Document {
@@ -306,6 +396,7 @@ model Task {
   description String?
   dueDate     DateTime?
   status      TaskStatus @default(PENDIENTE)
+  viewerIds   String?   // Comma-separated list of User IDs allowed to view this task/event
   createdAt   DateTime  @default(now())
 }
 

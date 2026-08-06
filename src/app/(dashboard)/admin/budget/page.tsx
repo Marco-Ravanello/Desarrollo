@@ -2,8 +2,10 @@ export const dynamic = "force-dynamic";
 
 import { getBudgetSummary } from "@/app/(dashboard)/admin/actions/budget-actions";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Wallet } from "lucide-react";
+import { Wallet, ExternalLink } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { BudgetEditDialog } from "@/app/(dashboard)/admin/budget/budget-edit-dialog";
+import Link from "next/link";
 
 export default async function BudgetPage() {
   const summary = await getBudgetSummary();
@@ -58,6 +60,14 @@ export default async function BudgetPage() {
                <div className="flex justify-between items-center text-[10px] text-muted-foreground">
                  <span>{area.percentage.toFixed(1)}% ejecutado</span>
                  <span>Restante: ${(area.budget - area.spent).toLocaleString()}</span>
+               </div>
+
+               <div className="pt-2 border-t flex justify-end">
+                 <Button variant="ghost" size="sm" asChild className="text-[10px] h-7 gap-1 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50">
+                    <Link href={`/admin/agreements?areaId=${area.id}`}>
+                      <ExternalLink className="h-3 w-3" /> Ver Convenios del Área
+                    </Link>
+                 </Button>
                </div>
             </CardContent>
           </Card>

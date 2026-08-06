@@ -10,13 +10,16 @@ interface ComboboxProps {
   options: { value: string; label: string }[];
   placeholder?: string;
   name?: string;
+  value?: string;
   defaultValue?: string;
+  onValueChange?: (value: string) => void;
   required?: boolean;
 }
 
-export function Combobox({ options, placeholder = "Seleccionar...", name, defaultValue, required }: ComboboxProps) {
+export function Combobox({ options, placeholder = "Seleccionar...", name, value: propsValue, defaultValue, onValueChange, required }: ComboboxProps) {
   const [open, setOpen] = React.useState(false);
-  const [value, setValue] = React.useState(defaultValue || "");
+  const [internalValue, setInternalValue] = React.useState(defaultValue || "");
+  const value = propsValue !== undefined ? propsValue : internalValue;
   const [searchTerm, setSearchTerm] = React.useState("");
 
   const filteredOptions = options.filter((option) =>
@@ -64,7 +67,9 @@ export function Combobox({ options, placeholder = "Seleccionar...", name, defaul
                     value === option.value && "bg-accent text-accent-foreground"
                   )}
                   onClick={() => {
-                    setValue(option.value === value ? "" : option.value);
+                    const newValue = option.value === value ? "" : option.value;
+                    if (propsValue === undefined) setInternalValue(newValue);
+                    onValueChange?.(newValue);
                     setOpen(false);
                     setSearchTerm("");
                   }}

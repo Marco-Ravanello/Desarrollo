@@ -3,7 +3,11 @@
 import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
+import { ReservationStatus, VehicleStatus } from "@prisma/client";
 
+/**
+ * Solicita una reserva de vehículo (Estado: PENDIENTE)
+ */
 export async function createVehicleReservationAction(formData: FormData) {
   const session = await auth();
   if (!session?.user) return { error: "No autorizado" };
@@ -12,58 +16,120 @@ export async function createVehicleReservationAction(formData: FormData) {
   const startDate = new Date(formData.get("startDate") as string);
   const endDate = new Date(formData.get("endDate") as string);
   const reason = formData.get("reason") as string;
+  const areaId = (session.user as any).areaId || null;
 
   try {
-    // Validar superposición de reservas
+    // 1. Validar que el vehículo no esté en taller o fuera de servicio
+    const vehicle = await prisma.vehicle.findUnique({ where: { id: vehicleId } });
+    if (!vehicle) return { error: "Vehículo no encontrado" };
+    if (vehicle.status !== 'DISPONIBLE') {
+      return { error: `El vehículo no está disponible para reserva (Estado: ${vehicle.status})` };
+    }
+
+    // 2. Validar superposición de reservas (solo para aprobadas o en curso)
     const overlapping = await prisma.vehicleReservation.findFirst({
       where: {
         vehicleId,
-        status: { in: ['RESERVADO', 'EN_CURSO'] },
+        status: { in: ['APROBADA', 'EN_CURSO'] },
         OR: [
-          {
-            AND: [
-              { startDate: { lte: startDate } },
-              { endDate: { gte: startDate } }
-            ]
-          },
-          {
-            AND: [
-              { startDate: { lte: endDate } },
-              { endDate: { gte: endDate } }
-            ]
-          },
-          {
-            AND: [
-              { startDate: { gte: startDate } },
-              { endDate: { lte: endDate } }
-            ]
-          }
+          { AND: [{ startDate: { lte: startDate } }, { endDate: { gte: startDate } }] },
+          { AND: [{ startDate: { lte: endDate } }, { endDate: { gte: endDate } }] },
+          { AND: [{ startDate: { gte: startDate } }, { endDate: { lte: endDate } }] }
         ]
       }
     });
 
     if (overlapping) {
-      return { error: "El vehículo ya tiene una reserva en ese horario" };
+      return { error: "El vehículo ya tiene una reserva confirmada en ese horario" };
     }
 
+    // 3. Crear reserva en estado PENDIENTE
     const reservation = await prisma.vehicleReservation.create({
       data: {
         vehicleId,
         userId: session.user.id!,
+        areaId,
         startDate,
         endDate,
         reason,
-        status: 'RESERVADO'
+        status: 'PENDIENTE'
       }
     });
 
+    // 4. Auditoría
     await prisma.auditLog.create({
       data: {
         userId: session.user.id!,
-        action: 'VEHICLE_RESERVATION',
+        action: 'VEHICLE_RESERVATION_REQUEST',
         entity: 'VehicleReservation',
         entityId: reservation.id,
-        details: `Reserva de vehículo: ${vehicleId}`
+        details: `Solicitud de reserva: ${vehicle.brand} ${vehicle.model} (${vehicle.plate})`
+      }
+    });
+
+    // 5. Notificar a administradores (Simulado mediante creación de notificación en BD)
+    const admins = await prisma.user.findMany({
+      where: { role: { in: ['SUPERADMIN', 'ADMIN_GENERAL'] } }
+    });
+
+    for (const admin of admins) {
+      await prisma.notification.create({
+        data: {
+          userId: admin.id,
+          title: "Nueva solicitud de vehículo",
+          message: `${session.user.name} solicita el móvil ${vehicle.plate} para el ${startDate.toLocaleDateString()}`,
+          link: "/admin/vehicles/requests"
+        }
+      });
+    }
+
+    revalidatePath("/admin/vehicles");
+    revalidatePath("/admin/vehicles/requests");
+    return { success: true };
+  } catch (error) {
+    console.error(error);
+    return { error: "Error al realizar la solicitud" };
+  }
+}
+
+/**
+ * Actualiza el estado de una reserva (Aprobar/Rechazar/Finalizar)
+ */
+export async function updateReservationStatusAction(reservationId: string, newStatus: ReservationStatus, observations?: string) {
+  const session = await auth();
+  if (!session?.user) return { error: "No autorizado" };
+
+  try {
+    const reservation = await prisma.vehicleReservation.findUnique({
+      where: { id: reservationId },
+      include: { vehicle: true, user: true }
+    });
+
+    if (!reservation) return { error: "Reserva no encontrada" };
+
+    const updated = await prisma.vehicleReservation.update({
+      where: { id: reservationId },
+      data: { status: newStatus, observations }
+    });
+
+    // Auditoría
+    await prisma.auditLog.create({
+      data: {
+        userId: session.user.id!,
+        action: `RESERVATION_${newStatus}`,
+        entity: 'VehicleReservation',
+        entityId: reservationId,
+        details: `Reserva ${newStatus}: ${reservation.vehicle.plate} - Obs: ${observations || 'Ninguna'}`
+      }
+    });
+
+    // Notificar al solicitante
+    await prisma.notification.create({
+      data: {
+        userId: reservation.userId,
+        title: `Tu reserva fue ${newStatus.toLowerCase()}`,
+        message: `El móvil ${reservation.vehicle.plate} para el ${reservation.startDate.toLocaleDateString()} está ${newStatus.toLowerCase()}.`,
+        link: "/admin/vehicles"
       }
     });
 
@@ -71,10 +137,35 @@ export async function createVehicleReservationAction(formData: FormData) {
     return { success: true };
   } catch (error) {
     console.error(error);
-    return { error: "Error al realizar la reserva" };
+    return { error: "Error al actualizar la reserva" };
   }
 }
 
+/**
+ * Actualiza el estado de un vehículo (Taller, etc)
+ */
+export async function updateVehicleStatusAction(vehicleId: string, status: VehicleStatus) {
+  const session = await auth();
+  if (!session?.user || (session.user.role !== 'SUPERADMIN' && session.user.role !== 'ADMIN_GENERAL')) {
+    return { error: "No autorizado" };
+  }
+
+  try {
+    await prisma.vehicle.update({
+      where: { id: vehicleId },
+      data: { status }
+    });
+
+    revalidatePath("/admin/vehicles");
+    return { success: true };
+  } catch (error) {
+    return { error: "Error al actualizar estado del vehículo" };
+  }
+}
+
+/**
+ * Carga de combustible con validación de límite
+ */
 export async function createFuelRecordAction(formData: FormData) {
   const session = await auth();
   if (!session?.user) return { error: "No autorizado" };
@@ -96,19 +187,13 @@ export async function createFuelRecordAction(formData: FormData) {
 
     if (!vehicle) return { error: "Vehículo no encontrado" };
 
-    // Validar cupo mensual
     if (vehicle.fuelMonthlyLimit && Number(vehicle.fuelMonthlyLimit) > 0) {
       const monthlySpent = await prisma.fuelRecord.aggregate({
         where: {
           vehicleId,
-          date: {
-            gte: startOfMonth,
-            lte: endOfMonth
-          }
+          date: { gte: startOfMonth, lte: endOfMonth }
         },
-        _sum: {
-          amount: true
-        }
+        _sum: { amount: true }
       });
 
       const totalSpent = Number(monthlySpent._sum.amount || 0);
@@ -122,7 +207,7 @@ export async function createFuelRecordAction(formData: FormData) {
     const record = await prisma.fuelRecord.create({
       data: {
         vehicleId,
-        date: new Date(date),
+        date,
         amount,
         liters,
         ticketNumber,
@@ -136,14 +221,13 @@ export async function createFuelRecordAction(formData: FormData) {
         action: 'FUEL_RECORD',
         entity: 'FuelRecord',
         entityId: record.id,
-        details: `Carga de combustible: ${liters}L - $${amount}`
+        details: `Carga combustible: ${vehicle.plate} - ${liters}L`
       }
     });
 
     revalidatePath("/admin/vehicles");
     return { success: true };
   } catch (error) {
-    console.error(error);
-    return { error: "Error al registrar la carga de combustible" };
+    return { error: "Error al registrar combustible" };
   }
 }
