@@ -217,7 +217,7 @@ ${queryText}
 
 Por favor, responde a la pregunta del usuario utilizando EXCLUSIVAMENTE la información del contexto de la base de datos municipal anterior.
 No inventes ni asumas ningún dato, número, nombre, saldo o detalle que no esté presente en el contexto anterior.
-Si el usuario pregunta por personas, órdenes, sueldos o datos específicos y no los ves listados en el bloque de contexto, indícales amablemente que no se registran en la base de datos municipal.
+Si los datos del contexto indican cero (0) resultados para la búsqueda (por ejemplo, "Se encontraron 0 personas" o "No se encontraron ciudadanos"), debes responder claramente que no hay registros coincidentes en la base de datos municipal para esa consulta. No digas que la información no se registra o no existe en la base de datos, simplemente explica que el padrón actual no tiene coincidencias con el filtro especificado.
 Preserva el formato de tablas o listas si ayuda a presentar los datos con claridad y precisión de forma profesional.`;
       } else {
         userPrompt = `[PREGUNTA DEL USUARIO]:
@@ -825,7 +825,8 @@ ${areas.map(a => {
 
 async function handleSocialQuery(query: string): Promise<AIResponse> {
   // 0. Dynamic Check for DNI / Document ending digit (e.g. "documento termine con 5", "dni termine en 5")
-  const endsWithMatch = query.match(/(?:documento|dni|ciudada|persona)\s+(?:que\s+)?(?:termine|termina)\s+(?:en|con)\s+(\d)/i);
+  const endsWithMatch = query.match(/(?:documento|dni|ciudada|persona)\s+(?:que\s+)?termin[a-z]*\s+(?:en|con)\s+(\d)/i) ||
+                        query.match(/\b(?:termina|termine|terminado|terminada)\s+(?:en|con)\s+(\d)\b/i);
   if (endsWithMatch && endsWithMatch[1]) {
     const digit = endsWithMatch[1];
     const people = await prisma.person.findMany();
@@ -932,8 +933,9 @@ async function handleSocialQuery(query: string): Promise<AIResponse> {
   }
 
   // 2. Dynamic Check for Surname / Name startsWith filter (e.g., "apellido que comience con A")
-  const letterMatch = query.match(/(?:apellido|nombre|letra)\s+(?:que\s+)?(?:comience\s+por\s+la\s+|empiece\s+con\s+la\s+|comienza\s+con\s+|de\s+la\s+)?letra\s+([a-z])/i) ||
-                      query.match(/(?:apellido|nombre)\s+(?:que\s+)?(?:comience|empiece)\s+(?:por\s+|con\s+)?([a-z])/i);
+  const letterMatch = query.match(/(?:apellido|nombre|letra)\s+(?:que\s+)?(?:comience|empiece|comienza|empieza|inicie|inicia|con|de)\s+(?:por\s+la\s+|con\s+la\s+|con\s+|de\s+la\s+|de\s+|la\s+)?letra\s+([a-z])/i) ||
+                      query.match(/(?:apellido|nombre|persona)\s+(?:que\s+)?(?:comience|empiece|comienza|empieza|inicie|inicia)\s+(?:por\s+|con\s+|de\s+)?([a-z])\b/i) ||
+                      query.match(/\b(?:apellido|nombre|letra)\s+([a-z])\b/i);
 
   if (letterMatch && letterMatch[1]) {
     const targetLetter = letterMatch[1].trim().toUpperCase();
@@ -962,7 +964,7 @@ async function handleSocialQuery(query: string): Promise<AIResponse> {
         answer += `| **${p.lastName}, ${p.firstName}** | ${p.dni} | ${p.phone || "No registrado"} | ${p.address || "No registrado"} |\n`;
       });
     } else {
-      answer += `*No se registraron personas cuya inicial coincida con la búsqueda.*`;
+      answer += `*No se encontraron ciudadanos registrados cuya inicial de ${targetField.toLowerCase()} coincida con la letra "${targetLetter}" en la base de datos municipal.*`;
     }
 
     return {
