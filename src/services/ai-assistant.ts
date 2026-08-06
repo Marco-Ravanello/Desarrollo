@@ -824,16 +824,25 @@ ${areas.map(a => {
 }
 
 async function handleSocialQuery(query: string): Promise<AIResponse> {
-  // 0. Dynamic Check for DNI / Document ending digit (e.g. "documento termine con 5", "dni termine en 5")
-  const endsWithMatch = query.match(/(?:documento|dni|ciudada|persona)\s+(?:que\s+)?termin[a-z]*\s+(?:en|con)\s+(\d)/i) ||
-                        query.match(/\b(?:termina|termine|terminado|terminada)\s+(?:en|con)\s+(\d)\b/i);
-  if (endsWithMatch && endsWithMatch[1]) {
-    const digit = endsWithMatch[1];
-    const people = await prisma.person.findMany();
-    const filteredPeople = people.filter(p => p.dni && p.dni.trim().endsWith(digit));
+  const cleanQuery = query.toLowerCase().trim();
 
-    let answer = `### 🔍 Legajos de Ciudadanos con DNI terminado en "${digit}"\n\n`;
-    answer += `Se han extraído de la base de datos municipal todos los ciudadanos cuyo documento nacional de identidad termina con el número **"${digit}"**:\n\n`;
+  // 1. Check for DNI ending digit query (e.g. "dni terminado en 5", "documento con 3", etc.)
+  const isDniQuery = cleanQuery.includes("dni") || cleanQuery.includes("documento") || cleanQuery.includes("termin");
+  const digitMatch = cleanQuery.match(/\b(?:en|con|termin[a-z]*)\s+(\d)\b/) ||
+                     cleanQuery.match(/\b(?:dni|documento|ciudadano|persona)s?\s+(\d)\b/);
+
+  if (isDniQuery && digitMatch && digitMatch[1]) {
+    const digit = digitMatch[1];
+    const people = await prisma.person.findMany();
+    // Normalize and clean DNI formatting (remove dots, spaces) to compare accurately
+    const filteredPeople = people.filter(p => {
+      if (!p.dni) return false;
+      const cleanDni = p.dni.replace(/[^0-9]/g, "");
+      return cleanDni.endsWith(digit);
+    });
+
+    let answer = `### 🔍 Ciudadanos registrados con DNI terminado en "${digit}"\n\n`;
+    answer += `Se encontraron **${filteredPeople.length} personas** en la base de datos municipal cuyo DNI termina en **"${digit}"**:\n\n`;
 
     if (filteredPeople.length > 0) {
       answer += `| Ciudadano | Nro Documento (DNI) | Teléfono / Contacto | Dirección |\n`;
@@ -852,14 +861,60 @@ async function handleSocialQuery(query: string): Promise<AIResponse> {
     };
   }
 
-  // 1. Dynamic Check for Specific Name Lookups or "el caso de Acevedo, Aylen Victoria"
+  // 2. Check for Surname / Name initial letter query (e.g., "apellidos con A", "apellido que comience con A", etc.)
+  const isAlphabetQuery = cleanQuery.includes("apellido") || cleanQuery.includes("nombre") || cleanQuery.includes("letra") || cleanQuery.includes("inicia") || cleanQuery.includes("empie");
+  const letterMatch = cleanQuery.match(/\b(?:letra|inicial|con|empie[a-z]*|comien[a-z]*|inici[a-z]*|por)\s+([a-z])\b/) ||
+                      cleanQuery.match(/\b(?:apellido|nombre|persona|ciudadano)s?\s+([a-z])\b/);
+
+  if (isAlphabetQuery && letterMatch && letterMatch[1]) {
+    const targetLetter = letterMatch[1].toUpperCase();
+    const isFirstName = cleanQuery.includes("nombre");
+
+    // Fetch all citizens and filter/sort in memory for maximum robust matching
+    const people = await prisma.person.findMany();
+    const filteredPeople = people.filter(p => {
+      const nameField = isFirstName ? p.firstName : p.lastName;
+      return nameField && nameField.trim().toUpperCase().startsWith(targetLetter);
+    });
+
+    // Sort alphabetically
+    filteredPeople.sort((a, b) => {
+      const nameA = isFirstName ? a.firstName : a.lastName;
+      const nameB = isFirstName ? b.firstName : b.lastName;
+      return nameA.localeCompare(nameB);
+    });
+
+    const totalCount = filteredPeople.length;
+    const targetField = isFirstName ? "Nombre" : "Apellido";
+
+    let answer = `### 🔍 Búsqueda de Ciudadanos por Inicial "${targetLetter}"\n\n`;
+    answer += `Se encontraron **${totalCount} personas** registrados en la base de datos municipal con **${targetField}** que comienza por la letra **"${targetLetter}"**:\n\n`;
+
+    if (totalCount > 0) {
+      answer += `| Ciudadano | Nro Documento (DNI) | Teléfono / Contacto | Dirección |\n`;
+      answer += `| :--- | :---: | :---: | :--- |\n`;
+      filteredPeople.forEach(p => {
+        answer += `| **${p.lastName}, ${p.firstName}** | ${p.dni} | ${p.phone || "No registrado"} | ${p.address || "No registrado"} |\n`;
+      });
+    } else {
+      answer += `*No se encontraron ciudadanos registrados cuya inicial de ${targetField.toLowerCase()} sea la letra "${targetLetter}" en la base de datos municipal.*`;
+    }
+
+    return {
+      intent: "social_letter_filter",
+      answer,
+      dataSummary: { targetLetter, totalCount, isFirstName, people: filteredPeople }
+    };
+  }
+
+  // 3. Dynamic Check for Specific Name Lookups or "el caso de Acevedo, Aylen Victoria"
   const lookups = ["acevedo", "aylen", "victoria", "aylén", "buscar persona", "caso de", "detalles de", "consultar por"];
-  const isSpecificSearch = lookups.some(keyword => query.includes(keyword));
+  const isSpecificSearch = lookups.some(keyword => cleanQuery.includes(keyword));
 
   if (isSpecificSearch) {
     // Extract target name from sentence
     let targetName = "";
-    const cleanQuery = query
+    const cleanRepl = cleanQuery
       .replace("me gustaría consultar por el caso de", "")
       .replace("me gustaria consultar por el caso de", "")
       .replace("si, me gustaría consultar por el caso de", "")
@@ -872,9 +927,9 @@ async function handleSocialQuery(query: string): Promise<AIResponse> {
       .replace("consultar por", "")
       .trim();
 
-    if (cleanQuery.length > 2) {
-      targetName = cleanQuery;
-    } else if (query.includes("acevedo")) {
+    if (cleanRepl.length > 2) {
+      targetName = cleanRepl;
+    } else if (cleanQuery.includes("acevedo")) {
       targetName = "acevedo";
     }
 
@@ -930,48 +985,6 @@ async function handleSocialQuery(query: string): Promise<AIResponse> {
         };
       }
     }
-  }
-
-  // 2. Dynamic Check for Surname / Name startsWith filter (e.g., "apellido que comience con A")
-  const letterMatch = query.match(/(?:apellido|nombre|letra)\s+(?:que\s+)?(?:comience|empiece|comienza|empieza|inicie|inicia|con|de)\s+(?:por\s+la\s+|con\s+la\s+|con\s+|de\s+la\s+|de\s+|la\s+)?letra\s+([a-z])/i) ||
-                      query.match(/(?:apellido|nombre|persona)\s+(?:que\s+)?(?:comience|empiece|comienza|empieza|inicie|inicia)\s+(?:por\s+|con\s+|de\s+)?([a-z])\b/i) ||
-                      query.match(/\b(?:apellido|nombre|letra)\s+([a-z])\b/i);
-
-  if (letterMatch && letterMatch[1]) {
-    const targetLetter = letterMatch[1].trim().toUpperCase();
-    const isFirstName = query.includes("nombre");
-
-    // Execute dynamic filtering query to DB
-    const filteredPeople = await prisma.person.findMany({
-      where: isFirstName ? {
-        firstName: { startsWith: targetLetter, mode: 'insensitive' }
-      } : {
-        lastName: { startsWith: targetLetter, mode: 'insensitive' }
-      },
-      orderBy: isFirstName ? { firstName: 'asc' } : { lastName: 'asc' }
-    });
-
-    const totalCount = filteredPeople.length;
-    const targetField = isFirstName ? "Nombre" : "Apellido";
-
-    let answer = `### 🔍 Búsqueda de Ciudadanos por Inicial\n\n`;
-    answer += `Se encontraron **${totalCount} personas** en el Registro Único con **${targetField}** que comienza por la letra **"${targetLetter}"**.\n\n`;
-
-    if (totalCount > 0) {
-      answer += `| Ciudadano | Nro Documento (DNI) | Teléfono / Contacto | Dirección |\n`;
-      answer += `| :--- | :---: | :---: | :--- |\n`;
-      filteredPeople.forEach(p => {
-        answer += `| **${p.lastName}, ${p.firstName}** | ${p.dni} | ${p.phone || "No registrado"} | ${p.address || "No registrado"} |\n`;
-      });
-    } else {
-      answer += `*No se encontraron ciudadanos registrados cuya inicial de ${targetField.toLowerCase()} coincida con la letra "${targetLetter}" en la base de datos municipal.*`;
-    }
-
-    return {
-      intent: "social_letter_filter",
-      answer,
-      dataSummary: { targetLetter, totalCount, isFirstName }
-    };
   }
 
   // Fallback to general social statistics
