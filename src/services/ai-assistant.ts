@@ -728,6 +728,80 @@ async function handleVehicleQuery(query: string): Promise<AIResponse> {
     prisma.fuelRecord.findMany()
   ]);
 
+  const cleanQuery = query.toLowerCase().trim();
+
+  // 1. Dynamic Check for Specific Vehicle Plate (patente) Lookups (e.g. "patente AB-123-CD", "gasto AB123CD", etc.)
+  const plateMatch = cleanQuery.replace(/[^a-z0-9]/g, "").match(/[a-z]{3}\d{3}|[a-z]{2}\d{3}[a-z]{2}/);
+  if (plateMatch) {
+    const targetPlate = plateMatch[0].toUpperCase();
+    const matchedVehicle = vehicles.find(v => v.plate && v.plate.replace(/[^a-z0-9]/g, "").toUpperCase() === targetPlate);
+
+    if (matchedVehicle) {
+      const records = fuelRecords.filter(r => r.vehicleId === matchedVehicle.id);
+      const totalCost = records.reduce((sum, curr) => sum + Number(curr.amount), 0);
+      const totalLiters = records.reduce((sum, curr) => sum + Number(curr.liters), 0);
+
+      let answer = `### 🚗 Historial de Combustible de la Unidad Patente "${matchedVehicle.plate}"\n\n`;
+      answer += `Se han extraído de la base de datos municipal todos los consumos reales para el vehículo **${matchedVehicle.brand} ${matchedVehicle.model}**:\n\n`;
+      answer += `*   🏷️ **Marca y Modelo:** ${matchedVehicle.brand} ${matchedVehicle.model}\n`;
+      answer += `*   🪪 **Patente/Dominio:** ${matchedVehicle.plate}\n`;
+      answer += `*   ⛽ **Límite Mensual:** $${Number(matchedVehicle.fuelMonthlyLimit || 0).toLocaleString("es-AR")} ARS (Tarjeta: ${matchedVehicle.fuelCardNumber || "No registrada"})\n`;
+      answer += `*   📊 **Estado Operativo:** \`${matchedVehicle.status}\`\n\n`;
+
+      answer += `#### 💰 Resumen de Consumo Acumulado:\n`;
+      answer += `*   💵 **Gasto Total de Combustible:** $${totalCost.toLocaleString("es-AR")} ARS\n`;
+      answer += `*   ⛽ **Total de Litros Cargados:** ${totalLiters.toLocaleString("es-AR")} Lts\n`;
+      answer += `*   💳 **Precio Promedio por Litro:** $${totalLiters > 0 ? Math.round(totalCost / totalLiters).toLocaleString("es-AR") : "0"} ARS/Lt\n\n`;
+
+      answer += `#### 📋 Detalle de Cargas de Combustible Registradas (${records.length}):\n`;
+      if (records.length > 0) {
+        answer += `| Fecha | Litros Cargados | Monto Cargado | Nro Ticket |\n`;
+        answer += `| :--- | :---: | :---: | :---: |\n`;
+        records.forEach(r => {
+          answer += `| ${new Date(r.date).toLocaleDateString("es-AR")} | ${Number(r.liters).toLocaleString("es-AR")} Lts | $${Number(r.amount).toLocaleString("es-AR")} | ${r.ticketNumber || "No registrado"} |\n`;
+        });
+      } else {
+        answer += `*No se registran cargas de combustible en el sistema para este vehículo.*`;
+      }
+
+      return {
+        intent: "vehicle_fuel_lookup",
+        answer,
+        dataSummary: { vehicle: matchedVehicle, totalCost, totalLiters, records }
+      };
+    }
+  }
+
+  // 2. Dynamic Check for expired VTV/Insurance alerts
+  const isAlertQuery = cleanQuery.includes("vencid") || cleanQuery.includes("alerta") || cleanQuery.includes("seguro") || cleanQuery.includes("vtv");
+  if (isAlertQuery) {
+    const expiredVtv = vehicles.filter(v => v.vtvExpiry && new Date(v.vtvExpiry) < new Date());
+    const expiredInsurance = vehicles.filter(v => v.insuranceExpiry && new Date(v.insuranceExpiry) < new Date());
+
+    let answer = `### ⚠️ Alertas Críticas de Documentación de la Flota Municipal\n\n`;
+    answer += `Se encontraron unidades con seguros o verificaciones técnicas (VTV) vencidas:\n\n`;
+
+    if (expiredVtv.length > 0 || expiredInsurance.length > 0) {
+      answer += `| Vehículo | Patente | VTV Expiración | Seguro Expiración | Estado |\n`;
+      answer += `| :--- | :---: | :---: | :---: | :---: |\n`;
+      vehicles.forEach(v => {
+        const hasVtvExpired = v.vtvExpiry && new Date(v.vtvExpiry) < new Date();
+        const hasInsExpired = v.insuranceExpiry && new Date(v.insuranceExpiry) < new Date();
+        if (hasVtvExpired || hasInsExpired) {
+          answer += `| **${v.brand} ${v.model}** | ${v.plate} | ${hasVtvExpired ? `❌ Vencido (${new Date(v.vtvExpiry!).toLocaleDateString("es-AR")})` : "🟢 Al día"} | ${hasInsExpired ? `❌ Vencido (${new Date(v.insuranceExpiry!).toLocaleDateString("es-AR")})` : "🟢 Al día"} | \`${v.status}\` |\n`;
+        }
+      });
+    } else {
+      answer += `*🟢 ¡Todos los vehículos de la flota tienen la VTV y el seguro al día! No se registran alertas críticas.*`;
+    }
+
+    return {
+      intent: "vehicle_alerts_query",
+      answer,
+      dataSummary: { expiredVtv, expiredInsurance }
+    };
+  }
+
   const totalVehicles = vehicles.length;
   const available = vehicles.filter(v => v.status === "DISPONIBLE").length;
   const inWorkshop = vehicles.filter(v => v.status === "EN_TALLER").length;
@@ -740,7 +814,7 @@ async function handleVehicleQuery(query: string): Promise<AIResponse> {
   const activeReservations = reservations.filter(r => r.status === "APROBADA" || r.status === "EN_CURSO").length;
 
   let answer = "";
-  if (query.includes("combustible") || query.includes("nafta") || query.includes("litro") || query.includes("gasto")) {
+  if (cleanQuery.includes("combustible") || cleanQuery.includes("nafta") || cleanQuery.includes("litro") || cleanQuery.includes("gasto")) {
     answer = `### ⛽ Control de Consumo de Combustible
 
 La flota municipal registra los siguientes consumos consolidados:
@@ -825,6 +899,50 @@ ${areas.map(a => {
 
 async function handleSocialQuery(query: string): Promise<AIResponse> {
   const cleanQuery = query.toLowerCase().trim();
+
+  // 0. Check for Specific Exact DNI Lookup (e.g. "¿Quién es la persona con DNI 12.345.678?")
+  const numericDniMatch = cleanQuery.replace(/[^0-9]/g, "").match(/\b\d{7,8}\b/);
+  if (numericDniMatch) {
+    const targetDni = numericDniMatch[0];
+    const people = await prisma.person.findMany({
+      include: {
+        cases: {
+          include: { area: true }
+        }
+      }
+    });
+
+    const matchedPerson = people.find(p => p.dni && p.dni.replace(/[^0-9]/g, "") === targetDni);
+    if (matchedPerson) {
+      let answer = `### 👤 Legajo Social Encontrado: ${matchedPerson.lastName}, ${matchedPerson.firstName}\n\n`;
+      answer += `Se han extraído de la base de datos municipal todos los detalles para el DNI **${matchedPerson.dni}**:\n\n`;
+      answer += `*   🪪 **DNI / Documento:** ${matchedPerson.dni}\n`;
+      answer += `*   📞 **Teléfono:** ${matchedPerson.phone || "No registrado"}\n`;
+      answer += `*   📍 **Dirección:** ${matchedPerson.address || "No registrada"}\n`;
+      answer += `*   📅 **Fecha de Nacimiento:** ${matchedPerson.birthDate ? new Date(matchedPerson.birthDate).toLocaleDateString("es-AR") : "No registrada"}\n\n`;
+
+      answer += `#### 📁 Casos de Asistencia Social Asociados (${matchedPerson.cases.length}):\n`;
+      if (matchedPerson.cases.length > 0) {
+        matchedPerson.cases.forEach((c, idx) => {
+          answer += `\n${idx + 1}. **Caso: ${c.title}**\n`;
+          answer += `   *   **Descripción:** ${c.description || "Sin descripción disponible."}\n`;
+          answer += `   *   **Estado:** \`${c.status}\` - **Prioridad:** \`${c.priority}\`\n`;
+          answer += `   *   **Área de Atención:** *${c.area.name}*\n`;
+          answer += `   *   **Fecha de Registro:** ${new Date(c.createdAt).toLocaleDateString("es-AR")}\n`;
+        });
+      } else {
+        answer += `*No se registran solicitudes de asistencia o casos activos abiertos para este ciudadano.*\n`;
+      }
+
+      answer += `\n🔗 **[Ver Legajo Completo en Ficha Única](/people/${matchedPerson.id})**`;
+
+      return {
+        intent: "social_person_lookup",
+        answer,
+        dataSummary: matchedPerson
+      };
+    }
+  }
 
   // 1. Check for DNI ending digit query (e.g. "dni terminado en 5", "documento con 3", etc.)
   const isDniQuery = cleanQuery.includes("dni") || cleanQuery.includes("documento") || cleanQuery.includes("termin");
