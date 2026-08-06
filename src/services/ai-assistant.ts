@@ -41,8 +41,8 @@ async function callOllama(messages: Message[]): Promise<string> {
         "Content-Type": "application/json",
         "Content-Length": Buffer.byteLength(requestBody)
       },
-      // Set timeout to 120 seconds to allow cold-start on slow Colab CPUs without Undici fetch limitations
-      timeout: 120000
+      // Set timeout to 5 minutes (300000ms) to allow cold-start of llama3:8b on CPU-only instances
+      timeout: 300000
     }, (res) => {
       let responseData = "";
       res.setEncoding("utf8");
@@ -68,7 +68,7 @@ async function callOllama(messages: Message[]): Promise<string> {
 
     req.on("timeout", () => {
       req.destroy();
-      reject(new Error("Ollama API request timed out (120s)"));
+      reject(new Error("Ollama API request timed out (300s). Te recomendamos activar la aceleración por GPU T4 en Google Colab (Entorno de ejecución -> Cambiar tipo de entorno -> T4 GPU) para que las respuestas sean instantáneas."));
     });
 
     req.on("error", (err) => {
