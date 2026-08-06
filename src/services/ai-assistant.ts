@@ -17,7 +17,8 @@ async function callOllama(messages: Message[]): Promise<string> {
   const url = `${host.replace(/\/$/, "")}/api/chat`;
 
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 15000);
+  // Set timeout to 90 seconds to allow Ollama enough time to load the llama3:8b model on first run
+  const timeoutId = setTimeout(() => controller.abort(), 90000);
 
   try {
     const res = await fetch(url, {
