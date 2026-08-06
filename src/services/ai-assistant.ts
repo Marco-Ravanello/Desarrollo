@@ -215,7 +215,10 @@ ${dbResponse.answer}
 [PREGUNTA DEL USUARIO]:
 ${queryText}
 
-Por favor, responde a la pregunta del usuario utilizando la información del contexto de la base de datos municipal anterior de forma natural y conversacional. Mantén el formato de tablas o listas si ayuda a presentar los datos de forma clara y profesional. Si te preguntan algo específico que no está en el contexto, indícalo de forma educada y servicial sin inventar datos.`;
+Por favor, responde a la pregunta del usuario utilizando EXCLUSIVAMENTE la información del contexto de la base de datos municipal anterior.
+No inventes ni asumas ningún dato, número, nombre, saldo o detalle que no esté presente en el contexto anterior.
+Si el usuario pregunta por personas, órdenes, sueldos o datos específicos y no los ves listados en el bloque de contexto, indícales amablemente que no se registran en la base de datos municipal.
+Preserva el formato de tablas o listas si ayuda a presentar los datos con claridad y precisión de forma profesional.`;
       } else {
         userPrompt = `[PREGUNTA DEL USUARIO]:
 ${queryText}
@@ -601,6 +604,68 @@ async function handleBudgetQuery(query: string): Promise<AIResponse> {
   ]);
 
   const totalOrders = orders.length;
+
+  // 1. Dynamic Check for Specific Order Lookups (e.g. "orden 253", "oc 253", or any digit)
+  const orderNumMatch = query.match(/(?:orden|oc|compra|nro|número|numero)\s*#?\s*(\d+)/i) || query.match(/\b(\d{3,})\b/);
+  if (orderNumMatch && orderNumMatch[1]) {
+    const orderNumber = orderNumMatch[1];
+    const order = orders.find(o => o.number === orderNumber);
+
+    if (order) {
+      const totalAmount = Number(order.amount);
+      const executedAmount = order.items.reduce((sum, item) => sum + (Number(item.unitPrice) * Number(item.fulfilledQuantity)), 0);
+      const pendingBalance = totalAmount - executedAmount;
+
+      let answer = `### 🛍️ Detalles de la Orden de Compra Nro #${order.number}\n\n`;
+      answer += `Se han extraído los datos reales de la base de datos municipal para la **OC #${order.number}**:\n\n`;
+      answer += `*   🏢 **Área Solicitante:** ${order.area?.name || "Sin área asignada"}\n`;
+      answer += `*   👥 **Proveedor:** ${order.providerName || "Desconocido"} (CUIT: ${order.providerCuit || "No registrado"})\n`;
+      answer += `*   📅 **Fecha de Entrega:** ${order.deliveryDate ? new Date(order.deliveryDate).toLocaleDateString("es-AR") : "No especificada"}\n`;
+      answer += `*   📍 **Lugar de Entrega:** ${order.deliveryPlace || "No especificado"}\n`;
+      answer += `*   💳 **Condición de Pago:** ${order.paymentTerms || "No especificada"}\n`;
+      answer += `*   📊 **Estado Administrativo:** \`${order.status}\`\n\n`;
+
+      answer += `#### 💰 Estado Financiero y Ejecución:\n`;
+      answer += `*   💵 **Monto Total Aprobado:** $${totalAmount.toLocaleString("es-AR")} ARS\n`;
+      answer += `*   🟢 **Monto Ejecutado (Entregado/Facturado):** $${executedAmount.toLocaleString("es-AR")} ARS\n`;
+      answer += `*   🔵 **Saldo Pendiente (Disponible/No entregado):** $${pendingBalance.toLocaleString("es-AR")} ARS\n\n`;
+
+      answer += `#### 📋 Detalle de Ítems e Insumos en la Orden:\n`;
+      if (order.items.length > 0) {
+        answer += `| Ítem | Cantidad Solicitada | Entregado/Cumplido | Precio Unitario | Total |\n`;
+        answer += `| :--- | :---: | :---: | :---: | :---: |\n`;
+        order.items.forEach(item => {
+          const itemTotal = Number(item.quantity) * Number(item.unitPrice);
+          answer += `| ${item.description} | ${item.quantity} ${item.unitOfMeasure || ""} | ${item.fulfilledQuantity} ${item.unitOfMeasure || ""} | $${Number(item.unitPrice).toLocaleString("es-AR")} | $${itemTotal.toLocaleString("es-AR")} |\n`;
+        });
+      } else {
+        answer += `*No se registraron líneas de ítems detalladas para esta orden.*\n`;
+      }
+
+      return {
+        intent: "purchase_order_lookup",
+        answer,
+        dataSummary: order
+      };
+    }
+  }
+
+  // 2. Dynamic Check for Lists or Tables of Purchase Orders
+  if (query.includes("lista") || query.includes("todas") || query.includes("tengo") || query.includes("cargar") || query.includes("que orden") || query.includes("qué orden") || query.includes("mostrar órdenes") || query.includes("mostrar ordenes")) {
+    let answer = `### 📋 Listado Completo de Órdenes de Compra Registradas\n\n`;
+    answer += `Aquí tienes el listado de todas las órdenes de compra reales en el sistema:\n\n`;
+    answer += `| Nro Orden | Área Solicitante | Proveedor | Monto Total | Estado |\n`;
+    answer += `| :--- | :--- | :--- | :---: | :---: |\n`;
+    orders.forEach(o => {
+      answer += `| **OC #${o.number}** | ${o.area?.name || "Sin área"} | ${o.providerName || "Desconocido"} | $${Number(o.amount).toLocaleString("es-AR")} | \`${o.status}\` |\n`;
+    });
+    return {
+      intent: "budget_query",
+      answer,
+      dataSummary: { totalOrders, totalSpent: orders.filter(o => o.status === "APROBADA" || o.status === "CUMPLIDA").reduce((sum, curr) => sum + Number(curr.amount), 0) }
+    };
+  }
+
   const approvedOrders = orders.filter(o => o.status === "APROBADA" || o.status === "CUMPLIDA");
   const pendingOrders = orders.filter(o => o.status === "PENDIENTE_APROBACION");
   const draftOrders = orders.filter(o => o.status === "BORRADOR");
@@ -759,6 +824,33 @@ ${areas.map(a => {
 }
 
 async function handleSocialQuery(query: string): Promise<AIResponse> {
+  // 0. Dynamic Check for DNI / Document ending digit (e.g. "documento termine con 5", "dni termine en 5")
+  const endsWithMatch = query.match(/(?:documento|dni|ciudada|persona)\s+(?:que\s+)?(?:termine|termina)\s+(?:en|con)\s+(\d)/i);
+  if (endsWithMatch && endsWithMatch[1]) {
+    const digit = endsWithMatch[1];
+    const people = await prisma.person.findMany();
+    const filteredPeople = people.filter(p => p.dni && p.dni.trim().endsWith(digit));
+
+    let answer = `### 🔍 Legajos de Ciudadanos con DNI terminado en "${digit}"\n\n`;
+    answer += `Se han extraído de la base de datos municipal todos los ciudadanos cuyo documento nacional de identidad termina con el número **"${digit}"**:\n\n`;
+
+    if (filteredPeople.length > 0) {
+      answer += `| Ciudadano | Nro Documento (DNI) | Teléfono / Contacto | Dirección |\n`;
+      answer += `| :--- | :---: | :---: | :--- |\n`;
+      filteredPeople.forEach(p => {
+        answer += `| **${p.lastName}, ${p.firstName}** | ${p.dni} | ${p.phone || "No registrado"} | ${p.address || "No registrado"} |\n`;
+      });
+    } else {
+      answer += `*No se encontraron ciudadanos registrados cuyo DNI termine con la cifra "${digit}" en el padrón municipal.*`;
+    }
+
+    return {
+      intent: "social_dni_filter",
+      answer,
+      dataSummary: { digit, count: filteredPeople.length, people: filteredPeople }
+    };
+  }
+
   // 1. Dynamic Check for Specific Name Lookups or "el caso de Acevedo, Aylen Victoria"
   const lookups = ["acevedo", "aylen", "victoria", "aylén", "buscar persona", "caso de", "detalles de", "consultar por"];
   const isSpecificSearch = lookups.some(keyword => query.includes(keyword));
