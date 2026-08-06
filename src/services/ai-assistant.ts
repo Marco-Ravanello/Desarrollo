@@ -1,4 +1,5 @@
 import prisma from "@/lib/prisma";
+import http from "http";
 
 export interface AIResponse {
   answer: string;
@@ -14,41 +15,69 @@ export interface Message {
 async function callOllama(messages: Message[]): Promise<string> {
   const host = process.env.OLLAMA_HOST || "http://127.0.0.1:11434";
   const model = process.env.OLLAMA_MODEL || "llama3:8b";
-  const url = `${host.replace(/\/$/, "")}/api/chat`;
 
-  const controller = new AbortController();
-  // Set timeout to 90 seconds to allow Ollama enough time to load the llama3:8b model on first run
-  const timeoutId = setTimeout(() => controller.abort(), 90000);
+  // Parse host URL
+  const hostUrl = new URL(host);
+  const hostname = hostUrl.hostname || "127.0.0.1";
+  const port = hostUrl.port || "11434";
+  const path = "/api/chat";
 
-  try {
-    const res = await fetch(url, {
+  const requestBody = JSON.stringify({
+    model,
+    messages,
+    stream: false,
+    options: {
+      temperature: 0.3,
+    }
+  });
+
+  return new Promise((resolve, reject) => {
+    const req = http.request({
+      hostname,
+      port,
+      path,
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        "Content-Length": Buffer.byteLength(requestBody)
       },
-      body: JSON.stringify({
-        model,
-        messages,
-        stream: false,
-        options: {
-          temperature: 0.3,
+      // Set timeout to 120 seconds to allow cold-start on slow Colab CPUs without Undici fetch limitations
+      timeout: 120000
+    }, (res) => {
+      let responseData = "";
+      res.setEncoding("utf8");
+
+      res.on("data", (chunk) => {
+        responseData += chunk;
+      });
+
+      res.on("end", () => {
+        if (res.statusCode && (res.statusCode < 200 || res.statusCode >= 300)) {
+          reject(new Error(`Ollama API returned status ${res.statusCode}: ${responseData}`));
+          return;
         }
-      }),
-      signal: controller.signal,
+
+        try {
+          const data = JSON.parse(responseData);
+          resolve(data.message?.content || "");
+        } catch (err) {
+          reject(new Error(`Failed to parse Ollama JSON response: ${err}`));
+        }
+      });
     });
 
-    clearTimeout(timeoutId);
+    req.on("timeout", () => {
+      req.destroy();
+      reject(new Error("Ollama API request timed out (120s)"));
+    });
 
-    if (!res.ok) {
-      throw new Error(`Ollama API returned status ${res.status}`);
-    }
+    req.on("error", (err) => {
+      reject(err);
+    });
 
-    const data = await res.json();
-    return data.message?.content || "";
-  } catch (error) {
-    clearTimeout(timeoutId);
-    throw error;
-  }
+    req.write(requestBody);
+    req.end();
+  });
 }
 
 export async function queryAIAssistant(
