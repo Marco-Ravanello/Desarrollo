@@ -16,7 +16,9 @@ import {
   FileText,
   RefreshCw,
   Package,
-  BookOpen
+  BookOpen,
+  Volume2,
+  VolumeX
 } from "lucide-react";
 import { toast } from "sonner";
 import { useTheme } from "next-themes";
@@ -46,12 +48,85 @@ export default function AssistantPage() {
   ]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [currentlySpeakingId, setCurrentlySpeakingId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Auto scroll to bottom
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading]);
+
+  // Clean speaking on unmount
+  useEffect(() => {
+    return () => {
+      if (typeof window !== "undefined" && window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+      }
+    };
+  }, []);
+
+  const speakText = (text: string, msgId: string) => {
+    if (typeof window === "undefined" || !window.speechSynthesis) {
+      toast.error("Tu navegador no soporta síntesis de voz (Text-to-Speech).");
+      return;
+    }
+
+    if (currentlySpeakingId === msgId) {
+      window.speechSynthesis.cancel();
+      setCurrentlySpeakingId(null);
+      return;
+    }
+
+    window.speechSynthesis.cancel(); // Stop any active reading first
+
+    const cleanText = cleanMarkdownForSpeech(text);
+    const utterance = new SpeechSynthesisUtterance(cleanText);
+
+    // Get Spanish voice
+    const voices = window.speechSynthesis.getVoices();
+    const esVoice = voices.find(v => v.lang.includes("es-AR")) ||
+                    voices.find(v => v.lang.startsWith("es"));
+    if (esVoice) {
+      utterance.voice = esVoice;
+    }
+
+    utterance.rate = 1.0; // Normal rate
+    utterance.pitch = 1.0;
+
+    utterance.onend = () => {
+      setCurrentlySpeakingId(null);
+    };
+
+    utterance.onerror = (e) => {
+      console.error("Speech error:", e);
+      setCurrentlySpeakingId(null);
+    };
+
+    setCurrentlySpeakingId(msgId);
+    window.speechSynthesis.speak(utterance);
+  };
+
+  const cleanMarkdownForSpeech = (markdown: string) => {
+    let clean = markdown;
+    // Strip tables first (lines starting with pipes)
+    clean = clean.split("\n")
+      .filter(line => {
+        const trimmed = line.trim();
+        // Remove lines with only hyphens/pipes used as table separators
+        if (trimmed.startsWith("|") && trimmed.includes("-")) return false;
+        return true;
+      })
+      .join("\n");
+
+    clean = clean.replace(/\|/g, " ") // replace table dividers with spaces
+      .replace(/#{1,6}\s+/g, "") // remove markdown headers
+      .replace(/\*\*/g, "") // remove bold markers
+      .replace(/\*/g, "") // remove italic markers
+      .replace(/`/g, "") // remove inline code
+      .replace(/\[([^\]]+)\]\((.*?)\)/g, "$1") // convert markdown links [text](url) to just "text"
+      .replace(/\s+/g, " "); // collapse whitespace
+    return clean.trim();
+  };
 
   const handleQuery = async (text: string) => {
     if (!text.trim() || loading) return;
@@ -105,6 +180,10 @@ export default function AssistantPage() {
   };
 
   const clearChat = () => {
+    if (typeof window !== "undefined" && window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+    }
+    setCurrentlySpeakingId(null);
     setMessages([
       {
         id: "welcome",
@@ -426,7 +505,7 @@ export default function AssistantPage() {
                   <div className={`rounded-3xl p-5 shadow-sm text-foreground relative ${
                     m.sender === "user"
                       ? "bg-blue-600/10 border border-blue-500/20 rounded-tr-none"
-                      : "bg-background/45 border border-border/30 rounded-tl-none w-full"
+                      : "bg-background/45 border border-border/30 rounded-tl-none w-full pr-12"
                   }`}>
                     {m.sender === "user" ? (
                       <p className="text-sm font-semibold leading-relaxed">{m.text}</p>
@@ -437,6 +516,20 @@ export default function AssistantPage() {
                         {/* Interactive Recharts Chart rendering */}
                         {m.dataSummary?.chart && renderChart(m.dataSummary.chart)}
                       </div>
+                    )}
+
+                    {m.sender === "assistant" && (
+                      <button
+                        onClick={() => speakText(m.text, m.id)}
+                        className="absolute top-4 right-4 p-1.5 rounded-xl hover:bg-muted/60 transition-all text-muted-foreground hover:text-blue-500"
+                        title={currentlySpeakingId === m.id ? "Detener voz" : "Escuchar respuesta"}
+                      >
+                        {currentlySpeakingId === m.id ? (
+                          <VolumeX className="h-4 w-4 text-blue-500 animate-pulse" />
+                        ) : (
+                          <Volume2 className="h-4 w-4" />
+                        )}
+                      </button>
                     )}
 
                     <span className="text-[9px] text-muted-foreground font-bold tracking-wider uppercase block mt-2.5 text-right">
