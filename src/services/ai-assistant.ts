@@ -1358,10 +1358,19 @@ function parseNaturalLanguageDate(text: string): Date {
   }
   else {
     // Check days of the week
-    const days = ["domingo", "lunes", "martes", "miércoles", "miercoles", "jueves", "viernes", "sábado", "sabado"];
+    const daysNormalized = ["domingo", "lunes", "martes", "miercoles", "jueves", "viernes", "sabado"];
+    const cleanNormalized = clean
+      .replace(/á/g, "a")
+      .replace(/é/g, "e")
+      .replace(/í/g, "i")
+      .replace(/ó/g, "o")
+      .replace(/ú/g, "u")
+      .replace(/ü/g, "u")
+      .replace(/juves/g, "jueves"); // support common typos
+
     let matchedDay = false;
-    for (let i = 0; i < days.length; i++) {
-      if (clean.includes(days[i])) {
+    for (let i = 0; i < daysNormalized.length; i++) {
+      if (cleanNormalized.includes(daysNormalized[i])) {
         const targetDay = i;
         const currentDay = arNow.getDay();
         let daysToAdd = targetDay - currentDay;
@@ -1374,23 +1383,146 @@ function parseNaturalLanguageDate(text: string): Date {
     }
 
     if (!matchedDay) {
-      // Exact date format like DD/MM/YYYY or DD/MM
-      const dateMatch = clean.match(/(\d{1,2})[\/\-](\d{1,2})(?:[\/\-](\d{2,4}))?/);
-      if (dateMatch) {
-        const day = parseInt(dateMatch[1]);
-        const month = parseInt(dateMatch[2]) - 1;
-        const year = dateMatch[3] ? parseInt(dateMatch[3]) : arNow.getFullYear();
-        const fullYear = year < 100 ? 2000 + year : year;
-        targetDate = new Date(fullYear, month, day, 12, 0, 0); // default to 12:00 PM on that day
-      } else {
-        // Default to today if no specific date was matched
-        targetDate = new Date(arNow);
+      // Exact date format like DD/MM/YYYY or DD/MM or DD de MM
+      const wordMonthMatch = clean.match(/(\d{1,2})\s+de\s+([a-z]+)/);
+      if (wordMonthMatch) {
+        const day = parseInt(wordMonthMatch[1]);
+        const monthWord = wordMonthMatch[2];
+        const months = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
+        const monthIdx = months.indexOf(monthWord);
+        if (monthIdx !== -1) {
+          targetDate = new Date(arNow.getFullYear(), monthIdx, day, 12, 0, 0);
+          matchedDay = true;
+        }
+      }
+
+      if (!matchedDay) {
+        const dateMatch = clean.match(/(\d{1,2})[\/\-](\d{1,2})(?:[\/\-](\d{2,4}))?/);
+        if (dateMatch) {
+          const day = parseInt(dateMatch[1]);
+          const month = parseInt(dateMatch[2]) - 1;
+          const year = dateMatch[3] ? parseInt(dateMatch[3]) : arNow.getFullYear();
+          const fullYear = year < 100 ? 2000 + year : year;
+          targetDate = new Date(fullYear, month, day, 12, 0, 0); // default to 12:00 PM on that day
+        } else {
+          // Default to today if no specific date was matched
+          targetDate = new Date(arNow);
+        }
       }
     }
   }
 
+  // Also extract time from query if available in fallback
+  const timeMatch = clean.match(/(?:a las|a la|las|la|hs|hora)\s*(\d{1,2})(?::(\d{2}))?/);
+  if (timeMatch) {
+    const hours = parseInt(timeMatch[1]);
+    const minutes = timeMatch[2] ? parseInt(timeMatch[2]) : 0;
+    targetDate.setHours(hours, minutes, 0, 0);
+  } else {
+    targetDate.setHours(12, 0, 0, 0); // default fallback hour
+  }
+
   // Convert the adjusted Argentina local date back to a standard Date object
   return targetDate;
+}
+
+interface ExtractedDetails {
+  title: string;
+  dueDate: Date;
+}
+
+async function extractSchedulingDetails(query: string): Promise<ExtractedDetails> {
+  // Get current date/time adjusted to Argentina timezone (UTC-3)
+  const now = new Date();
+  const utcTime = now.getTime() + (now.getTimezoneOffset() * 60000);
+  const arOffset = -3; // UTC-3
+  const arNow = new Date(utcTime + (3600000 * arOffset));
+
+  const arNowString = arNow.toLocaleDateString("es-AR", { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+  const arNowTimeString = arNow.toLocaleTimeString("es-AR", { hour: '2-digit', minute: '2-digit' });
+
+  // Fallback values
+  let fallbackTitle = query
+    .replace(/crear tarea/i, "")
+    .replace(/crear recordatorio/i, "")
+    .replace(/agendar reunion/i, "")
+    .replace(/agendar reunión/i, "")
+    .replace(/agendar evento/i, "")
+    .replace(/crear evento/i, "")
+    .replace(/agregar tarea/i, "")
+    .replace(/agendar/i, "")
+    .replace(/recordatorio/i, "")
+    .replace(/tarea/i, "")
+    .replace(/evento/i, "")
+    .replace(/reunion/i, "")
+    .replace(/reunión/i, "")
+    .replace(/cita/i, "")
+    .replace(/turno/i, "")
+    .replace(/para el/i, "")
+    .replace(/para mañana/i, "")
+    .replace(/para manana/i, "")
+    .trim();
+  fallbackTitle = fallbackTitle.charAt(0).toUpperCase() + fallbackTitle.slice(1);
+  if (fallbackTitle.length === 0) fallbackTitle = "Nueva tarea agendada por IA";
+
+  let fallbackDate = parseNaturalLanguageDate(query);
+
+  try {
+    const systemPrompt = `Eres un extractor de datos estructurados de alta precisión para un calendario municipal de Argentina.
+Tu única tarea es analizar una solicitud de agenda o reserva del usuario y extraer un objeto JSON plano con la siguiente estructura exacta:
+{
+  "title": "Un título de evento súper limpio y conciso, sin preposiciones excesivas ni frases conversacionales, capitalizado. Debe ser solo el nombre del evento (por ejemplo, 'Familia Solidaria' si el usuario pide 'agendar un llamado Familia Solidaria' o 'una tarea de Familia Solidaria').",
+  "date": "La fecha del evento en formato YYYY-MM-DD. Calcula esta fecha de forma inteligente usando la fecha de referencia provista.",
+  "time": "La hora en formato HH:MM:SS. Si se especificó una hora (por ejemplo, 'a las 18hs' o '18 hs' es '18:00:00', 'a las 6 de la tarde' es '18:00:00', 'a la mañana' o 'temprano' es '09:00:00'), extráela. Si el usuario NO especificó ninguna hora o momento del día, el valor por defecto DEBE SER '12:00:00'."
+}
+
+INFORMACIÓN DE REFERENCIA ACTUAL:
+- Fecha de referencia hoy: ${arNowString}
+- Hora de referencia actual: ${arNowTimeString}
+- Si el usuario menciona un día de la semana (por ejemplo, 'jueves 13' o simplemente 'jueves', 'juves'), calcula la fecha de ese día de la semana correspondiente a esa fecha o al jueves más cercano. Tolera errores de tipeo comunes (por ejemplo, 'juves' es 'jueves', 'miercoles' es 'miércoles', 'sabado' es 'sábado').
+- Si el usuario dice 'para mañana', calcula el día siguiente a hoy.
+- Si el usuario especifica un mes (por ejemplo, '13 de agosto'), usa el mes indicado y el año actual de la fecha de referencia (${arNow.getFullYear()}).
+
+REGLAS ESTRICTAS DE RESPUESTA:
+1. Responde ÚNICAMENTE con el objeto JSON plano válido. No agregues explicaciones, no agregues markdown (no uses triple acento grave \`\`\` o bloques de código), no agregues comentarios.
+2. Si no puedes interpretar un campo, usa un valor coherente basado en la fecha de referencia.
+3. El título debe ser muy limpio, por ejemplo, remover palabras iniciales como "agendar", "crear", "reunion", "tarea", "un llamado", "llamado para", etc., para conservar solo el nombre real del evento.`;
+
+    const response = await callOllama([
+      { role: "system", content: systemPrompt },
+      { role: "user", content: `Analiza la siguiente consulta y extrae el JSON: "${query}"` }
+    ]);
+
+    let cleanResponse = response.trim();
+    if (cleanResponse.includes("```")) {
+      const match = cleanResponse.match(/```(?:json)?([\s\S]*?)```/);
+      if (match && match[1]) {
+        cleanResponse = match[1].trim();
+      }
+    }
+
+    const data = JSON.parse(cleanResponse);
+    if (data.title && data.date) {
+      const title = data.title.trim();
+      const timeStr = data.time || "12:00:00";
+      const [year, month, day] = data.date.split("-").map(Number);
+      const [hour, minute, second] = timeStr.split(":").map(Number);
+
+      const dueDate = new Date(year, month - 1, day, hour, minute || 0, second || 0);
+
+      return {
+        title,
+        dueDate
+      };
+    }
+  } catch (err) {
+    console.warn("Error parsing scheduling details via Ollama, using fallback parser:", err);
+  }
+
+  return {
+    title: fallbackTitle,
+    dueDate: fallbackDate
+  };
 }
 
 async function handleAgentCommandQuery(query: string, userId?: string): Promise<AIResponse> {
@@ -1406,49 +1538,32 @@ async function handleAgentCommandQuery(query: string, userId?: string): Promise<
   // 1. Task/Event Creation
   const isTaskCommand = cleanQuery.includes("tarea") || cleanQuery.includes("recordatorio") || cleanQuery.includes("reunion") || cleanQuery.includes("reunión") || cleanQuery.includes("pendiente") || cleanQuery.includes("evento") || cleanQuery.includes("cita") || cleanQuery.includes("turno") || cleanQuery.includes("agendar");
   if (isTaskCommand) {
-    // Extract title: strip action keywords
-    let title = query
-      .replace(/crear tarea/i, "")
-      .replace(/crear recordatorio/i, "")
-      .replace(/agendar reunion/i, "")
-      .replace(/agendar reunión/i, "")
-      .replace(/agendar evento/i, "")
-      .replace(/crear evento/i, "")
-      .replace(/agregar tarea/i, "")
-      .replace(/agendar/i, "")
-      .replace(/recordatorio/i, "")
-      .replace(/tarea/i, "")
-      .replace(/evento/i, "")
-      .replace(/reunion/i, "")
-      .replace(/reunión/i, "")
-      .replace(/cita/i, "")
-      .replace(/turno/i, "")
-      .replace(/para el/i, "")
-      .replace(/para mañana/i, "")
-      .replace(/para manana/i, "")
-      .trim();
-
-    // Capitalize first letter
-    title = title.charAt(0).toUpperCase() + title.slice(1);
-    if (title.length === 0) title = "Nueva tarea agendada por IA";
-
-    const dueDate = parseNaturalLanguageDate(cleanQuery);
+    const details = await extractSchedulingDetails(query);
 
     const task = await prisma.task.create({
       data: {
         userId,
-        title,
-        dueDate,
+        title: details.title,
+        dueDate: details.dueDate,
         status: "PENDIENTE"
       }
     });
+
+    const formatOptions: Intl.DateTimeFormatOptions = {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit"
+    };
 
     return {
       intent: "task_created",
       answer: `### ✅ ¡Tarea creada con éxito!
 He registrado tu nueva tarea en la base de datos municipal:
 *   📌 **Título:** ${task.title}
-*   📅 **Fecha de Vencimiento:** ${task.dueDate ? new Date(task.dueDate).toLocaleDateString("es-AR") : "Sin fecha"}
+*   📅 **Fecha de Vencimiento:** ${task.dueDate ? new Date(task.dueDate).toLocaleDateString("es-AR", formatOptions) : "Sin fecha"}
 *   👤 **Asignado a:** Tu usuario de MuniGestión
 
 ¿Deseas que agende alguna otra cosa en tu calendario unificado?`,
@@ -1477,7 +1592,8 @@ He registrado tu nueva tarea en la base de datos municipal:
       };
     }
 
-    const startDate = parseNaturalLanguageDate(cleanQuery);
+    const details = await extractSchedulingDetails(query);
+    const startDate = details.dueDate;
     const endDate = new Date(startDate);
     endDate.setHours(startDate.getHours() + 4); // default reservation duration: 4 hours
 
@@ -1487,7 +1603,7 @@ He registrado tu nueva tarea en la base de datos municipal:
         userId,
         startDate,
         endDate,
-        reason: "Reserva logística agendada por IA",
+        reason: details.title !== "Nueva tarea agendada por IA" ? `Reserva para: ${details.title}` : "Reserva logística agendada por IA",
         status: "APROBADA"
       }
     });
