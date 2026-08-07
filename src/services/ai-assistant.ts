@@ -1,5 +1,7 @@
 import prisma from "@/lib/prisma";
 import http from "http";
+import fs from "fs/promises";
+import path from "path";
 
 export interface AIResponse {
   answer: string;
@@ -82,7 +84,8 @@ async function callOllama(messages: Message[]): Promise<string> {
 
 export async function queryAIAssistant(
   queryText: string,
-  history?: { role: "user" | "assistant"; content: string }[]
+  history?: { role: "user" | "assistant"; content: string }[],
+  userId?: string
 ): Promise<AIResponse> {
   const query = queryText.toLowerCase().trim();
 
@@ -96,7 +99,22 @@ export async function queryAIAssistant(
 
     let dbResponse: AIResponse;
 
+    // 0. AGENT PRODUCTIVITY & COMMANDS (Tasks & Reservations)
+    const isCommand = query.includes("tarea") || query.includes("recordatorio") || query.includes("agendar") || query.includes("reservar") || query.includes("reserva");
+    // Ensure we don't accidentally intercept mere checks of reservations/tasks unless they contain creation keywords
+    const isCreationCommand = isCommand && (query.includes("crear") || query.includes("agend") || query.includes("program") || query.includes("añadir") || query.includes("agregar") || query.includes("hacer"));
+
+    // 0.1 Check for PDF RAG Query
+    const isDocRagQuery = query.includes("pdf") || query.includes("documento") || query.includes("archivo") || query.includes("leé") || query.includes("lee") || query.includes("informe") || query.includes("adjunto");
+
+    if (isCreationCommand) {
+      dbResponse = await handleAgentCommandQuery(queryText, userId);
+    }
+    else if (isDocRagQuery) {
+      dbResponse = await handleDocumentRAGQuery(queryText);
+    }
     // 1. HR & SALARY INTENTS
+    else if (
     if (
       query.includes("sueldo") ||
       query.includes("salario") ||
@@ -186,6 +204,7 @@ export async function queryAIAssistant(
       dbResponse = handleGeneralFallback(queryText);
     }
 
+    // Ensure we don't pass massive extracted PDF contexts to Ollama's chat history directly as a system prompt to keep context tight
     // Try to synthesize the response using Ollama
     try {
       const systemPrompt = `Eres el Asistente Inteligente Municipal de la plataforma MuniGestión.
@@ -1219,4 +1238,257 @@ Escribe cualquier pregunta relacionada y te traeré los datos precisos al instan
     intent: "fallback",
     answer
   };
+}
+
+// --- ADVANCED RAG & COMMAND COMMANDS (PDF Extraction & Calendar Agent) ---
+
+async function extractTextFromPDFFile(filePath: string): Promise<string> {
+  try {
+    const pdfjs = await import("pdfjs-dist");
+    const fileBuffer = await fs.readFile(filePath);
+    const arrayBuffer = fileBuffer.buffer.slice(fileBuffer.byteOffset, fileBuffer.byteOffset + fileBuffer.byteLength);
+    const pdf = await pdfjs.getDocument({ data: arrayBuffer }).promise;
+    let fullText = "";
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const textContent = await page.getTextContent();
+      const textItems = textContent.items as any[];
+      const pageText = textItems.map(item => item.str || "").join(" ");
+      fullText += pageText + "\n";
+    }
+    return fullText;
+  } catch (error) {
+    console.error(`Error extracting text from PDF ${filePath}:`, error);
+    return "";
+  }
+}
+
+async function handleDocumentRAGQuery(query: string): Promise<AIResponse> {
+  const people = await prisma.person.findMany({ include: { documents: true } });
+  const cases = await prisma.case.findMany({ include: { documents: true } });
+
+  // 1. Identify which person or case the user is asking about
+  let matchedPerson = null;
+  let matchedCase = null;
+
+  for (const p of people) {
+    const fullName = `${p.firstName} ${p.lastName}`.toLowerCase();
+    if (query.includes(p.lastName.toLowerCase()) || query.includes(p.firstName.toLowerCase()) || query.includes(fullName)) {
+      matchedPerson = p;
+      break;
+    }
+  }
+
+  if (!matchedPerson) {
+    for (const c of cases) {
+      if (c.title && query.includes(c.title.toLowerCase())) {
+        matchedCase = c;
+        break;
+      }
+    }
+  }
+
+  // Get documents list
+  let documentsToParse = [];
+  let subjectName = "documentos generales";
+
+  if (matchedPerson) {
+    documentsToParse = matchedPerson.documents;
+    subjectName = `legajo de ${matchedPerson.firstName} ${matchedPerson.lastName}`;
+  } else if (matchedCase) {
+    documentsToParse = matchedCase.documents;
+    subjectName = `expediente del caso "${matchedCase.title}"`;
+  } else {
+    // Fallback: get the 3 most recent PDFs uploaded in the system
+    documentsToParse = await prisma.document.findMany({
+      orderBy: { createdAt: "desc" },
+      take: 3
+    });
+  }
+
+  const pdfDocs = documentsToParse.filter(d => d.url && d.url.toLowerCase().endsWith(".pdf"));
+
+  let answer = `### 📂 Análisis de Contenidos de Documentos y PDFs\n\n`;
+  answer += `He analizado los documentos digitales cargados para el **${subjectName}**:\n\n`;
+
+  if (pdfDocs.length > 0) {
+    let extractedContext = "";
+    for (const doc of pdfDocs) {
+      const filePath = path.join(process.cwd(), "public", doc.url);
+      const text = await extractTextFromPDFFile(filePath);
+      if (text.trim().length > 0) {
+        extractedContext += `\n--- CONTENIDO DEL ARCHIVO: ${doc.name} ---\n${text.substring(0, 4000)}\n`; // limit text length per file to prevent prompt overflow
+        answer += `*   📄 **Archivo analizado con éxito:** \`${doc.name}\` (${doc.url})\n`;
+      } else {
+        answer += `*   ⚠️ **Archivo vacío o ilegible:** \`${doc.name}\`\n`;
+      }
+    }
+
+    if (extractedContext.trim().length > 0) {
+      answer += `\n[CONTENIDO DE TEXTO EXTRAÍDO DE LOS PDFs]:\n${extractedContext}\n`;
+    } else {
+      answer += `\n*No se pudo extraer texto legible de los archivos adjuntos. Asegúrate de que sean archivos PDF digitales legibles.*`;
+    }
+  } else {
+    answer += `*No se registran archivos adjuntos en formato PDF para este legajo o caso municipal.*`;
+  }
+
+  return {
+    intent: "document_rag_query",
+    answer,
+    dataSummary: { documents: pdfDocs }
+  };
+}
+
+function parseNaturalLanguageDate(text: string): Date {
+  const clean = text.toLowerCase();
+  const now = new Date();
+
+  if (clean.includes("hoy")) {
+    return now;
+  }
+  if (clean.includes("mañana") || clean.includes("manana")) {
+    const tomorrow = new Date();
+    tomorrow.setDate(now.getDate() + 1);
+    return tomorrow;
+  }
+
+  // Days of the week
+  const days = ["domingo", "lunes", "martes", "miércoles", "miercoles", "jueves", "viernes", "sábado", "sabado"];
+  for (let i = 0; i < days.length; i++) {
+    if (clean.includes(days[i])) {
+      const targetDay = i;
+      const currentDay = now.getDay();
+      let daysToAdd = targetDay - currentDay;
+      if (daysToAdd <= 0) daysToAdd += 7; // Next week's day
+
+      const targetDayDate = new Date();
+      targetDayDate.setDate(now.getDate() + daysToAdd);
+      return targetDayDate;
+    }
+  }
+
+  // Exact date format like DD/MM/YYYY or DD/MM
+  const dateMatch = clean.match(/(\d{1,2})[\/\-](\d{1,2})(?:[\/\-](\d{2,4}))?/);
+  if (dateMatch) {
+    const day = parseInt(dateMatch[1]);
+    const month = parseInt(dateMatch[2]) - 1;
+    const year = dateMatch[3] ? parseInt(dateMatch[3]) : now.getFullYear();
+    const fullYear = year < 100 ? 2000 + year : year;
+    return new Date(fullYear, month, day);
+  }
+
+  // Default to 1 day from now
+  const defaultDate = new Date();
+  defaultDate.setDate(now.getDate() + 1);
+  return defaultDate;
+}
+
+async function handleAgentCommandQuery(query: string, userId?: string): Promise<AIResponse> {
+  const cleanQuery = query.toLowerCase().trim();
+
+  if (!userId) {
+    return {
+      intent: "command_error",
+      answer: "⚠️ No se pudo identificar tu sesión de usuario. Debes iniciar sesión para crear tareas o reservas."
+    };
+  }
+
+  // 1. Task Creation
+  const isTaskCommand = cleanQuery.includes("tarea") || cleanQuery.includes("recordatorio") || cleanQuery.includes("reunion") || cleanQuery.includes("reunión") || cleanQuery.includes("pendiente");
+  if (isTaskCommand) {
+    // Extract title: strip action keywords
+    let title = query
+      .replace(/crear tarea/i, "")
+      .replace(/crear recordatorio/i, "")
+      .replace(/agendar reunion/i, "")
+      .replace(/agendar reunión/i, "")
+      .replace(/agregar tarea/i, "")
+      .replace(/agendar/i, "")
+      .replace(/recordatorio/i, "")
+      .replace(/tarea/i, "")
+      .replace(/para el/i, "")
+      .replace(/para mañana/i, "")
+      .replace(/para manana/i, "")
+      .trim();
+
+    // Capitalize first letter
+    title = title.charAt(0).toUpperCase() + title.slice(1);
+    if (title.length === 0) title = "Nueva tarea agendada por IA";
+
+    const dueDate = parseNaturalLanguageDate(cleanQuery);
+
+    const task = await prisma.task.create({
+      data: {
+        userId,
+        title,
+        dueDate,
+        status: "PENDIENTE"
+      }
+    });
+
+    return {
+      intent: "task_created",
+      answer: `### ✅ ¡Tarea creada con éxito!
+He registrado tu nueva tarea en la base de datos municipal:
+*   📌 **Título:** ${task.title}
+*   📅 **Fecha de Vencimiento:** ${task.dueDate ? new Date(task.dueDate).toLocaleDateString("es-AR") : "Sin fecha"}
+*   👤 **Asignado a:** Tu usuario de MuniGestión
+
+¿Deseas que agende alguna otra cosa en tu calendario unificado?`,
+      dataSummary: task
+    };
+  }
+
+  // 2. Vehicle Reservation
+  const isReservationCommand = cleanQuery.includes("reserva") || cleanQuery.includes("reservar") || cleanQuery.includes("vehiculo") || cleanQuery.includes("vehículo") || cleanQuery.includes("auto") || cleanQuery.includes("camioneta");
+  if (isReservationCommand) {
+    // Find if a specific vehicle or plate is mentioned
+    const vehicles = await prisma.vehicle.findMany();
+    let matchedVehicle = vehicles.find(v => v.status === "DISPONIBLE"); // default to any available vehicle
+
+    const plateMatch = cleanQuery.replace(/[^a-z0-9]/g, "").match(/[a-z]{3}\d{3}|[a-z]{2}\d{3}[a-z]{2}/);
+    if (plateMatch) {
+      const targetPlate = plateMatch[0].toUpperCase();
+      const vehicleByPlate = vehicles.find(v => v.plate && v.plate.replace(/[^a-z0-9]/g, "").toUpperCase() === targetPlate);
+      if (vehicleByPlate) matchedVehicle = vehicleByPlate;
+    }
+
+    if (!matchedVehicle) {
+      return {
+        intent: "reservation_error",
+        answer: "⚠️ No se encontraron vehículos de la flota disponibles para realizar la reserva."
+      };
+    }
+
+    const startDate = parseNaturalLanguageDate(cleanQuery);
+    const endDate = new Date(startDate);
+    endDate.setHours(startDate.getHours() + 4); // default reservation duration: 4 hours
+
+    const reservation = await prisma.vehicleReservation.create({
+      data: {
+        vehicleId: matchedVehicle.id,
+        userId,
+        startDate,
+        endDate,
+        reason: "Reserva logística agendada por IA",
+        status: "APROBADA"
+      }
+    });
+
+    return {
+      intent: "reservation_created",
+      answer: `### ✅ ¡Reserva de Vehículo realizada con éxito!
+He registrado la reserva logística en el calendario unificado del municipio:
+*   🚗 **Vehículo:** ${matchedVehicle.brand} ${matchedVehicle.model} (Patente: ${matchedVehicle.plate})
+*   📅 **Inicio:** ${reservation.startDate.toLocaleString("es-AR")}
+*   📅 **Fin:** ${reservation.endDate.toLocaleString("es-AR")}
+*   📝 **Motivo:** ${reservation.reason}
+
+¡Listo para salir a la calle! El vehículo ha quedado bloqueado para tu uso en esas horas.`,
+      dataSummary: reservation
+    };
+  }
+
+  return handleGeneralFallback(query);
 }

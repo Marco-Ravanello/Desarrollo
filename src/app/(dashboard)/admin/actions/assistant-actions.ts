@@ -14,7 +14,7 @@ export async function queryAssistantAction(
   }
 
   try {
-    return await queryAIAssistant(queryText, history);
+    return await queryAIAssistant(queryText, history, session.user.id);
   } catch (error: any) {
     console.error("Error running queryAssistantAction:", error);
     return {
