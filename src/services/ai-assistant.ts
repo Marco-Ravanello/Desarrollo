@@ -1339,6 +1339,12 @@ async function handleDocumentRAGQuery(query: string): Promise<AIResponse> {
   };
 }
 
+function createArgentinaDate(year: number, monthIdx: number, day: number, hour: number, minute: number = 0, second: number = 0): Date {
+  // Argentina is UTC-3, so UTC is 3 hours ahead of local time.
+  // E.g., 16:00 local Argentina time is 19:00 UTC.
+  return new Date(Date.UTC(year, monthIdx, day, hour + 3, minute, second));
+}
+
 function parseNaturalLanguageDate(text: string): Date {
   const clean = text.toLowerCase();
 
@@ -1413,17 +1419,15 @@ function parseNaturalLanguageDate(text: string): Date {
   }
 
   // Also extract time from query if available in fallback
+  let hours = 12;
+  let minutes = 0;
   const timeMatch = clean.match(/(?:a las|a la|las|la|hs|hora)\s*(\d{1,2})(?::(\d{2}))?/);
   if (timeMatch) {
-    const hours = parseInt(timeMatch[1]);
-    const minutes = timeMatch[2] ? parseInt(timeMatch[2]) : 0;
-    targetDate.setHours(hours, minutes, 0, 0);
-  } else {
-    targetDate.setHours(12, 0, 0, 0); // default fallback hour
+    hours = parseInt(timeMatch[1]);
+    minutes = timeMatch[2] ? parseInt(timeMatch[2]) : 0;
   }
 
-  // Convert the adjusted Argentina local date back to a standard Date object
-  return targetDate;
+  return createArgentinaDate(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate(), hours, minutes, 0);
 }
 
 interface ExtractedDetails {
@@ -1508,7 +1512,7 @@ REGLAS ESTRICTAS DE RESPUESTA:
       const [year, month, day] = data.date.split("-").map(Number);
       const [hour, minute, second] = timeStr.split(":").map(Number);
 
-      const dueDate = new Date(year, month - 1, day, hour, minute || 0, second || 0);
+      const dueDate = createArgentinaDate(year, month - 1, day, hour, minute || 0, second || 0);
 
       return {
         title,
