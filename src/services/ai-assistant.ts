@@ -100,9 +100,9 @@ export async function queryAIAssistant(
     let dbResponse: AIResponse;
 
     // 0. AGENT PRODUCTIVITY & COMMANDS (Tasks & Reservations)
-    const isCommand = query.includes("tarea") || query.includes("recordatorio") || query.includes("agendar") || query.includes("reservar") || query.includes("reserva");
+    const isCommand = query.includes("tarea") || query.includes("recordatorio") || query.includes("agendar") || query.includes("reservar") || query.includes("reserva") || query.includes("evento") || query.includes("reunion") || query.includes("reunión") || query.includes("cita") || query.includes("turno");
     // Ensure we don't accidentally intercept mere checks of reservations/tasks unless they contain creation keywords
-    const isCreationCommand = isCommand && (query.includes("crear") || query.includes("agend") || query.includes("program") || query.includes("añadir") || query.includes("agregar") || query.includes("hacer"));
+    const isCreationCommand = isCommand && (query.includes("crear") || query.includes("agend") || query.includes("program") || query.includes("añadir") || query.includes("agregar") || query.includes("hacer") || query.includes("reserv") || query.includes("pon"));
 
     // 0.1 Check for PDF RAG Query
     const isDocRagQuery = query.includes("pdf") || query.includes("documento") || query.includes("archivo") || query.includes("leé") || query.includes("lee") || query.includes("informe") || query.includes("adjunto");
@@ -1393,8 +1393,8 @@ async function handleAgentCommandQuery(query: string, userId?: string): Promise<
     };
   }
 
-  // 1. Task Creation
-  const isTaskCommand = cleanQuery.includes("tarea") || cleanQuery.includes("recordatorio") || cleanQuery.includes("reunion") || cleanQuery.includes("reunión") || cleanQuery.includes("pendiente");
+  // 1. Task/Event Creation
+  const isTaskCommand = cleanQuery.includes("tarea") || cleanQuery.includes("recordatorio") || cleanQuery.includes("reunion") || cleanQuery.includes("reunión") || cleanQuery.includes("pendiente") || cleanQuery.includes("evento") || cleanQuery.includes("cita") || cleanQuery.includes("turno") || cleanQuery.includes("agendar");
   if (isTaskCommand) {
     // Extract title: strip action keywords
     let title = query
@@ -1402,10 +1402,17 @@ async function handleAgentCommandQuery(query: string, userId?: string): Promise<
       .replace(/crear recordatorio/i, "")
       .replace(/agendar reunion/i, "")
       .replace(/agendar reunión/i, "")
+      .replace(/agendar evento/i, "")
+      .replace(/crear evento/i, "")
       .replace(/agregar tarea/i, "")
       .replace(/agendar/i, "")
       .replace(/recordatorio/i, "")
       .replace(/tarea/i, "")
+      .replace(/evento/i, "")
+      .replace(/reunion/i, "")
+      .replace(/reunión/i, "")
+      .replace(/cita/i, "")
+      .replace(/turno/i, "")
       .replace(/para el/i, "")
       .replace(/para mañana/i, "")
       .replace(/para manana/i, "")
