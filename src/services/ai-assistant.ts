@@ -1341,46 +1341,56 @@ async function handleDocumentRAGQuery(query: string): Promise<AIResponse> {
 
 function parseNaturalLanguageDate(text: string): Date {
   const clean = text.toLowerCase();
+
+  // Get current date/time adjusted to Argentina timezone (UTC-3)
   const now = new Date();
+  const utcTime = now.getTime() + (now.getTimezoneOffset() * 60000);
+  const arOffset = -3; // UTC-3
+  const arNow = new Date(utcTime + (3600000 * arOffset));
+
+  let targetDate = new Date(arNow);
 
   if (clean.includes("hoy")) {
-    return now;
+    // Keep targetDate as arNow (today)
   }
-  if (clean.includes("mañana") || clean.includes("manana")) {
-    const tomorrow = new Date();
-    tomorrow.setDate(now.getDate() + 1);
-    return tomorrow;
+  else if (clean.includes("mañana") || clean.includes("manana")) {
+    targetDate.setDate(arNow.getDate() + 1);
   }
+  else {
+    // Check days of the week
+    const days = ["domingo", "lunes", "martes", "miércoles", "miercoles", "jueves", "viernes", "sábado", "sabado"];
+    let matchedDay = false;
+    for (let i = 0; i < days.length; i++) {
+      if (clean.includes(days[i])) {
+        const targetDay = i;
+        const currentDay = arNow.getDay();
+        let daysToAdd = targetDay - currentDay;
+        if (daysToAdd <= 0) daysToAdd += 7; // Next week's day
 
-  // Days of the week
-  const days = ["domingo", "lunes", "martes", "miércoles", "miercoles", "jueves", "viernes", "sábado", "sabado"];
-  for (let i = 0; i < days.length; i++) {
-    if (clean.includes(days[i])) {
-      const targetDay = i;
-      const currentDay = now.getDay();
-      let daysToAdd = targetDay - currentDay;
-      if (daysToAdd <= 0) daysToAdd += 7; // Next week's day
+        targetDate.setDate(arNow.getDate() + daysToAdd);
+        matchedDay = true;
+        break;
+      }
+    }
 
-      const targetDayDate = new Date();
-      targetDayDate.setDate(now.getDate() + daysToAdd);
-      return targetDayDate;
+    if (!matchedDay) {
+      // Exact date format like DD/MM/YYYY or DD/MM
+      const dateMatch = clean.match(/(\d{1,2})[\/\-](\d{1,2})(?:[\/\-](\d{2,4}))?/);
+      if (dateMatch) {
+        const day = parseInt(dateMatch[1]);
+        const month = parseInt(dateMatch[2]) - 1;
+        const year = dateMatch[3] ? parseInt(dateMatch[3]) : arNow.getFullYear();
+        const fullYear = year < 100 ? 2000 + year : year;
+        targetDate = new Date(fullYear, month, day, 12, 0, 0); // default to 12:00 PM on that day
+      } else {
+        // Default to today if no specific date was matched
+        targetDate = new Date(arNow);
+      }
     }
   }
 
-  // Exact date format like DD/MM/YYYY or DD/MM
-  const dateMatch = clean.match(/(\d{1,2})[\/\-](\d{1,2})(?:[\/\-](\d{2,4}))?/);
-  if (dateMatch) {
-    const day = parseInt(dateMatch[1]);
-    const month = parseInt(dateMatch[2]) - 1;
-    const year = dateMatch[3] ? parseInt(dateMatch[3]) : now.getFullYear();
-    const fullYear = year < 100 ? 2000 + year : year;
-    return new Date(fullYear, month, day);
-  }
-
-  // Default to 1 day from now
-  const defaultDate = new Date();
-  defaultDate.setDate(now.getDate() + 1);
-  return defaultDate;
+  // Convert the adjusted Argentina local date back to a standard Date object
+  return targetDate;
 }
 
 async function handleAgentCommandQuery(query: string, userId?: string): Promise<AIResponse> {
