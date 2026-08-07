@@ -115,7 +115,6 @@ export async function queryAIAssistant(
     }
     // 1. HR & SALARY INTENTS
     else if (
-    if (
       query.includes("sueldo") ||
       query.includes("salario") ||
       query.includes("rrhh") ||
