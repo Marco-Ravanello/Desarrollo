@@ -9,6 +9,41 @@ export async function getPurchaseOrders(status?: string) {
   });
 }
 
+export async function getAgreementById(id: string) {
+  return await prisma.agreement.findUnique({
+    where: { id },
+    include: { area: true }
+  });
+}
+
+export async function getPurchaseOrderById(id: string) {
+  return await prisma.purchaseOrder.findUnique({
+    where: { id },
+    include: {
+      provider: {
+        include: {
+          orders: {
+            take: 5,
+            orderBy: { createdAt: 'desc' },
+            select: { id: true, number: true, amount: true, createdAt: true, status: true }
+          },
+          _count: { select: { orders: true } }
+        }
+      },
+      area: true,
+      items: true
+    }
+  });
+}
+
+export async function getOrderAuditLogs(id: string) {
+  return await prisma.auditLog.findMany({
+    where: { entityId: id, entity: 'PurchaseOrder' },
+    include: { user: true },
+    orderBy: { createdAt: 'desc' }
+  });
+}
+
 export async function createPurchaseOrder(data: any) {
   return await prisma.purchaseOrder.create({
     data: {
@@ -16,13 +51,23 @@ export async function createPurchaseOrder(data: any) {
       providerId: data.providerId || null,
       providerName: data.providerName || null,
       providerCuit: data.providerCuit || null,
+      providerNumber: data.providerNumber || null,
       amount: data.amount,
       description: data.description,
       expediente: data.expediente || null,
       deliveryDate: data.deliveryDate ? new Date(data.deliveryDate) : null,
       deliveryPlace: data.deliveryPlace || null,
       paymentTerms: data.paymentTerms || null,
-      status: 'PENDIENTE_APROBACION'
+      status: 'PENDIENTE_APROBACION',
+      items: data.items ? {
+        create: data.items.map((item: any) => ({
+          quantity: item.quantity,
+          unitOfMeasure: item.unitOfMeasure,
+          description: item.description,
+          unitPrice: item.unitPrice,
+          totalPrice: item.totalPrice
+        }))
+      } : undefined
     }
   });
 }

@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import { getAreas } from "@/services/cases";
 import { CreateAgreementForm } from "./create-agreement-form";
 

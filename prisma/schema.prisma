@@ -165,6 +165,7 @@ model PurchaseOrder {
   provider      Provider?   @relation(fields: [providerId], references: [id])
   providerName  String?
   providerCuit  String?
+  providerNumber String?
   areaId        String?
   area          Area?       @relation(fields: [areaId], references: [id])
   amount        Decimal
@@ -176,9 +177,24 @@ model PurchaseOrder {
   deliveryDate  DateTime?
   deliveryPlace String?
   paymentTerms  String?
+  items         PurchaseOrderItem[]
 
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
+}
+
+model PurchaseOrderItem {
+  id              String        @id @default(cuid())
+  orderId         String
+  order           PurchaseOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  quantity        Decimal
+  unitOfMeasure   String?
+  description     String
+  unitPrice       Decimal
+  totalPrice      Decimal
+  fulfilledQuantity Decimal    @default(0)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
 }
 
 enum OrderStatus {
@@ -380,6 +396,7 @@ model Task {
   description String?
   dueDate     DateTime?
   status      TaskStatus @default(PENDIENTE)
+  viewerIds   String?   // Comma-separated list of User IDs allowed to view this task/event
   createdAt   DateTime  @default(now())
 }
 

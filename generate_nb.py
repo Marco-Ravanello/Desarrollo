@@ -10,7 +10,7 @@ def make_cell(source_lines, cell_type="code"):
 step1_source = [
     "#@title Configuracion del Repositorio",
     "REPO_URL = \"https://github.com/Marco-Ravanello/Desarrollo.git\" #@param {type:\"string\"}",
-    "BRANCH = \"feature/data-management-and-ux-fixes-v2\" #@param {type:\"string\"}",
+    "BRANCH = \"fix/ocr-field-detection-enhancement-12094009015913255245\" #@param {type:\"string\"}",
     "GITHUB_TOKEN = \"\" #@param {type:\"string\"}",
     "",
     "import os",
