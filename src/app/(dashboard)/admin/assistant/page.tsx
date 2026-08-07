@@ -18,7 +18,9 @@ import {
   Package,
   BookOpen,
   Volume2,
-  VolumeX
+  VolumeX,
+  Mic,
+  MicOff
 } from "lucide-react";
 import { toast } from "sonner";
 import { useTheme } from "next-themes";
@@ -49,12 +51,77 @@ export default function AssistantPage() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [currentlySpeakingId, setCurrentlySpeakingId] = useState<string | null>(null);
+  const [isListening, setIsListening] = useState(false);
+  const recognitionRef = useRef<any>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Auto scroll to bottom
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading]);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+      if (SpeechRecognition) {
+        const recognition = new SpeechRecognition();
+        recognition.continuous = false; // Stop automatically when user stops speaking
+        recognition.interimResults = false;
+        recognition.lang = "es-AR"; // Argentina Spanish
+
+        recognition.onstart = () => {
+          setIsListening(true);
+        };
+
+        recognition.onresult = (event: any) => {
+          const transcript = event.results[0][0].transcript;
+          if (transcript) {
+            setInput(prev => {
+              const cleanedPrev = prev.trim();
+              return cleanedPrev ? `${cleanedPrev} ${transcript}` : transcript;
+            });
+          }
+        };
+
+        recognition.onerror = (event: any) => {
+          console.error("Speech recognition error:", event.error);
+          if (event.error !== "no-speech") {
+            toast.error(`Error de reconocimiento de voz: ${event.error}`);
+          }
+          setIsListening(false);
+        };
+
+        recognition.onend = () => {
+          setIsListening(false);
+        };
+
+        recognitionRef.current = recognition;
+      }
+    }
+
+    return () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.abort();
+      }
+    };
+  }, []);
+
+  const toggleListening = () => {
+    if (!recognitionRef.current) {
+      toast.error("El dictado por voz no es soportado por este navegador.");
+      return;
+    }
+
+    if (isListening) {
+      recognitionRef.current.stop();
+    } else {
+      try {
+        recognitionRef.current.start();
+      } catch (err) {
+        console.error("Failed to start speech recognition:", err);
+      }
+    }
+  };
 
   // Clean speaking on unmount
   useEffect(() => {
@@ -566,6 +633,20 @@ export default function AssistantPage() {
                   disabled={loading}
                   className="flex-1 h-12 rounded-2xl bg-background/50 border-border/40 text-foreground text-sm font-medium focus-visible:ring-blue-500 px-4"
                 />
+                <Button
+                  type="button"
+                  onClick={toggleListening}
+                  variant="outline"
+                  disabled={loading}
+                  className={`h-12 w-12 rounded-2xl flex items-center justify-center shrink-0 border-border/40 transition-all ${
+                    isListening
+                      ? "bg-red-500 text-white border-red-500 animate-pulse hover:bg-red-600"
+                      : "bg-background/50 text-muted-foreground hover:text-foreground hover:bg-muted"
+                  }`}
+                  title={isListening ? "Detener dictado" : "Dictar por voz (Speech-to-Text)"}
+                >
+                  {isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+                </Button>
                 <Button
                   type="submit"
                   disabled={!input.trim() || loading}
