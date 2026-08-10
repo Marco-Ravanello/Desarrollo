@@ -65,33 +65,56 @@ export async function getPersonById(id: string) {
 }
 
 export async function getPeopleStats() {
-  const people = await prisma.person.findMany({
-    select: {
-      birthDate: true,
-      cases: { select: { area: { select: { name: true } } } }
-    }
+  const total = await prisma.person.count();
+
+  // Load only the birthDate column for citizens with birthDates (extremely light RAM footprint)
+  const birthDates = await prisma.person.findMany({
+    where: { birthDate: { not: null } },
+    select: { birthDate: true }
   });
 
   const now = new Date();
+  const currentYear = now.getFullYear();
   let totalAge = 0;
-  let withAge = 0;
-  const areaCounts: Record<string, number> = {};
+  const withAge = birthDates.length;
 
-  people.forEach(p => {
+  birthDates.forEach(p => {
     if (p.birthDate) {
-      const age = now.getFullYear() - p.birthDate.getFullYear();
-      totalAge += age;
-      withAge++;
+      totalAge += (currentYear - p.birthDate.getFullYear());
     }
-    p.cases.forEach(c => {
-      areaCounts[c.area.name] = (areaCounts[c.area.name] || 0) + 1;
-    });
   });
 
+  const avgAge = withAge > 0 ? Math.round(totalAge / withAge) : 0;
+
+  // Use database aggregation to find the most active area
+  const topAreaGroup = await prisma.case.groupBy({
+    by: ['areaId'],
+    _count: {
+      _all: true
+    },
+    orderBy: {
+      _count: {
+        areaId: 'desc'
+      }
+    },
+    take: 1
+  });
+
+  let topArea = 'N/A';
+  if (topAreaGroup.length > 0 && topAreaGroup[0].areaId) {
+    const area = await prisma.area.findUnique({
+      where: { id: topAreaGroup[0].areaId },
+      select: { name: true }
+    });
+    if (area) {
+      topArea = area.name;
+    }
+  }
+
   return {
-    total: people.length,
-    avgAge: withAge > 0 ? Math.round(totalAge / withAge) : 0,
-    topArea: Object.entries(areaCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || 'N/A'
+    total,
+    avgAge,
+    topArea
   };
 }
 

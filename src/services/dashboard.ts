@@ -116,19 +116,91 @@ export async function getDashboardStats(filters?: { from: Date; to: Date }) {
 }
 
 async function getTrendData(from: Date, to: Date) {
-  // Casos por mes
-  const cases = await prisma.case.findMany({
-    where: { createdAt: { gte: from, lte: to } },
-    select: { createdAt: true }
-  });
+  // We can dynamically choose whether we aggregate monthly or daily first to optimize db calls
+  const isDaily = (to.getTime() - from.getTime()) <= (60 * 24 * 3600 * 1000); // Selection <= 60 days (or ~2 months)
 
-  // Gastos combustible por mes
-  const fuel = await prisma.fuelRecord.findMany({
-    where: { date: { gte: from, lte: to } },
-    select: { date: true, amount: true }
-  });
+  if (isDaily) {
+    // Pre-aggregate cases by day in SQL (optimized database grouping)
+    const caseDailyCounts = await prisma.$queryRaw<{ year: number; month: number; day: number; count: number }[]>`
+      SELECT
+        EXTRACT(YEAR FROM "createdAt")::integer as year,
+        EXTRACT(MONTH FROM "createdAt")::integer as month,
+        EXTRACT(DAY FROM "createdAt")::integer as day,
+        COUNT(*)::integer as count
+      FROM "Case"
+      WHERE "createdAt" >= ${from} AND "createdAt" <= ${to}
+      GROUP BY 1, 2, 3
+    `;
 
-  // Dynamically calculate months between from and to dates
+    // Pre-aggregate fuel sums by day in SQL
+    const fuelDailySums = await prisma.$queryRaw<{ year: number; month: number; day: number; sum: number }[]>`
+      SELECT
+        EXTRACT(YEAR FROM "date")::integer as year,
+        EXTRACT(MONTH FROM "date")::integer as month,
+        EXTRACT(DAY FROM "date")::integer as day,
+        COALESCE(SUM("amount"), 0)::double precision as sum
+      FROM "FuelRecord"
+      WHERE "date" >= ${from} AND "date" <= ${to}
+      GROUP BY 1, 2, 3
+    `;
+
+    const caseDailyMap = new Map<string, number>();
+    caseDailyCounts.forEach(c => caseDailyMap.set(`${c.year}-${c.month}-${c.day}`, c.count));
+
+    const fuelDailyMap = new Map<string, number>();
+    fuelDailySums.forEach(f => fuelDailyMap.set(`${f.year}-${f.month}-${f.day}`, f.sum));
+
+    const dayResult = [];
+    const tempDate = new Date(from);
+    while (tempDate <= to) {
+      const dayStr = tempDate.toLocaleDateString('es-AR', { day: 'numeric', month: 'short' });
+      const dayIndex = tempDate.getDate();
+      const monthIndex = tempDate.getMonth();
+      const yearIndex = tempDate.getFullYear();
+
+      const key = `${yearIndex}-${monthIndex + 1}-${dayIndex}`;
+      const dailyCases = caseDailyMap.get(key) || 0;
+      const dailyFuel = fuelDailyMap.get(key) || 0;
+
+      dayResult.push({
+        month: dayStr,
+        casos: dailyCases,
+        combustible: dailyFuel
+      });
+
+      tempDate.setDate(tempDate.getDate() + 1);
+    }
+    return dayResult;
+  }
+
+  // Pre-aggregate cases by year & month in SQL (highly efficient database grouping)
+  const caseCounts = await prisma.$queryRaw<{ year: number; month: number; count: number }[]>`
+    SELECT
+      EXTRACT(YEAR FROM "createdAt")::integer as year,
+      EXTRACT(MONTH FROM "createdAt")::integer as month,
+      COUNT(*)::integer as count
+    FROM "Case"
+    WHERE "createdAt" >= ${from} AND "createdAt" <= ${to}
+    GROUP BY 1, 2
+  `;
+
+  // Pre-aggregate fuel records by year & month in SQL
+  const fuelSums = await prisma.$queryRaw<{ year: number; month: number; sum: number }[]>`
+    SELECT
+      EXTRACT(YEAR FROM "date")::integer as year,
+      EXTRACT(MONTH FROM "date")::integer as month,
+      COALESCE(SUM("amount"), 0)::double precision as sum
+    FROM "FuelRecord"
+    WHERE "date" >= ${from} AND "date" <= ${to}
+    GROUP BY 1, 2
+  `;
+
+  const caseMap = new Map<string, number>();
+  caseCounts.forEach(c => caseMap.set(`${c.year}-${c.month}`, c.count));
+
+  const fuelMap = new Map<string, number>();
+  fuelSums.forEach(f => fuelMap.set(`${f.year}-${f.month}`, f.sum));
+
   const months = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
   const result = [];
 
@@ -142,14 +214,10 @@ async function getTrendData(from: Date, to: Date) {
 
   while (currentYear < endYear || (currentYear === endYear && currentMonth <= endMonth)) {
     const monthName = months[currentMonth];
+    const key = `${currentYear}-${currentMonth + 1}`;
 
-    const monthlyCases = cases.filter(c =>
-      c.createdAt.getMonth() === currentMonth && c.createdAt.getFullYear() === currentYear
-    ).length;
-
-    const monthlyFuel = fuel.filter(f =>
-      f.date.getMonth() === currentMonth && f.date.getFullYear() === currentYear
-    ).reduce((acc, curr) => acc + Number(curr.amount), 0);
+    const monthlyCases = caseMap.get(key) || 0;
+    const monthlyFuel = fuelMap.get(key) || 0;
 
     result.push({
       month: `${monthName} ${currentYear.toString().substring(2)}`,
@@ -162,35 +230,6 @@ async function getTrendData(from: Date, to: Date) {
       currentMonth = 0;
       currentYear++;
     }
-  }
-
-  // If the selection is less than 2 months (e.g., today or 7 days), just map the days instead of months to keep charts informative!
-  if (result.length <= 1) {
-    const dayResult = [];
-    const tempDate = new Date(from);
-    while (tempDate <= to) {
-      const dayStr = tempDate.toLocaleDateString('es-AR', { day: 'numeric', month: 'short' });
-      const dayIndex = tempDate.getDate();
-      const monthIndex = tempDate.getMonth();
-      const yearIndex = tempDate.getFullYear();
-
-      const dailyCases = cases.filter(c =>
-        c.createdAt.getDate() === dayIndex && c.createdAt.getMonth() === monthIndex && c.createdAt.getFullYear() === yearIndex
-      ).length;
-
-      const dailyFuel = fuel.filter(f =>
-        f.date.getDate() === dayIndex && f.date.getMonth() === monthIndex && f.date.getFullYear() === yearIndex
-      ).reduce((acc, curr) => acc + Number(curr.amount), 0);
-
-      dayResult.push({
-        month: dayStr,
-        casos: dailyCases,
-        combustible: dailyFuel
-      });
-
-      tempDate.setDate(tempDate.getDate() + 1);
-    }
-    return dayResult;
   }
 
   return result;

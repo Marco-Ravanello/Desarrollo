@@ -95,6 +95,10 @@ model Case {
   documents     Document[]
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
+
+  @@index([personId])
+  @@index([areaId])
+  @@index([status])
 }
 
 enum CaseStatus {
@@ -283,6 +287,8 @@ model VehicleReservation {
   observations  String?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+
+  @@index([startDate, endDate, status])
 }
 
 enum ReservationStatus {
@@ -415,6 +421,10 @@ model AuditLog {
   entityId    String
   details     String?
   createdAt   DateTime @default(now())
+
+  @@index([userId])
+  @@index([createdAt])
+  @@index([entity, entityId])
 }
 
 model Account {
