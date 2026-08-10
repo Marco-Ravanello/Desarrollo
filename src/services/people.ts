@@ -1,4 +1,23 @@
 import prisma from "@/lib/prisma";
+import { z } from "zod";
+
+export const CreatePersonSchema = z.object({
+  dni: z.string().min(1),
+  firstName: z.string().min(1),
+  lastName: z.string().min(1),
+  birthDate: z.string().or(z.date()).optional().nullable(),
+  address: z.string().min(1),
+  phone: z.string().optional().nullable(),
+  email: z.string().email().or(z.string().length(0)).optional().nullable(),
+});
+
+export const UpdatePersonSchema = z.object({
+  firstName: z.string().optional(),
+  lastName: z.string().optional(),
+  address: z.string().optional(),
+  phone: z.string().optional().nullable(),
+  email: z.string().email().or(z.string().length(0)).optional().nullable(),
+});
 
 export async function getPeople(query?: string) {
   const numericQuery = query ? query.replace(/[^0-9]/g, '') : null;
@@ -117,7 +136,8 @@ async function geocodeAddress(address: string) {
     };
 }
 
-export async function createPerson(data: any) {
+export async function createPerson(rawData: z.infer<typeof CreatePersonSchema>) {
+  const data = CreatePersonSchema.parse(rawData);
   const coords = await geocodeAddress(data.address);
 
   return await prisma.person.create({
@@ -128,14 +148,15 @@ export async function createPerson(data: any) {
       birthDate: data.birthDate ? new Date(data.birthDate) : null,
       address: data.address,
       phone: data.phone,
-      email: data.email,
+      email: data.email || null,
       latitude: coords.lat,
       longitude: coords.lng,
     }
   });
 }
 
-export async function updatePerson(id: string, data: any) {
+export async function updatePerson(id: string, rawData: z.infer<typeof UpdatePersonSchema>) {
+  const data = UpdatePersonSchema.parse(rawData);
   let coords = undefined;
   if (data.address) {
     coords = await geocodeAddress(data.address);
@@ -148,7 +169,7 @@ export async function updatePerson(id: string, data: any) {
       lastName: data.lastName,
       address: data.address,
       phone: data.phone,
-      email: data.email,
+      email: data.email || null,
       ...(coords ? { latitude: coords.lat, longitude: coords.lng } : {})
     }
   });

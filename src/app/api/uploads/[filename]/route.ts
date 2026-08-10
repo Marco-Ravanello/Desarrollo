@@ -1,5 +1,5 @@
 import { readFile } from "fs/promises";
-import { join } from "path";
+import { join, basename, resolve } from "path";
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 
@@ -13,7 +13,16 @@ export async function GET(
   }
 
   const { filename } = await params;
-  const path = join(process.cwd(), "public", "uploads", filename);
+
+  // Prevent Path Traversal by extracting only the base name
+  const safeFilename = basename(filename);
+  const uploadsDir = resolve(process.cwd(), "public", "uploads");
+  const path = join(uploadsDir, safeFilename);
+
+  // Additional check to verify the resulting path resides strictly within public/uploads
+  if (!path.startsWith(uploadsDir)) {
+    return new NextResponse("Forbidden", { status: 403 });
+  }
 
   try {
     const file = await readFile(path);
