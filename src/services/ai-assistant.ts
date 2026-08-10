@@ -926,7 +926,8 @@ async function handleSocialQuery(query: string): Promise<AIResponse> {
       include: {
         cases: {
           include: { area: true }
-        }
+        },
+        documents: true
       }
     });
 
@@ -950,6 +951,22 @@ async function handleSocialQuery(query: string): Promise<AIResponse> {
         });
       } else {
         answer += `*No se registran solicitudes de asistencia o casos activos abiertos para este ciudadano.*\n`;
+      }
+
+      // Automatically read and append PDF document content to the assistant context (RAG)
+      const pdfDocs = matchedPerson.documents.filter(d => d.url && d.url.toLowerCase().endsWith(".pdf"));
+      if (pdfDocs.length > 0) {
+        let extractedText = "";
+        for (const doc of pdfDocs) {
+          const filePath = path.join(process.cwd(), "public", doc.url);
+          const text = await extractTextFromPDFFile(filePath);
+          if (text.trim().length > 0) {
+            extractedText += `\n--- CONTENIDO DEL DOCUMENTO/PDF ADJUNTO: ${doc.name} ---\n${text.substring(0, 4000)}\n`;
+          }
+        }
+        if (extractedText.trim().length > 0) {
+          answer += `\n\n[INFORMACIÓN DE RESPALDO EXTRAÍDA DE DOCUMENTOS Y EXPEDIENTES PDF DEL CIUDADANO]:\n${extractedText}\n`;
+        }
       }
 
       answer += `\n🔗 **[Ver Legajo Completo en Ficha Única](/people/${matchedPerson.id})**`;
@@ -1081,7 +1098,8 @@ async function handleSocialQuery(query: string): Promise<AIResponse> {
         include: {
           cases: {
             include: { area: true }
-          }
+          },
+          documents: true
         }
       });
 
@@ -1105,6 +1123,22 @@ async function handleSocialQuery(query: string): Promise<AIResponse> {
           });
         } else {
           answer += `*No se registran solicitudes de asistencia o casos activos abiertos para este ciudadano.*\n`;
+        }
+
+        // Automatically read and append PDF document content to the assistant context (RAG)
+        const pdfDocs = p.documents.filter(d => d.url && d.url.toLowerCase().endsWith(".pdf"));
+        if (pdfDocs.length > 0) {
+          let extractedText = "";
+          for (const doc of pdfDocs) {
+            const filePath = path.join(process.cwd(), "public", doc.url);
+            const text = await extractTextFromPDFFile(filePath);
+            if (text.trim().length > 0) {
+              extractedText += `\n--- CONTENIDO DEL DOCUMENTO/PDF ADJUNTO: ${doc.name} ---\n${text.substring(0, 4000)}\n`;
+            }
+          }
+          if (extractedText.trim().length > 0) {
+            answer += `\n\n[INFORMACIÓN DE RESPALDO EXTRAÍDA DE DOCUMENTOS Y EXPEDIENTES PDF DEL CIUDADANO]:\n${extractedText}\n`;
+          }
         }
 
         answer += `\n🔗 **[Ver Legajo Completo en Ficha Única](/people/${p.id})**`;
