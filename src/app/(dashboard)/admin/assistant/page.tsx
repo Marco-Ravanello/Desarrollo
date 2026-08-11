@@ -195,6 +195,16 @@ export default function AssistantPage() {
     return clean.trim();
   };
 
+  const handleActionButton = (act: { label: string; actionType: string; payload?: any }) => {
+    if (act.actionType === "NAVIGATE" && act.payload?.path) {
+      router.push(act.payload.path);
+      toast.success(`Navegando a: ${act.label}`);
+    } else if (act.actionType === "OPEN_DIALOG") {
+      router.push("/tasks");
+      toast.info("Por favor, crea una nueva tarea para asignar este caso.");
+    }
+  };
+
   const handleQuery = async (text: string) => {
     if (!text.trim() || loading) return;
 
@@ -220,22 +230,92 @@ export default function AssistantPage() {
     setInput("");
     setLoading(true);
 
+    // Insert an empty assistant message which we will populate in real-time
+    const assistantMessage: Message = {
+      id: assistantMsgId,
+      sender: "assistant",
+      text: "",
+      timestamp: new Date(),
+      dataSummary: { sources: [], actions: [] }
+    };
+
+    setMessages(prev => [...prev, assistantMessage]);
+
     try {
-      const response = await queryAssistantAction(text, historyToSend);
+      const response = await fetch("/api/assistant/stream", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ query: text, history: historyToSend }),
+      });
 
-      const assistantMessage: Message = {
-        id: assistantMsgId,
-        sender: "assistant",
-        text: response.answer,
-        timestamp: new Date(),
-        dataSummary: response.dataSummary
-      };
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
 
-      setMessages(prev => [...prev, assistantMessage]);
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+      if (!reader) throw new Error("ReadableStream not supported in this browser.");
+
+      let currentText = "";
+      let dataSummary: any = { sources: [], actions: [] };
+
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+
+        const chunkText = decoder.decode(value);
+        const lines = chunkText.split("\n");
+
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (trimmed === "") continue;
+
+          if (trimmed.startsWith("data: ")) {
+            try {
+              const payloadStr = trimmed.substring(6);
+              // Safely handle if it's the metadata or completion event
+              if (payloadStr.startsWith("{")) {
+                const parsed = JSON.parse(payloadStr);
+                if (parsed.chunk) {
+                  currentText += parsed.chunk;
+                  setMessages(prev =>
+                    prev.map(m =>
+                      m.id === assistantMsgId
+                        ? { ...m, text: currentText }
+                        : m
+                    )
+                  );
+                } else if (parsed.done) {
+                  dataSummary = parsed.dataSummary || { sources: [], actions: [] };
+                  setMessages(prev =>
+                    prev.map(m =>
+                      m.id === assistantMsgId
+                        ? { ...m, dataSummary }
+                        : m
+                    )
+                  );
+                }
+              }
+            } catch (err) {}
+          } else if (trimmed.startsWith("event: metadata")) {
+            // metadata follows
+          }
+        }
+      }
     } catch (err: any) {
       toast.error("Error al procesar la consulta", {
         description: err.message || "Inténtalo de nuevo en unos momentos."
       });
+      // Fallback or show error in message
+      setMessages(prev =>
+        prev.map(m =>
+          m.id === assistantMsgId
+            ? { ...m, text: "⚠️ Ocurrió un error al procesar la consulta por streaming. Por favor, intenta de nuevo." }
+            : m
+        )
+      );
     } finally {
       setLoading(false);
     }
@@ -582,6 +662,53 @@ export default function AssistantPage() {
 
                         {/* Interactive Recharts Chart rendering */}
                         {m.dataSummary?.chart && renderChart(m.dataSummary.chart)}
+
+                        {/* Verified Sources rendering */}
+                        {m.dataSummary?.sources && m.dataSummary.sources.length > 0 && (
+                          <div className="mt-4 pt-3 border-t border-border/20 space-y-2">
+                            <p className="text-[10px] font-black uppercase tracking-wider text-muted-foreground flex items-center gap-1 select-none">
+                              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
+                              Fuentes Verificadas de la BD Municipal
+                            </p>
+                            <div className="flex flex-wrap gap-2">
+                              {m.dataSummary.sources.map((src: any, idx: number) => (
+                                <button
+                                  key={idx}
+                                  onClick={() => src.url && router.push(src.url)}
+                                  className="text-xs bg-muted/65 hover:bg-muted/80 border border-border/30 rounded-xl px-2.5 py-1.5 font-bold transition-all text-foreground/85 hover:text-foreground flex items-center gap-1.5"
+                                  title={src.url ? "Ver ficha de origen" : undefined}
+                                >
+                                  {src.type === "Ciudadano" && <User className="h-3 w-3 text-blue-500" />}
+                                  {src.type === "Caso Social" && <FileText className="h-3 w-3 text-rose-500" />}
+                                  {src.type === "Orden de Compra" && <FileSpreadsheet className="h-3 w-3 text-emerald-500" />}
+                                  {src.type === "Vehículo" && <Car className="h-3 w-3 text-amber-500" />}
+                                  {src.type === "Recursos Humanos" && <Users className="h-3 w-3 text-indigo-500" />}
+                                  {src.name}
+                                  {src.url && <ArrowUpRight className="h-2.5 w-2.5 text-muted-foreground" />}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Interactive Action buttons */}
+                        {m.dataSummary?.actions && m.dataSummary.actions.length > 0 && (
+                          <div className="mt-3 flex flex-wrap gap-2 select-none">
+                            {m.dataSummary.actions.map((act: any, idx: number) => (
+                              <Button
+                                key={idx}
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleActionButton(act)}
+                                className="h-8 rounded-xl text-xs font-bold border-blue-500/20 bg-blue-500/5 hover:bg-blue-500/10 text-blue-600 hover:text-blue-700 flex items-center gap-1.5"
+                              >
+                                {act.label === "Ver en Mapa Social" && <MapPin className="h-3.5 w-3.5" />}
+                                {act.label === "Asignar Tarea" && <CheckCircle2 className="h-3.5 w-3.5" />}
+                                {act.label}
+                              </Button>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     )}
 

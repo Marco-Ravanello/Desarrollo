@@ -82,140 +82,343 @@ async function callOllama(messages: Message[]): Promise<string> {
   });
 }
 
-export async function queryAIAssistant(
+const ZERO_HALLUCINATION_SYSTEM_PROMPT = `Eres el Asistente Inteligente Municipal de MuniGestión.
+REGLAS ABSOLUTAS DE VERACIDAD Y CERO ALUCINACIÓN (ZERO HALLUCINATION):
+1. Responde a la pregunta del usuario basándote EXCLUSIVAMENTE en la información provista en el bloque [CONTEXTO REAL DE LA BASE DE DATOS MUNICIPAL].
+2. Queda ESTRICTAMENTE PROHIBIDO inventar, suponer o alucinar nombres de personas, sueldos, números de DNI, patentes de vehículos, montos de compras o fechas que no figuren explícitamente en el contexto.
+3. Si el contexto indica que no hay registros coincidentes o está vacío, debes responder literalmente:
+   "No se encontraron registros en la base de datos municipal para esta consulta."
+4. Mantén un tono profesional, institucional y conciso en español latinoamericano. Utiliza formato markdown claro.`;
+
+async function callOllamaStream(
+  messages: Message[],
+  onChunk: (chunk: string) => void
+): Promise<string> {
+  const host = process.env.OLLAMA_HOST || "http://127.0.0.1:11434";
+  const model = process.env.OLLAMA_MODEL || "llama3:8b";
+
+  const hostUrl = new URL(host);
+  const hostname = hostUrl.hostname || "127.0.0.1";
+  const port = hostUrl.port || "11434";
+  const path = "/api/chat";
+
+  const requestBody = JSON.stringify({
+    model,
+    messages,
+    stream: true,
+    options: {
+      temperature: 0.3,
+    }
+  });
+
+  return new Promise((resolve, reject) => {
+    const req = http.request({
+      hostname,
+      port,
+      path,
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      timeout: 300000
+    }, (res) => {
+      if (res.statusCode && (res.statusCode < 200 || res.statusCode >= 300)) {
+        reject(new Error(`Ollama API returned status ${res.statusCode}`));
+        return;
+      }
+
+      let buffer = "";
+      let fullResponseText = "";
+      res.setEncoding("utf8");
+
+      res.on("data", (chunk) => {
+        buffer += chunk;
+        const lines = buffer.split("\n");
+        buffer = lines.pop() || ""; // keep unfinished line in buffer
+
+        for (const line of lines) {
+          if (line.trim() === "") continue;
+          try {
+            const parsed = JSON.parse(line);
+            const content = parsed.message?.content || "";
+            if (content) {
+              fullResponseText += content;
+              onChunk(content);
+            }
+          } catch (err) {
+            // ignore partial json parsing issues
+          }
+        }
+      });
+
+      res.on("end", () => {
+        // Parse any remaining buffer
+        if (buffer.trim() !== "") {
+          try {
+            const parsed = JSON.parse(buffer);
+            const content = parsed.message?.content || "";
+            if (content) {
+              fullResponseText += content;
+              onChunk(content);
+            }
+          } catch (err) {}
+        }
+        resolve(fullResponseText);
+      });
+    });
+
+    req.on("timeout", () => {
+      req.destroy();
+      reject(new Error("Ollama API request timed out (300s)."));
+    });
+
+    req.on("error", (err) => {
+      reject(err);
+    });
+
+    req.write(requestBody);
+    req.end();
+  });
+}
+
+interface UniversalSearchResult {
+  contextText: string;
+  sources: { type: string; name: string; url?: string }[];
+  actions: { label: string; actionType: string; payload?: any }[];
+  dataSummary: any;
+}
+
+export async function performUniversalDBSearch(queryText: string): Promise<UniversalSearchResult> {
+  const query = queryText.toLowerCase().trim();
+  const words = query.split(/\s+/).filter(w => w.length > 2);
+
+  if (words.length === 0) {
+    return { contextText: "", sources: [], actions: [], dataSummary: {} };
+  }
+
+  // Build prisma OR conditions for each table
+  const personFilters = words.map(w => ({
+    OR: [
+      { firstName: { contains: w, mode: 'insensitive' as const } },
+      { lastName: { contains: w, mode: 'insensitive' as const } },
+      { dni: { contains: w } }
+    ]
+  }));
+
+  const hrFilters = words.map(w => ({
+    OR: [
+      { firstName: { contains: w, mode: 'insensitive' as const } },
+      { lastName: { contains: w, mode: 'insensitive' as const } },
+      { position: { contains: w, mode: 'insensitive' as const } }
+    ]
+  }));
+
+  const caseFilters = words.map(w => ({
+    OR: [
+      { title: { contains: w, mode: 'insensitive' as const } },
+      { description: { contains: w, mode: 'insensitive' as const } }
+    ]
+  }));
+
+  const orderFilters = words.map(w => ({
+    OR: [
+      { number: { contains: w } },
+      { providerName: { contains: w, mode: 'insensitive' as const } },
+      { description: { contains: w, mode: 'insensitive' as const } }
+    ]
+  }));
+
+  const vehicleFilters = words.map(w => ({
+    OR: [
+      { plate: { contains: w, mode: 'insensitive' as const } },
+      { brand: { contains: w, mode: 'insensitive' as const } },
+      { model: { contains: w, mode: 'insensitive' as const } }
+    ]
+  }));
+
+  // Fetch in parallel
+  const [people, hrRecords, cases, orders, vehicles] = await Promise.all([
+    prisma.person.findMany({
+      where: { AND: personFilters },
+      take: 5
+    }),
+    prisma.hRRecord.findMany({
+      where: { AND: hrFilters },
+      take: 5
+    }),
+    prisma.case.findMany({
+      where: { AND: caseFilters },
+      include: { area: true },
+      take: 5
+    }),
+    prisma.purchaseOrder.findMany({
+      where: { AND: orderFilters },
+      take: 5
+    }),
+    prisma.vehicle.findMany({
+      where: { AND: vehicleFilters },
+      take: 5
+    })
+  ]);
+
+  let contextText = "";
+  const sources: { type: string; name: string; url?: string }[] = [];
+  const actions: { label: string; actionType: string; payload?: any }[] = [];
+
+  if (people.length > 0) {
+    contextText += `### 👤 CIUDADANOS ENCONTRADOS:\n`;
+    people.forEach(p => {
+      contextText += `*   Ciudadano: ${p.lastName}, ${p.firstName} (DNI: ${p.dni}) - Dirección: ${p.address || "N/R"} - Teléfono: ${p.phone || "N/R"}\n`;
+      sources.push({ type: "Ciudadano", name: `${p.lastName}, ${p.firstName}`, url: `/people/${p.id}` });
+    });
+    actions.push({ label: "Ver en Mapa Social", actionType: "NAVIGATE", payload: { path: "/maps" } });
+  }
+
+  if (hrRecords.length > 0) {
+    contextText += `\n### 👥 AGENTES MUNICIPALES (RRHH) ENCONTRADOS:\n`;
+    hrRecords.forEach(h => {
+      contextText += `*   Agente: ${h.lastName}, ${h.firstName} (DNI: ${h.dni}) - Puesto: ${h.position || "N/R"} - Sueldo: $${Number(h.salary || 0).toLocaleString("es-AR")} ARS - Estado: ${h.status}\n`;
+      sources.push({ type: "Recursos Humanos", name: `Agente: ${h.lastName}, ${h.firstName}` });
+    });
+    actions.push({ label: "Ver Nómina de RRHH", actionType: "NAVIGATE", payload: { path: "/admin/hr" } });
+  }
+
+  if (cases.length > 0) {
+    contextText += `\n### 📁 CASOS SOCIALES ENCONTRADOS:\n`;
+    cases.forEach(c => {
+      contextText += `*   Caso: ${c.title} - Estado: ${c.status} - Prioridad: ${c.priority} - Dirección Área: ${c.area.name}\n`;
+      sources.push({ type: "Caso Social", name: `Caso: ${c.title}`, url: `/cases/${c.id}` });
+    });
+    actions.push({ label: "Asignar Tarea", actionType: "OPEN_DIALOG", payload: { type: "TASK_ASSIGN" } });
+  }
+
+  if (orders.length > 0) {
+    contextText += `\n### 🛍️ ÓRDENES DE COMPRA ENCONTRADAS:\n`;
+    orders.forEach(o => {
+      contextText += `*   Orden: OC #${o.number} - Proveedor: ${o.providerName || "Desconocido"} - Monto: $${Number(o.amount).toLocaleString("es-AR")} ARS - Estado: ${o.status}\n`;
+      sources.push({ type: "Orden de Compra", name: `OC #${o.number}`, url: `/admin/purchase-orders/${o.id}` });
+    });
+    actions.push({ label: "Ver Órdenes de Compras", actionType: "NAVIGATE", payload: { path: "/admin/purchase-orders" } });
+  }
+
+  if (vehicles.length > 0) {
+    contextText += `\n### 🚗 VEHÍCULOS DE LA FLOTA ENCONTRADOS:\n`;
+    vehicles.forEach(v => {
+      contextText += `*   Vehículo: ${v.brand} ${v.model} (Patente: ${v.plate}) - Estado: ${v.status} - Tarjeta Nafta: ${v.fuelCardNumber || "N/R"}\n`;
+      sources.push({ type: "Vehículo", name: `${v.brand} ${v.model} (${v.plate})`, url: `/admin/vehicles/${v.id}` });
+    });
+    actions.push({ label: "Ver Logística", actionType: "NAVIGATE", payload: { path: "/admin/vehicles" } });
+  }
+
+  return {
+    contextText: contextText.trim(),
+    sources,
+    actions,
+    dataSummary: {
+      hasResults: people.length > 0 || hrRecords.length > 0 || cases.length > 0 || orders.length > 0 || vehicles.length > 0,
+      counts: {
+        people: people.length,
+        hrRecords: hrRecords.length,
+        cases: cases.length,
+        orders: orders.length,
+        vehicles: vehicles.length
+      }
+    }
+  };
+}
+
+export async function queryAIAssistantStream(
   queryText: string,
   history?: { role: "user" | "assistant"; content: string }[],
-  userId?: string
+  userId?: string,
+  onChunk?: (chunk: string) => void
 ): Promise<AIResponse> {
   const query = queryText.toLowerCase().trim();
 
   try {
-    // Check if the user is explicitly requesting a chart or visualization
-    const wantsChart = query.includes("gráfico") || query.includes("grafico") || query.includes("chart") || query.includes("dibujar") || query.includes("mostrar gráfico");
-
-    if (wantsChart) {
-      return await handleChartRequest(query);
-    }
-
     let dbResponse: AIResponse;
 
-    // 0. AGENT PRODUCTIVITY & COMMANDS (Tasks & Reservations)
     const isCommand = query.includes("tarea") || query.includes("recordatorio") || query.includes("agendar") || query.includes("reservar") || query.includes("reserva") || query.includes("evento") || query.includes("reunion") || query.includes("reunión") || query.includes("cita") || query.includes("turno");
-    // Ensure we don't accidentally intercept mere checks of reservations/tasks unless they contain creation keywords
     const isCreationCommand = isCommand && (query.includes("crear") || query.includes("agend") || query.includes("program") || query.includes("añadir") || query.includes("agregar") || query.includes("hacer") || query.includes("reserv") || query.includes("pon"));
-
-    // 0.1 Check for PDF RAG Query
+    const wantsChart = query.includes("gráfico") || query.includes("grafico") || query.includes("chart") || query.includes("dibujar") || query.includes("mostrar gráfico");
     const isDocRagQuery = query.includes("pdf") || query.includes("documento") || query.includes("archivo") || query.includes("leé") || query.includes("lee") || query.includes("informe") || query.includes("adjunto");
 
-    if (isCreationCommand) {
+    let sources: any[] = [];
+    let actions: any[] = [];
+
+    if (wantsChart) {
+      dbResponse = await handleChartRequest(query);
+    } else if (isCreationCommand) {
       dbResponse = await handleAgentCommandQuery(queryText, userId);
-    }
-    else if (isDocRagQuery) {
+    } else if (isDocRagQuery) {
       dbResponse = await handleDocumentRAGQuery(queryText);
-    }
-    // 1. HR & SALARY INTENTS
-    else if (
-      query.includes("sueldo") ||
-      query.includes("salario") ||
-      query.includes("rrhh") ||
-      query.includes("recursos humanos") ||
-      query.includes("personal") ||
-      query.includes("empleado") ||
-      query.includes("agente") ||
-      query.includes("contrato") ||
-      query.includes("nómina") ||
-      query.includes("nomina")
+    } else if (
+      query.includes("sueldo") || query.includes("salario") || query.includes("rrhh") || query.includes("recursos humanos") ||
+      query.includes("personal") || query.includes("empleado") || query.includes("agente") || query.includes("contrato") ||
+      query.includes("nómina") || query.includes("nomina")
     ) {
       dbResponse = await handleHRQuery(query);
-    }
-    // 2. PURCHASE ORDERS & BUDGET INTENTS
-    else if (
-      query.includes("orden") ||
-      query.includes("compras") ||
-      query.includes("gasto") ||
-      query.includes("presupuesto") ||
-      query.includes("comprar") ||
-      query.includes("monto") ||
-      query.includes("factura")
+    } else if (
+      query.includes("orden") || query.includes("compras") || query.includes("gasto") || query.includes("presupuesto") ||
+      query.includes("comprar") || query.includes("monto") || query.includes("factura")
     ) {
       dbResponse = await handleBudgetQuery(query);
-    }
-    // 3. VEHICLES & FUEL INTENTS
-    else if (
-      query.includes("vehiculo") ||
-      query.includes("vehículo") ||
-      query.includes("auto") ||
-      query.includes("camioneta") ||
-      query.includes("flota") ||
-      query.includes("taller") ||
-      query.includes("reserva") ||
-      query.includes("combustible") ||
-      query.includes("nafta") ||
-      query.includes("litro")
+    } else if (
+      query.includes("vehiculo") || query.includes("vehículo") || query.includes("auto") || query.includes("camioneta") ||
+      query.includes("flota") || query.includes("taller") || query.includes("reserva") || query.includes("combustible") ||
+      query.includes("nafta") || query.includes("litro")
     ) {
       dbResponse = await handleVehicleQuery(query);
-    }
-    // 4. AGREEMENTS (CONVENIOS) INTENTS
-    else if (
-      query.includes("convenio") ||
-      query.includes("acuerdo") ||
-      query.includes("parties") ||
-      query.includes("institucional")
+    } else if (
+      query.includes("convenio") || query.includes("acuerdo") || query.includes("parties") || query.includes("institucional")
     ) {
       dbResponse = await handleAgreementQuery(query);
-    }
-    // 5. CASES & SOCIAL MONITORING INTENTS
-    else if (
-      query.includes("caso") ||
-      query.includes("urgente") ||
-      query.includes("critico") ||
-      query.includes("crítico") ||
-      query.includes("social") ||
-      query.includes("familia") ||
-      query.includes("persona") ||
-      query.includes("ciudadano") ||
-      query.includes("deriva") ||
-      query.includes("abierto") ||
-      query.includes("registro") ||
-      query.includes("apellido") ||
-      query.includes("nombre") ||
-      query.includes("letra") ||
-      query.includes("buscar") ||
-      query.includes("consultar") ||
-      query.includes("acevedo") || // handle user direct name query explicitly
-      query.includes("aylen") ||
-      query.includes("victoria")
+    } else if (
+      query.includes("caso") || query.includes("urgente") || query.includes("critico") || query.includes("crítico") ||
+      query.includes("social") || query.includes("familia") || query.includes("persona") || query.includes("ciudadano") ||
+      query.includes("deriva") || query.includes("abierto") || query.includes("registro") || query.includes("apellido") ||
+      query.includes("nombre") || query.includes("letra") || query.includes("buscar") || query.includes("consultar") ||
+      query.includes("acevedo") || query.includes("aylen") || query.includes("victoria")
     ) {
       dbResponse = await handleSocialQuery(query);
-    }
-    // 6. SUPPLY & INVENTORY INTENTS
-    else if (
-      query.includes("insumo") ||
-      query.includes("stock") ||
-      query.includes("inventario") ||
-      query.includes("deposito") ||
-      query.includes("depósito")
+    } else if (
+      query.includes("insumo") || query.includes("stock") || query.includes("inventario") ||
+      query.includes("deposito") || query.includes("depósito")
     ) {
       dbResponse = await handleSupplyQuery(query);
-    }
-    // 7. DEFAULT FALLBACK
-    else {
-      dbResponse = handleGeneralFallback(queryText);
+    } else {
+      const search = await performUniversalDBSearch(queryText);
+      sources = search.sources;
+      actions = search.actions;
+
+      if (search.contextText !== "") {
+        dbResponse = {
+          intent: "universal_search",
+          answer: search.contextText,
+          dataSummary: { ...search.dataSummary, sources, actions }
+        };
+      } else {
+        dbResponse = {
+          intent: "fallback",
+          answer: "No se encontraron registros en la base de datos municipal para esta consulta.",
+          dataSummary: { hasResults: false, sources, actions }
+        };
+      }
     }
 
-    // Ensure we don't pass massive extracted PDF contexts to Ollama's chat history directly as a system prompt to keep context tight
-    // Try to synthesize the response using Ollama
+    // Merge sources & actions if they came from search or intent sub-handlers
+    if (dbResponse.dataSummary?.sources) {
+      sources = dbResponse.dataSummary.sources;
+    }
+    if (dbResponse.dataSummary?.actions) {
+      actions = dbResponse.dataSummary.actions;
+    }
+
     try {
-      const systemPrompt = `Eres el Asistente Inteligente Municipal de la plataforma MuniGestión.
-Tu objetivo es ayudar a los funcionarios y directores municipales a consultar información de la base de datos municipal.
-Sé profesional, conciso y preciso. Siempre responde en español de Argentina/latinoamericano.
-Utiliza un tono administrativo pero servicial. Usa markdown para dar formato a tus respuestas (tablas, listas, negritas) cuando sea apropiado.`;
-
       const ollamaMessages: Message[] = [
-        { role: "system", content: systemPrompt }
+        { role: "system", content: ZERO_HALLUCINATION_SYSTEM_PROMPT }
       ];
 
-      // Add conversation history if provided
       if (history && history.length > 0) {
         history.forEach(msg => {
           ollamaMessages.push({
@@ -227,47 +430,63 @@ Utiliza un tono administrativo pero servicial. Usa markdown para dar formato a t
 
       let userPrompt = "";
       if (dbResponse.intent !== "fallback") {
-        userPrompt = `[CONTEXTO DE LA BASE DE DATOS MUNICIPAL]:
+        userPrompt = `[CONTEXTO REAL DE LA BASE DE DATOS MUNICIPAL]:
 ${dbResponse.answer}
 
 [PREGUNTA DEL USUARIO]:
 ${queryText}
 
-Por favor, responde a la pregunta del usuario utilizando EXCLUSIVAMENTE la información del contexto de la base de datos municipal anterior.
-No inventes ni asumas ningún dato, número, nombre, saldo o detalle que no esté presente en el contexto anterior.
-Si los datos del contexto indican cero (0) resultados para la búsqueda (por ejemplo, "Se encontraron 0 personas" o "No se encontraron ciudadanos"), debes responder claramente que no hay registros coincidentes en la base de datos municipal para esa consulta. No digas que la información no se registra o no existe en la base de datos, simplemente explica que el padrón actual no tiene coincidencias con el filtro especificado.
-Preserva el formato de tablas o listas si ayuda a presentar los datos con claridad y precisión de forma profesional.`;
+Por favor, responde a la pregunta del usuario utilizando EXCLUSIVAMENTE la información del contexto real anterior. Sigue de forma estricta las REGLAS DE CERO ALUCINACIÓN.`;
       } else {
-        userPrompt = `[PREGUNTA DEL USUARIO]:
+        userPrompt = `[CONTEXTO REAL DE LA BASE DE DATOS MUNICIPAL]:
+No se encontraron registros en la base de datos municipal para esta consulta.
+
+[PREGUNTA DEL USUARIO]:
 ${queryText}
 
-Por favor, responde de forma inteligente y útil. Si la pregunta es sobre el municipio o la aplicación, menciónale qué tipo de consultas sobre Recursos Humanos, Presupuesto, Vehículos, Convenios o Stock puedes responder en tiempo real en MuniGestión.`;
+Responde de forma estricta siguiendo las REGLAS DE CERO ALUCINACIÓN.`;
       }
 
       ollamaMessages.push({ role: "user", content: userPrompt });
 
-      const ollamaAnswer = await callOllama(ollamaMessages);
+      let ollamaAnswer = "";
+      if (onChunk) {
+        ollamaAnswer = await callOllamaStream(ollamaMessages, onChunk);
+      } else {
+        ollamaAnswer = await callOllama(ollamaMessages);
+      }
 
       if (ollamaAnswer && ollamaAnswer.trim() !== "") {
         return {
           intent: dbResponse.intent,
           answer: ollamaAnswer,
-          dataSummary: dbResponse.dataSummary
+          dataSummary: { ...dbResponse.dataSummary, sources, actions }
         };
       }
     } catch (ollamaError) {
-      console.warn("Ollama is not available or timed out. Falling back to structured response.", ollamaError);
+      console.warn("Ollama is not available, falling back to static answer:", ollamaError);
     }
 
-    return dbResponse;
+    return {
+      ...dbResponse,
+      dataSummary: { ...dbResponse.dataSummary, sources, actions }
+    };
 
   } catch (error: any) {
-    console.error("AI Assistant query processing error:", error);
+    console.error("AI Assistant streaming query processing error:", error);
     return {
       intent: "error",
-      answer: `⚠️ Ocurrió un error al consultar la base de datos municipal: **${error.message || error}**. Por favor, intenta reformular tu pregunta.`
+      answer: `⚠️ Ocurrió un error al consultar la base de datos municipal: **${error.message || error}**.`
     };
   }
+}
+
+export async function queryAIAssistant(
+  queryText: string,
+  history?: { role: "user" | "assistant"; content: string }[],
+  userId?: string
+): Promise<AIResponse> {
+  return await queryAIAssistantStream(queryText, history, userId);
 }
 
 // --- SUB-HANDLERS ---
