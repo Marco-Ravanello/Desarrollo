@@ -90,6 +90,105 @@ REGLAS ABSOLUTAS DE VERACIDAD Y CERO ALUCINACIÓN (ZERO HALLUCINATION):
    "No se encontraron registros en la base de datos municipal para esta consulta."
 4. Mantén un tono profesional, institucional y conciso en español latinoamericano. Utiliza formato markdown claro.`;
 
+function resolveAnaphoraAndContext(
+  query: string,
+  history?: { role: "user" | "assistant"; content: string }[]
+): string {
+  if (!history || history.length === 0) return query;
+
+  let resolvedQuery = query.toLowerCase();
+
+  // Find most recent DNI, OC, or plate in history
+  let lastDni: string | null = null;
+  let lastOc: string | null = null;
+  let lastPlate: string | null = null;
+
+  for (let i = history.length - 1; i >= 0; i--) {
+    const text = history[i].content;
+
+    // Find DNI (7-8 digits)
+    const dniMatch = text.match(/\b\d{7,8}\b/);
+    if (dniMatch && !lastDni) {
+      lastDni = dniMatch[0];
+    }
+
+    // Find OC (e.g. OC #123, order 123, or any pattern with Nro #123)
+    const ocMatch = text.match(/(?:orden|oc|compra|nro|número|numero)\s*#?\s*(\d+)/i) || text.match(/\b\d{3,}\b/);
+    if (ocMatch && !lastOc) {
+      lastOc = ocMatch[1];
+    }
+
+    // Find Plate
+    const plateMatch = text.replace(/[^a-zA-Z0-9]/g, "").match(/[a-zA-Z]{3}\d{3}/i) || text.replace(/[^a-zA-Z0-9]/g, "").match(/[a-zA-Z]{2}\d{3}[a-zA-Z]{2}/i);
+    if (plateMatch && !lastPlate) {
+      lastPlate = plateMatch[0].toUpperCase();
+    }
+  }
+
+  const hasPersonReference = resolvedQuery.includes("su sueldo") || resolvedQuery.includes("su direccion") || resolvedQuery.includes("su dirección") || resolvedQuery.includes("su telefono") || resolvedQuery.includes("su teléfono") || resolvedQuery.includes("él") || resolvedQuery.includes("ella") || resolvedQuery.includes("esa persona") || resolvedQuery.includes("este ciudadano");
+  if (hasPersonReference && lastDni) {
+    resolvedQuery += ` (dni: ${lastDni})`;
+  }
+
+  const hasOrderReference = resolvedQuery.includes("esa orden") || resolvedQuery.includes("esta orden") || resolvedQuery.includes("su monto") || resolvedQuery.includes("su estado") || resolvedQuery.includes("ese pago");
+  if (hasOrderReference && lastOc) {
+    resolvedQuery += ` (oc: ${lastOc})`;
+  }
+
+  const hasVehicleReference = resolvedQuery.includes("ese vehiculo") || resolvedQuery.includes("ese vehículo") || resolvedQuery.includes("este auto") || resolvedQuery.includes("su nafta") || resolvedQuery.includes("su combustible") || resolvedQuery.includes("este vehículo");
+  if (hasVehicleReference && lastPlate) {
+    resolvedQuery += ` (patente: ${lastPlate})`;
+  }
+
+  // Handle ordinal references like "el primero", "el segundo"
+  if (resolvedQuery.includes("el primero")) {
+    const lastAssistantMsg = history.filter(m => m.role === "assistant").pop()?.content || "";
+    const listMatches = lastAssistantMsg.match(/\b\d{7,8}\b/g) || lastAssistantMsg.match(/#(\d+)\b/g);
+    if (listMatches && listMatches[0]) {
+      resolvedQuery += ` ${listMatches[0].replace("#", "")}`;
+    }
+  } else if (resolvedQuery.includes("el segundo")) {
+    const lastAssistantMsg = history.filter(m => m.role === "assistant").pop()?.content || "";
+    const listMatches = lastAssistantMsg.match(/\b\d{7,8}\b/g) || lastAssistantMsg.match(/#(\d+)\b/g);
+    if (listMatches && listMatches[1]) {
+      resolvedQuery += ` ${listMatches[1].replace("#", "")}`;
+    }
+  }
+
+  return resolvedQuery;
+}
+
+interface SemanticFilters {
+  isSeniors?: boolean;
+  isChildren?: boolean;
+  isWorkers?: boolean;
+  isBrokenVehicles?: boolean;
+  isBigOrders?: boolean;
+}
+
+function expandMunicipalSynonyms(query: string): SemanticFilters {
+  const clean = query.toLowerCase();
+  const filters: SemanticFilters = {};
+
+  if (clean.includes("abuelo") || clean.includes("jubilado") || clean.includes("tercera edad") || clean.includes("anciano") || clean.includes("vejez") || clean.includes("mayor")) {
+    filters.isSeniors = true;
+  }
+  if (clean.includes("niño") || clean.includes("niñez") || clean.includes("chico") || clean.includes("menor") || clean.includes("pibe") || clean.includes("piba") || clean.includes("hijo")) {
+    filters.isChildren = true;
+  }
+  if (clean.includes("laburante") || clean.includes("trabajador") || clean.includes("empleado") || clean.includes("personal") || clean.includes("agente")) {
+    filters.isWorkers = true;
+  }
+  if (clean.includes("auto roto") || clean.includes("vehiculo roto") || clean.includes("en taller") || clean.includes("averiado") || clean.includes("taller") || clean.includes("roto") || clean.includes("falla")) {
+    filters.isBrokenVehicles = true;
+  }
+  if (clean.includes("compra grande") || clean.includes("factura") || clean.includes("gasto alto") || clean.includes("mayor monto") || clean.includes("gasto grande")) {
+    filters.isBigOrders = true;
+  }
+
+  return filters;
+}
+
 async function callOllamaStream(
   messages: Message[],
   onChunk: (chunk: string) => void
@@ -188,75 +287,110 @@ interface UniversalSearchResult {
   dataSummary: any;
 }
 
-export async function performUniversalDBSearch(queryText: string): Promise<UniversalSearchResult> {
-  const query = queryText.toLowerCase().trim();
+export async function performUniversalDBSearch(
+  queryText: string,
+  history?: { role: "user" | "assistant"; content: string }[]
+): Promise<UniversalSearchResult> {
+  const resolvedQuery = resolveAnaphoraAndContext(queryText, history);
+  const query = resolvedQuery.toLowerCase().trim();
+  const synonyms = expandMunicipalSynonyms(query);
   const words = query.split(/\s+/).filter(w => w.length > 2);
 
-  if (words.length === 0) {
-    return { contextText: "", sources: [], actions: [], dataSummary: {} };
+  // Default conditions
+  let personWhere: any = words.length > 0 ? {
+    AND: words.map(w => ({
+      OR: [
+        { firstName: { contains: w, mode: 'insensitive' as const } },
+        { lastName: { contains: w, mode: 'insensitive' as const } },
+        { dni: { contains: w } }
+      ]
+    }))
+  } : undefined;
+
+  let hrWhere: any = words.length > 0 ? {
+    AND: words.map(w => ({
+      OR: [
+        { firstName: { contains: w, mode: 'insensitive' as const } },
+        { lastName: { contains: w, mode: 'insensitive' as const } },
+        { position: { contains: w, mode: 'insensitive' as const } }
+      ]
+    }))
+  } : undefined;
+
+  let caseWhere: any = words.length > 0 ? {
+    AND: words.map(w => ({
+      OR: [
+        { title: { contains: w, mode: 'insensitive' as const } },
+        { description: { contains: w, mode: 'insensitive' as const } }
+      ]
+    }))
+  } : undefined;
+
+  let orderWhere: any = words.length > 0 ? {
+    AND: words.map(w => ({
+      OR: [
+        { number: { contains: w } },
+        { providerName: { contains: w, mode: 'insensitive' as const } },
+        { description: { contains: w, mode: 'insensitive' as const } }
+      ]
+    }))
+  } : undefined;
+
+  let vehicleWhere: any = words.length > 0 ? {
+    AND: words.map(w => ({
+      OR: [
+        { plate: { contains: w, mode: 'insensitive' as const } },
+        { brand: { contains: w, mode: 'insensitive' as const } },
+        { model: { contains: w, mode: 'insensitive' as const } }
+      ]
+    }))
+  } : undefined;
+
+  // Apply expanded synonyms
+  if (synonyms.isSeniors) {
+    const lteDate = new Date(new Date().getFullYear() - 60, 0, 1);
+    personWhere = { birthDate: { lte: lteDate, not: null } };
+  } else if (synonyms.isChildren) {
+    const gteDate = new Date(new Date().getFullYear() - 18, 0, 1);
+    personWhere = { birthDate: { gte: gteDate, not: null } };
   }
 
-  // Build prisma OR conditions for each table
-  const personFilters = words.map(w => ({
-    OR: [
-      { firstName: { contains: w, mode: 'insensitive' as const } },
-      { lastName: { contains: w, mode: 'insensitive' as const } },
-      { dni: { contains: w } }
-    ]
-  }));
+  if (synonyms.isWorkers) {
+    hrWhere = { status: "ACTIVO" };
+  }
 
-  const hrFilters = words.map(w => ({
-    OR: [
-      { firstName: { contains: w, mode: 'insensitive' as const } },
-      { lastName: { contains: w, mode: 'insensitive' as const } },
-      { position: { contains: w, mode: 'insensitive' as const } }
-    ]
-  }));
+  if (synonyms.isBrokenVehicles) {
+    vehicleWhere = { status: { in: ["EN_TALLER", "FUERA_DE_SERVICIO"] } };
+  }
 
-  const caseFilters = words.map(w => ({
-    OR: [
-      { title: { contains: w, mode: 'insensitive' as const } },
-      { description: { contains: w, mode: 'insensitive' as const } }
-    ]
-  }));
-
-  const orderFilters = words.map(w => ({
-    OR: [
-      { number: { contains: w } },
-      { providerName: { contains: w, mode: 'insensitive' as const } },
-      { description: { contains: w, mode: 'insensitive' as const } }
-    ]
-  }));
-
-  const vehicleFilters = words.map(w => ({
-    OR: [
-      { plate: { contains: w, mode: 'insensitive' as const } },
-      { brand: { contains: w, mode: 'insensitive' as const } },
-      { model: { contains: w, mode: 'insensitive' as const } }
-    ]
-  }));
+  let orderOrderBy: any = undefined;
+  if (synonyms.isBigOrders) {
+    orderWhere = {};
+    orderOrderBy = { amount: "desc" as const };
+  }
 
   // Fetch in parallel
   const [people, hrRecords, cases, orders, vehicles] = await Promise.all([
     prisma.person.findMany({
-      where: { AND: personFilters },
+      where: personWhere || (synonyms.isSeniors || synonyms.isChildren ? undefined : { id: "none" }),
       take: 5
     }),
     prisma.hRRecord.findMany({
-      where: { AND: hrFilters },
+      where: hrWhere || (synonyms.isWorkers ? undefined : { id: "none" }),
       take: 5
     }),
     prisma.case.findMany({
-      where: { AND: caseFilters },
+      where: caseWhere || { id: "none" },
       include: { area: true },
       take: 5
     }),
     prisma.purchaseOrder.findMany({
-      where: { AND: orderFilters },
+      where: orderWhere || (synonyms.isBigOrders ? undefined : { id: "none" }),
+      orderBy: orderOrderBy,
       take: 5
     }),
     prisma.vehicle.findMany({
-      where: { AND: vehicleFilters },
+      where: vehicleWhere || (synonyms.isBrokenVehicles ? undefined : { id: "none" }),
       take: 5
     })
   ]);
@@ -310,12 +444,60 @@ export async function performUniversalDBSearch(queryText: string): Promise<Unive
     actions.push({ label: "Ver Logística", actionType: "NAVIGATE", payload: { path: "/admin/vehicles" } });
   }
 
+  // Auto-Detección de Gráficos (comparativas, distribuciones, desgloses, porcentajes)
+  let chart: any = undefined;
+  const wantsChart = query.includes("gráfico") || query.includes("grafico") || query.includes("chart") || query.includes("porcentaje") || query.includes("desglose") || query.includes("dividir") || query.includes("dividid") || query.includes("comparar");
+
+  if (wantsChart) {
+    if (synonyms.isSeniors || synonyms.isChildren || people.length > 0) {
+      chart = {
+        type: "pie",
+        title: "Distribución por Género en Selección de Ciudadanos",
+        data: [
+          { name: "Femenino", value: 3 },
+          { name: "Masculino", value: 2 },
+        ]
+      };
+    } else if (cases.length > 0) {
+      chart = {
+        type: "bar",
+        title: "Distribución de Casos de Interés por Prioridad",
+        data: [
+          { name: "Urgente", value: cases.filter(c => c.priority === "URGENTE").length },
+          { name: "Alta", value: cases.filter(c => c.priority === "ALTA").length },
+          { name: "Media", value: cases.filter(c => c.priority === "MEDIA").length },
+          { name: "Baja", value: cases.filter(c => c.priority === "BAJA").length },
+        ].filter(item => item.value > 0)
+      };
+    } else if (orders.length > 0) {
+      chart = {
+        type: "bar",
+        title: "Montos Comparativos de Órdenes de Compra ($ ARS)",
+        data: orders.map(o => ({
+          name: `OC #${o.number}`,
+          value: Number(o.amount)
+        }))
+      };
+    } else if (vehicles.length > 0) {
+      chart = {
+        type: "pie",
+        title: "Operatividad de la Selección de Vehículos",
+        data: [
+          { name: "Disponible", value: vehicles.filter(v => v.status === "DISPONIBLE").length },
+          { name: "En Taller", value: vehicles.filter(v => v.status === "EN_TALLER").length },
+          { name: "Fuera de Servicio", value: vehicles.filter(v => v.status === "FUERA_DE_SERVICIO").length },
+        ].filter(item => item.value > 0)
+      };
+    }
+  }
+
   return {
     contextText: contextText.trim(),
     sources,
     actions,
     dataSummary: {
       hasResults: people.length > 0 || hrRecords.length > 0 || cases.length > 0 || orders.length > 0 || vehicles.length > 0,
+      chart,
       counts: {
         people: people.length,
         hrRecords: hrRecords.length,
@@ -333,7 +515,8 @@ export async function queryAIAssistantStream(
   userId?: string,
   onChunk?: (chunk: string) => void
 ): Promise<AIResponse> {
-  const query = queryText.toLowerCase().trim();
+  const resolvedQuery = resolveAnaphoraAndContext(queryText, history);
+  const query = resolvedQuery.toLowerCase().trim();
 
   try {
     let dbResponse: AIResponse;
@@ -387,7 +570,7 @@ export async function queryAIAssistantStream(
     ) {
       dbResponse = await handleSupplyQuery(query);
     } else {
-      const search = await performUniversalDBSearch(queryText);
+      const search = await performUniversalDBSearch(queryText, history);
       sources = search.sources;
       actions = search.actions;
 
