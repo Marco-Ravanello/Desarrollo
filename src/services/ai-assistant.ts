@@ -400,7 +400,7 @@ export async function performUniversalDBSearch(
   const actions: { label: string; actionType: string; payload?: any }[] = [];
 
   if (people.length > 0) {
-    contextText += `### 👤 CIUDADANOS ENCONTRADOS:\n`;
+    contextText += `### REGISTRO DE CIUDADANOS\n`;
     people.forEach(p => {
       contextText += `*   Ciudadano: ${p.lastName}, ${p.firstName} (DNI: ${p.dni}) - Dirección: ${p.address || "N/R"} - Teléfono: ${p.phone || "N/R"}\n`;
       sources.push({ type: "Ciudadano", name: `${p.lastName}, ${p.firstName}`, url: `/people/${p.id}` });
@@ -409,7 +409,7 @@ export async function performUniversalDBSearch(
   }
 
   if (hrRecords.length > 0) {
-    contextText += `\n### 👥 AGENTES MUNICIPALES (RRHH) ENCONTRADOS:\n`;
+    contextText += `\n### NÓMINA DE RECURSOS HUMANOS\n`;
     hrRecords.forEach(h => {
       contextText += `*   Agente: ${h.lastName}, ${h.firstName} (DNI: ${h.dni}) - Puesto: ${h.position || "N/R"} - Sueldo: $${Number(h.salary || 0).toLocaleString("es-AR")} ARS - Estado: ${h.status}\n`;
       sources.push({ type: "Recursos Humanos", name: `Agente: ${h.lastName}, ${h.firstName}` });
@@ -418,7 +418,7 @@ export async function performUniversalDBSearch(
   }
 
   if (cases.length > 0) {
-    contextText += `\n### 📁 CASOS SOCIALES ENCONTRADOS:\n`;
+    contextText += `\n### EXPEDIENTES DE CASOS SOCIALES\n`;
     cases.forEach(c => {
       contextText += `*   Caso: ${c.title} - Estado: ${c.status} - Prioridad: ${c.priority} - Dirección Área: ${c.area.name}\n`;
       sources.push({ type: "Caso Social", name: `Caso: ${c.title}`, url: `/cases/${c.id}` });
@@ -427,7 +427,7 @@ export async function performUniversalDBSearch(
   }
 
   if (orders.length > 0) {
-    contextText += `\n### 🛍️ ÓRDENES DE COMPRA ENCONTRADAS:\n`;
+    contextText += `\n### REGISTRO DE ÓRDENES DE COMPRA\n`;
     orders.forEach(o => {
       contextText += `*   Orden: OC #${o.number} - Proveedor: ${o.providerName || "Desconocido"} - Monto: $${Number(o.amount).toLocaleString("es-AR")} ARS - Estado: ${o.status}\n`;
       sources.push({ type: "Orden de Compra", name: `OC #${o.number}`, url: `/admin/purchase-orders/${o.id}` });
@@ -436,7 +436,7 @@ export async function performUniversalDBSearch(
   }
 
   if (vehicles.length > 0) {
-    contextText += `\n### 🚗 VEHÍCULOS DE LA FLOTA ENCONTRADOS:\n`;
+    contextText += `\n### FLOTA DE VEHÍCULOS MUNICIPALES\n`;
     vehicles.forEach(v => {
       contextText += `*   Vehículo: ${v.brand} ${v.model} (Patente: ${v.plate}) - Estado: ${v.status} - Tarjeta Nafta: ${v.fuelCardNumber || "N/R"}\n`;
       sources.push({ type: "Vehículo", name: `${v.brand} ${v.model} (${v.plate})`, url: `/admin/vehicles/${v.id}` });
@@ -509,12 +509,85 @@ export async function performUniversalDBSearch(
   };
 }
 
+export function isGreetingOrGeneralQuery(queryText: string): boolean {
+  const clean = queryText.toLowerCase().trim();
+  const greetingsAndGeneral = [
+    "hola", "buenas", "que tal", "qué tal", "quien sos", "quién sos", "que podes hacer", "qué podés hacer",
+    "que puede hacer", "qué puede hacer", "ayuda", "gracias", "chau", "adios", "adiós", "buen dia", "buen día",
+    "buenas tardes", "buenas noches", "saludos", "como estas", "cómo estás", "como andas", "cómo andás"
+  ];
+  return greetingsAndGeneral.some(g => clean.includes(g));
+}
+
+export function handleGreetingQuery(queryText: string): AIResponse {
+  const clean = queryText.toLowerCase().trim();
+  let answer = "";
+  let intent = "greeting";
+
+  if (clean.includes("gracias")) {
+    answer = `### Mensaje Recibido
+
+Es un agrado asistirle en la gestión de tareas del municipio. Si requiere realizar consultas adicionales sobre Recursos Humanos, Presupuesto, Vehículos, Casos Sociales o Inventario, quedo a su entera disposición.
+
+Atentamente,
+Asistencia Municipal`;
+    intent = "thanks";
+  } else if (clean.includes("chau") || clean.includes("adios") || clean.includes("adiós")) {
+    answer = `### Sesión Finalizada
+
+Agradecemos su uso del Asistente Inteligente Municipal. Que tenga una excelente jornada de gestión pública. Estaré disponible para futuras consultas administrativas.`;
+    intent = "goodbye";
+  } else {
+    answer = `### Sistema de Asistencia Inteligente Municipal
+
+Bienvenido al asistente de consulta municipal. Este canal automatizado facilita el análisis y auditoría de la información administrativa y social de la municipalidad.
+
+#### Módulos y capacidades de consulta habilitados:
+*   **Recursos Humanos (RRHH):** Auditoría de nómina de personal activo, licencias, régimen contractual y cálculo consolidado del gasto salarial mensual por dirección.
+*   **Presupuesto y Compras:** Análisis del estado administrativo de Órdenes de Compra, saldos pendientes, montos de ejecución real y legajos de proveedores.
+*   **Vehículos y Logística:** Monitoreo del consumo de combustible, kilometraje, control de alertas por vencimiento de VTV o pólizas de seguro, y reserva de unidades de flota municipal.
+*   **Convenios Institucionales:** Consulta de convenios vigentes, montos devengados, partes intervinientes y plazos según la dirección solicitante.
+*   **Acción Social:** Consulta integrada del Registro Único de personas, grupos familiares, legajos de vulnerabilidad con filtros por DNI o inicial de apellido, y lectura inteligente de informes PDF adjuntos.
+*   **Control de Insumos (Depósito):** Reportes automáticos sobre stock mínimo, faltantes y alertas de abastecimiento.
+*   **Agenda Unificada:** Programación y asignación de tareas, eventos administrativos y coordinación horaria de recursos municipales.
+
+Por favor, especifique el reporte o la consulta administrativa que desea formular para iniciar el procesamiento de datos.`;
+  }
+
+  return {
+    intent,
+    answer,
+    dataSummary: {
+      hasResults: true,
+      sources: [],
+      actions: [
+        { label: "Ver en Mapa Social", actionType: "NAVIGATE", payload: { path: "/maps" } },
+        { label: "Ver Nómina de RRHH", actionType: "NAVIGATE", payload: { path: "/admin/hr" } },
+        { label: "Ver Agenda Unificada", actionType: "NAVIGATE", payload: { path: "/admin/calendar" } },
+        { label: "Ver Órdenes de Compra", actionType: "NAVIGATE", payload: { path: "/admin/purchase-orders" } }
+      ]
+    }
+  };
+}
+
 export async function queryAIAssistantStream(
   queryText: string,
   history?: { role: "user" | "assistant"; content: string }[],
   userId?: string,
   onChunk?: (chunk: string) => void
 ): Promise<AIResponse> {
+  if (isGreetingOrGeneralQuery(queryText)) {
+    const greetingResponse = handleGreetingQuery(queryText);
+    if (onChunk) {
+      const words = greetingResponse.answer.split(" ");
+      for (let i = 0; i < words.length; i++) {
+        onChunk(words[i] + (i === words.length - 1 ? "" : " "));
+        await new Promise(resolve => setTimeout(resolve, 15));
+      }
+    }
+    return greetingResponse;
+  }
+
   const resolvedQuery = resolveAnaphoraAndContext(queryText, history);
   const query = resolvedQuery.toLowerCase().trim();
 
@@ -659,7 +732,7 @@ Responde de forma estricta siguiendo las REGLAS DE CERO ALUCINACIÓN.`;
     console.error("AI Assistant streaming query processing error:", error);
     return {
       intent: "error",
-      answer: `⚠️ Ocurrió un error al consultar la base de datos municipal: **${error.message || error}**.`
+      answer: `Error de sistema: Ocurrió un error al consultar la base de datos municipal: ${error.message || error}.`
     };
   }
 }
@@ -718,7 +791,7 @@ async function handleChartRequest(query: string): Promise<AIResponse> {
 
       return {
         intent: "chart_render",
-        answer: `### 📊 Gráfico: Casos Sociales por Rango de Edad\n\nAquí tienes la visualización de los casos de asistencia social clasificados según el rango de edad de los ciudadanos afectados.`,
+        answer: `### Gráfico: Casos Sociales por Rango de Edad\n\nSe presenta la visualización de los casos de asistencia social clasificados según el rango de edad de los ciudadanos afectados en el padrón municipal.`,
         dataSummary: {
           chart: {
             type: "bar",
@@ -749,7 +822,7 @@ async function handleChartRequest(query: string): Promise<AIResponse> {
 
       return {
         intent: "chart_render",
-        answer: `### 📊 Gráfico: Casos por Género del Ciudadano\n\nEste gráfico circular representa la distribución de casos sociales registrados según la identidad de género declarada en el legajo único.`,
+        answer: `### Gráfico: Casos por Género del Ciudadano\n\nEste gráfico representa la distribución de casos sociales registrados según la identidad de género declarada en el legajo único de asistencia.`,
         dataSummary: {
           chart: {
             type: "pie",
@@ -779,7 +852,7 @@ async function handleChartRequest(query: string): Promise<AIResponse> {
 
       return {
         intent: "chart_render",
-        answer: `### 📊 Gráfico: Casos por Nivel de Prioridad\n\nAquí tienes la distribución de los expedientes municipales clasificados por nivel de severidad y prioridad asignada.`,
+        answer: `### Gráfico: Casos por Nivel de Prioridad\n\nSe detalla la distribución de los expedientes municipales clasificados por nivel de prioridad asignada por los trabajadores de las áreas sociales.`,
         dataSummary: {
           chart: {
             type: "bar",
@@ -805,7 +878,7 @@ async function handleChartRequest(query: string): Promise<AIResponse> {
 
       return {
         intent: "chart_render",
-        answer: `### 📊 Gráfico: Casos por Estado de Gestión\n\nVisualización interactiva sobre el estado administrativo de resolución de los casos de asistencia municipal.`,
+        answer: `### Gráfico: Casos por Estado de Gestión\n\nAnálisis del estado de resolución de las demandas y expedientes activos de asistencia municipal en el distrito.`,
         dataSummary: {
           chart: {
             type: "pie",
@@ -829,7 +902,7 @@ async function handleChartRequest(query: string): Promise<AIResponse> {
 
     return {
       intent: "chart_render",
-      answer: `### 📊 Gráfico: Casos Activos por Dirección Social\n\nAquí tienes la visualización interactiva de la distribución de casos por área municipal. He consolidado los expedientes registrados actualmente en cada departamento.`,
+      answer: `### Gráfico: Casos Activos por Dirección Social\n\nSe presenta la distribución consolidada de casos sociales según la dirección municipal correspondiente en el área de desarrollo social.`,
       dataSummary: {
         chart: {
           type: "bar",
@@ -855,7 +928,7 @@ async function handleChartRequest(query: string): Promise<AIResponse> {
 
     return {
       intent: "chart_render",
-      answer: `### 📊 Gráfico: Presupuesto Ejecutado por Dirección ($ ARS)\n\nAquí tienes la representación visual de los fondos ejecutados y aprobados mediante Órdenes de Compra por departamento municipal.`,
+      answer: `### Gráfico: Presupuesto Ejecutado por Dirección ($ ARS)\n\nAnálisis de los fondos comprometidos y aprobados mediante órdenes de compra según la dirección municipal requirente.`,
       dataSummary: {
         chart: {
           type: "bar",
@@ -877,7 +950,7 @@ async function handleChartRequest(query: string): Promise<AIResponse> {
 
     return {
       intent: "chart_render",
-      answer: `### 📊 Gráfico: Distribución de Modalidades de Contratación\n\nEste gráfico representa la distribución actual del personal activo según su régimen o tipo de contratación laboral.`,
+      answer: `### Gráfico: Distribución de Modalidades de Contratación\n\nInforme sobre la distribución del personal activo en la municipalidad clasificado por régimen o tipo de vinculación laboral.`,
       dataSummary: {
         chart: {
           type: "pie",
@@ -898,7 +971,7 @@ async function handleChartRequest(query: string): Promise<AIResponse> {
 
     return {
       intent: "chart_render",
-      answer: `### 📊 Gráfico: Operatividad de la Flota Logística\n\nRepresentación visual del estado actual de mantenimiento y disponibilidad de todas las unidades de la flota municipal.`,
+      answer: `### Gráfico: Operatividad de la Flota Logística\n\nEstado operativo, disponibilidad y mantenimiento de las unidades pertenecientes al parque automotor municipal.`,
       dataSummary: {
         chart: {
           type: "pie",
@@ -912,18 +985,18 @@ async function handleChartRequest(query: string): Promise<AIResponse> {
   // General chart fallback
   return {
     intent: "chart_render_fallback",
-    answer: `### 📊 Solicitud de Gráficos
+    answer: `### Solicitud de Gráficos de Datos
 
-Puedo dibujarte gráficos interactivos en tiempo real con diferentes variables. Por favor indícame qué tipo de gráfico deseas ver:
+Es posible generar gráficos informativos en tiempo real a partir de las siguientes variables del sistema municipal:
 
-*   📊 **"Gráfico de casos por área"** - Muestra la cantidad de expedientes activos por departamento.
-*   📊 **"Gráfico de casos por género"** - Muestra los casos según la identidad de género declarada.
-*   📊 **"Gráfico de casos por edad"** - Clasifica los casos según el rango de edad.
-*   📊 **"Gráfico de casos por prioridad"** - Clasifica por nivel de urgencia o severidad.
-*   📊 **"Gráfico de casos por estado"** - Muestra el estado administrativo de resolución.
-*   📊 **"Gráfico de gastos"** - Muestra las órdenes de compra ejecutadas por dirección.
-*   📊 **"Gráfico de personal"** - Muestra las modalidades de contratación de recursos humanos.
-*   📊 **"Gráfico de flota"** - Muestra el estado operativo de los vehículos.`
+*   **Gráfico de casos por área:** Muestra la cantidad de expedientes activos distribuidos por dirección.
+*   **Gráfico de casos por género:** Clasifica los legajos según el género declarado en el Registro Único.
+*   **Gráfico de casos por edad:** Agrupa los legajos activos según rangos etarios.
+*   **Gráfico de casos por prioridad:** Muestra la ponderación de prioridad asignada (Urgente, Alta, Media, Baja).
+*   **Gráfico de casos por estado:** Indica el nivel de resolución administrativa de las demandas.
+*   **Gráfico de gastos:** Consolida la asignación presupuestaria por órdenes de compra aprobadas según dirección.
+*   **Gráfico de personal:** Detalla la relación contractual del personal (Recursos Humanos).
+*   **Gráfico de flota:** Presenta el estado de operatividad de los vehículos del municipio.`
   };
 }
 
@@ -943,12 +1016,12 @@ async function handleHRQuery(query: string): Promise<AIResponse> {
     );
 
     if (matchedAgents.length > 0) {
-      let answer = `### 👥 Resultados de Búsqueda de Agentes\n\nSe encontraron **${matchedAgents.length}** agentes que coinciden con "*${searchName}*":\n\n`;
+      let answer = `### Resultados de Búsqueda de Agentes\n\nSe encontraron **${matchedAgents.length}** agentes que coinciden con la búsqueda de "${searchName}":\n\n`;
       matchedAgents.forEach(a => {
-        answer += `*   **${a.firstName} ${a.lastName}** (${a.dni}) - *${a.position || "Sin puesto definido"}*\n`;
-        answer += `    *   **Área:** ${a.area?.name || "Sin área"}\n`;
-        answer += `    *   **Contrato:** ${a.contractType} - **Sueldo:** $${Number(a.salary || 0).toLocaleString("es-AR")} ARS\n`;
-        answer += `    *   **Horario:** ${a.schedule || "No especificado"} - **Estado:** ${a.status}\n\n`;
+        answer += `*   **${a.firstName} ${a.lastName}** (DNI: ${a.dni}) - *${a.position || "Sin puesto definido"}*\n`;
+        answer += `    *   **Área de dependencia:** ${a.area?.name || "Sin área asignada"}\n`;
+        answer += `    *   **Régimen de contrato:** ${a.contractType} - **Sueldo:** $${Number(a.salary || 0).toLocaleString("es-AR")} ARS\n`;
+        answer += `    *   **Esquema horario:** ${a.schedule || "No especificado"} - **Estado laboral:** ${a.status}\n\n`;
       });
       return { intent: "hr_agent_lookup", answer, dataSummary: matchedAgents };
     }
@@ -981,32 +1054,32 @@ async function handleHRQuery(query: string): Promise<AIResponse> {
 
   let answer = "";
   if (query.includes("sueldo") || query.includes("salario") || query.includes("presupuesto") || query.includes("gasto")) {
-    answer = `### 📊 Presupuesto Mensual de Recursos Humanos
+    answer = `### Presupuesto Mensual de Recursos Humanos
 
 El gasto salarial mensual acumulado para el personal activo y de licencia asciende a **$${totalSalary.toLocaleString("es-AR")} ARS**.
 
-#### 🏢 Distribución Salarial por Dirección Municipal:
+#### Distribución Salarial por Dirección Municipal:
 | Dirección / Área | Cantidad de Agentes | Presupuesto Mensual | Promedio Salarial |
 | :--- | :---: | :---: | :---: |
 ${salaryByArea.map(a => `| ${a.name} | **${a.count}** | $${a.total.toLocaleString("es-AR")} | $${Math.round(a.count > 0 ? a.total / a.count : 0).toLocaleString("es-AR")} |`).join("\n")}
 
 *Nota: Excluye agentes dados de baja.*`;
   } else {
-    answer = `### 👥 Estado de la Nómina y Personal de Recursos Humanos
+    answer = `### Estado de la Nómina y Personal de Recursos Humanos
 
 Actualmente se registran **${totalPersonnel}** legajos en la base de datos municipal.
 
-#### 📊 Estado de Ocupación:
-*   🟢 **Activos:** ${activePersonnel} agentes
-*   🟡 **En Licencia/Vacaciones:** ${leavePersonnel} agentes
-*   🔴 **Dados de Baja:** ${inactivePersonnel} agentes
+#### Resumen de Estados de Ocupación:
+*   **Activos:** ${activePersonnel} agentes
+*   **En Licencia o Vacaciones:** ${leavePersonnel} agentes
+*   **Dados de Baja:** ${inactivePersonnel} agentes
 
-#### 📄 Modalidades de Contratación (Agentes Totales):
-*   💼 **Monotributistas:** ${contracts.MONOTRIBUTISTA}
-*   📅 **Mensualizados:** ${contracts.MENSUALIZADO}
-*   🏛️ **Planta Permanente:** ${contracts.PLANTA_PERMANENTE}
+#### Distribución por Modalidad de Contratación:
+*   **Monotributistas:** ${contracts.MONOTRIBUTISTA} agentes
+*   **Mensualizados:** ${contracts.MENSUALIZADO} agentes
+*   **Planta Permanente:** ${contracts.PLANTA_PERMANENTE} agentes
 
-¿Te gustaría saber los detalles salariales específicos de alguna de estas modalidades?`;
+Por favor, indique si requiere un análisis o desglose salarial de alguna de estas modalidades contractuales.`;
   }
 
   return {
@@ -1036,21 +1109,21 @@ async function handleBudgetQuery(query: string): Promise<AIResponse> {
       const executedAmount = order.items.reduce((sum, item) => sum + (Number(item.unitPrice) * Number(item.fulfilledQuantity)), 0);
       const pendingBalance = totalAmount - executedAmount;
 
-      let answer = `### 🛍️ Detalles de la Orden de Compra Nro #${order.number}\n\n`;
+      let answer = `### Detalles de la Orden de Compra Nro #${order.number}\n\n`;
       answer += `Se han extraído los datos reales de la base de datos municipal para la **OC #${order.number}**:\n\n`;
-      answer += `*   🏢 **Área Solicitante:** ${order.area?.name || "Sin área asignada"}\n`;
-      answer += `*   👥 **Proveedor:** ${order.providerName || "Desconocido"} (CUIT: ${order.providerCuit || "No registrado"})\n`;
-      answer += `*   📅 **Fecha de Entrega:** ${order.deliveryDate ? new Date(order.deliveryDate).toLocaleDateString("es-AR") : "No especificada"}\n`;
-      answer += `*   📍 **Lugar de Entrega:** ${order.deliveryPlace || "No especificado"}\n`;
-      answer += `*   💳 **Condición de Pago:** ${order.paymentTerms || "No especificada"}\n`;
-      answer += `*   📊 **Estado Administrativo:** \`${order.status}\`\n\n`;
+      answer += `*   **Área Solicitante:** ${order.area?.name || "Sin área asignada"}\n`;
+      answer += `*   **Proveedor:** ${order.providerName || "Desconocido"} (CUIT: ${order.providerCuit || "No registrado"})\n`;
+      answer += `*   **Fecha de Entrega:** ${order.deliveryDate ? new Date(order.deliveryDate).toLocaleDateString("es-AR") : "No especificada"}\n`;
+      answer += `*   **Lugar de Entrega:** ${order.deliveryPlace || "No especificado"}\n`;
+      answer += `*   **Condición de Pago:** ${order.paymentTerms || "No especificada"}\n`;
+      answer += `*   **Estado Administrativo:** \`${order.status}\`\n\n`;
 
-      answer += `#### 💰 Estado Financiero y Ejecución:\n`;
-      answer += `*   💵 **Monto Total Aprobado:** $${totalAmount.toLocaleString("es-AR")} ARS\n`;
-      answer += `*   🟢 **Monto Ejecutado (Entregado/Facturado):** $${executedAmount.toLocaleString("es-AR")} ARS\n`;
-      answer += `*   🔵 **Saldo Pendiente (Disponible/No entregado):** $${pendingBalance.toLocaleString("es-AR")} ARS\n\n`;
+      answer += `#### Estado Financiero y Ejecución:\n`;
+      answer += `*   **Monto Total Aprobado:** $${totalAmount.toLocaleString("es-AR")} ARS\n`;
+      answer += `*   **Monto Ejecutado (Entregado/Facturado):** $${executedAmount.toLocaleString("es-AR")} ARS\n`;
+      answer += `*   **Saldo Pendiente (Disponible/No entregado):** $${pendingBalance.toLocaleString("es-AR")} ARS\n\n`;
 
-      answer += `#### 📋 Detalle de Ítems e Insumos en la Orden:\n`;
+      answer += `#### Detalle de Ítems e Insumos en la Orden:\n`;
       if (order.items.length > 0) {
         answer += `| Ítem | Cantidad Solicitada | Entregado/Cumplido | Precio Unitario | Total |\n`;
         answer += `| :--- | :---: | :---: | :---: | :---: |\n`;
@@ -1072,7 +1145,7 @@ async function handleBudgetQuery(query: string): Promise<AIResponse> {
 
   // 2. Dynamic Check for Lists or Tables of Purchase Orders
   if (query.includes("lista") || query.includes("todas") || query.includes("tengo") || query.includes("cargar") || query.includes("que orden") || query.includes("qué orden") || query.includes("mostrar órdenes") || query.includes("mostrar ordenes")) {
-    let answer = `### 📋 Listado Completo de Órdenes de Compra Registradas\n\n`;
+    let answer = `### Listado Completo de Órdenes de Compra Registradas\n\n`;
     answer += `Aquí tienes el listado de todas las órdenes de compra reales en el sistema:\n\n`;
     answer += `| Nro Orden | Área Solicitante | Proveedor | Monto Total | Estado |\n`;
     answer += `| :--- | :--- | :--- | :---: | :---: |\n`;
@@ -1108,29 +1181,29 @@ async function handleBudgetQuery(query: string): Promise<AIResponse> {
 
   let answer = "";
   if (query.includes("gasto") || query.includes("presupuesto") || query.includes("gastado") || query.includes("monto")) {
-    answer = `### 💰 Análisis de Ejecución Presupuestaria y Gastos
+    answer = `### Análisis de Ejecución Presupuestaria y Gastos
 
 El gasto total aprobado y ejecutado mediante Órdenes de Compra es de **$${totalSpent.toLocaleString("es-AR")} ARS**.
 Adicionalmente, hay solicitudes en espera de aprobación por un total de **$${totalPendingAmount.toLocaleString("es-AR")} ARS**.
 
-#### 🏢 Gastos Aprobados por Dirección Municipal:
+#### Gastos Aprobados por Dirección Municipal:
 | Dirección / Área | Presupuesto Ejecutado |
 | :--- | :---: |
 ${spendByArea.map(a => `| ${a.name} | **$${a.total.toLocaleString("es-AR")}** |`).join("\n")}
 
-#### 🔝 Órdenes de Compra con Mayor Monto Registrado:
+#### Órdenes de Compra con Mayor Monto Registrado:
 ${topOrders.map((o, idx) => `${idx + 1}. **OC #${o.number}** - ${o.providerName || "Proveedor desconocido"} (${o.area?.name || "Sin área asignada"}): **$${Number(o.amount).toLocaleString("es-AR")}** - *Estado: ${o.status.replace("_", " ")}*`).join("\n")}`;
   } else {
-    answer = `### 🛍️ Gestión de Órdenes de Compra y Proveedores
+    answer = `### Gestión de Órdenes de Compra y Proveedores
 
 Se encuentran registradas **${totalOrders} Órdenes de Compra** en el sistema.
 
-#### 📊 Estado de las Órdenes:
-*   🟢 **Aprobadas/Cumplidas:** ${approvedOrders.length} (Monto: $${totalSpent.toLocaleString("es-AR")} ARS)
-*   🟡 **Pendientes de Aprobación:** ${pendingOrders.length} (Monto: $${totalPendingAmount.toLocaleString("es-AR")} ARS)
-*   📝 **Borradores / En Creación:** ${draftOrders.length}
+#### Estado de las Órdenes:
+*   **Aprobadas/Cumplidas:** ${approvedOrders.length} (Monto: $${totalSpent.toLocaleString("es-AR")} ARS)
+*   **Pendientes de Aprobación:** ${pendingOrders.length} (Monto: $${totalPendingAmount.toLocaleString("es-AR")} ARS)
+*   **Borradores / En Creación:** ${draftOrders.length}
 
-#### 👥 Información de Proveedores:
+#### Información de Proveedores:
 Actualmente trabajamos con **${providers.length} proveedores registrados**. Las órdenes de compra más recientes corresponden a ${orders.slice(-2).map(o => `*${o.providerName}*`).join(" y ")}.`;
   }
 
@@ -1161,19 +1234,19 @@ async function handleVehicleQuery(query: string): Promise<AIResponse> {
       const totalCost = records.reduce((sum, curr) => sum + Number(curr.amount), 0);
       const totalLiters = records.reduce((sum, curr) => sum + Number(curr.liters), 0);
 
-      let answer = `### 🚗 Historial de Combustible de la Unidad Patente "${matchedVehicle.plate}"\n\n`;
+      let answer = `### Historial de Combustible de la Unidad Patente "${matchedVehicle.plate}"\n\n`;
       answer += `Se han extraído de la base de datos municipal todos los consumos reales para el vehículo **${matchedVehicle.brand} ${matchedVehicle.model}**:\n\n`;
-      answer += `*   🏷️ **Marca y Modelo:** ${matchedVehicle.brand} ${matchedVehicle.model}\n`;
-      answer += `*   🪪 **Patente/Dominio:** ${matchedVehicle.plate}\n`;
-      answer += `*   ⛽ **Límite Mensual:** $${Number(matchedVehicle.fuelMonthlyLimit || 0).toLocaleString("es-AR")} ARS (Tarjeta: ${matchedVehicle.fuelCardNumber || "No registrada"})\n`;
-      answer += `*   📊 **Estado Operativo:** \`${matchedVehicle.status}\`\n\n`;
+      answer += `*   **Marca y Modelo:** ${matchedVehicle.brand} ${matchedVehicle.model}\n`;
+      answer += `*   **Patente/Dominio:** ${matchedVehicle.plate}\n`;
+      answer += `*   **Límite Mensual:** $${Number(matchedVehicle.fuelMonthlyLimit || 0).toLocaleString("es-AR")} ARS (Tarjeta: ${matchedVehicle.fuelCardNumber || "No registrada"})\n`;
+      answer += `*   **Estado Operativo:** \`${matchedVehicle.status}\`\n\n`;
 
-      answer += `#### 💰 Resumen de Consumo Acumulado:\n`;
-      answer += `*   💵 **Gasto Total de Combustible:** $${totalCost.toLocaleString("es-AR")} ARS\n`;
-      answer += `*   ⛽ **Total de Litros Cargados:** ${totalLiters.toLocaleString("es-AR")} Lts\n`;
-      answer += `*   💳 **Precio Promedio por Litro:** $${totalLiters > 0 ? Math.round(totalCost / totalLiters).toLocaleString("es-AR") : "0"} ARS/Lt\n\n`;
+      answer += `#### Resumen de Consumo Acumulado:\n`;
+      answer += `*   **Gasto Total de Combustible:** $${totalCost.toLocaleString("es-AR")} ARS\n`;
+      answer += `*   **Total de Litros Cargados:** ${totalLiters.toLocaleString("es-AR")} Lts\n`;
+      answer += `*   **Precio Promedio por Litro:** $${totalLiters > 0 ? Math.round(totalCost / totalLiters).toLocaleString("es-AR") : "0"} ARS/Lt\n\n`;
 
-      answer += `#### 📋 Detalle de Cargas de Combustible Registradas (${records.length}):\n`;
+      answer += `#### Detalle de Cargas de Combustible Registradas (${records.length}):\n`;
       if (records.length > 0) {
         answer += `| Fecha | Litros Cargados | Monto Cargado | Nro Ticket |\n`;
         answer += `| :--- | :---: | :---: | :---: |\n`;
@@ -1198,7 +1271,7 @@ async function handleVehicleQuery(query: string): Promise<AIResponse> {
     const expiredVtv = vehicles.filter(v => v.vtvExpiry && new Date(v.vtvExpiry) < new Date());
     const expiredInsurance = vehicles.filter(v => v.insuranceExpiry && new Date(v.insuranceExpiry) < new Date());
 
-    let answer = `### ⚠️ Alertas Críticas de Documentación de la Flota Municipal\n\n`;
+    let answer = `### Alertas Críticas de Documentación de la Flota Municipal\n\n`;
     answer += `Se encontraron unidades con seguros o verificaciones técnicas (VTV) vencidas:\n\n`;
 
     if (expiredVtv.length > 0 || expiredInsurance.length > 0) {
@@ -1208,11 +1281,11 @@ async function handleVehicleQuery(query: string): Promise<AIResponse> {
         const hasVtvExpired = v.vtvExpiry && new Date(v.vtvExpiry) < new Date();
         const hasInsExpired = v.insuranceExpiry && new Date(v.insuranceExpiry) < new Date();
         if (hasVtvExpired || hasInsExpired) {
-          answer += `| **${v.brand} ${v.model}** | ${v.plate} | ${hasVtvExpired ? `❌ Vencido (${new Date(v.vtvExpiry!).toLocaleDateString("es-AR")})` : "🟢 Al día"} | ${hasInsExpired ? `❌ Vencido (${new Date(v.insuranceExpiry!).toLocaleDateString("es-AR")})` : "🟢 Al día"} | \`${v.status}\` |\n`;
+          answer += `| **${v.brand} ${v.model}** | ${v.plate} | ${hasVtvExpired ? `Vencido (${new Date(v.vtvExpiry!).toLocaleDateString("es-AR")})` : "Al día"} | ${hasInsExpired ? `Vencido (${new Date(v.insuranceExpiry!).toLocaleDateString("es-AR")})` : "Al día"} | \`${v.status}\` |\n`;
         }
       });
     } else {
-      answer += `*🟢 ¡Todos los vehículos de la flota tienen la VTV y el seguro al día! No se registran alertas críticas.*`;
+      answer += `*Todos los vehículos de la flota tienen la VTV y el seguro al día. No se registran alertas críticas.*`;
     }
 
     return {
@@ -1235,15 +1308,15 @@ async function handleVehicleQuery(query: string): Promise<AIResponse> {
 
   let answer = "";
   if (cleanQuery.includes("combustible") || cleanQuery.includes("nafta") || cleanQuery.includes("litro") || cleanQuery.includes("gasto")) {
-    answer = `### ⛽ Control de Consumo de Combustible
+    answer = `### Control de Consumo de Combustible
 
 La flota municipal registra los siguientes consumos consolidados:
 
-*   💰 **Gasto Total de Combustible:** $${totalFuelCost.toLocaleString("es-AR")} ARS
-*   ⛽ **Total de Litros Cargados:** ${totalLiters.toLocaleString("es-AR")} Lts
-*   💳 **Precio Promedio por Litro:** $${totalLiters > 0 ? Math.round(totalFuelCost / totalLiters).toLocaleString("es-AR") : "0"} ARS/Lt
+*   **Gasto Total de Combustible:** $${totalFuelCost.toLocaleString("es-AR")} ARS
+*   **Total de Litros Cargados:** ${totalLiters.toLocaleString("es-AR")} Lts
+*   **Precio Promedio por Litro:** $${totalLiters > 0 ? Math.round(totalFuelCost / totalLiters).toLocaleString("es-AR") : "0"} ARS/Lt
 
-#### 🚗 Consumo por Vehículo Reciente:
+#### Consumo por Vehículo Reciente:
 ${vehicles.map(v => {
   const recs = fuelRecords.filter(r => r.vehicleId === v.id);
   const totalAm = recs.reduce((s, c) => s + Number(c.amount), 0);
@@ -1251,26 +1324,26 @@ ${vehicles.map(v => {
   return recs.length > 0 ? `*   **${v.brand} ${v.model} (${v.plate}):** $${totalAm.toLocaleString("es-AR")} ARS (${lts} Lts)` : null;
 }).filter(Boolean).slice(0, 4).join("\n")}`;
   } else {
-    answer = `### 🚗 Estado de la Flota Logística Municipal
+    answer = `### Estado de la Flota Logística Municipal
 
 El municipio cuenta con **${totalVehicles} vehículos registrados**.
 
-#### 📊 Estado de Ocupación de Unidades:
-*   🟢 **Disponibles:** ${available} unidades
-*   🔧 **En Taller mecánico:** ${inWorkshop} unidades
-*   🔴 **Fuera de Servicio:** ${outOfService} unidades
+#### Resumen de Estados de Ocupación:
+*   **Disponibles:** ${available} unidades
+*   **En Taller mecánico:** ${inWorkshop} unidades
+*   **Fuera de Servicio:** ${outOfService} unidades
 
-#### 📅 Agenda de Reservas y Movilidad:
-*   🟡 **Reservas pendientes de autorización:** ${pendingReservations} solicitudes
-*   🟢 **Viajes autorizados/en curso:** ${activeReservations} reservas activas
+#### Agenda de Reservas y Movilidad:
+*   **Reservas pendientes de autorización:** ${pendingReservations} solicitudes
+*   **Viajes autorizados o en curso:** ${activeReservations} reservas activas
 
-#### ⚠️ Alertas de Documentación Crítica:
+#### Alertas de Documentación Crítica:
 ${vehicles.map(v => {
   const alerts = [];
   if (v.vtvExpiry && new Date(v.vtvExpiry) < new Date()) alerts.push("VTV Vencida");
   if (v.insuranceExpiry && new Date(v.insuranceExpiry) < new Date()) alerts.push("Seguro Vencido");
-  return alerts.length > 0 ? `*   **${v.brand} ${v.model} (${v.plate}):** ❌ ${alerts.join(" y ")}` : null;
-}).filter(Boolean).join("\n") || "*¡No hay alertas de documentación vencida en la flota! Todo al día.*"}`;
+  return alerts.length > 0 ? `*   **${v.brand} ${v.model} (${v.plate}):** ${alerts.join(" y ")}` : null;
+}).filter(Boolean).join("\n") || "*No hay alertas de documentación vencida en la flota.*"}`;
   }
 
   return {
@@ -1293,17 +1366,17 @@ async function handleAgreementQuery(query: string): Promise<AIResponse> {
 
   const totalAmount = agreements.reduce((sum, curr) => sum + Number(curr.amount || 0), 0);
 
-  const answer = `### 📜 Registro de Convenios Institucionales y Acuerdos
+  const answer = `### Registro de Convenios Institucionales y Acuerdos
 
 Actualmente el municipio administra **${total} convenios institucionales**.
 
-#### 📊 Resumen Financiero y Operativo:
-*   💼 **Monto total comprometido en convenios:** $${totalAmount.toLocaleString("es-AR")} ARS
-*   🟢 **Convenios Vigentes:** ${active}
-*   🟡 **Convenios En Revisión:** ${review}
-*   🔴 **Convenios Vencidos:** ${expired}
+#### Resumen Financiero y Operativo:
+*   **Monto total comprometido en convenios:** $${totalAmount.toLocaleString("es-AR")} ARS
+*   **Convenios Vigentes:** ${active}
+*   **Convenios En Revisión:** ${review}
+*   **Convenios Vencidos:** ${expired}
 
-#### 🏢 Distribución por Dirección de Área:
+#### Distribución por Dirección de Área:
 ${areas.map(a => {
   const count = agreements.filter(ag => ag.areaId === a.id).length;
   const amt = agreements.filter(ag => ag.areaId === a.id).reduce((s, c) => s + Number(c.amount || 0), 0);
@@ -1335,14 +1408,14 @@ async function handleSocialQuery(query: string): Promise<AIResponse> {
 
     const matchedPerson = people.find(p => p.dni && p.dni.replace(/[^0-9]/g, "") === targetDni);
     if (matchedPerson) {
-      let answer = `### 👤 Legajo Social Encontrado: ${matchedPerson.lastName}, ${matchedPerson.firstName}\n\n`;
+      let answer = `### Legajo Social Encontrado: ${matchedPerson.lastName}, ${matchedPerson.firstName}\n\n`;
       answer += `Se han extraído de la base de datos municipal todos los detalles para el DNI **${matchedPerson.dni}**:\n\n`;
-      answer += `*   🪪 **DNI / Documento:** ${matchedPerson.dni}\n`;
-      answer += `*   📞 **Teléfono:** ${matchedPerson.phone || "No registrado"}\n`;
-      answer += `*   📍 **Dirección:** ${matchedPerson.address || "No registrada"}\n`;
-      answer += `*   📅 **Fecha de Nacimiento:** ${matchedPerson.birthDate ? new Date(matchedPerson.birthDate).toLocaleDateString("es-AR") : "No registrada"}\n\n`;
+      answer += `*   **DNI / Documento:** ${matchedPerson.dni}\n`;
+      answer += `*   **Teléfono:** ${matchedPerson.phone || "No registrado"}\n`;
+      answer += `*   **Dirección:** ${matchedPerson.address || "No registrada"}\n`;
+      answer += `*   **Fecha de Nacimiento:** ${matchedPerson.birthDate ? new Date(matchedPerson.birthDate).toLocaleDateString("es-AR") : "No registrada"}\n\n`;
 
-      answer += `#### 📁 Casos de Asistencia Social Asociados (${matchedPerson.cases.length}):\n`;
+      answer += `#### Casos de Asistencia Social Asociados (${matchedPerson.cases.length}):\n`;
       if (matchedPerson.cases.length > 0) {
         matchedPerson.cases.forEach((c, idx) => {
           answer += `\n${idx + 1}. **Caso: ${c.title}**\n`;
@@ -1396,8 +1469,8 @@ async function handleSocialQuery(query: string): Promise<AIResponse> {
       return cleanDni.endsWith(digit);
     });
 
-    let answer = `### 🔍 Ciudadanos registrados con DNI terminado en "${digit}"\n\n`;
-    answer += `Se encontraron **${filteredPeople.length} personas** en la base de datos municipal cuyo DNI termina en **"${digit}"**:\n\n`;
+    let answer = `### Ciudadanos Registrados con DNI Terminado en "${digit}"\n\n`;
+    answer += `Se encontraron **${filteredPeople.length} personas** en la base de datos municipal cuyo número de DNI finaliza con el dígito **"${digit}"**:\n\n`;
 
     if (filteredPeople.length > 0) {
       answer += `| Ciudadano | Nro Documento (DNI) | Teléfono / Contacto | Dirección |\n`;
@@ -1442,8 +1515,8 @@ async function handleSocialQuery(query: string): Promise<AIResponse> {
     const totalCount = filteredPeople.length;
     const targetField = isFirstName ? "Nombre" : "Apellido";
 
-    let answer = `### 🔍 Búsqueda de Ciudadanos por Inicial "${targetLetter}"\n\n`;
-    answer += `Se encontraron **${totalCount} personas** registrados en la base de datos municipal con **${targetField}** que comienza por la letra **"${targetLetter}"**:\n\n`;
+    let answer = `### Búsqueda de Ciudadanos por Inicial "${targetLetter}"\n\n`;
+    answer += `Se encontraron **${totalCount} personas** registradas en la base de datos municipal con **${targetField}** que comienza por la letra **"${targetLetter}"**:\n\n`;
 
     if (totalCount > 0) {
       answer += `| Ciudadano | Nro Documento (DNI) | Teléfono / Contacto | Dirección |\n`;
@@ -1506,15 +1579,15 @@ async function handleSocialQuery(query: string): Promise<AIResponse> {
       });
 
       if (matchingPeople.length > 0) {
-        let answer = `### 👤 Legajo Social Encontrado: ${matchingPeople[0].lastName}, ${matchingPeople[0].firstName}\n\n`;
+        let answer = `### Legajo Social Encontrado: ${matchingPeople[0].lastName}, ${matchingPeople[0].firstName}\n\n`;
         const p = matchingPeople[0];
         answer += `He extraído los detalles reales del legajo social de la base de datos municipal:\n\n`;
-        answer += `*   🪪 **DNI / Documento:** ${p.dni}\n`;
-        answer += `*   📞 **Teléfono:** ${p.phone || "No registrado"}\n`;
-        answer += `*   📍 **Dirección:** ${p.address || "No registrada"}\n`;
-        answer += `*   📅 **Fecha de Nacimiento:** ${p.birthDate ? new Date(p.birthDate).toLocaleDateString("es-AR") : "No registrada"}\n\n`;
+        answer += `*   **DNI / Documento:** ${p.dni}\n`;
+        answer += `*   **Teléfono:** ${p.phone || "No registrado"}\n`;
+        answer += `*   **Dirección:** ${p.address || "No registrada"}\n`;
+        answer += `*   **Fecha de Nacimiento:** ${p.birthDate ? new Date(p.birthDate).toLocaleDateString("es-AR") : "No registrada"}\n\n`;
 
-        answer += `#### 📁 Casos de Asistencia Social Asociados (${p.cases.length}):\n`;
+        answer += `#### Casos de Asistencia Social Asociados (${p.cases.length}):\n`;
         if (p.cases.length > 0) {
           p.cases.forEach((c, idx) => {
             answer += `\n${idx + 1}. **Caso: ${c.title}**\n`;
@@ -1543,7 +1616,7 @@ async function handleSocialQuery(query: string): Promise<AIResponse> {
           }
         }
 
-        answer += `\n🔗 **[Ver Legajo Completo en Ficha Única](/people/${p.id})**`;
+        answer += `\n[Ver Legajo Completo en Ficha Única](/people/${p.id})`;
 
         return {
           intent: "social_person_lookup",
@@ -1553,7 +1626,7 @@ async function handleSocialQuery(query: string): Promise<AIResponse> {
       } else {
         return {
           intent: "social_person_not_found",
-          answer: `🔍 No logré encontrar a ningún ciudadano con el nombre o apellido que coincida con "*${targetName}*" en el Registro Único de personas.\n\nPor favor, verifica el apellido o introduce el número de DNI para realizar una búsqueda exacta.`
+          answer: `No se logró encontrar a ningún ciudadano con el nombre o apellido que coincida con "${targetName}" en el Registro Único de personas.\n\nPor favor, verifique el apellido o introduzca el número de DNI para realizar una búsqueda exacta.`
         };
       }
     }
@@ -1580,34 +1653,34 @@ async function handleSocialQuery(query: string): Promise<AIResponse> {
     BAJA: cases.filter(c => c.priority === "BAJA").length,
   };
 
-  const answer = `### 📁 Panel de Casos y Monitoreo Social
+  const answer = `### Panel de Casos y Monitoreo Social
 
-La plataforma registra la siguiente situación de vulnerabilidad y asistencia social:
+Se presenta el reporte sobre la situación de vulnerabilidad y demandas de asistencia social registradas:
 
-#### 📊 Métricas Principales:
-*   👥 **Total de Ciudadanos Registrados:** ${people.length} personas
-*   🏠 **Familias Consolidadas:** ${families.length} grupos familiares
-*   📂 **Casos Registrados Totales:** ${totalCases} expedientes
+#### Métricas Principales:
+*   **Total de Ciudadanos Registrados:** ${people.length} personas
+*   **Familias Consolidadas:** ${families.length} grupos familiares
+*   **Casos Registrados Totales:** ${totalCases} expedientes
 
-#### 🏷️ Estado y Severidad de Casos Activos:
-*   🟢 **Casos Activos:** ${activeCases} (Abiertos o en proceso de asistencia)
-*   🔴 **Casos Críticos/Urgentes Activos:** **${criticalCases} casos** (Requieren atención inmediata)
-*   🏁 **Casos Resueltos/Cerrados:** ${closedCases} asistencias completas
+#### Estado y Severidad de Casos Activos:
+*   **Casos Activos:** ${activeCases} (Abiertos o en proceso de asistencia)
+*   **Casos Críticos o Urgentes Activos:** **${criticalCases} casos** (Requieren intervención inmediata)
+*   **Casos Resueltos o Cerrados:** ${closedCases} asistencias completas
 
-#### 📌 Severidad de la Demanda Social (Casos Totales):
-*   🚨 **Urgente:** ${priorities.URGENTE}
-*   ⚠️ **Alta:** ${priorities.ALTA}
-*   🔵 **Media:** ${priorities.MEDIA}
-*   🟢 **Baja:** ${priorities.BAJA}
+#### Severidad de la Demanda Social (Casos Totales):
+*   **Urgente:** ${priorities.URGENTE} casos
+*   **Alta:** ${priorities.ALTA} casos
+*   **Media:** ${priorities.MEDIA} casos
+*   **Baja:** ${priorities.BAJA} casos
 
-#### 🏢 Distribución de Casos por Dirección de Atención:
+#### Distribución de Casos por Dirección de Atención:
 ${areas.map(a => {
   const count = cases.filter(c => c.areaId === a.id).length;
   const active = cases.filter(c => c.areaId === a.id && (c.status === "ABIERTO" || c.status === "EN_PROCESO")).length;
   return count > 0 ? `*   **${a.name}:** ${count} totales (${active} activos)` : null;
 }).filter(Boolean).join("\n")}
 
-¿Te gustaría consultar detalles de algún caso crítico en particular?`;
+Por favor, especifique si requiere un informe pormenorizado de algún expediente de asistencia social en particular.`;
 
   return {
     intent: "social_query",
@@ -1628,23 +1701,23 @@ async function handleSupplyQuery(query: string): Promise<AIResponse> {
 
   const pendingRequests = requests.filter(r => r.status === "PENDIENTE").length;
 
-  const answer = `### 📦 Inventario de Insumos y Depósito Social
+  const answer = `### Inventario de Insumos y Depósito Social
 
-Estado actual del stock de asistencia municipal:
+Estado consolidado del stock de asistencia y depósito municipal:
 
-*   🔢 **Artículos Registrados en Depósito:** ${totalItems} ítems
-*   🚨 **Sin Stock (Agotado):** **${outOfStock} ítems**
-*   ⚠️ **En Stock Mínimo/Alerta:** **${lowStock} ítems**
+*   **Artículos Registrados en Depósito:** ${totalItems} ítems
+*   **Sin Stock (Agotado):** **${outOfStock} ítems**
+*   **En Stock Mínimo o Alerta:** **${lowStock} ítems**
 
-#### 📋 Solicitudes de Insumos Sociales:
-*   ⏳ **Pendientes de Entrega:** ${pendingRequests} solicitudes de áreas sociales
+#### Solicitudes de Insumos de Áreas Sociales:
+*   **Pendientes de Entrega:** ${pendingRequests} solicitudes de áreas sociales en proceso de distribución
 
-#### ⚠️ Alertas de Artículos Críticos (Agotados o en Stock Mínimo):
+#### Alertas de Artículos Críticos (Agotados o en Stock Mínimo):
 ${items.map(i => {
-  if (i.stock === 0) return `*   ❌ **${i.name}:** AGOTADO (Área: ${i.area?.name || "Global"})`;
-  if (i.stock <= i.minStock) return `*   ⚠️ **${i.name}:** Stock bajo (${i.stock} de ${i.minStock} mín.)`;
+  if (i.stock === 0) return `*   **${i.name}:** AGOTADO (Área: ${i.area?.name || "Global"})`;
+  if (i.stock <= i.minStock) return `*   **${i.name}:** Stock bajo (${i.stock} de ${i.minStock} mín.)`;
   return null;
-}).filter(Boolean).slice(0, 5).join("\n") || "*¡Depósito totalmente abastecido! No hay alertas de stock bajo.*"}`;
+}).filter(Boolean).slice(0, 5).join("\n") || "*Depósito totalmente abastecido sin alertas de stock bajo.*"}`;
 
   return {
     intent: "supply_query",
@@ -1654,20 +1727,20 @@ ${items.map(i => {
 }
 
 function handleGeneralFallback(queryText: string): AIResponse {
-  const answer = `### 🤖 ¡Hola! Soy tu Asistente Inteligente Municipal
+  const answer = `### Consulta de Datos Municipales
 
-No logré identificar con precisión qué conjunto de datos deseas consultar con la frase: *"${queryText}"*.
+No ha sido posible identificar con precisión los parámetros de su consulta para la frase: "${queryText}".
 
-Puedo realizar análisis profundos de la base de datos municipal en tiempo real. Prueba consultarme sobre alguno de estos temas:
+El asistente puede proveer informes ejecutivos estructurados sobre los siguientes módulos del sistema:
 
-*   👥 **Recursos Humanos:** *"¿Cuál es la nómina de personal activo?", "¿Cuál es el presupuesto de sueldos por área?"*
-*   💰 **Presupuestos y Compras:** *"¿Cuánto gastamos en órdenes de compra?", "¿Qué órdenes de compra están pendientes de aprobación?"*
-*   🚗 **Flota de Vehículos:** *"¿Cuál es el consumo de nafta?", "¿Qué autos están reservados o en taller?", "¿Hay seguros vencidos?"*
-*   📜 **Convenios:** *"Mostrame los convenios vigentes", "¿Cuánto dinero hay invertido en convenios?"*
-*   📁 **Casos Sociales:** *"¿Cuántos ciudadanos y familias tenemos registrados?", "¿Cuántos casos urgentes tenemos abiertos?"*
-*   📦 **Inventario:** *"¿Qué insumos están sin stock en depósito?"*
+*   **Recursos Humanos:** Nómina de personal activo, licencias, régimen contractual y cálculo del gasto salarial consolidado.
+*   **Presupuestos y Compras:** Análisis de ejecución real y estado de Órdenes de Compra y cuentas de proveedores.
+*   **Flota de Vehículos:** Control de consumo de combustible, alertas por expiración de documentación (VTV/Seguro) y coordinación de reservas de la flota.
+*   **Convenios:** Registro de convenios vigentes, montos devengados e informe por área de dependencia.
+*   **Casos Sociales:** Padrón de ciudadanos, legajos familiares y expedientes de demanda clasificados por prioridad.
+*   **Inventario:** Monitoreo de stock de insumos en depósito y solicitudes de distribución.
 
-Escribe cualquier pregunta relacionada y te traeré los datos precisos al instante.`;
+Por favor, reformule su consulta con términos específicos para generar el informe ejecutivo correspondiente.`;
 
   return {
     intent: "fallback",
@@ -1743,8 +1816,8 @@ async function handleDocumentRAGQuery(query: string): Promise<AIResponse> {
 
   const pdfDocs = documentsToParse.filter(d => d.url && d.url.toLowerCase().endsWith(".pdf"));
 
-  let answer = `### 📂 Análisis de Contenidos de Documentos y PDFs\n\n`;
-  answer += `He analizado los documentos digitales cargados para el **${subjectName}**:\n\n`;
+  let answer = `### Análisis de Contenidos de Documentos y PDFs\n\n`;
+  answer += `Se ha completado el análisis de los documentos digitales relacionados con: **${subjectName}**:\n\n`;
 
   if (pdfDocs.length > 0) {
     let extractedContext = "";
@@ -1753,9 +1826,9 @@ async function handleDocumentRAGQuery(query: string): Promise<AIResponse> {
       const text = await extractTextFromPDFFile(filePath);
       if (text.trim().length > 0) {
         extractedContext += `\n--- CONTENIDO DEL ARCHIVO: ${doc.name} ---\n${text.substring(0, 4000)}\n`; // limit text length per file to prevent prompt overflow
-        answer += `*   📄 **Archivo analizado con éxito:** \`${doc.name}\` (${doc.url})\n`;
+        answer += `*   **Archivo analizado con éxito:** \`${doc.name}\` (${doc.url})\n`;
       } else {
-        answer += `*   ⚠️ **Archivo vacío o ilegible:** \`${doc.name}\`\n`;
+        answer += `*   **Archivo sin contenido o ilegible:** \`${doc.name}\`\n`;
       }
     }
 
@@ -1971,7 +2044,7 @@ async function handleAgentCommandQuery(query: string, userId?: string): Promise<
   if (!userId) {
     return {
       intent: "command_error",
-      answer: "⚠️ No se pudo identificar tu sesión de usuario. Debes iniciar sesión para crear tareas o reservas."
+      answer: "Error de autenticación: No se pudo identificar su sesión de usuario. Por favor inicie sesión para agendar tareas o reservas."
     };
   }
 
@@ -2000,13 +2073,13 @@ async function handleAgentCommandQuery(query: string, userId?: string): Promise<
 
     return {
       intent: "task_created",
-      answer: `### ✅ ¡Tarea creada con éxito!
-He registrado tu nueva tarea en la base de datos municipal:
-*   📌 **Título:** ${task.title}
-*   📅 **Fecha de Vencimiento:** ${task.dueDate ? new Date(task.dueDate).toLocaleDateString("es-AR", formatOptions) : "Sin fecha"}
-*   👤 **Asignado a:** Tu usuario de MuniGestión
+      answer: `### Registro de Tarea Completado
+Se ha registrado la nueva tarea en la base de datos municipal:
+*   **Título:** ${task.title}
+*   **Fecha de Vencimiento:** ${task.dueDate ? new Date(task.dueDate).toLocaleDateString("es-AR", formatOptions) : "Sin fecha especificada"}
+*   **Asignado a:** Usuario de MuniGestión correspondiente
 
-¿Deseas que agende alguna otra cosa en tu calendario unificado?`,
+Indique si requiere agendar compromisos o tareas adicionales en el calendario unificado.`,
       dataSummary: task
     };
   }
@@ -2028,7 +2101,7 @@ He registrado tu nueva tarea en la base de datos municipal:
     if (!matchedVehicle) {
       return {
         intent: "reservation_error",
-        answer: "⚠️ No se encontraron vehículos de la flota disponibles para realizar la reserva."
+        answer: "No se encontraron vehículos de la flota disponibles para realizar la reserva logística."
       };
     }
 
@@ -2050,14 +2123,14 @@ He registrado tu nueva tarea en la base de datos municipal:
 
     return {
       intent: "reservation_created",
-      answer: `### ✅ ¡Reserva de Vehículo realizada con éxito!
-He registrado la reserva logística en el calendario unificado del municipio:
-*   🚗 **Vehículo:** ${matchedVehicle.brand} ${matchedVehicle.model} (Patente: ${matchedVehicle.plate})
-*   📅 **Inicio:** ${reservation.startDate.toLocaleString("es-AR")}
-*   📅 **Fin:** ${reservation.endDate.toLocaleString("es-AR")}
-*   📝 **Motivo:** ${reservation.reason}
+      answer: `### Registro de Reserva de Vehículo Completado
+Se ha registrado la reserva de flota logística en el calendario unificado del municipio:
+*   **Vehículo:** ${matchedVehicle.brand} ${matchedVehicle.model} (Patente: ${matchedVehicle.plate})
+*   **Inicio:** ${reservation.startDate.toLocaleString("es-AR")}
+*   **Fin:** ${reservation.endDate.toLocaleString("es-AR")}
+*   **Motivo:** ${reservation.reason}
 
-¡Listo para salir a la calle! El vehículo ha quedado bloqueado para tu uso en esas horas.`,
+La unidad automotriz ha quedado reservada y bloqueada para su uso exclusivo durante el bloque horario detallado.`,
       dataSummary: reservation
     };
   }

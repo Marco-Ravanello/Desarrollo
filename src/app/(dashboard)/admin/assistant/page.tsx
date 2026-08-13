@@ -52,7 +52,7 @@ export default function AssistantPage() {
     {
       id: "welcome",
       sender: "assistant",
-      text: "### 👋 ¡Hola! Soy tu Asistente Inteligente Municipal\n\nEstoy conectado en tiempo real a la base de datos de MuniGestión. Puedo responder tus preguntas sobre **Recursos Humanos, Presupuesto, Vehículos, Casos Sociales, Convenios e Inventario**.\n\n¿En qué puedo ayudarte hoy?",
+      text: "### Sistema de Asistencia Inteligente Municipal\n\nEste canal automatizado facilita la consulta y auditoría de la base de datos de MuniGestión en tiempo real. Puede formular preguntas o solicitar reportes estructurados sobre los módulos de **Recursos Humanos, Presupuesto, Vehículos, Casos Sociales, Convenios e Inventario**.\n\nPor favor, detalle la consulta administrativa o el análisis que desea realizar.",
       timestamp: new Date()
     }
   ]);
@@ -343,7 +343,7 @@ export default function AssistantPage() {
       {
         id: "welcome",
         sender: "assistant",
-        text: "### 👋 ¡Hola! Soy tu Asistente Inteligente Municipal\n\nEstoy conectado en tiempo real a la base de datos de MuniGestión. Puedo responder tus preguntas sobre **Recursos Humanos, Presupuesto, Vehículos, Casos Sociales, Convenios e Inventario**.\n\n¿En qué puedo ayudarte hoy?",
+        text: "### Sistema de Asistencia Inteligente Municipal\n\nEste canal automatizado facilita la consulta y auditoría de la base de datos de MuniGestión en tiempo real. Puede formular preguntas o solicitar reportes estructurados sobre los módulos de **Recursos Humanos, Presupuesto, Vehículos, Casos Sociales, Convenios e Inventario**.\n\nPor favor, detalle la consulta administrativa o el análisis que desea realizar.",
         timestamp: new Date()
       }
     ]);
@@ -420,7 +420,6 @@ export default function AssistantPage() {
       if (trimmed.startsWith("###")) {
         elements.push(
           <h3 key={index} className="text-lg font-extrabold tracking-tight mt-5 mb-2 text-foreground flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-blue-500 animate-pulse" />
             {trimmed.replace("###", "").trim()}
           </h3>
         );
