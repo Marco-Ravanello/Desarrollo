@@ -509,84 +509,12 @@ export async function performUniversalDBSearch(
   };
 }
 
-export function isGreetingOrGeneralQuery(queryText: string): boolean {
-  const clean = queryText.toLowerCase().trim();
-  const greetingsAndGeneral = [
-    "hola", "buenas", "que tal", "qué tal", "quien sos", "quién sos", "que podes hacer", "qué podés hacer",
-    "que puede hacer", "qué puede hacer", "ayuda", "gracias", "chau", "adios", "adiós", "buen dia", "buen día",
-    "buenas tardes", "buenas noches", "saludos", "como estas", "cómo estás", "como andas", "cómo andás"
-  ];
-  return greetingsAndGeneral.some(g => clean.includes(g));
-}
-
-export function handleGreetingQuery(queryText: string): AIResponse {
-  const clean = queryText.toLowerCase().trim();
-  let answer = "";
-  let intent = "greeting";
-
-  if (clean.includes("gracias")) {
-    answer = `### ❤️ ¡De nada!
-
-Es un placer ayudarte a gestionar las tareas del municipio. Si necesitas consultar algo más sobre Recursos Humanos, Presupuesto, Vehículos, Casos Sociales o Inventario, no dudes en escribirme.
-
-¡Que tengas un excelente día de gestión!`;
-    intent = "thanks";
-  } else if (clean.includes("chau") || clean.includes("adios") || clean.includes("adiós")) {
-    answer = `### 👋 ¡Hasta luego!
-
-Gracias por utilizar el Asistente Inteligente Municipal. Que tengas un excelente día. Estaré aquí cuando necesites seguir gestionando.`;
-    intent = "goodbye";
-  } else {
-    answer = `### 🤖 ¡Hola! Soy tu Asistente Inteligente Municipal
-
-Estoy aquí para ayudarte a agilizar y consultar de forma segura toda la información administrativa y social del municipio.
-
-#### 🌟 Mis capacidades principales incluyen:
-*   👥 **Recursos Humanos (RRHH):** Consultar personal activo, licencias, salarios y calcular gastos salariales mensuales por dirección.
-*   💰 **Presupuesto y Compras:** Analizar el estado de Órdenes de Compra (Borradores, Pendientes, Aprobadas), saldo pendiente, montos ejecutados e información de proveedores.
-*   🚗 **Vehículos y Logística:** Monitorear el consumo de nafta, kilometraje, alertar sobre seguros y VTV vencidas, agendar reservas de flota o registrar derivaciones mecánicas.
-*   📜 **Convenios Institucionales:** Buscar acuerdos por área municipal, montos comprometidos y vigencia de convenios institucionales.
-*   📂 **Acción Social:** Consultar el padrón de ciudadanos, grupos familiares, casos de asistencia vulnerables, filtrar por DNI o inicial de apellido, y realizar RAG interactivo analizando expedientes PDF.
-*   📦 **Control de Insumos (Depósito):** Verificar alertas de stock bajo o artículos agotados en tiempo real.
-*   📅 **Agenda Unificada:** Agendar eventos, reuniones o tareas personales y reservas de flota directamente desde el chat.
-
-¿En qué puedo asistirte hoy?`;
-  }
-
-  return {
-    intent,
-    answer,
-    dataSummary: {
-      hasResults: true,
-      sources: [],
-      actions: [
-        { label: "Ver en Mapa Social", actionType: "NAVIGATE", payload: { path: "/maps" } },
-        { label: "Ver Nómina de RRHH", actionType: "NAVIGATE", payload: { path: "/admin/hr" } },
-        { label: "Ver Agenda Unificada", actionType: "NAVIGATE", payload: { path: "/admin/calendar" } },
-        { label: "Ver Órdenes de Compra", actionType: "NAVIGATE", payload: { path: "/admin/purchase-orders" } }
-      ]
-    }
-  };
-}
-
 export async function queryAIAssistantStream(
   queryText: string,
   history?: { role: "user" | "assistant"; content: string }[],
   userId?: string,
   onChunk?: (chunk: string) => void
 ): Promise<AIResponse> {
-  if (isGreetingOrGeneralQuery(queryText)) {
-    const greetingResponse = handleGreetingQuery(queryText);
-    if (onChunk) {
-      const words = greetingResponse.answer.split(" ");
-      for (let i = 0; i < words.length; i++) {
-        onChunk(words[i] + (i === words.length - 1 ? "" : " "));
-        await new Promise(resolve => setTimeout(resolve, 15));
-      }
-    }
-    return greetingResponse;
-  }
-
   const resolvedQuery = resolveAnaphoraAndContext(queryText, history);
   const query = resolvedQuery.toLowerCase().trim();
 

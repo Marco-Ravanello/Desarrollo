@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { queryAssistantAction } from "../actions/assistant-actions";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -20,7 +21,13 @@ import {
   Volume2,
   VolumeX,
   Mic,
-  MicOff
+  MicOff,
+  MapPin,
+  FileSpreadsheet,
+  CheckCircle2,
+  ArrowUpRight,
+  ExternalLink,
+  ShieldAlert
 } from "lucide-react";
 import { toast } from "sonner";
 import { useTheme } from "next-themes";
@@ -37,6 +44,7 @@ interface Message {
 const COLORS = ['#3b82f6', '#10b981', '#f5a623', '#ef4444', '#8b5cf6', '#ec4899'];
 
 export default function AssistantPage() {
+  const router = useRouter();
   const { theme } = useTheme();
   const isDark = theme === "dark";
 
