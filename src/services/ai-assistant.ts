@@ -804,165 +804,111 @@ export async function queryAIAssistant(
 // --- SUB-HANDLERS ---
 
 async function handleChartRequest(query: string): Promise<AIResponse> {
-  // Determine target topic for the chart
-  if (query.includes("caso") || query.includes("social") || query.includes("área") || query.includes("area") || query.includes("vulnerabilidad") || query.includes("edad") || query.includes("género") || query.includes("genero") || query.includes("prioridad") || query.includes("estado")) {
+  const cleanQuery = query.toLowerCase();
 
-    // Dynamic Case Variable Sub-routing
-    if (query.includes("edad") || query.includes("año") || query.includes("nacimiento") || query.includes("rango")) {
-      const casesWithPeople = await prisma.case.findMany({
-        include: { person: true }
-      });
+  // 1. Gráfico por Inicial de Apellido o Nombre
+  if (cleanQuery.includes("letra") || cleanQuery.includes("inicial") || cleanQuery.includes("apellido") || cleanQuery.includes("nombre")) {
+    const people = await prisma.person.findMany();
+    const isFirstName = cleanQuery.includes("nombre");
+    const counts: Record<string, number> = {};
 
-      const ageBuckets = {
-        "Niños (0-12)": 0,
-        "Adolescentes (13-17)": 0,
-        "Jóvenes (18-29)": 0,
-        "Adultos (30-59)": 0,
-        "Adultos Mayores (60+)": 0,
-        "No registrado": 0,
-      };
-
-      const now = new Date();
-      casesWithPeople.forEach(c => {
-        if (c.person && c.person.birthDate) {
-          const birth = new Date(c.person.birthDate);
-          let age = now.getFullYear() - birth.getFullYear();
-          const monthDiff = now.getMonth() - birth.getMonth();
-          if (monthDiff < 0 || (monthDiff === 0 && now.getDate() < birth.getDate())) {
-            age--;
-          }
-          if (age <= 12) ageBuckets["Niños (0-12)"]++;
-          else if (age <= 17) ageBuckets["Adolescentes (13-17)"]++;
-          else if (age <= 29) ageBuckets["Jóvenes (18-29)"]++;
-          else if (age <= 59) ageBuckets["Adultos (30-59)"]++;
-          else ageBuckets["Adultos Mayores (60+)"]++;
-        } else {
-          ageBuckets["No registrado"]++;
-        }
-      });
-
-      const chartData = Object.entries(ageBuckets)
-        .map(([name, value]) => ({ name, value }))
-        .filter(item => item.value > 0);
-
-      return {
-        intent: "chart_render",
-        answer: `### Gráfico: Casos Sociales por Rango de Edad\n\nSe presenta la visualización de los casos de asistencia social clasificados según el rango de edad de los ciudadanos afectados en el padrón municipal.`,
-        dataSummary: {
-          chart: {
-            type: "bar",
-            title: "Casos por Rango de Edad",
-            color: "#3b82f6",
-            data: chartData
-          }
-        }
-      };
-    }
-
-    if (query.includes("género") || query.includes("genero") || query.includes("sexo")) {
-      const casesWithPeople = await prisma.case.findMany({
-        include: { person: true }
-      });
-
-      const genderCounts: Record<string, number> = {};
-      casesWithPeople.forEach(c => {
-        const g = c.person?.gender ? c.person.gender.toUpperCase() : "NO ESPECIFICADO";
-        genderCounts[g] = (genderCounts[g] || 0) + 1;
-      });
-
-      const chartData = Object.entries(genderCounts)
-        .map(([name, value]) => ({
-          name: name === "FEMENINO" ? "Femenino" : name === "MASCULINO" ? "Masculino" : name === "OTRO" ? "Otro" : "No especificado",
-          value
-        }));
-
-      return {
-        intent: "chart_render",
-        answer: `### Gráfico: Casos por Género del Ciudadano\n\nEste gráfico representa la distribución de casos sociales registrados según la identidad de género declarada en el legajo único de asistencia.`,
-        dataSummary: {
-          chart: {
-            type: "pie",
-            title: "Distribución por Género",
-            data: chartData
-          }
-        }
-      };
-    }
-
-    if (query.includes("prioridad") || query.includes("urgencia") || query.includes("severidad")) {
-      const cases = await prisma.case.findMany();
-      const priorityCounts: Record<string, number> = {
-        "BAJA": 0,
-        "MEDIA": 0,
-        "ALTA": 0,
-        "URGENTE": 0
-      };
-      cases.forEach(c => {
-        if (c.priority) {
-          priorityCounts[c.priority] = (priorityCounts[c.priority] || 0) + 1;
-        }
-      });
-      const chartData = Object.entries(priorityCounts)
-        .map(([name, value]) => ({ name: name.charAt(0) + name.slice(1).toLowerCase(), value }))
-        .filter(item => item.value > 0);
-
-      return {
-        intent: "chart_render",
-        answer: `### Gráfico: Casos por Nivel de Prioridad\n\nSe detalla la distribución de los expedientes municipales clasificados por nivel de prioridad asignada por los trabajadores de las áreas sociales.`,
-        dataSummary: {
-          chart: {
-            type: "bar",
-            title: "Prioridad de Casos",
-            color: "#f5a623",
-            data: chartData
-          }
-        }
-      };
-    }
-
-    if (query.includes("estado") || query.includes("status") || query.includes("etapa")) {
-      const cases = await prisma.case.findMany();
-      const statusCounts: Record<string, number> = {};
-      cases.forEach(c => {
-        if (c.status) {
-          statusCounts[c.status] = (statusCounts[c.status] || 0) + 1;
-        }
-      });
-      const chartData = Object.entries(statusCounts)
-        .map(([name, value]) => ({ name: name.replace("_", " ").charAt(0) + name.replace("_", " ").slice(1).toLowerCase(), value }))
-        .filter(item => item.value > 0);
-
-      return {
-        intent: "chart_render",
-        answer: `### Gráfico: Casos por Estado de Gestión\n\nAnálisis del estado de resolución de las demandas y expedientes activos de asistencia municipal en el distrito.`,
-        dataSummary: {
-          chart: {
-            type: "pie",
-            title: "Estado de Casos",
-            data: chartData
-          }
-        }
-      };
-    }
-
-    // Default to cases by area
-    const casesByArea = await prisma.case.groupBy({
-      by: ['areaId'],
-      _count: { _all: true },
+    people.forEach(p => {
+      const name = isFirstName ? p.firstName : p.lastName;
+      const initial = name && name.trim() ? name.trim().charAt(0).toUpperCase() : "?";
+      counts[initial] = (counts[initial] || 0) + 1;
     });
-    const areas = await prisma.area.findMany();
-    const chartData = areas.map(area => {
-      const count = casesByArea.find(c => c.areaId === area.id)?._count._all || 0;
-      return { name: area.name.replace("Dirección de ", "").replace("Coordinación de ", "").substring(0, 22), value: count };
-    }).filter(a => a.value > 0);
+
+    const chartData = Object.entries(counts)
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([name, value]) => ({ name: `Letra ${name}`, value }));
 
     return {
       intent: "chart_render",
-      answer: `### Gráfico: Casos Activos por Dirección Social\n\nSe presenta la distribución consolidada de casos sociales según la dirección municipal correspondiente en el área de desarrollo social.`,
+      answer: `### Gráfico: Distribución de Ciudadanos por Inicial de ${isFirstName ? "Nombre" : "Apellido"}\n\nVisualización estadística en tiempo real de la distribución del padrón municipal según la letra inicial de su ${isFirstName ? "nombre" : "apellido"}.`,
       dataSummary: {
         chart: {
           type: "bar",
-          title: "Distribución de Casos por Área",
+          title: `Ciudadanos por Inicial de ${isFirstName ? "Nombre" : "Apellido"}`,
+          color: "#8b5cf6",
+          data: chartData
+        }
+      }
+    };
+  }
+
+  // 2. Gráfico por Proveedor de Compras
+  if (cleanQuery.includes("proveedor") || cleanQuery.includes("proveedores")) {
+    const orders = await prisma.purchaseOrder.findMany();
+    const providerTotals: Record<string, number> = {};
+
+    orders.forEach(o => {
+      const pName = o.providerName || "Desconocido";
+      providerTotals[pName] = (providerTotals[pName] || 0) + Number(o.amount || 0);
+    });
+
+    const chartData = Object.entries(providerTotals)
+      .map(([name, value]) => ({ name: name.substring(0, 20), value }))
+      .sort((a, b) => b.value - a.value);
+
+    return {
+      intent: "chart_render",
+      answer: `### Gráfico: Monto Consolidado de Órdenes de Compra por Proveedor ($ ARS)\n\nAnálisis dinámico de ejecución presupuestaria adjudicada por proveedor.`,
+      dataSummary: {
+        chart: {
+          type: "bar",
+          title: "Presupuesto por Proveedor ($ ARS)",
+          color: "#10b981",
+          data: chartData
+        }
+      }
+    };
+  }
+
+  // 3. Gráfico por Edad
+  if (cleanQuery.includes("edad") || cleanQuery.includes("año") || cleanQuery.includes("nacimiento") || cleanQuery.includes("rango")) {
+    const casesWithPeople = await prisma.case.findMany({
+      include: { person: true }
+    });
+
+    const ageBuckets = {
+      "Niños (0-12)": 0,
+      "Adolescentes (13-17)": 0,
+      "Jóvenes (18-29)": 0,
+      "Adultos (30-59)": 0,
+      "Adultos Mayores (60+)": 0,
+      "No registrado": 0,
+    };
+
+    const now = new Date();
+    casesWithPeople.forEach(c => {
+      if (c.person && c.person.birthDate) {
+        const birth = new Date(c.person.birthDate);
+        let age = now.getFullYear() - birth.getFullYear();
+        const monthDiff = now.getMonth() - birth.getMonth();
+        if (monthDiff < 0 || (monthDiff === 0 && now.getDate() < birth.getDate())) {
+          age--;
+        }
+        if (age <= 12) ageBuckets["Niños (0-12)"]++;
+        else if (age <= 17) ageBuckets["Adolescentes (13-17)"]++;
+        else if (age <= 29) ageBuckets["Jóvenes (18-29)"]++;
+        else if (age <= 59) ageBuckets["Adultos (30-59)"]++;
+        else ageBuckets["Adultos Mayores (60+)"]++;
+      } else {
+        ageBuckets["No registrado"]++;
+      }
+    });
+
+    const chartData = Object.entries(ageBuckets)
+      .map(([name, value]) => ({ name, value }))
+      .filter(item => item.value > 0);
+
+    return {
+      intent: "chart_render",
+      answer: `### Gráfico: Casos Sociales por Rango de Edad\n\nSe presenta la visualización de los casos de asistencia social clasificados según el rango etario.`,
+      dataSummary: {
+        chart: {
+          type: "bar",
+          title: "Casos por Rango de Edad",
           color: "#3b82f6",
           data: chartData
         }
@@ -970,7 +916,93 @@ async function handleChartRequest(query: string): Promise<AIResponse> {
     };
   }
 
-  if (query.includes("gasto") || query.includes("orden") || query.includes("compra") || query.includes("presupuesto") || query.includes("monto")) {
+  if (cleanQuery.includes("género") || cleanQuery.includes("genero") || cleanQuery.includes("sexo")) {
+    const casesWithPeople = await prisma.case.findMany({
+      include: { person: true }
+    });
+
+    const genderCounts: Record<string, number> = {};
+    casesWithPeople.forEach(c => {
+      const g = c.person?.gender ? c.person.gender.toUpperCase() : "NO ESPECIFICADO";
+      genderCounts[g] = (genderCounts[g] || 0) + 1;
+    });
+
+    const chartData = Object.entries(genderCounts)
+      .map(([name, value]) => ({
+        name: name === "FEMENINO" ? "Femenino" : name === "MASCULINO" ? "Masculino" : name === "OTRO" ? "Otro" : "No especificado",
+        value
+      }));
+
+    return {
+      intent: "chart_render",
+      answer: `### Gráfico: Casos por Género del Ciudadano\n\nDistribución de casos sociales registrados según la identidad de género declarada en el legajo único.`,
+      dataSummary: {
+        chart: {
+          type: "pie",
+          title: "Distribución por Género",
+          data: chartData
+        }
+      }
+    };
+  }
+
+  if (cleanQuery.includes("prioridad") || cleanQuery.includes("urgencia") || cleanQuery.includes("severidad")) {
+    const cases = await prisma.case.findMany();
+    const priorityCounts: Record<string, number> = {
+      "BAJA": 0,
+      "MEDIA": 0,
+      "ALTA": 0,
+      "URGENTE": 0
+    };
+    cases.forEach(c => {
+      if (c.priority) {
+        priorityCounts[c.priority] = (priorityCounts[c.priority] || 0) + 1;
+      }
+    });
+    const chartData = Object.entries(priorityCounts)
+      .map(([name, value]) => ({ name: name.charAt(0) + name.slice(1).toLowerCase(), value }))
+      .filter(item => item.value > 0);
+
+    return {
+      intent: "chart_render",
+      answer: `### Gráfico: Casos por Nivel de Prioridad\n\nDistribución de expedientes municipales clasificados por nivel de prioridad asignada.`,
+      dataSummary: {
+        chart: {
+          type: "bar",
+          title: "Prioridad de Casos",
+          color: "#f5a623",
+          data: chartData
+        }
+      }
+    };
+  }
+
+  if (cleanQuery.includes("estado") || cleanQuery.includes("status") || cleanQuery.includes("etapa")) {
+    const cases = await prisma.case.findMany();
+    const statusCounts: Record<string, number> = {};
+    cases.forEach(c => {
+      if (c.status) {
+        statusCounts[c.status] = (statusCounts[c.status] || 0) + 1;
+      }
+    });
+    const chartData = Object.entries(statusCounts)
+      .map(([name, value]) => ({ name: name.replace("_", " ").charAt(0) + name.replace("_", " ").slice(1).toLowerCase(), value }))
+      .filter(item => item.value > 0);
+
+    return {
+      intent: "chart_render",
+      answer: `### Gráfico: Casos por Estado de Gestión\n\nAnálisis del estado de resolución administrativa de expedientes de asistencia municipal.`,
+      dataSummary: {
+        chart: {
+          type: "pie",
+          title: "Estado de Casos",
+          data: chartData
+        }
+      }
+    };
+  }
+
+  if (cleanQuery.includes("gasto") || cleanQuery.includes("orden") || cleanQuery.includes("compra") || cleanQuery.includes("presupuesto") || cleanQuery.includes("monto")) {
     const orders = await prisma.purchaseOrder.findMany({ include: { area: true } });
     const areas = await prisma.area.findMany();
     const approvedOrders = orders.filter(o => o.status === "APROBADA" || o.status === "CUMPLIDA");
@@ -984,7 +1016,7 @@ async function handleChartRequest(query: string): Promise<AIResponse> {
 
     return {
       intent: "chart_render",
-      answer: `### Gráfico: Presupuesto Ejecutado por Dirección ($ ARS)\n\nAnálisis de los fondos comprometidos y aprobados mediante órdenes de compra según la dirección municipal requirente.`,
+      answer: `### Gráfico: Presupuesto Ejecutado por Dirección ($ ARS)\n\nAnálisis de los fondos comprometidos mediante órdenes de compra según la dirección municipal.`,
       dataSummary: {
         chart: {
           type: "bar",
@@ -996,7 +1028,7 @@ async function handleChartRequest(query: string): Promise<AIResponse> {
     };
   }
 
-  if (query.includes("personal") || query.includes("rrhh") || query.includes("recursos humanos") || query.includes("sueldo") || query.includes("salario")) {
+  if (cleanQuery.includes("personal") || cleanQuery.includes("rrhh") || query.includes("recursos humanos") || cleanQuery.includes("sueldo") || cleanQuery.includes("salario")) {
     const records = await prisma.hRRecord.findMany({ where: { status: "ACTIVO" } });
     const contractsBreakdown = [
       { name: "Monotributistas", value: records.filter(r => r.contractType === "MONOTRIBUTISTA").length },
@@ -1006,7 +1038,7 @@ async function handleChartRequest(query: string): Promise<AIResponse> {
 
     return {
       intent: "chart_render",
-      answer: `### Gráfico: Distribución de Modalidades de Contratación\n\nInforme sobre la distribución del personal activo en la municipalidad clasificado por régimen o tipo de vinculación laboral.`,
+      answer: `### Gráfico: Distribución de Modalidades de Contratación\n\nInforme sobre la distribución del personal activo clasificado por modalidad contractual.`,
       dataSummary: {
         chart: {
           type: "pie",
@@ -1017,7 +1049,7 @@ async function handleChartRequest(query: string): Promise<AIResponse> {
     };
   }
 
-  if (query.includes("vehiculo") || query.includes("vehículo") || query.includes("flota") || query.includes("estado")) {
+  if (cleanQuery.includes("vehiculo") || cleanQuery.includes("vehículo") || cleanQuery.includes("flota")) {
     const vehicles = await prisma.vehicle.findMany();
     const states = [
       { name: "Disponibles", value: vehicles.filter(v => v.status === "DISPONIBLE").length },
@@ -1027,7 +1059,7 @@ async function handleChartRequest(query: string): Promise<AIResponse> {
 
     return {
       intent: "chart_render",
-      answer: `### Gráfico: Operatividad de la Flota Logística\n\nEstado operativo, disponibilidad y mantenimiento de las unidades pertenecientes al parque automotor municipal.`,
+      answer: `### Gráfico: Operatividad de la Flota Logística\n\nEstado operativo del parque automotor municipal.`,
       dataSummary: {
         chart: {
           type: "pie",
@@ -1038,21 +1070,28 @@ async function handleChartRequest(query: string): Promise<AIResponse> {
     };
   }
 
-  // General chart fallback
+  // Universal Dynamic Fallback Chart (Casos Activos por Área)
+  const casesByArea = await prisma.case.groupBy({
+    by: ['areaId'],
+    _count: { _all: true },
+  });
+  const areas = await prisma.area.findMany();
+  const fallbackChartData = areas.map(area => {
+    const count = casesByArea.find(c => c.areaId === area.id)?._count._all || 0;
+    return { name: area.name.replace("Dirección de ", "").replace("Coordinación de ", "").substring(0, 22), value: count };
+  }).filter(a => a.value > 0);
+
   return {
-    intent: "chart_render_fallback",
-    answer: `### Solicitud de Gráficos de Datos
-
-Es posible generar gráficos informativos en tiempo real a partir de las siguientes variables del sistema municipal:
-
-*   **Gráfico de casos por área:** Muestra la cantidad de expedientes activos distribuidos por dirección.
-*   **Gráfico de casos por género:** Clasifica los legajos según el género declarado en el Registro Único.
-*   **Gráfico de casos por edad:** Agrupa los legajos activos según rangos etarios.
-*   **Gráfico de casos por prioridad:** Muestra la ponderación de prioridad asignada (Urgente, Alta, Media, Baja).
-*   **Gráfico de casos por estado:** Indica el nivel de resolución administrativa de las demandas.
-*   **Gráfico de gastos:** Consolida la asignación presupuestaria por órdenes de compra aprobadas según dirección.
-*   **Gráfico de personal:** Detalla la relación contractual del personal (Recursos Humanos).
-*   **Gráfico de flota:** Presenta el estado de operatividad de los vehículos del municipio.`
+    intent: "chart_render",
+    answer: `### Gráfico: Resumen General de Casos Sociales por Área Municipal\n\nVisualización gráfica consolidada del volumen de expedientes por área.`,
+    dataSummary: {
+      chart: {
+        type: "bar",
+        title: "Casos por Área Municipal",
+        color: "#3b82f6",
+        data: fallbackChartData
+      }
+    }
   };
 }
 
