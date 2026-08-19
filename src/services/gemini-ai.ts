@@ -15,74 +15,94 @@ export async function callGeminiAnonymized(
   const { sanitizedText, rehydrate } = sanitizeText(fullRawText, knownEntities);
   console.log("🔒 [PII Sanitizer] Prompt anonimizado exitosamente antes de enviar a Gemini.");
 
-  // 2. Auto-descubrir dinámicamente los modelos de Gemini habilitados para esta API Key específica
-  let activeModelResource = "models/gemini-1.5-flash";
+  // 2. Lista de modelos activos priorizando gemini-3.6-flash (exigido por Google para claves nuevas)
+  const candidateModels = [
+    "models/gemini-3.6-flash",
+    "models/gemini-2.0-flash",
+    "models/gemini-1.5-flash",
+    "models/gemini-3.6-pro"
+  ];
+
+  // Auto-descubrir dinámicamente filtrando modelos discontinuados (como 2.5-flash)
   try {
     const listResp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
     if (listResp.ok) {
       const listData = await listResp.json();
       const validModels = (listData.models || []).filter((m: any) =>
-        m.supportedGenerationMethods && m.supportedGenerationMethods.includes("generateContent")
+        m.supportedGenerationMethods &&
+        m.supportedGenerationMethods.includes("generateContent") &&
+        !m.name.includes("2.5-flash") // Excluir modelo discontinuado
       );
       if (validModels.length > 0) {
-        // Priorizar modelos 'flash' o tomar el primero disponible para esta API key
-        const preferred = validModels.find((m: any) => m.name.includes("flash")) || validModels[0];
-        activeModelResource = preferred.name;
-        console.log(`🌐 [Gemini API] Modelo activo detectado automáticamente: '${activeModelResource}'`);
-      } else {
-        console.warn("⚠️ ListModels no devolvió modelos con generateContent, usando valor por defecto.");
+        validModels.forEach((m: any) => {
+          if (!candidateModels.includes(m.name)) {
+            candidateModels.unshift(m.name);
+          }
+        });
       }
-    } else {
-      console.warn(`⚠️ ListModels devolvió estatus ${listResp.status}, usando modelo por defecto.`);
     }
   } catch (listErr) {
-    console.warn("⚠️ Error en consulta de ListModels, usando modelo por defecto:", listErr);
+    console.warn("⚠️ ListModels fallback:", listErr);
   }
 
-  // Formatear endpoint dinámico
-  const modelPath = activeModelResource.startsWith("models/") ? activeModelResource : `models/${activeModelResource}`;
-  const endpointUrl = `https://generativelanguage.googleapis.com/v1beta/${modelPath}:generateContent?key=${apiKey}`;
+  let lastError: Error | null = null;
+  let rawGeminiAnswer = "";
+  let successfulModel = "";
 
-  // 3. Prompt del sistema con reglas strictly prohibidas de inventar
-  const systemPrompt = `Eres el Asistente Inteligente Municipal.
+  // 3. Ejecutar llamada al primer modelo disponible
+  for (const modelResource of candidateModels) {
+    const modelPath = modelResource.startsWith("models/") ? modelResource : `models/${modelResource}`;
+    const endpointUrl = `https://generativelanguage.googleapis.com/v1beta/${modelPath}:generateContent?key=${apiKey}`;
+
+    try {
+      const systemPrompt = `Eres el Asistente Inteligente Municipal.
 Responde a la pregunta del usuario utilizando EXCLUSIVAMENTE el [CONTEXTO REAL] provisto.
 No inventes información. Conserva las máscaras como [CIUDADANO_1], [DNI_1], [DIRECCION_1] tal cual aparecen en el contexto.`;
 
-  // 4. Llamada a la API de Gemini con el modelo auto-descubierto
-  const response = await fetch(endpointUrl, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      contents: [
-        {
-          role: "user",
-          parts: [
-            { text: `${systemPrompt}\n\n${sanitizedText}` }
-          ]
+      const response = await fetch(endpointUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              role: "user",
+              parts: [
+                { text: `${systemPrompt}\n\n${sanitizedText}` }
+              ]
+            }
+          ],
+          generationConfig: {
+            temperature: 0.2,
+            maxOutputTokens: 1000,
+          }
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        rawGeminiAnswer = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+        if (rawGeminiAnswer) {
+          successfulModel = modelPath;
+          console.log(`🌐 [Gemini API] Respuesta exitosa recibida usando '${successfulModel}'.`);
+          lastError = null;
+          break;
         }
-      ],
-      generationConfig: {
-        temperature: 0.2,
-        maxOutputTokens: 1000,
+      } else {
+        const errorText = await response.text();
+        lastError = new Error(`Error en Gemini API (${modelPath} - Status ${response.status}): ${errorText}`);
       }
-    })
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`Error en Gemini API (${activeModelResource} - Status ${response.status}): ${errorText}`);
+    } catch (err: any) {
+      lastError = err;
+    }
   }
 
-  const data = await response.json();
-  const rawGeminiAnswer = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
-
-  if (!rawGeminiAnswer) {
-    throw new Error("Respuesta vacía obtenida de Gemini API.");
+  if (lastError || !rawGeminiAnswer) {
+    throw lastError || new Error("No se pudo obtener respuesta de ningún modelo de Gemini API.");
   }
 
-  // 5. Rehidratar la respuesta de la nube localmente en el servidor antes de mostrarla al usuario
+  // 4. Rehidratar la respuesta de la nube localmente en el servidor antes de mostrarla al usuario
   const finalAnswer = rehydrate(rawGeminiAnswer);
   console.log("🔓 [PII Sanitizer] Respuesta rehidratada localmente con datos reales.");
 
