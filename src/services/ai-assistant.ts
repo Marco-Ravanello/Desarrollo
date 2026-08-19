@@ -2,6 +2,7 @@ import prisma from "@/lib/prisma";
 import http from "http";
 import fs from "fs/promises";
 import path from "path";
+import { findPeopleNearPoint } from "@/services/spatial";
 
 export interface AIResponse {
   answer: string;
@@ -642,6 +643,12 @@ export async function queryAIAssistantStream(
       query.includes("deposito") || query.includes("depósito")
     ) {
       dbResponse = await handleSupplyQuery(query);
+    } else if (
+      query.includes("metro") || query.includes("metros") || query.includes("cerca") ||
+      query.includes("radio") || query.includes("proximidad") || query.includes("cuadra") ||
+      query.includes("cuadras") || query.includes("distancia")
+    ) {
+      dbResponse = await handleSpatialProximityQuery(query);
     } else {
       const search = await performUniversalDBSearch(queryText, history);
       sources = search.sources;
@@ -2136,4 +2143,108 @@ La unidad automotriz ha quedado reservada y bloqueada para su uso exclusivo dura
   }
 
   return handleGeneralFallback(query);
+}
+
+export async function handleSpatialProximityQuery(query: string): Promise<AIResponse> {
+  const cleanQuery = query.toLowerCase();
+
+  // 1. Extraer radio en metros (ej: 500m, 1km, 3 cuadras)
+  let radiusMeters = 500;
+  const kmMatch = cleanQuery.match(/(\d+(?:\.\d+)?)\s*(?:km|kilómetro|kilometro|kilómetros|kilometros)/i);
+  const meterMatch = cleanQuery.match(/(\d+)\s*(?:m|metro|metros)/i);
+  const blocksMatch = cleanQuery.match(/(\d+)\s*(?:cuadra|cuadras)/i);
+
+  if (kmMatch) {
+    radiusMeters = Math.round(parseFloat(kmMatch[1]) * 1000);
+  } else if (meterMatch) {
+    radiusMeters = parseInt(meterMatch[1], 10);
+  } else if (blocksMatch) {
+    radiusMeters = parseInt(blocksMatch[1], 10) * 100;
+  }
+
+  // 2. Puntos de referencia municipales (Centros, municipio, plazas)
+  const referencePoints: Record<string, { lat: number; lng: number; name: string }> = {
+    "centro comunitario": { lat: -34.6037, lng: -58.3816, name: "Centro Comunitario Central" },
+    "municipio": { lat: -34.6033, lng: -58.3815, name: "Palacio Municipal" },
+    "plaza": { lat: -34.6040, lng: -58.3820, name: "Plaza Principal" },
+    "hospital": { lat: -34.6050, lng: -58.3800, name: "Hospital Municipal" },
+    "comisaria": { lat: -34.6020, lng: -58.3830, name: "Comisaría Seccional" },
+  };
+
+  let targetPoint = referencePoints["centro comunitario"];
+  for (const [key, point] of Object.entries(referencePoints)) {
+    if (cleanQuery.includes(key)) {
+      targetPoint = point;
+      break;
+    }
+  }
+
+  // Detectar coordenadas explícitas si las envían (ej: -34.6033, -58.3815)
+  const coordMatch = cleanQuery.match(/(-?\d+\.\d+)\s*,\s*(-?\d+\.\d+)/);
+  if (coordMatch) {
+    targetPoint = {
+      lat: parseFloat(coordMatch[1]),
+      lng: parseFloat(coordMatch[2]),
+      name: `Punto GPS (${coordMatch[1]}, ${coordMatch[2]})`
+    };
+  }
+
+  // 3. Ejecutar consulta de proximidad usando Bounding Box / PostGIS
+  const nearbyPeople = await findPeopleNearPoint(targetPoint.lat, targetPoint.lng, radiusMeters);
+
+  if (nearbyPeople.length === 0) {
+    return {
+      intent: "spatial_proximity",
+      answer: `### Búsqueda de Proximidad Espacial\n\nNo se encontraron ciudadanos ni legajos georreferenciados en un radio de **${radiusMeters} metros** alrededor de **${targetPoint.name}**.`,
+      dataSummary: {
+        hasResults: false,
+        sources: [],
+        actions: [
+          {
+            label: "Ver Mapa GIS General",
+            actionType: "NAVIGATE",
+            payload: { path: "/maps" }
+          }
+        ]
+      }
+    };
+  }
+
+  // 4. Formatear respuesta detallada
+  let answer = `### Búsqueda Espacial: Ciudadanos a menos de ${radiusMeters}m de ${targetPoint.name}\n\n`;
+  answer += `Se identificaron **${nearbyPeople.length} ciudadanos** georreferenciados dentro del radio especificado:\n\n`;
+
+  nearbyPeople.forEach((p, idx) => {
+    answer += `${idx + 1}. **${p.lastName}, ${p.firstName}** (DNI: ${p.dni}) - Distancia exacta: **${p.distanceMeters}m**\n`;
+    answer += `   * **Dirección:** ${p.address || "Sin dirección registrada"}\n`;
+    if (p.casesCount && p.casesCount > 0) {
+      answer += `   * **Expedientes sociales activos:** ${p.casesCount}\n`;
+    }
+  });
+
+  const sources = nearbyPeople.map(p => ({
+    type: "Ciudadano Cercano",
+    name: `${p.lastName}, ${p.firstName} (${p.distanceMeters}m)`,
+    url: `/people/${p.id}`
+  }));
+
+  const actions = [
+    {
+      label: `Centrar Mapa GIS en ${targetPoint.name}`,
+      actionType: "NAVIGATE",
+      payload: { path: `/maps?lat=${targetPoint.lat}&lng=${targetPoint.lng}&zoom=16` }
+    }
+  ];
+
+  return {
+    intent: "spatial_proximity",
+    answer,
+    dataSummary: {
+      hasResults: true,
+      center: targetPoint,
+      radiusMeters,
+      sources,
+      actions
+    }
+  };
 }
