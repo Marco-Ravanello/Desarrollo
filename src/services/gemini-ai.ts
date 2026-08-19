@@ -95,7 +95,7 @@ REGLAS ABSOLUTAS DE VERACIDAD:
           contents: contentsPayload,
           generationConfig: {
             temperature: 0.2,
-            maxOutputTokens: 1000,
+            maxOutputTokens: 8192,
           }
         })
       });
