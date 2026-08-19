@@ -157,6 +157,23 @@ function resolveAnaphoraAndContext(
     }
   }
 
+  // Manejar preguntas de seguimiento como "cuáles son", "quiénes son", "dame la lista"
+  const isListFollowup = resolvedQuery.includes("cuáles") || resolvedQuery.includes("cuales") ||
+                         resolvedQuery.includes("quiénes") || resolvedQuery.includes("quienes") ||
+                         resolvedQuery.includes("dame la lista") || resolvedQuery.includes("ver los") ||
+                         resolvedQuery.includes("mostrar");
+  if (isListFollowup) {
+    for (let i = history.length - 1; i >= 0; i--) {
+      const pastContent = history[i].content.toLowerCase();
+      const pastLetterMatch = pastContent.match(/\b(?:letra|inicial|con|empie[a-z]*|comien[a-z]*|inici[a-z]*|por)\s+([a-z])\b/) ||
+                              pastContent.match(/\b(?:apellido|nombre)s?\s+([a-z])\b/);
+      if (pastLetterMatch && pastLetterMatch[1]) {
+        resolvedQuery += ` personas con apellido que empiece con la letra ${pastLetterMatch[1]}`;
+        break;
+      }
+    }
+  }
+
   return resolvedQuery;
 }
 
@@ -688,10 +705,12 @@ export async function queryAIAssistantStream(
             if (s.name) namesToSanitize.push(s.name);
           });
         }
-        const geminiResult = await callGeminiAnonymized(queryText, dbResponse.answer, {
-          names: namesToSanitize,
-          addresses: addressesToSanitize
-        });
+        const geminiResult = await callGeminiAnonymized(
+          queryText,
+          dbResponse.answer,
+          { names: namesToSanitize, addresses: addressesToSanitize },
+          history
+        );
         if (geminiResult.answer) {
           if (onChunk) {
             onChunk(geminiResult.answer);
