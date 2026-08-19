@@ -3,6 +3,7 @@ import http from "http";
 import fs from "fs/promises";
 import path from "path";
 import { findPeopleNearPoint } from "@/services/spatial";
+import { callGeminiAnonymized } from "@/services/gemini-ai";
 
 export interface AIResponse {
   answer: string;
@@ -675,6 +676,35 @@ export async function queryAIAssistantStream(
     }
     if (dbResponse.dataSummary?.actions) {
       actions = dbResponse.dataSummary.actions;
+    }
+
+    // Intentar primero con Gemini API (con anonimización PII local) si la clave está configurada
+    if (process.env.GEMINI_API_KEY) {
+      try {
+        const namesToSanitize: string[] = [];
+        const addressesToSanitize: string[] = [];
+        if (dbResponse.dataSummary?.sources) {
+          dbResponse.dataSummary.sources.forEach((s: any) => {
+            if (s.name) namesToSanitize.push(s.name);
+          });
+        }
+        const geminiResult = await callGeminiAnonymized(queryText, dbResponse.answer, {
+          names: namesToSanitize,
+          addresses: addressesToSanitize
+        });
+        if (geminiResult.answer) {
+          if (onChunk) {
+            onChunk(geminiResult.answer);
+          }
+          return {
+            intent: dbResponse.intent,
+            answer: geminiResult.answer,
+            dataSummary: { ...dbResponse.dataSummary, sources, actions }
+          };
+        }
+      } catch (geminiErr) {
+        console.warn("Gemini API error, intentando fallback con Ollama local:", geminiErr);
+      }
     }
 
     try {
