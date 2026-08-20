@@ -616,7 +616,7 @@ export async function queryAIAssistantStream(
     const isCommand = query.includes("tarea") || query.includes("recordatorio") || query.includes("agendar") || query.includes("reservar") || query.includes("reserva") || query.includes("evento") || query.includes("reunion") || query.includes("reunión") || query.includes("cita") || query.includes("turno");
     const isCreationCommand = isCommand && (query.includes("crear") || query.includes("agend") || query.includes("program") || query.includes("añadir") || query.includes("agregar") || query.includes("hacer") || query.includes("reserv") || query.includes("pon"));
     const wantsChart = query.includes("gráfico") || query.includes("grafico") || query.includes("chart") || query.includes("dibujar") || query.includes("mostrar gráfico");
-    const isDocRagQuery = query.includes("pdf") || query.includes("documento") || query.includes("archivo") || query.includes("leé") || query.includes("lee") || query.includes("informe") || query.includes("adjunto");
+    const isDocRagQuery = query.includes("pdf") || query.includes("documento") || query.includes("archivo") || query.includes("leé") || query.includes("lee") || query.includes("informe") || query.includes("adjunto") || query.includes("ordenanza") || query.includes("decreto") || query.includes("pliego") || query.includes("resolución") || query.includes("resolucion");
 
     let sources: any[] = [];
     let actions: any[] = [];
