@@ -94,6 +94,15 @@ export async function getDashboardStats(filters?: { from: Date; to: Date }) {
     value: s._count._all
   }));
 
+  const executedOrders = await prisma.purchaseOrder.aggregate({
+    where: {
+      status: { in: ['APROBADA', 'CUMPLIDA'] },
+      createdAt: dateFilter
+    },
+    _sum: { amount: true }
+  });
+  const executedAmount = Number(executedOrders._sum.amount || 0);
+
   return {
     peopleCount,
     activeCases,

@@ -165,13 +165,14 @@ export default async function DashboardPage() {
       </div>
 
       {/* Budget Execution Thermometer */}
-      <BudgetProgressWidget />
+      <BudgetProgressWidget executedAmount={stats.executedAmount} />
 
       {/* Charts */}
       <DashboardCharts
         casesByAreaData={stats.casesByAreaData}
         poStatusData={stats.poStatusData}
         trendData={stats.trends}
+        areas={stats.areas}
       />
 
       {/* Bottom Section: Heatmap Widget & Recent Activity Feed */}

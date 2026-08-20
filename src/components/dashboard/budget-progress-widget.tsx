@@ -9,7 +9,7 @@ interface BudgetProgressWidgetProps {
 }
 
 export function BudgetProgressWidget({
-  executedAmount = 14500000,
+  executedAmount = 0,
   totalBudget = 20000000
 }: BudgetProgressWidgetProps) {
   const percentage = Math.min(100, Math.round((executedAmount / totalBudget) * 100));

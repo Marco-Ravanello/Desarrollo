@@ -2,30 +2,50 @@
 import { useState } from "react";
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Cell, Pie, PieChart, Line, LineChart, CartesianGrid } from "recharts";
 import { useTheme } from "next-themes";
-import { Layers, ShieldCheck, HeartHandshake, Home } from "lucide-react";
+import { Layers, ShieldCheck, HeartHandshake, Home, Building } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-const COLORS = ['#004a80', '#10b981', '#f5a623', '#ef4444', '#8b5cf6'];
+const COLORS = ['#004a80', '#10b981', '#f5a623', '#ef4444', '#8b5cf6', '#06b6d4', '#ec4899', '#f97316'];
 
-export function DashboardCharts({ casesByAreaData, poStatusData, trendData }: { casesByAreaData: any[], poStatusData: any[], trendData: any[] }) {
+interface DashboardChartsProps {
+  casesByAreaData: any[];
+  poStatusData: any[];
+  trendData: any[];
+  areas?: any[];
+}
+
+export function DashboardCharts({
+  casesByAreaData,
+  poStatusData,
+  trendData,
+  areas = []
+}: DashboardChartsProps) {
   const { theme } = useTheme();
   const isDark = theme === "dark";
   const [selectedArea, setSelectedArea] = useState<string>("all");
 
   const areaTabs = [
-    { id: "all", label: "Todas las Áreas", icon: Layers, color: "text-blue-400" },
-    { id: "social", label: "Protección Social", icon: ShieldCheck, color: "text-emerald-400" },
-    { id: "ninez", label: "Niñez y Familia", icon: HeartHandshake, color: "text-amber-400" },
-    { id: "habitat", label: "Hábitat y Vivienda", icon: Home, color: "text-sky-400" },
+    { id: "all", label: "Todas las Áreas", icon: Layers },
+    ...(areas.length > 0
+      ? areas.map((a) => ({
+          id: a.id,
+          label: a.name.replace("Dirección de ", "").replace("Coordinación de ", "").trim(),
+          icon: a.name.toLowerCase().includes("hábitat") ? Home : a.name.toLowerCase().includes("niñez") ? HeartHandshake : ShieldCheck
+        }))
+      : casesByAreaData.map((c) => ({
+          id: c.name,
+          label: c.name.replace("Dirección de ", "").replace("Coordinación de ", "").trim(),
+          icon: Building
+        })))
   ];
 
-  const filteredCasesData = casesByAreaData.filter(item => {
+  const filteredCasesData = casesByAreaData.filter((item) => {
     if (selectedArea === "all") return true;
-    const nameLower = item.name.toLowerCase();
-    if (selectedArea === "social") return nameLower.includes("social") || nameLower.includes("desarrollo");
-    if (selectedArea === "ninez") return nameLower.includes("niñez") || nameLower.includes("familia") || nameLower.includes("ninez");
-    if (selectedArea === "habitat") return nameLower.includes("hábitat") || nameLower.includes("vivienda") || nameLower.includes("habitat");
-    return true;
+    const targetArea = areas.find(a => a.id === selectedArea);
+    if (targetArea) {
+      return item.name === targetArea.name;
+    }
+    return item.name === selectedArea;
   });
 
   return (
@@ -47,7 +67,7 @@ export function DashboardCharts({ casesByAreaData, poStatusData, trendData }: { 
                   : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
               }`}
             >
-              <Icon className={`h-3.5 w-3.5 ${isActive ? "text-primary-foreground" : tab.color}`} />
+              <Icon className="h-3.5 w-3.5" />
               <span>{tab.label}</span>
             </Button>
           );
