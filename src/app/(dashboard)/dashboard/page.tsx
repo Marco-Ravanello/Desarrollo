@@ -6,11 +6,11 @@ import {
   CheckCircle2, ShieldAlert, Activity, Clock
 } from "lucide-react";
 import { DashboardCharts } from "@/components/dashboard/dashboard-charts";
-import { MiniHeatmapWidget } from "@/components/dashboard/mini-heatmap-widget";
-import { BudgetProgressWidget } from "@/components/dashboard/budget-progress-widget";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { ExecutiveReportButton } from "../admin/reports/executive-report-button";
+import { MiniHeatmapWidget } from "@/components/dashboard/mini-heatmap-widget";
+import { BudgetProgressWidget } from "@/components/dashboard/budget-progress-widget";
 
 function getGreeting() {
   const hour = new Date().getHours();
@@ -177,7 +177,7 @@ export default async function DashboardPage() {
       {/* Bottom Section: Heatmap Widget & Recent Activity Feed */}
       <div className="grid gap-6 md:grid-cols-12">
         <div className="md:col-span-5 lg:col-span-4">
-          <MiniHeatmapWidget />
+          <MiniHeatmapWidget peopleLocations={stats.peopleLocations} />
         </div>
         <div className="md:col-span-7 lg:col-span-8">
           <Card className="bg-card/60 backdrop-blur-md border border-white/[0.06] shadow-xl h-full">
