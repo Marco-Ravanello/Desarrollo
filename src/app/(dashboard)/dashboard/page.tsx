@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { DashboardCharts } from "@/components/dashboard/dashboard-charts";
 import { MiniHeatmapWidget } from "@/components/dashboard/mini-heatmap-widget";
+import { BudgetProgressWidget } from "@/components/dashboard/budget-progress-widget";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { ExecutiveReportButton } from "../admin/reports/executive-report-button";
@@ -162,6 +163,9 @@ export default async function DashboardPage() {
           </div>
         ))}
       </div>
+
+      {/* Budget Execution Thermometer */}
+      <BudgetProgressWidget />
 
       {/* Charts */}
       <DashboardCharts
