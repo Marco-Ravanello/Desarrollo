@@ -103,6 +103,11 @@ export async function getDashboardStats(filters?: { from: Date; to: Date }) {
   });
   const executedAmount = Number(executedOrders._sum.amount || 0);
 
+  const totalBudgetAgg = await prisma.area.aggregate({
+    _sum: { annualBudget: true }
+  });
+  const totalBudget = Number(totalBudgetAgg._sum.annualBudget || 0);
+
   return {
     peopleCount,
     activeCases,

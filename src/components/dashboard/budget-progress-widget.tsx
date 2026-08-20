@@ -1,7 +1,7 @@
 "use client";
 import * as React from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { DollarSign, TrendingUp, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { DollarSign, TrendingUp, AlertTriangle, CheckCircle2, Info } from "lucide-react";
 
 interface BudgetProgressWidgetProps {
   executedAmount?: number;
@@ -10,9 +10,10 @@ interface BudgetProgressWidgetProps {
 
 export function BudgetProgressWidget({
   executedAmount = 0,
-  totalBudget = 20000000
+  totalBudget = 0
 }: BudgetProgressWidgetProps) {
-  const percentage = Math.min(100, Math.round((executedAmount / totalBudget) * 100));
+  const hasConfiguredBudget = totalBudget > 0;
+  const percentage = hasConfiguredBudget ? Math.min(100, Math.round((executedAmount / totalBudget) * 100)) : 0;
 
   let colorStyle = {
     bar: "bg-emerald-500",
@@ -68,10 +69,17 @@ export function BudgetProgressWidget({
             <CardDescription className="text-xs">Ejecución acumulada de fondos aprobados ($ ARS).</CardDescription>
           </div>
         </div>
-        <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[11px] font-bold uppercase tracking-wider ${colorStyle.badge}`}>
-          <StatusIcon className="h-3.5 w-3.5 shrink-0" />
-          <span>{percentage}% Ejecutado</span>
-        </div>
+        {hasConfiguredBudget ? (
+          <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[11px] font-bold uppercase tracking-wider ${colorStyle.badge}`}>
+            <StatusIcon className="h-3.5 w-3.5 shrink-0" />
+            <span>{percentage}% Ejecutado</span>
+          </div>
+        ) : (
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[11px] font-semibold bg-muted/30 text-muted-foreground border-border/50">
+            <Info className="h-3.5 w-3.5 shrink-0" />
+            <span>Sin Presupuesto Asignado</span>
+          </div>
+        )}
       </CardHeader>
       <CardContent className="space-y-4 pt-2">
         <div className="flex items-baseline justify-between">
@@ -84,23 +92,34 @@ export function BudgetProgressWidget({
           <div className="text-right">
             <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest block">Presupuesto Anual</span>
             <span className="text-sm font-semibold text-muted-foreground">
-              {formatCurrency(totalBudget)}
+              {hasConfiguredBudget ? formatCurrency(totalBudget) : "Sin asignar"}
             </span>
           </div>
         </div>
-        <div className="space-y-1.5">
-          <div className="h-3 w-full bg-muted/40 rounded-full overflow-hidden p-0.5 border border-white/[0.06]">
-            <div
-              className={`h-full rounded-full transition-all duration-1000 shadow-md ${colorStyle.bar}`}
-              style={{ width: `${percentage}%` }}
-            />
+        {hasConfiguredBudget ? (
+          <div className="space-y-1.5">
+            <div className="h-3 w-full bg-muted/40 rounded-full overflow-hidden p-0.5 border border-white/[0.06]">
+              <div
+                className={`h-full rounded-full transition-all duration-1000 shadow-md ${colorStyle.bar}`}
+                style={{ width: `${percentage}%` }}
+              />
+            </div>
+            <div className="flex justify-between items-center text-[10px] text-muted-foreground font-medium">
+              <span>0%</span>
+              <span className={colorStyle.text}>{colorStyle.statusText}</span>
+              <span>100%</span>
+            </div>
           </div>
-          <div className="flex justify-between items-center text-[10px] text-muted-foreground font-medium">
-            <span>0%</span>
-            <span className={colorStyle.text}>{colorStyle.statusText}</span>
-            <span>100%</span>
+        ) : (
+          <div className="p-3 rounded-xl bg-muted/20 border border-border/40 text-center">
+            <p className="text-xs text-muted-foreground font-medium">
+              El presupuesto total anual aún no ha sido configurado en el sistema.
+            </p>
+            <p className="text-[10px] text-muted-foreground/60 mt-0.5">
+              Al cargar las partidas asignadas en las Áreas o aprobar órdenes de compra, la barra de ejecución se actualizará en tiempo real.
+            </p>
           </div>
-        </div>
+        )}
       </CardContent>
     </Card>
   );

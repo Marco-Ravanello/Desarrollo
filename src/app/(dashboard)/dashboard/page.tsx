@@ -165,7 +165,7 @@ export default async function DashboardPage() {
       </div>
 
       {/* Budget Execution Thermometer */}
-      <BudgetProgressWidget executedAmount={stats.executedAmount} />
+      <BudgetProgressWidget executedAmount={stats.executedAmount} totalBudget={stats.totalBudget} />
 
       {/* Charts */}
       <DashboardCharts
