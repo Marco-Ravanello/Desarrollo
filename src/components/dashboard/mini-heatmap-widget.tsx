@@ -20,22 +20,33 @@ const DynamicMiniHeatmap = dynamic(
   }
 );
 
+interface LocationItem {
+  id: string;
+  latitude: number;
+  longitude: number;
+  neighborhood?: string;
+  address?: string;
+}
+
 interface MiniHeatmapWidgetProps {
-  peopleLocations?: { id: string; latitude: number; longitude: number; neighborhood?: string }[];
+  peopleLocations?: LocationItem[];
 }
 
 export function MiniHeatmapWidget({ peopleLocations = [] }: MiniHeatmapWidgetProps) {
   const router = useRouter();
 
-  const defaultLocations = [
-    { id: "1", latitude: -34.603, longitude: -58.558, neighborhood: "Caseros Centro" },
-    { id: "2", latitude: -34.608, longitude: -58.562, neighborhood: "Barrio Derqui" },
-    { id: "3", latitude: -34.615, longitude: -58.548, neighborhood: "Ejército de los Andes" },
-    { id: "4", latitude: -34.598, longitude: -58.565, neighborhood: "Ciudadela" },
-    { id: "5", latitude: -34.605, longitude: -58.552, neighborhood: "Villa Bosch" },
-  ];
+  const neighborhoodCounts: Record<string, number> = {};
+  peopleLocations.forEach((p) => {
+    const rawZone = p.neighborhood || p.address || "Zona Registrada";
+    const cleanZone = rawZone.split(",")[0].trim();
+    neighborhoodCounts[cleanZone] = (neighborhoodCounts[cleanZone] || 0) + 1;
+  });
 
-  const locations = peopleLocations.length > 0 ? peopleLocations : defaultLocations;
+  const topNeighborhoods = Object.entries(neighborhoodCounts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 3);
+
+  const hasRealLocations = peopleLocations.length > 0;
 
   return (
     <Card className="bg-card/60 backdrop-blur-md border border-white/[0.06] shadow-xl overflow-hidden flex flex-col h-full">
@@ -61,25 +72,45 @@ export function MiniHeatmapWidget({ peopleLocations = [] }: MiniHeatmapWidgetPro
       </CardHeader>
       <CardContent className="space-y-4 flex-1 flex flex-col justify-between pt-0">
         <div className="relative rounded-xl overflow-hidden border border-white/[0.08] shadow-inner">
-          <DynamicMiniHeatmap locations={locations} />
-          <div className="absolute bottom-2 left-2 z-[400] flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-background/80 backdrop-blur-md border border-border/60 text-[11px] font-semibold text-foreground shadow-xs">
-            <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping" />
-            <span>Zona de Alta Densidad</span>
-          </div>
+          <DynamicMiniHeatmap locations={peopleLocations} />
+          {hasRealLocations && (
+            <div className="absolute bottom-2 left-2 z-[400] flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-background/80 backdrop-blur-md border border-border/60 text-[11px] font-semibold text-foreground shadow-xs">
+              <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping" />
+              <span>Zonas con Puntos Registrados</span>
+            </div>
+          )}
         </div>
         <div className="space-y-2">
           <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Zonas de Mayor Asistencia</p>
-          <div className="flex flex-wrap gap-1.5">
-            <Badge variant="secondary" className="text-xs bg-rose-500/10 text-rose-400 border border-rose-500/20 px-2.5 py-1 font-medium cursor-pointer hover:bg-rose-500/20" onClick={() => router.push("/maps?view=heatmap")}>
-              📍 B° Derqui (Alta Demanda)
-            </Badge>
-            <Badge variant="secondary" className="text-xs bg-amber-500/10 text-amber-400 border border-amber-500/20 px-2.5 py-1 font-medium cursor-pointer hover:bg-amber-500/20" onClick={() => router.push("/maps?view=heatmap")}>
-              📍 Fuerte Apache (Media)
-            </Badge>
-            <Badge variant="secondary" className="text-xs bg-blue-500/10 text-blue-400 border border-blue-500/20 px-2.5 py-1 font-medium cursor-pointer hover:bg-blue-500/20" onClick={() => router.push("/maps?view=heatmap")}>
-              📍 Caseros Centro (Estable)
-            </Badge>
-          </div>
+
+          {hasRealLocations && topNeighborhoods.length > 0 ? (
+            <div className="flex flex-wrap gap-1.5">
+              {topNeighborhoods.map(([zone, count], idx) => {
+                const colorClass = idx === 0
+                  ? "bg-rose-500/10 text-rose-400 border-rose-500/20 hover:bg-rose-500/20"
+                  : idx === 1
+                  ? "bg-amber-500/10 text-amber-400 border-amber-500/20 hover:bg-amber-500/20"
+                  : "bg-blue-500/10 text-blue-400 border-blue-500/20 hover:bg-blue-500/20";
+                return (
+                  <Badge
+                    key={zone}
+                    variant="secondary"
+                    className={`text-xs border px-2.5 py-1 font-medium cursor-pointer transition-colors ${colorClass}`}
+                    onClick={() => router.push("/maps?view=heatmap")}
+                  >
+                    📍 {zone} ({count} {count === 1 ? "registro" : "registros"})
+                  </Badge>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="p-3 rounded-xl bg-muted/30 border border-border/40 text-center space-y-1">
+              <p className="text-xs font-semibold text-muted-foreground">Sin registros geolocalizados en la BD</p>
+              <p className="text-[10px] text-muted-foreground/60">
+                Al registrar ciudadanos con dirección o coordenadas GPS, las zonas de mayor demanda se calcularán automáticamente.
+              </p>
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>
