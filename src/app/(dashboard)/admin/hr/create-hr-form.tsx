@@ -9,11 +9,14 @@ import { toast } from "sonner";
 import { createHRRecordAction } from "../actions/hr-actions";
 import { Combobox } from "@/components/ui/combobox";
 import { Separator } from "@/components/ui/separator";
+import { Car, GraduationCap } from "lucide-react";
 
 export function CreateHRForm({ areas }: { areas: any[] }) {
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState("ACTIVO");
   const [contractType, setContractType] = useState("MENSUALIZADO");
+  const [hasDrivingPermit, setHasDrivingPermit] = useState(false);
+  const [hasAcademicStatus, setHasAcademicStatus] = useState(false);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -26,6 +29,8 @@ export function CreateHRForm({ areas }: { areas: any[] }) {
       (e.target as HTMLFormElement).reset();
       setStatus("ACTIVO");
       setContractType("MENSUALIZADO");
+      setHasDrivingPermit(false);
+      setHasAcademicStatus(false);
     } else {
       toast.error(res.error);
     }
@@ -92,21 +97,6 @@ export function CreateHRForm({ areas }: { areas: any[] }) {
 
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="category" className="font-bold text-foreground">Categoría</Label>
-            <Input id="category" name="category" type="number" placeholder="Ej: 12" />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="salary" className="font-bold text-foreground">Sueldo Mensual ($ ARS)</Label>
-            <Input id="salary" name="salary" type="number" step="0.01" placeholder="Ej: 450000" />
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="schedule" className="font-bold text-foreground">Horario de Trabajo</Label>
-            <Input id="schedule" name="schedule" placeholder="Ej: 08:00 a 14:00 hs" />
-          </div>
-          <div className="space-y-2">
             <Label htmlFor="contractType" className="font-bold text-foreground">Tipo de Contrato</Label>
             <select
               id="contractType"
@@ -120,6 +110,29 @@ export function CreateHRForm({ areas }: { areas: any[] }) {
               <option value="PLANTA_PERMANENTE">Planta Permanente</option>
               <option value="MONOTRIBUTISTA">Monotributista / Contratado</option>
             </select>
+          </div>
+
+          {contractType !== "MONOTRIBUTISTA" ? (
+            <div className="space-y-2 animate-in fade-in duration-200">
+              <Label htmlFor="category" className="font-bold text-foreground">Categoría</Label>
+              <Input id="category" name="category" type="number" placeholder="Ej: 12" />
+            </div>
+          ) : (
+            <div className="space-y-2 opacity-50">
+              <Label className="font-bold text-muted-foreground">Categoría</Label>
+              <Input placeholder="No aplica a Monotributistas" disabled className="bg-muted/40 cursor-not-allowed" />
+            </div>
+          )}
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="salary" className="font-bold text-foreground">Sueldo / Haber Mensual ($ ARS)</Label>
+            <Input id="salary" name="salary" type="number" step="0.01" placeholder="Ej: 450000" />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="schedule" className="font-bold text-foreground">Horario de Trabajo</Label>
+            <Input id="schedule" name="schedule" placeholder="Ej: 08:00 a 14:00 hs" />
           </div>
         </div>
 
@@ -161,13 +174,52 @@ export function CreateHRForm({ areas }: { areas: any[] }) {
           <Label htmlFor="healthNotes" className="font-bold text-foreground">🩺 Salud, Carpetas Médicas y Aptitud Física</Label>
           <Textarea id="healthNotes" name="healthNotes" placeholder="Ej: Examen pre-ocupacional aprobado." rows={2} />
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="education" className="font-bold text-foreground">🎓 Títulos, Cursos y Acreditaciones Académicas</Label>
-          <Textarea id="education" name="education" placeholder="Ej: Título Secundario Completo." rows={2} />
+
+        <div className="space-y-3 p-3.5 rounded-2xl bg-muted/20 border border-border/50">
+          <div className="flex items-center justify-between">
+            <Label htmlFor="hasAcademicStatus" className="font-bold text-foreground cursor-pointer flex items-center gap-2">
+              <GraduationCap className="h-4 w-4 text-purple-400" /> ¿Posee título o es alumno regular?
+            </Label>
+            <input
+              type="checkbox"
+              id="hasAcademicStatus"
+              checked={hasAcademicStatus}
+              onChange={(e) => setHasAcademicStatus(e.target.checked)}
+              className="h-4 w-4 rounded border-input text-primary focus:ring-primary cursor-pointer"
+            />
+          </div>
+          {hasAcademicStatus && (
+            <div className="space-y-2 pt-1 animate-in fade-in duration-200">
+              <Label htmlFor="education" className="text-xs font-bold text-muted-foreground">Detalle de Título, Carrera o Alumno Regular</Label>
+              <Textarea
+                id="education"
+                name="education"
+                placeholder="Ej: Alumno Regular de Trabajo Social (3er año) / Título Secundario Completo."
+                rows={2}
+              />
+            </div>
+          )}
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="drivingLicense" className="font-bold text-foreground">🚗 Licencia de Conducir y Habilitaciones</Label>
-          <Input id="drivingLicense" name="drivingLicense" placeholder="Ej: Licencia Profesional Clase B2 / C" />
+
+        <div className="space-y-3 p-3.5 rounded-2xl bg-muted/20 border border-border/50">
+          <div className="flex items-center justify-between">
+            <Label htmlFor="hasDrivingPermit" className="font-bold text-foreground cursor-pointer flex items-center gap-2">
+              <Car className="h-4 w-4 text-teal-400" /> ¿Habilitado para conducir flota municipal?
+            </Label>
+            <input
+              type="checkbox"
+              id="hasDrivingPermit"
+              checked={hasDrivingPermit}
+              onChange={(e) => setHasDrivingPermit(e.target.checked)}
+              className="h-4 w-4 rounded border-input text-primary focus:ring-primary cursor-pointer"
+            />
+          </div>
+          {hasDrivingPermit && (
+            <div className="space-y-2 pt-1 animate-in fade-in duration-200">
+              <Label htmlFor="drivingLicense" className="text-xs font-bold text-muted-foreground">Detalle de Licencia y Habilitación</Label>
+              <Input id="drivingLicense" name="drivingLicense" placeholder="Ej: Licencia Profesional Clase B2 / C" />
+            </div>
+          )}
         </div>
       </div>
 
