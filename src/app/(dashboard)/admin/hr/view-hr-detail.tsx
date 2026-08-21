@@ -14,6 +14,19 @@ export function ViewHRDetail({ agent }: { agent: any }) {
 
   if (!agent) return null;
 
+  let legajoData = { tasksText: agent.tasks || "", healthNotes: "", education: "", drivingLicense: "" };
+  try {
+    if (agent.tasks?.startsWith("{")) {
+      const parsed = JSON.parse(agent.tasks);
+      legajoData = {
+        tasksText: parsed.tasksText || "",
+        healthNotes: parsed.healthNotes || "",
+        education: parsed.education || "",
+        drivingLicense: parsed.drivingLicense || ""
+      };
+    }
+  } catch (e) {}
+
   const formatCurrency = (val?: number | string) => {
     if (!val || Number(val) === 0) return "$0";
     return new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(Number(val));
@@ -165,10 +178,10 @@ export function ViewHRDetail({ agent }: { agent: any }) {
 
           <div className="bg-card/50 rounded-2xl p-4 space-y-2 border border-border/50">
             <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-1.5">
-              <Sparkles className="h-3.5 w-3.5 text-primary" /> Tareas, Capacitaciones y Habilitaciones
+              <Sparkles className="h-3.5 w-3.5 text-primary" /> Funciones y Tareas del Puesto
             </p>
             <p className="text-xs text-muted-foreground leading-relaxed italic">
-              {agent.tasks || "No se registraron observaciones o tareas detalladas para este legajo."}
+              {legajoData.tasksText || "No se detallaron funciones específicas para este legajo."}
             </p>
           </div>
         </div>
@@ -180,7 +193,7 @@ export function ViewHRDetail({ agent }: { agent: any }) {
             <div className="flex items-center gap-3">
               <ShieldCheck className="h-5 w-5 text-emerald-400" />
               <div>
-                <p className="text-xs font-bold text-foreground">Aptitud Física de Perfil</p>
+                <p className="text-xs font-bold text-foreground">Aptitud Física del Agente</p>
                 <p className="text-[10px] text-muted-foreground">Examen pre-ocupacional / periódico municipal</p>
               </div>
             </div>
@@ -190,13 +203,11 @@ export function ViewHRDetail({ agent }: { agent: any }) {
           </div>
 
           <div className="p-4 rounded-2xl bg-card/40 border border-border/40 space-y-2">
-            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Detalle de Licencias o Salud</p>
-            <p className="text-xs text-muted-foreground">
-              {agent.status === 'LICENCIA'
+            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Detalle de Salud y Carpetas Médicas</p>
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              {legajoData.healthNotes || (agent.status === 'LICENCIA'
                 ? `Agente en licencia médica ${agent.statusUntil ? `hasta el ${formatDate(agent.statusUntil)}` : ''}.`
-                : agent.tasks?.toLowerCase().includes("salud") || agent.tasks?.toLowerCase().includes("médic")
-                ? agent.tasks
-                : "Sin carpetas médicas o licencias por enfermedad activas en el período actual."}
+                : "Sin observaciones médicas registradas en este legajo.")}
             </p>
           </div>
         </div>
@@ -209,20 +220,18 @@ export function ViewHRDetail({ agent }: { agent: any }) {
               <GraduationCap className="h-5 w-5 text-purple-400" />
               <div>
                 <p className="text-xs font-bold text-foreground">Nivel Académico y Formación</p>
-                <p className="text-[10px] text-muted-foreground">Documentación y certificaciones acreditadas</p>
+                <p className="text-[10px] text-muted-foreground">Documentación y certificaciones registradas</p>
               </div>
             </div>
             <Badge className="bg-purple-500/20 text-purple-400 border border-purple-500/30 text-[10px] uppercase font-bold">
-              Registrado
+              {legajoData.education ? "Acreditado" : "Regular"}
             </Badge>
           </div>
 
           <div className="p-4 rounded-2xl bg-card/40 border border-border/40 space-y-2">
-            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Acreditaciones Registradas en el Legajo</p>
-            <p className="text-xs text-muted-foreground">
-              {agent.tasks?.toLowerCase().includes("título") || agent.tasks?.toLowerCase().includes("curso") || agent.tasks?.toLowerCase().includes("capacita")
-                ? agent.tasks
-                : "Se registran títulos y certificados entregados en la oficina de Recursos Humanos."}
+            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Acreditaciones y Capacitaciones</p>
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              {legajoData.education || "Sin títulos o cursos específicos acreditados en el legajo."}
             </p>
           </div>
         </div>
@@ -239,16 +248,14 @@ export function ViewHRDetail({ agent }: { agent: any }) {
               </div>
             </div>
             <Badge className="bg-teal-500/20 text-teal-400 border border-teal-500/30 text-[10px] uppercase font-bold">
-              {agent.tasks?.toLowerCase().includes("licencia") || agent.tasks?.toLowerCase().includes("conduc") ? "Habilitado" : "Regular"}
+              {legajoData.drivingLicense ? "Habilitado" : "No asignado"}
             </Badge>
           </div>
 
           <div className="p-4 rounded-2xl bg-card/40 border border-border/40 space-y-2">
             <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Observaciones de Conducción</p>
-            <p className="text-xs text-muted-foreground">
-              {agent.tasks?.toLowerCase().includes("licencia") || agent.tasks?.toLowerCase().includes("conduc")
-                ? agent.tasks
-                : "Licencia de conducir estándar o legajo sin habilitación especial asignada."}
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              {legajoData.drivingLicense || "Sin registros de licencia de conducir o habilitación especial asignada."}
             </p>
           </div>
         </div>

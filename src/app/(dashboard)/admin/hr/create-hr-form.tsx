@@ -152,15 +152,22 @@ export function CreateHRForm({ areas }: { areas: any[] }) {
       <Separator />
 
       <div className="space-y-4">
-        <h4 className="text-sm font-black uppercase tracking-widest text-primary">Legajo Digital y Observaciones</h4>
+        <h4 className="text-sm font-black uppercase tracking-widest text-primary">Legajo Digital Unificado</h4>
         <div className="space-y-2">
-          <Label htmlFor="tasks" className="font-bold text-foreground">Títulos, Capacitaciones, Salud y Licencia de Conducir</Label>
-          <Textarea
-            id="tasks"
-            name="tasks"
-            placeholder="Ej: Título Secundario Completo. Aptitud Física Aprobada. Licencia de Conducir Clase B2."
-            rows={4}
-          />
+          <Label htmlFor="tasks" className="font-bold text-foreground">📋 Funciones y Tareas del Puesto</Label>
+          <Textarea id="tasks" name="tasks" placeholder="Ej: Relevamientos territoriales y atención al ciudadano." rows={2} />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="healthNotes" className="font-bold text-foreground">🩺 Salud, Carpetas Médicas y Aptitud Física</Label>
+          <Textarea id="healthNotes" name="healthNotes" placeholder="Ej: Examen pre-ocupacional aprobado." rows={2} />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="education" className="font-bold text-foreground">🎓 Títulos, Cursos y Acreditaciones Académicas</Label>
+          <Textarea id="education" name="education" placeholder="Ej: Título Secundario Completo." rows={2} />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="drivingLicense" className="font-bold text-foreground">🚗 Licencia de Conducir y Habilitaciones</Label>
+          <Input id="drivingLicense" name="drivingLicense" placeholder="Ej: Licencia Profesional Clase B2 / C" />
         </div>
       </div>
 

@@ -1,15 +1,30 @@
 "use server";
+
 import { createHRRecord } from "@/services/hr";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import prisma from "@/lib/prisma";
 import { HRStatus } from "@prisma/client";
 
+function buildTasksPayload(formData: FormData) {
+  const tasksRaw = formData.get("tasks") as string || "";
+  const healthNotes = formData.get("healthNotes") as string || "";
+  const education = formData.get("education") as string || "";
+  const drivingLicense = formData.get("drivingLicense") as string || "";
+
+  if (healthNotes || education || drivingLicense) {
+    return JSON.stringify({ tasksText: tasksRaw, healthNotes, education, drivingLicense });
+  }
+  return tasksRaw;
+}
+
 export async function createHRRecordAction(formData: FormData) {
   const session = await auth();
   if (!session?.user || (session.user.role !== 'SUPERADMIN' && session.user.role !== 'ADMIN_GENERAL')) {
     return { error: "No autorizado" };
   }
+
+  const tasksPayload = buildTasksPayload(formData);
 
   const data = {
     firstName: formData.get("firstName") as string,
@@ -26,7 +41,7 @@ export async function createHRRecordAction(formData: FormData) {
     salary: parseFloat(formData.get("salary") as string) || 0,
     schedule: formData.get("schedule") as string,
     imageUrl: formData.get("imageUrl") as string,
-    tasks: formData.get("tasks") as string,
+    tasks: tasksPayload,
   };
 
   try {
@@ -45,6 +60,8 @@ export async function updateHRRecordAction(id: string, formData: FormData) {
     return { error: "No autorizado" };
   }
 
+  const tasksPayload = buildTasksPayload(formData);
+
   const data = {
     firstName: formData.get("firstName") as string,
     lastName: formData.get("lastName") as string,
@@ -58,16 +75,13 @@ export async function updateHRRecordAction(id: string, formData: FormData) {
     salary: parseFloat(formData.get("salary") as string) || 0,
     schedule: formData.get("schedule") as string,
     imageUrl: formData.get("imageUrl") as string,
-    tasks: formData.get("tasks") as string,
+    tasks: tasksPayload,
     status: formData.get("status") as any,
     statusUntil: formData.get("statusUntil") as string ? new Date(formData.get("statusUntil") as string) : null,
   };
 
   try {
-    await prisma.hRRecord.update({
-      where: { id },
-      data
-    });
+    await prisma.hRRecord.update({ where: { id }, data });
     revalidatePath("/admin/hr");
     return { success: true };
   } catch (error) {
@@ -83,10 +97,7 @@ export async function deleteHRRecordAction(id: string) {
   }
 
   try {
-    await prisma.hRRecord.update({
-      where: { id },
-      data: { status: 'BAJA' as HRStatus }
-    });
+    await prisma.hRRecord.update({ where: { id }, data: { status: 'BAJA' as HRStatus } });
     revalidatePath("/admin/hr");
     return { success: true };
   } catch (error) {

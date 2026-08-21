@@ -15,6 +15,19 @@ export function EditHRForm({ agent, areas, onComplete }: { agent: any, areas: an
   const [status, setStatus] = useState(agent.status || "ACTIVO");
   const [contractType, setContractType] = useState(agent.contractType || "MENSUALIZADO");
 
+  let legajoData = { tasksText: agent.tasks || "", healthNotes: "", education: "", drivingLicense: "" };
+  try {
+    if (agent.tasks?.startsWith("{")) {
+      const parsed = JSON.parse(agent.tasks);
+      legajoData = {
+        tasksText: parsed.tasksText || "",
+        healthNotes: parsed.healthNotes || "",
+        education: parsed.education || "",
+        drivingLicense: parsed.drivingLicense || ""
+      };
+    }
+  } catch (e) {}
+
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setLoading(true);
@@ -150,16 +163,22 @@ export function EditHRForm({ agent, areas, onComplete }: { agent: any, areas: an
       <Separator />
 
       <div className="space-y-4">
-        <h4 className="text-sm font-black uppercase tracking-widest text-primary">Legajo Digital y Observaciones</h4>
+        <h4 className="text-sm font-black uppercase tracking-widest text-primary">Legajo Digital Unificado</h4>
         <div className="space-y-2">
-          <Label htmlFor="tasks" className="font-bold text-foreground">Títulos, Capacitaciones, Salud y Licencia de Conducir</Label>
-          <Textarea
-            id="tasks"
-            name="tasks"
-            defaultValue={agent.tasks || ""}
-            placeholder="Ej: Título Secundario Completo. Aptitud Física Aprobada. Licencia de Conducir Clase B2."
-            rows={4}
-          />
+          <Label htmlFor="tasks" className="font-bold text-foreground">📋 Funciones y Tareas del Puesto</Label>
+          <Textarea id="tasks" name="tasks" defaultValue={legajoData.tasksText} rows={2} />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="healthNotes" className="font-bold text-foreground">🩺 Salud, Carpetas Médicas y Aptitud Física</Label>
+          <Textarea id="healthNotes" name="healthNotes" defaultValue={legajoData.healthNotes} rows={2} />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="education" className="font-bold text-foreground">🎓 Títulos, Cursos y Acreditaciones Académicas</Label>
+          <Textarea id="education" name="education" defaultValue={legajoData.education} rows={2} />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="drivingLicense" className="font-bold text-foreground">🚗 Licencia de Conducir y Habilitaciones</Label>
+          <Input id="drivingLicense" name="drivingLicense" defaultValue={legajoData.drivingLicense} />
         </div>
       </div>
 
