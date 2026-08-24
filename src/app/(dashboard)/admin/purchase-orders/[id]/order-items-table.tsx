@@ -182,7 +182,7 @@ export function OrderItemsTable({ orderId, orderStatus, items }: OrderItemsTable
             fulfilledQuantity: Number(selectedItem.fulfilledQuantity),
             unitOfMeasure: selectedItem.unitOfMeasure || "UNIDAD"
           }}
-          isOpen={isSheetOpen}
+          open={isSheetOpen}
           onOpenChange={(open) => {
             setIsSheetOpen(open);
             if (!open) setSelectedItem(null);
