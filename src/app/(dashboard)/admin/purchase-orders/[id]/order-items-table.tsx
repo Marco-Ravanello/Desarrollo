@@ -24,118 +24,151 @@ export function OrderItemsTable({ orderId, orderStatus, items }: OrderItemsTable
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between px-2">
-        <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center">
-                <ClipboardList className="h-4 w-4" />
-            </div>
-            <div>
-                <h3 className="text-sm font-black text-slate-800 uppercase tracking-tight">Renglones Detallados</h3>
-                <p className="text-[10px] text-slate-400 font-bold uppercase">{totalItems} renglones adjudicados • {fulfilledItems} completados</p>
-            </div>
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-2xl bg-blue-600 text-white flex items-center justify-center shadow-md shadow-blue-500/20">
+            <ClipboardList className="h-5 w-5" />
+          </div>
+          <div>
+            <h3 className="text-sm font-black text-foreground uppercase tracking-wider">Renglones Detallados</h3>
+            <p className="text-[11px] text-muted-foreground font-bold uppercase">
+              {totalItems} renglones adjudicados • {fulfilledItems} completados
+            </p>
+          </div>
         </div>
+
         {orderStatus === "CUMPLIDA" && (
-           <div className="flex items-center gap-1.5 text-[10px] font-black text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-100 uppercase tracking-widest">
-             <PackageCheck className="h-3 w-3" /> ORDEN TOTALMENTE CUMPLIDA
-           </div>
+          <div className="flex items-center gap-1.5 text-[11px] font-black text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-3.5 py-1.5 rounded-full border border-emerald-500/20 uppercase tracking-wider">
+            <PackageCheck className="h-3.5 w-3.5" /> ORDEN TOTALMENTE CUMPLIDA
+          </div>
         )}
       </div>
 
-      <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden">
-        <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-slate-200">
-            <table className="w-full text-sm min-w-[900px] table-fixed">
+      <div className="bg-card rounded-3xl border border-border/60 shadow-sm overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm min-w-[960px] table-auto border-collapse">
             <thead>
-                <tr className="bg-slate-50/50 border-b border-slate-100">
-                <th className="w-[80px] text-left p-5 font-black text-slate-400 uppercase text-[9px] tracking-widest">Reng.</th>
-                <th className="w-[100px] text-left p-5 font-black text-slate-400 uppercase text-[9px] tracking-widest">Cant.</th>
-                <th className="w-[120px] text-left p-5 font-black text-slate-400 uppercase text-[9px] tracking-widest">Unidad</th>
-                <th className="text-left p-5 font-black text-slate-400 uppercase text-[9px] tracking-widest">Descripción del Bien/Servicio</th>
-                <th className="w-[180px] text-left p-5 font-black text-slate-400 uppercase text-[9px] tracking-widest">Avance de Entrega</th>
-                <th className="w-[140px] text-right p-5 font-black text-slate-400 uppercase text-[9px] tracking-widest">P. Unitario</th>
-                <th className="w-[140px] text-right p-5 font-black text-slate-400 uppercase text-[9px] tracking-widest">Subtotal</th>
-                {canEdit && <th className="w-[120px] p-5"></th>}
-                </tr>
+              <tr className="bg-muted/40 border-b border-border/60">
+                <th className="w-16 text-center py-4 px-4 font-black text-muted-foreground uppercase text-[10px] tracking-wider">
+                  Reng.
+                </th>
+                <th className="w-24 text-center py-4 px-4 font-black text-muted-foreground uppercase text-[10px] tracking-wider">
+                  Cant.
+                </th>
+                <th className="w-28 text-center py-4 px-4 font-black text-muted-foreground uppercase text-[10px] tracking-wider">
+                  Unidad
+                </th>
+                <th className="text-left py-4 px-6 font-black text-muted-foreground uppercase text-[10px] tracking-wider min-w-[300px]">
+                  Descripción del Bien / Servicio
+                </th>
+                <th className="w-52 text-left py-4 px-5 font-black text-muted-foreground uppercase text-[10px] tracking-wider">
+                  Avance de Entrega
+                </th>
+                <th className="w-36 text-right py-4 px-5 font-black text-muted-foreground uppercase text-[10px] tracking-wider">
+                  P. Unitario
+                </th>
+                <th className="w-40 text-right py-4 px-6 font-black text-muted-foreground uppercase text-[10px] tracking-wider">
+                  Subtotal
+                </th>
+                {canEdit && <th className="w-32 py-4 px-4 text-center"></th>}
+              </tr>
             </thead>
-            <tbody className="divide-y divide-slate-50">
-                {items.map((item, idx) => {
+            <tbody className="divide-y divide-border/40">
+              {items.map((item, idx) => {
                 const q = Number(item.quantity);
                 const f = Number(item.fulfilledQuantity);
-                const progress = Math.min(100, (f / q) * 100);
-                const isFulfilled = f >= q;
+                const progress = Math.min(100, q > 0 ? (f / q) * 100 : 0);
+                const isFulfilled = f >= q && q > 0;
 
                 return (
-                    <tr key={idx} className="group hover:bg-slate-50/30 transition-all duration-200">
-                    <td className="p-5 align-top">
-                        <span className="text-[10px] font-black text-slate-400">#{idx + 1}</span>
+                  <tr key={idx} className="group hover:bg-muted/30 transition-colors">
+                    <td className="py-4 px-4 text-center align-top">
+                      <span className="text-xs font-black text-muted-foreground bg-muted/60 px-2 py-1 rounded-md">
+                        #{idx + 1}
+                      </span>
                     </td>
-                    <td className="p-5 align-top">
-                        <span className="font-black text-slate-800 text-base leading-none">{q.toLocaleString()}</span>
+                    <td className="py-4 px-4 text-center align-top">
+                      <span className="font-black text-foreground text-base tabular-nums">
+                        {q.toLocaleString()}
+                      </span>
                     </td>
-                    <td className="p-5 align-top">
-                        <Badge variant="secondary" className="bg-blue-50 text-blue-600 border-none font-black text-[9px] uppercase tracking-tighter px-2 py-0.5">
+                    <td className="py-4 px-4 text-center align-top">
+                      <Badge variant="secondary" className="bg-blue-500/10 text-blue-600 dark:text-blue-400 border-none font-bold text-[10px] uppercase px-2.5 py-0.5">
                         {item.unitOfMeasure || "UNIDAD"}
-                        </Badge>
+                      </Badge>
                     </td>
-                    <td className="p-5 align-top">
-                        <p className="text-slate-700 text-xs font-bold leading-relaxed">{item.description}</p>
+                    <td className="py-4 px-6 align-top">
+                      <p className="text-foreground text-xs font-semibold leading-relaxed whitespace-pre-line">
+                        {item.description}
+                      </p>
                     </td>
-                    <td className="p-5 align-top">
-                        <div className="space-y-2">
-                        <div className="flex justify-between text-[10px] font-black uppercase tracking-tighter">
-                            <span className={isFulfilled ? "text-emerald-600" : "text-blue-600"}>
+                    <td className="py-4 px-5 align-top">
+                      <div className="space-y-1.5 min-w-[180px]">
+                        <div className="flex justify-between text-[11px] font-black uppercase tracking-tight">
+                          <span className={isFulfilled ? "text-emerald-600 dark:text-emerald-400" : "text-blue-600 dark:text-blue-400"}>
                             {f.toLocaleString()} de {q.toLocaleString()}
-                            </span>
-                            <span className={isFulfilled ? "text-emerald-500" : "text-slate-400"}>{Math.round(progress)}%</span>
+                          </span>
+                          <span className={isFulfilled ? "text-emerald-500 font-black" : "text-muted-foreground"}>
+                            {Math.round(progress)}%
+                          </span>
                         </div>
-                        <div className="relative w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-                            <div
-                                className={`absolute inset-y-0 left-0 transition-all duration-500 rounded-full ${isFulfilled ? "bg-emerald-500" : "bg-blue-500"}`}
-                                style={{ width: `${progress}%` }}
-                            />
+                        <div className="relative w-full h-2.5 bg-muted rounded-full overflow-hidden">
+                          <div
+                            className={`h-full transition-all duration-500 rounded-full ${
+                              isFulfilled ? "bg-emerald-500" : "bg-blue-500"
+                            }`}
+                            style={{ width: `${progress}%` }}
+                          />
                         </div>
-                        </div>
+                      </div>
                     </td>
-                    <td className="p-5 text-right tabular-nums text-slate-500 font-bold align-top">
-                        <span className="text-[10px] mr-1">$</span>{Number(item.unitPrice).toLocaleString()}
+                    <td className="py-4 px-5 text-right tabular-nums text-muted-foreground font-semibold align-top text-xs">
+                      <span className="text-[10px] mr-0.5">$</span>
+                      {Number(item.unitPrice).toLocaleString("es-AR", { minimumFractionDigits: 2 })}
                     </td>
-                    <td className="p-5 text-right tabular-nums font-black text-slate-900 align-top text-base leading-none">
-                        <span className="text-[10px] mr-1">$</span>{Number(item.totalPrice).toLocaleString()}
+                    <td className="py-4 px-6 text-right tabular-nums font-black text-foreground align-top text-sm">
+                      <span className="text-xs mr-0.5 font-bold text-muted-foreground">$</span>
+                      {Number(item.totalPrice).toLocaleString("es-AR", { minimumFractionDigits: 2 })}
                     </td>
                     {canEdit && (
-                        <td className="p-5 text-right align-top">
+                      <td className="py-4 px-4 text-center align-top">
                         {!isFulfilled ? (
-                            <Button
+                          <Button
                             variant="outline"
                             size="sm"
-                            className="h-9 px-4 text-[10px] font-black uppercase tracking-widest border-blue-200 text-blue-600 hover:bg-blue-600 hover:text-white transition-all shadow-sm rounded-xl"
+                            className="h-8 px-3 text-[10px] font-black uppercase tracking-wider border-blue-200 text-blue-600 hover:bg-blue-600 hover:text-white dark:border-blue-800 dark:text-blue-400 transition-all rounded-xl"
                             onClick={() => {
-                                setSelectedItem(item);
-                                setIsSheetOpen(true);
+                              setSelectedItem(item);
+                              setIsSheetOpen(true);
                             }}
-                            >
+                          >
                             Registrar
-                            </Button>
+                          </Button>
                         ) : (
-                            <div className="flex items-center justify-end gap-1.5 text-emerald-600 font-black text-[10px] uppercase tracking-widest bg-emerald-50/50 py-2 px-3 rounded-xl border border-emerald-100">
-                            <PackageCheck className="h-4 w-4" /> LISTO
-                            </div>
+                          <div className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-black text-[10px] uppercase bg-emerald-500/10 py-1.5 px-3 rounded-xl border border-emerald-500/20">
+                            <PackageCheck className="h-3.5 w-3.5" /> LISTO
+                          </div>
                         )}
-                        </td>
+                      </td>
                     )}
-                    </tr>
+                  </tr>
                 );
-                })}
+              })}
             </tbody>
-            <tfoot className="bg-slate-50/50">
-                <tr>
-                    <td colSpan={6} className="p-6 text-right font-black text-slate-400 uppercase text-[10px] tracking-widest">Suma Total de Renglones:</td>
-                    <td className="p-6 text-right font-black text-2xl text-slate-900 tabular-nums">
-                        <span className="text-sm mr-1 text-slate-400 font-bold">$</span>
-                        {items.reduce((acc, item) => acc + Number(item.totalPrice), 0).toLocaleString()}
-                    </td>
-                    {canEdit && <td className="p-6"></td>}
-                </tr>
+            <tfoot className="bg-muted/30 border-t border-border/60">
+              <tr>
+                <td colSpan={canEdit ? 6 : 5} className="py-5 px-6 text-right font-black text-muted-foreground uppercase text-xs tracking-wider">
+                  Suma Total de Renglones:
+                </td>
+                <td className="py-5 px-6 text-right font-black text-xl text-foreground tabular-nums">
+                  <span className="text-sm mr-1 text-muted-foreground font-bold">$</span>
+                  {items
+                    .reduce((acc, item) => acc + Number(item.totalPrice), 0)
+                    .toLocaleString("es-AR", { minimumFractionDigits: 2 })}
+                </td>
+                {canEdit && <td className="py-5 px-4"></td>}
+              </tr>
             </tfoot>
-            </table>
+          </table>
         </div>
       </div>
 
@@ -149,9 +182,11 @@ export function OrderItemsTable({ orderId, orderStatus, items }: OrderItemsTable
             fulfilledQuantity: Number(selectedItem.fulfilledQuantity),
             unitOfMeasure: selectedItem.unitOfMeasure || "UNIDAD"
           }}
-          open={isSheetOpen}
-          onOpenChange={setIsSheetOpen}
-          onSuccess={() => setSelectedItem(null)}
+          isOpen={isSheetOpen}
+          onOpenChange={(open) => {
+            setIsSheetOpen(open);
+            if (!open) setSelectedItem(null);
+          }}
         />
       )}
     </div>

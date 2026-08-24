@@ -1,4 +1,5 @@
 "use client";
+
 import * as React from "react";
 import { LayoutDashboard, Users, ShieldAlert, ClipboardList, LogOut, Briefcase, Car, UserCog, ChevronLeft, ChevronRight, CheckCircle2, MapPin, Wallet, Building2, FileSpreadsheet, Calendar, Sparkles } from "lucide-react";
 import { useSession, signOut } from "next-auth/react";
@@ -14,6 +15,7 @@ export function AppSidebar() {
   const { data: session } = useSession();
   const pathname = usePathname();
   const user = session?.user;
+
   const [isCollapsed, setIsCollapsed] = React.useState(false);
 
   React.useEffect(() => {
@@ -36,7 +38,7 @@ export function AppSidebar() {
 
   const adminNav = [
     { title: "Agenda Unificada", url: "/admin/calendar", icon: Calendar, color: "text-slate-400" },
-    { title: "Asistente de IA", url: "/admin/assistant", icon: Sparkles, color: "text-slate-400 animate-pulse text-blue-500" },
+    { title: "Asistente de IA", url: "/admin/assistant", icon: Sparkles, color: "text-blue-500 animate-pulse" },
     { title: "Órdenes de compras", url: "/admin/purchase-orders", icon: Briefcase, color: "text-slate-400" },
     { title: "Vehículos y Logística", url: "/admin/vehicles", icon: Car, color: "text-slate-400" },
     { title: "Stock de Insumos", url: "/admin/stock", icon: ClipboardList, color: "text-slate-400" },
@@ -58,7 +60,7 @@ export function AppSidebar() {
   const sidebarColor = getAreaBgColor(user?.role === 'SUPERADMIN' ? 'slate' : (user as any)?.area?.color);
 
   return (
-    <div className={`${isCollapsed ? "w-20" : "w-64"} h-screen sticky top-0 bg-white/75 dark:bg-card/75 backdrop-blur-md text-foreground flex flex-col shrink-0 overflow-hidden transition-all duration-300 relative border-r border-border/40 shadow-municipal`}>
+    <div className={`${isCollapsed ? "w-20" : "w-72"} h-screen sticky top-0 bg-white/80 dark:bg-card/80 backdrop-blur-md text-foreground flex flex-col shrink-0 overflow-hidden transition-all duration-300 relative border-r border-border/40 shadow-municipal`}>
       <Button
         variant="ghost"
         size="icon"
@@ -68,20 +70,20 @@ export function AppSidebar() {
         {isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
       </Button>
 
-      <div className={`p-6 space-y-6 ${isCollapsed ? "px-4" : ""}`}>
-        <div className={`text-2xl font-bold flex items-center gap-2 ${isCollapsed ? "justify-center" : ""}`}>
-          <div className={`bg-primary p-1.5 rounded-xl text-white shadow-lg shadow-primary/20 shrink-0`}>
+      <div className={`p-5 space-y-4 ${isCollapsed ? "px-3" : ""}`}>
+        <div className={`text-2xl font-bold flex items-center gap-2.5 ${isCollapsed ? "justify-center" : ""}`}>
+          <div className={`bg-primary p-2 rounded-2xl text-white shadow-lg shadow-primary/20 shrink-0`}>
             <Building2 className="h-6 w-6" />
           </div>
-          {!isCollapsed && <span className="tracking-tight truncate font-bold text-primary">MuniGestión</span>}
+          {!isCollapsed && <span className="tracking-tight truncate font-black text-primary text-xl">MuniGestión</span>}
         </div>
 
         {!isCollapsed && <GlobalSearch />}
       </div>
 
-      <nav className="flex-1 px-4 space-y-1 overflow-y-auto custom-scrollbar">
+      <nav className="flex-1 px-3 space-y-1 overflow-y-auto custom-scrollbar">
         <div className="pb-2">
-          {!isCollapsed && <p className="px-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Principal</p>}
+          {!isCollapsed && <p className="px-3 text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Principal</p>}
           {navigation.map((item) => {
             const isActive = pathname === item.url;
             return (
@@ -89,21 +91,21 @@ export function AppSidebar() {
                 key={item.title}
                 href={item.url}
                 title={isCollapsed ? item.title : ""}
-                className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-all group mb-1 ${
+                className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all group mb-1 ${
                   isCollapsed ? "justify-center" : ""
                 } ${
-                  isActive ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                  isActive ? "bg-primary text-primary-foreground shadow-sm font-bold" : "text-muted-foreground hover:text-foreground hover:bg-accent font-medium"
                 }`}
               >
                 <item.icon className={`h-5 w-5 shrink-0 ${isActive ? "text-primary-foreground" : item.color} group-hover:text-primary transition-colors`} />
-                {!isCollapsed && <span className="text-sm font-medium truncate">{item.title}</span>}
+                {!isCollapsed && <span className="text-sm truncate">{item.title}</span>}
               </Link>
             );
           })}
         </div>
 
-        <div className="pt-4 pb-2">
-          {!isCollapsed && <p className="px-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Administración</p>}
+        <div className="pt-3 pb-2">
+          {!isCollapsed && <p className="px-3 text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Administración</p>}
           {adminNav.map((item) => {
             const isActive = pathname.startsWith(item.url);
             return (
@@ -111,73 +113,66 @@ export function AppSidebar() {
                 key={item.title}
                 href={item.url}
                 title={isCollapsed ? item.title : ""}
-                className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-all group mb-1 ${
+                className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all group mb-1 ${
                   isCollapsed ? "justify-center" : ""
                 } ${
-                  isActive ? "bg-accent text-accent-foreground font-bold" : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                  isActive ? "bg-accent text-accent-foreground font-bold" : "text-muted-foreground hover:text-foreground hover:bg-accent font-medium"
                 }`}
               >
                 <item.icon className={`h-5 w-5 shrink-0 ${isActive ? "text-primary" : "text-slate-400"} group-hover:text-primary transition-colors`} />
-                {!isCollapsed && <span className="text-sm font-medium truncate">{item.title}</span>}
+                {!isCollapsed && <span className="text-sm truncate">{item.title}</span>}
               </Link>
             );
           })}
         </div>
 
-        <div className="pt-4 pb-2">
-          {!isCollapsed && <p className="px-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Áreas Sociales</p>}
+        <div className="pt-3 pb-2">
+          {!isCollapsed && <p className="px-3 text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Áreas Sociales</p>}
           {socialAreas.map((item) => (
             <Link
               key={item.title}
               href={item.url}
               title={isCollapsed ? item.title : ""}
-              className={`flex items-center gap-3 px-3 py-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-all group mb-1 ${
+              className={`flex items-center gap-3 px-3.5 py-2.5 text-muted-foreground hover:text-foreground hover:bg-accent rounded-xl transition-all group mb-1 font-medium ${
                 isCollapsed ? "justify-center" : ""
               }`}
             >
               <item.icon className={`h-5 w-5 shrink-0 ${getAreaNavColor(item.color)} opacity-70 group-hover:opacity-100 transition-opacity`} />
-              {!isCollapsed && <span className="text-sm font-medium truncate">{item.title}</span>}
+              {!isCollapsed && <span className="text-sm truncate">{item.title}</span>}
             </Link>
           ))}
-
-          {(user?.role === "SUPERADMIN" || user?.role === "DIRECCION_GENERAL" || user?.role === "VIOLENCIA_GENERO") && (
-            <Link
-              href="/areas/violence"
-              title={isCollapsed ? "Violencia de Género" : ""}
-              className={`flex items-center gap-3 px-3 py-2 text-rose-500/80 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-lg transition-all group mt-1 ${
-                isCollapsed ? "justify-center" : ""
-              }`}
-            >
-              <ShieldAlert className="h-5 w-5 shrink-0 text-rose-500" />
-              {!isCollapsed && <span className="text-sm font-medium truncate">Violencia de Género</span>}
-            </Link>
-          )}
         </div>
       </nav>
 
-      <div className={`border-t border-border p-4 mt-auto flex items-center gap-3 ${isCollapsed ? "flex-col" : ""}`}>
-        <Avatar className="h-8 w-8 shrink-0">
-          <AvatarFallback className="bg-accent text-accent-foreground">{user?.name?.[0] || "U"}</AvatarFallback>
-        </Avatar>
-
-        {!isCollapsed && (
-          <div className="flex-1 overflow-hidden">
-            <p className="text-sm font-medium truncate text-foreground">{user?.name || "Invitado"}</p>
-            <p className="text-[10px] text-muted-foreground truncate uppercase font-bold">{user?.role || "Sin rol"}</p>
+      <div className="p-3 border-t border-border/40 bg-muted/20">
+        <div className={`flex items-center gap-3 ${isCollapsed ? "justify-center" : "justify-between"}`}>
+          <div className="flex items-center gap-2.5 min-w-0">
+            <Avatar className="h-9 w-9 rounded-xl border border-border shrink-0">
+              <AvatarFallback className="bg-primary/10 text-primary font-bold text-xs">
+                {user?.name?.[0] || 'U'}
+              </AvatarFallback>
+            </Avatar>
+            {!isCollapsed && (
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-bold text-foreground truncate">{user?.name || "Usuario"}</p>
+                <p className="text-[10px] text-muted-foreground font-semibold uppercase truncate">{user?.role || "Agente"}</p>
+              </div>
+            )}
           </div>
-        )}
-
-        <div className={`flex items-center gap-1 ${isCollapsed ? "flex-col" : ""}`}>
-          <ThemeToggle />
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => signOut()}
-            className="text-muted-foreground hover:text-foreground hover:bg-accent"
-            title="Cerrar sesión"
-          >
-            <LogOut className="h-4 w-4" />
-          </Button>
+          {!isCollapsed && (
+            <div className="flex items-center gap-1 shrink-0">
+              <ThemeToggle />
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => signOut({ callbackUrl: "/login" })}
+                className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg"
+                title="Cerrar sesión"
+              >
+                <LogOut className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
         </div>
       </div>
     </div>
