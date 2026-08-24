@@ -1,7 +1,7 @@
 "use server";
 
 import { writeFile, mkdir } from "fs/promises";
-import { join } from "path";
+import { join, basename, resolve } from "path";
 import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
@@ -17,7 +17,7 @@ export async function uploadDocumentAction(formData: FormData) {
   if (!file || file.size === 0) return { error: "No se seleccionó ningún archivo válido" };
 
   try {
-    const uploadsDir = join(process.cwd(), "public", "uploads");
+    const uploadsDir = resolve(process.cwd(), "public", "uploads");
 
     // Ensure directory exists recursively
     await mkdir(uploadsDir, { recursive: true });
@@ -25,15 +25,21 @@ export async function uploadDocumentAction(formData: FormData) {
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
-    const fileName = `${Date.now()}-${file.name.replace(/\s+/g, '_')}`;
-    const path = join(uploadsDir, fileName);
+    // Sanitize filename to prevent relative paths or malicious character uploads
+    const cleanFilename = basename(file.name).replace(/[^a-zA-Z0-9_.-]/g, "_");
+    const safeFilename = `${Date.now()}-${cleanFilename}`;
+    const path = join(uploadsDir, safeFilename);
+
+    if (!path.startsWith(uploadsDir)) {
+      return { error: "Acceso denegado: nombre de archivo inválido" };
+    }
 
     await writeFile(path, buffer);
 
     const document = await prisma.document.create({
       data: {
         name: file.name,
-        url: `/uploads/${fileName}`,
+        url: `/uploads/${safeFilename}`,
         fileType: file.type,
         personId: personId || null,
         caseId: caseId || null,

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { queryAssistantAction } from "../actions/assistant-actions";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -16,7 +17,17 @@ import {
   FileText,
   RefreshCw,
   Package,
-  BookOpen
+  BookOpen,
+  Volume2,
+  VolumeX,
+  Mic,
+  MicOff,
+  MapPin,
+  FileSpreadsheet,
+  CheckCircle2,
+  ArrowUpRight,
+  ExternalLink,
+  ShieldAlert
 } from "lucide-react";
 import { toast } from "sonner";
 import { useTheme } from "next-themes";
@@ -33,6 +44,7 @@ interface Message {
 const COLORS = ['#3b82f6', '#10b981', '#f5a623', '#ef4444', '#8b5cf6', '#ec4899'];
 
 export default function AssistantPage() {
+  const router = useRouter();
   const { theme } = useTheme();
   const isDark = theme === "dark";
 
@@ -40,18 +52,166 @@ export default function AssistantPage() {
     {
       id: "welcome",
       sender: "assistant",
-      text: "### 👋 ¡Hola! Soy tu Asistente Inteligente Municipal\n\nEstoy conectado en tiempo real a la base de datos de MuniGestión. Puedo responder tus preguntas sobre **Recursos Humanos, Presupuesto, Vehículos, Casos Sociales, Convenios e Inventario**.\n\n¿En qué puedo ayudarte hoy?",
+      text: "### Sistema de Asistencia Inteligente Municipal\n\nEste canal automatizado facilita la consulta y auditoría de la base de datos de MuniGestión en tiempo real. Puede formular preguntas o solicitar reportes estructurados sobre los módulos de **Recursos Humanos, Presupuesto, Vehículos, Casos Sociales, Convenios e Inventario**.\n\nPor favor, detalle la consulta administrativa o el análisis que desea realizar.",
       timestamp: new Date()
     }
   ]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [currentlySpeakingId, setCurrentlySpeakingId] = useState<string | null>(null);
+  const [isListening, setIsListening] = useState(false);
+  const recognitionRef = useRef<any>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Auto scroll to bottom
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading]);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+      if (SpeechRecognition) {
+        const recognition = new SpeechRecognition();
+        recognition.continuous = false; // Stop automatically when user stops speaking
+        recognition.interimResults = false;
+        recognition.lang = "es-AR"; // Argentina Spanish
+
+        recognition.onstart = () => {
+          setIsListening(true);
+        };
+
+        recognition.onresult = (event: any) => {
+          const transcript = event.results[0][0].transcript;
+          if (transcript) {
+            setInput(prev => {
+              const cleanedPrev = prev.trim();
+              return cleanedPrev ? `${cleanedPrev} ${transcript}` : transcript;
+            });
+          }
+        };
+
+        recognition.onerror = (event: any) => {
+          console.error("Speech recognition error:", event.error);
+          if (event.error !== "no-speech") {
+            toast.error(`Error de reconocimiento de voz: ${event.error}`);
+          }
+          setIsListening(false);
+        };
+
+        recognition.onend = () => {
+          setIsListening(false);
+        };
+
+        recognitionRef.current = recognition;
+      }
+    }
+
+    return () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.abort();
+      }
+    };
+  }, []);
+
+  const toggleListening = () => {
+    if (!recognitionRef.current) {
+      toast.error("El dictado por voz no es soportado por este navegador.");
+      return;
+    }
+
+    if (isListening) {
+      recognitionRef.current.stop();
+    } else {
+      try {
+        recognitionRef.current.start();
+      } catch (err) {
+        console.error("Failed to start speech recognition:", err);
+      }
+    }
+  };
+
+  // Clean speaking on unmount
+  useEffect(() => {
+    return () => {
+      if (typeof window !== "undefined" && window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+      }
+    };
+  }, []);
+
+  const speakText = (text: string, msgId: string) => {
+    if (typeof window === "undefined" || !window.speechSynthesis) {
+      toast.error("Tu navegador no soporta síntesis de voz (Text-to-Speech).");
+      return;
+    }
+
+    if (currentlySpeakingId === msgId) {
+      window.speechSynthesis.cancel();
+      setCurrentlySpeakingId(null);
+      return;
+    }
+
+    window.speechSynthesis.cancel(); // Stop any active reading first
+
+    const cleanText = cleanMarkdownForSpeech(text);
+    const utterance = new SpeechSynthesisUtterance(cleanText);
+
+    // Get Spanish voice
+    const voices = window.speechSynthesis.getVoices();
+    const esVoice = voices.find(v => v.lang.includes("es-AR")) ||
+                    voices.find(v => v.lang.startsWith("es"));
+    if (esVoice) {
+      utterance.voice = esVoice;
+    }
+
+    utterance.rate = 1.0; // Normal rate
+    utterance.pitch = 1.0;
+
+    utterance.onend = () => {
+      setCurrentlySpeakingId(null);
+    };
+
+    utterance.onerror = (e) => {
+      console.error("Speech error:", e);
+      setCurrentlySpeakingId(null);
+    };
+
+    setCurrentlySpeakingId(msgId);
+    window.speechSynthesis.speak(utterance);
+  };
+
+  const cleanMarkdownForSpeech = (markdown: string) => {
+    let clean = markdown;
+    // Strip tables first (lines starting with pipes)
+    clean = clean.split("\n")
+      .filter(line => {
+        const trimmed = line.trim();
+        // Remove lines with only hyphens/pipes used as table separators
+        if (trimmed.startsWith("|") && trimmed.includes("-")) return false;
+        return true;
+      })
+      .join("\n");
+
+    clean = clean.replace(/\|/g, " ") // replace table dividers with spaces
+      .replace(/#{1,6}\s+/g, "") // remove markdown headers
+      .replace(/\*\*/g, "") // remove bold markers
+      .replace(/\*/g, "") // remove italic markers
+      .replace(/`/g, "") // remove inline code
+      .replace(/\[([^\]]+)\]\((.*?)\)/g, "$1") // convert markdown links [text](url) to just "text"
+      .replace(/\s+/g, " "); // collapse whitespace
+    return clean.trim();
+  };
+
+  const handleActionButton = (act: { label: string; actionType: string; payload?: any }) => {
+    if (act.actionType === "NAVIGATE" && act.payload?.path) {
+      router.push(act.payload.path);
+      toast.success(`Navegando a: ${act.label}`);
+    } else if (act.actionType === "OPEN_DIALOG") {
+      router.push("/tasks");
+      toast.info("Por favor, crea una nueva tarea para asignar este caso.");
+    }
+  };
 
   const handleQuery = async (text: string) => {
     if (!text.trim() || loading) return;
@@ -66,26 +226,104 @@ export default function AssistantPage() {
       timestamp: new Date()
     };
 
+    // Prepare history to send (excluding the welcome message to keep prompt focused)
+    const historyToSend = messages
+      .filter(m => m.id !== "welcome")
+      .map(m => ({
+        role: m.sender,
+        content: m.text
+      }));
+
     setMessages(prev => [...prev, userMessage]);
     setInput("");
     setLoading(true);
 
+    // Insert an empty assistant message which we will populate in real-time
+    const assistantMessage: Message = {
+      id: assistantMsgId,
+      sender: "assistant",
+      text: "",
+      timestamp: new Date(),
+      dataSummary: { sources: [], actions: [] }
+    };
+
+    setMessages(prev => [...prev, assistantMessage]);
+
     try {
-      const response = await queryAssistantAction(text);
+      const response = await fetch("/api/assistant/stream", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ query: text, history: historyToSend }),
+      });
 
-      const assistantMessage: Message = {
-        id: assistantMsgId,
-        sender: "assistant",
-        text: response.answer,
-        timestamp: new Date(),
-        dataSummary: response.dataSummary
-      };
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
 
-      setMessages(prev => [...prev, assistantMessage]);
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+      if (!reader) throw new Error("ReadableStream not supported in this browser.");
+
+      let currentText = "";
+      let dataSummary: any = { sources: [], actions: [] };
+
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+
+        const chunkText = decoder.decode(value);
+        const lines = chunkText.split("\n");
+
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (trimmed === "") continue;
+
+          if (trimmed.startsWith("data: ")) {
+            try {
+              const payloadStr = trimmed.substring(6);
+              // Safely handle if it's the metadata or completion event
+              if (payloadStr.startsWith("{")) {
+                const parsed = JSON.parse(payloadStr);
+                if (parsed.chunk) {
+                  currentText += parsed.chunk;
+                  setMessages(prev =>
+                    prev.map(m =>
+                      m.id === assistantMsgId
+                        ? { ...m, text: currentText }
+                        : m
+                    )
+                  );
+                } else if (parsed.done) {
+                  dataSummary = parsed.dataSummary || { sources: [], actions: [] };
+                  setMessages(prev =>
+                    prev.map(m =>
+                      m.id === assistantMsgId
+                        ? { ...m, dataSummary }
+                        : m
+                    )
+                  );
+                }
+              }
+            } catch (err) {}
+          } else if (trimmed.startsWith("event: metadata")) {
+            // metadata follows
+          }
+        }
+      }
     } catch (err: any) {
       toast.error("Error al procesar la consulta", {
         description: err.message || "Inténtalo de nuevo en unos momentos."
       });
+      // Fallback or show error in message
+      setMessages(prev =>
+        prev.map(m =>
+          m.id === assistantMsgId
+            ? { ...m, text: "⚠️ Ocurrió un error al procesar la consulta por streaming. Por favor, intenta de nuevo." }
+            : m
+        )
+      );
     } finally {
       setLoading(false);
     }
@@ -97,11 +335,15 @@ export default function AssistantPage() {
   };
 
   const clearChat = () => {
+    if (typeof window !== "undefined" && window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+    }
+    setCurrentlySpeakingId(null);
     setMessages([
       {
         id: "welcome",
         sender: "assistant",
-        text: "### 👋 ¡Hola! Soy tu Asistente Inteligente Municipal\n\nEstoy conectado en tiempo real a la base de datos de MuniGestión. Puedo responder tus preguntas sobre **Recursos Humanos, Presupuesto, Vehículos, Casos Sociales, Convenios e Inventario**.\n\n¿En qué puedo ayudarte hoy?",
+        text: "### Sistema de Asistencia Inteligente Municipal\n\nEste canal automatizado facilita la consulta y auditoría de la base de datos de MuniGestión en tiempo real. Puede formular preguntas o solicitar reportes estructurados sobre los módulos de **Recursos Humanos, Presupuesto, Vehículos, Casos Sociales, Convenios e Inventario**.\n\nPor favor, detalle la consulta administrativa o el análisis que desea realizar.",
         timestamp: new Date()
       }
     ]);
@@ -178,7 +420,6 @@ export default function AssistantPage() {
       if (trimmed.startsWith("###")) {
         elements.push(
           <h3 key={index} className="text-lg font-extrabold tracking-tight mt-5 mb-2 text-foreground flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-blue-500 animate-pulse" />
             {trimmed.replace("###", "").trim()}
           </h3>
         );
@@ -418,7 +659,7 @@ export default function AssistantPage() {
                   <div className={`rounded-3xl p-5 shadow-sm text-foreground relative ${
                     m.sender === "user"
                       ? "bg-blue-600/10 border border-blue-500/20 rounded-tr-none"
-                      : "bg-background/45 border border-border/30 rounded-tl-none w-full"
+                      : "bg-background/45 border border-border/30 rounded-tl-none w-full pr-12"
                   }`}>
                     {m.sender === "user" ? (
                       <p className="text-sm font-semibold leading-relaxed">{m.text}</p>
@@ -428,7 +669,68 @@ export default function AssistantPage() {
 
                         {/* Interactive Recharts Chart rendering */}
                         {m.dataSummary?.chart && renderChart(m.dataSummary.chart)}
+
+                        {/* Verified Sources rendering */}
+                        {m.dataSummary?.sources && m.dataSummary.sources.length > 0 && (
+                          <div className="mt-4 pt-3 border-t border-border/20 space-y-2">
+                            <p className="text-[10px] font-black uppercase tracking-wider text-muted-foreground flex items-center gap-1 select-none">
+                              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
+                              Fuentes Verificadas de la BD Municipal
+                            </p>
+                            <div className="flex flex-wrap gap-2">
+                              {m.dataSummary.sources.map((src: any, idx: number) => (
+                                <button
+                                  key={idx}
+                                  onClick={() => src.url && router.push(src.url)}
+                                  className="text-xs bg-muted/65 hover:bg-muted/80 border border-border/30 rounded-xl px-2.5 py-1.5 font-bold transition-all text-foreground/85 hover:text-foreground flex items-center gap-1.5"
+                                  title={src.url ? "Ver ficha de origen" : undefined}
+                                >
+                                  {src.type === "Ciudadano" && <User className="h-3 w-3 text-blue-500" />}
+                                  {src.type === "Caso Social" && <FileText className="h-3 w-3 text-rose-500" />}
+                                  {src.type === "Orden de Compra" && <FileSpreadsheet className="h-3 w-3 text-emerald-500" />}
+                                  {src.type === "Vehículo" && <Car className="h-3 w-3 text-amber-500" />}
+                                  {src.type === "Recursos Humanos" && <Users className="h-3 w-3 text-indigo-500" />}
+                                  {src.name}
+                                  {src.url && <ArrowUpRight className="h-2.5 w-2.5 text-muted-foreground" />}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Interactive Action buttons */}
+                        {m.dataSummary?.actions && m.dataSummary.actions.length > 0 && (
+                          <div className="mt-3 flex flex-wrap gap-2 select-none">
+                            {m.dataSummary.actions.map((act: any, idx: number) => (
+                              <Button
+                                key={idx}
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleActionButton(act)}
+                                className="h-8 rounded-xl text-xs font-bold border-blue-500/20 bg-blue-500/5 hover:bg-blue-500/10 text-blue-600 hover:text-blue-700 flex items-center gap-1.5"
+                              >
+                                {act.label === "Ver en Mapa Social" && <MapPin className="h-3.5 w-3.5" />}
+                                {act.label === "Asignar Tarea" && <CheckCircle2 className="h-3.5 w-3.5" />}
+                                {act.label}
+                              </Button>
+                            ))}
+                          </div>
+                        )}
                       </div>
+                    )}
+
+                    {m.sender === "assistant" && (
+                      <button
+                        onClick={() => speakText(m.text, m.id)}
+                        className="absolute top-4 right-4 p-1.5 rounded-xl hover:bg-muted/60 transition-all text-muted-foreground hover:text-blue-500"
+                        title={currentlySpeakingId === m.id ? "Detener voz" : "Escuchar respuesta"}
+                      >
+                        {currentlySpeakingId === m.id ? (
+                          <VolumeX className="h-4 w-4 text-blue-500 animate-pulse" />
+                        ) : (
+                          <Volume2 className="h-4 w-4" />
+                        )}
+                      </button>
                     )}
 
                     <span className="text-[9px] text-muted-foreground font-bold tracking-wider uppercase block mt-2.5 text-right">
@@ -465,6 +767,20 @@ export default function AssistantPage() {
                   disabled={loading}
                   className="flex-1 h-12 rounded-2xl bg-background/50 border-border/40 text-foreground text-sm font-medium focus-visible:ring-blue-500 px-4"
                 />
+                <Button
+                  type="button"
+                  onClick={toggleListening}
+                  variant="outline"
+                  disabled={loading}
+                  className={`h-12 w-12 rounded-2xl flex items-center justify-center shrink-0 border-border/40 transition-all ${
+                    isListening
+                      ? "bg-red-500 text-white border-red-500 animate-pulse hover:bg-red-600"
+                      : "bg-background/50 text-muted-foreground hover:text-foreground hover:bg-muted"
+                  }`}
+                  title={isListening ? "Detener dictado" : "Dictar por voz (Speech-to-Text)"}
+                >
+                  {isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+                </Button>
                 <Button
                   type="submit"
                   disabled={!input.trim() || loading}

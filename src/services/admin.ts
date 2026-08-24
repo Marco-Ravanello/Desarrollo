@@ -1,5 +1,63 @@
 import prisma from "@/lib/prisma";
 import { OrderStatus } from "@prisma/client";
+import { z } from "zod";
+
+export const CreatePurchaseOrderItemSchema = z.object({
+  quantity: z.number().or(z.string().transform(Number)),
+  unitOfMeasure: z.string().optional().nullable(),
+  description: z.string(),
+  unitPrice: z.number().or(z.string().transform(Number)),
+  totalPrice: z.number().or(z.string().transform(Number)),
+});
+
+export const CreatePurchaseOrderSchema = z.object({
+  number: z.string(),
+  providerId: z.string().optional().nullable(),
+  providerName: z.string().optional().nullable(),
+  providerCuit: z.string().optional().nullable(),
+  providerNumber: z.string().optional().nullable(),
+  amount: z.number().or(z.string().transform(Number)),
+  description: z.string().optional().nullable(),
+  expediente: z.string().optional().nullable(),
+  deliveryDate: z.string().or(z.date()).optional().nullable(),
+  deliveryPlace: z.string().optional().nullable(),
+  paymentTerms: z.string().optional().nullable(),
+  items: z.array(CreatePurchaseOrderItemSchema).optional(),
+});
+
+export const CreateProviderSchema = z.object({
+  name: z.string().min(1),
+  cuit: z.string().min(1),
+  bank: z.string().optional().nullable(),
+  cbu: z.string().optional().nullable(),
+});
+
+export const CreateVehicleSchema = z.object({
+  plate: z.string().min(1),
+  brand: z.string().min(1),
+  model: z.string().min(1),
+});
+
+export const CreateSupplySchema = z.object({
+  name: z.string().min(1),
+  description: z.string().optional().nullable(),
+  stock: z.number().or(z.string().transform(Number)),
+  minStock: z.number().or(z.string().transform(Number)),
+  areaId: z.string().optional().nullable(),
+});
+
+export const CreateAgreementSchema = z.object({
+  number: z.string().min(1),
+  title: z.string().min(1),
+  description: z.string().optional().nullable(),
+  parties: z.string().min(1),
+  amount: z.number().or(z.string().transform(Number)).optional().nullable(),
+  startDate: z.string().or(z.date()).optional().nullable(),
+  endDate: z.string().or(z.date()).optional().nullable(),
+  status: z.enum(["EN_REVISION", "VIGENTE", "VENCIDO", "RESCINDIDO", "FINALIZADO"]).optional().nullable(),
+  areaId: z.string().optional().nullable(),
+  fileUrl: z.string().optional().nullable(),
+});
 
 export async function getPurchaseOrders(status?: string) {
   return await prisma.purchaseOrder.findMany({
@@ -44,7 +102,9 @@ export async function getOrderAuditLogs(id: string) {
   });
 }
 
-export async function createPurchaseOrder(data: any) {
+export async function createPurchaseOrder(rawData: z.infer<typeof CreatePurchaseOrderSchema>) {
+  const data = CreatePurchaseOrderSchema.parse(rawData);
+
   return await prisma.purchaseOrder.create({
     data: {
       number: data.number,
@@ -53,14 +113,14 @@ export async function createPurchaseOrder(data: any) {
       providerCuit: data.providerCuit || null,
       providerNumber: data.providerNumber || null,
       amount: data.amount,
-      description: data.description,
+      description: data.description || "",
       expediente: data.expediente || null,
       deliveryDate: data.deliveryDate ? new Date(data.deliveryDate) : null,
       deliveryPlace: data.deliveryPlace || null,
       paymentTerms: data.paymentTerms || null,
       status: 'PENDIENTE_APROBACION',
       items: data.items ? {
-        create: data.items.map((item: any) => ({
+        create: data.items.map((item) => ({
           quantity: item.quantity,
           unitOfMeasure: item.unitOfMeasure,
           description: item.description,
@@ -78,7 +138,9 @@ export async function getProviders() {
   });
 }
 
-export async function createProvider(data: any) {
+export async function createProvider(rawData: z.infer<typeof CreateProviderSchema>) {
+  const data = CreateProviderSchema.parse(rawData);
+
   return await prisma.provider.create({
     data: {
       name: data.name,
@@ -128,7 +190,9 @@ export async function getVehicleWithHistory(id: string) {
   });
 }
 
-export async function createVehicle(data: any) {
+export async function createVehicle(rawData: z.infer<typeof CreateVehicleSchema>) {
+  const data = CreateVehicleSchema.parse(rawData);
+
   return await prisma.vehicle.create({
     data: {
       plate: data.plate,
@@ -160,13 +224,15 @@ export async function getSupplies() {
   });
 }
 
-export async function createSupply(data: any) {
+export async function createSupply(rawData: z.infer<typeof CreateSupplySchema>) {
+  const data = CreateSupplySchema.parse(rawData);
+
   return await prisma.supplyItem.create({
     data: {
       name: data.name,
       description: data.description,
-      stock: parseInt(data.stock),
-      minStock: parseInt(data.minStock),
+      stock: typeof data.stock === "number" ? data.stock : parseInt(data.stock),
+      minStock: typeof data.minStock === "number" ? data.minStock : parseInt(data.minStock),
       areaId: data.areaId || null
     }
   });
@@ -186,14 +252,16 @@ export async function getAgreements() {
   });
 }
 
-export async function createAgreement(data: any) {
+export async function createAgreement(rawData: z.infer<typeof CreateAgreementSchema>) {
+  const data = CreateAgreementSchema.parse(rawData);
+
   return await prisma.agreement.create({
     data: {
       number: data.number,
       title: data.title,
       description: data.description,
       parties: data.parties,
-      amount: data.amount,
+      amount: data.amount || null,
       startDate: data.startDate ? new Date(data.startDate) : null,
       endDate: data.endDate ? new Date(data.endDate) : null,
       status: data.status || 'VIGENTE',

@@ -1,4 +1,23 @@
 import prisma from "@/lib/prisma";
+import { z } from "zod";
+
+export const CreatePersonSchema = z.object({
+  dni: z.string().min(1),
+  firstName: z.string().min(1),
+  lastName: z.string().min(1),
+  birthDate: z.string().or(z.date()).optional().nullable(),
+  address: z.string().min(1),
+  phone: z.string().optional().nullable(),
+  email: z.string().email().or(z.string().length(0)).optional().nullable(),
+});
+
+export const UpdatePersonSchema = z.object({
+  firstName: z.string().optional(),
+  lastName: z.string().optional(),
+  address: z.string().optional(),
+  phone: z.string().optional().nullable(),
+  email: z.string().email().or(z.string().length(0)).optional().nullable(),
+});
 
 export async function getPeople(query?: string) {
   const numericQuery = query ? query.replace(/[^0-9]/g, '') : null;
@@ -46,33 +65,56 @@ export async function getPersonById(id: string) {
 }
 
 export async function getPeopleStats() {
-  const people = await prisma.person.findMany({
-    select: {
-      birthDate: true,
-      cases: { select: { area: { select: { name: true } } } }
-    }
+  const total = await prisma.person.count();
+
+  // Load only the birthDate column for citizens with birthDates (extremely light RAM footprint)
+  const birthDates = await prisma.person.findMany({
+    where: { birthDate: { not: null } },
+    select: { birthDate: true }
   });
 
   const now = new Date();
+  const currentYear = now.getFullYear();
   let totalAge = 0;
-  let withAge = 0;
-  const areaCounts: Record<string, number> = {};
+  const withAge = birthDates.length;
 
-  people.forEach(p => {
+  birthDates.forEach(p => {
     if (p.birthDate) {
-      const age = now.getFullYear() - p.birthDate.getFullYear();
-      totalAge += age;
-      withAge++;
+      totalAge += (currentYear - p.birthDate.getFullYear());
     }
-    p.cases.forEach(c => {
-      areaCounts[c.area.name] = (areaCounts[c.area.name] || 0) + 1;
-    });
   });
 
+  const avgAge = withAge > 0 ? Math.round(totalAge / withAge) : 0;
+
+  // Use database aggregation to find the most active area
+  const topAreaGroup = await prisma.case.groupBy({
+    by: ['areaId'],
+    _count: {
+      _all: true
+    },
+    orderBy: {
+      _count: {
+        areaId: 'desc'
+      }
+    },
+    take: 1
+  });
+
+  let topArea = 'N/A';
+  if (topAreaGroup.length > 0 && topAreaGroup[0].areaId) {
+    const area = await prisma.area.findUnique({
+      where: { id: topAreaGroup[0].areaId },
+      select: { name: true }
+    });
+    if (area) {
+      topArea = area.name;
+    }
+  }
+
   return {
-    total: people.length,
-    avgAge: withAge > 0 ? Math.round(totalAge / withAge) : 0,
-    topArea: Object.entries(areaCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || 'N/A'
+    total,
+    avgAge,
+    topArea
   };
 }
 
@@ -117,7 +159,8 @@ async function geocodeAddress(address: string) {
     };
 }
 
-export async function createPerson(data: any) {
+export async function createPerson(rawData: z.infer<typeof CreatePersonSchema>) {
+  const data = CreatePersonSchema.parse(rawData);
   const coords = await geocodeAddress(data.address);
 
   return await prisma.person.create({
@@ -128,14 +171,15 @@ export async function createPerson(data: any) {
       birthDate: data.birthDate ? new Date(data.birthDate) : null,
       address: data.address,
       phone: data.phone,
-      email: data.email,
+      email: data.email || null,
       latitude: coords.lat,
       longitude: coords.lng,
     }
   });
 }
 
-export async function updatePerson(id: string, data: any) {
+export async function updatePerson(id: string, rawData: z.infer<typeof UpdatePersonSchema>) {
+  const data = UpdatePersonSchema.parse(rawData);
   let coords = undefined;
   if (data.address) {
     coords = await geocodeAddress(data.address);
@@ -148,7 +192,7 @@ export async function updatePerson(id: string, data: any) {
       lastName: data.lastName,
       address: data.address,
       phone: data.phone,
-      email: data.email,
+      email: data.email || null,
       ...(coords ? { latitude: coords.lat, longitude: coords.lng } : {})
     }
   });
