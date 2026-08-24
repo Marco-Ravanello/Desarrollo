@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { LayoutDashboard, Users, ShieldAlert, ClipboardList, LogOut, Briefcase, Car, UserCog, ChevronLeft, ChevronRight, CheckCircle2, MapPin, Wallet, Building2, FileSpreadsheet, Calendar, Sparkles, CloudRain } from "lucide-react";
+import { LayoutDashboard, Users, ShieldAlert, ClipboardList, LogOut, Briefcase, Car, UserCog, ChevronLeft, ChevronRight, CheckCircle2, MapPin, Wallet, Building2, FileSpreadsheet, Calendar, Sparkles, CloudRain, Settings } from "lucide-react";
 import { useSession, signOut } from "next-auth/react";
 import { getAreaNavColor, getAreaBgColor } from "@/lib/area-theme";
 import { Button } from "@/components/ui/button";
@@ -45,6 +45,7 @@ export function AppSidebar() {
     { title: "Convenios y Presupuesto", url: "/admin/budget", icon: Wallet, color: "text-slate-400" },
     { title: "Recursos Humanos", url: "/admin/hr", icon: UserCog, color: "text-slate-400" },
     { title: "Emergencia Climática", url: "/admin/emergency", icon: CloudRain, color: "text-amber-500 font-bold" },
+    { title: "Configuración", url: "/admin/settings", icon: Settings, color: "text-slate-400" },
     ...(user?.role === 'SUPERADMIN' ? [
       { title: "Importar Datos", url: "/admin/interventions", icon: FileSpreadsheet, color: "text-slate-400" },
       { title: "Usuarios", url: "/admin/users", icon: UserCog, color: "text-slate-400" },
