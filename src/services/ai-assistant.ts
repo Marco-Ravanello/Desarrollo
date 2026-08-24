@@ -777,6 +777,9 @@ Responde de forma estricta siguiendo las REGLAS DE CERO ALUCINACIÓN.`;
       }
     } catch (ollamaError) {
       console.warn("Ollama is not available, falling back to static answer:", ollamaError);
+      if (onChunk && dbResponse.answer) {
+        onChunk(dbResponse.answer);
+      }
     }
 
     return {
