@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { MunicipalCrest } from "./municipal-crest";
 import { Button } from "@/components/ui/button";
 import { Printer } from "lucide-react";
@@ -14,13 +14,18 @@ export function PrintHeader({
   documentSubtitle?: string;
   referenceNumber?: string;
 }) {
-  const currentDate = new Date().toLocaleDateString("es-AR", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit"
-  });
+  const [currentDate, setCurrentDate] = useState("");
+
+  useEffect(() => {
+    try {
+      const now = new Date();
+      setCurrentDate(
+        `${now.toLocaleDateString("es-AR")} ${now.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" })}`
+      );
+    } catch (e) {
+      setCurrentDate(new Date().toISOString().slice(0, 10));
+    }
+  }, []);
 
   return (
     <div className="hidden print:flex flex-col w-full border-b-2 border-slate-900 pb-4 mb-6 text-slate-900">
@@ -46,7 +51,9 @@ export function PrintHeader({
           <div className="border border-slate-900 px-3 py-1 rounded-lg inline-block font-mono font-bold text-xs bg-slate-50">
             {referenceNumber ? `REF: ${referenceNumber}` : "DOCUMENTO OFICIAL"}
           </div>
-          <p className="text-[10px] text-slate-500 mt-1">Emisión: {currentDate} hs</p>
+          {currentDate && (
+            <p className="text-[10px] text-slate-500 mt-1">Emisión: {currentDate} hs</p>
+          )}
         </div>
       </div>
 
