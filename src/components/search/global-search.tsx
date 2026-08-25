@@ -77,11 +77,11 @@ export function GlobalSearch() {
     <>
       <button
         onClick={() => setOpen(true)}
-        className="flex items-center gap-2 w-full px-3 py-2 text-sm text-muted-foreground bg-accent/50 hover:bg-accent rounded-lg border border-border transition-all group shadow-sm hover:shadow-md"
+        className="flex items-center gap-2.5 w-full px-3.5 py-2.5 text-xs text-muted-foreground bg-muted/60 dark:bg-muted/30 hover:bg-muted rounded-xl border border-border/60 transition-all group shadow-sm"
       >
-        <Search className="h-4 w-4 shrink-0 text-primary/70 group-hover:text-primary transition-colors" />
+        <Search className="h-4 w-4 shrink-0 text-muted-foreground group-hover:text-primary transition-colors" />
         <span className="flex-1 text-left font-medium">Buscar o ejecutar comando...</span>
-        <kbd className="pointer-events-none hidden h-5 select-none items-center gap-1 rounded border bg-muted/80 px-1.5 font-mono text-[10px] font-semibold text-foreground/80 opacity-100 sm:flex shadow-xs">
+        <kbd className="pointer-events-none hidden h-5 select-none items-center gap-1 rounded-md border border-border/60 bg-background/80 px-1.5 font-mono text-[10px] font-bold text-muted-foreground sm:flex">
           <span className="text-xs">⌘</span>K
         </kbd>
       </button>

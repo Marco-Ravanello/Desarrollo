@@ -108,8 +108,24 @@ export async function getDashboardStats(filters?: { from: Date; to: Date }) {
   });
   const totalBudget = Number(totalBudgetAgg._sum.annualBudget || 0);
 
+  const peopleLocations = await prisma.person.findMany({
+    where: {
+      latitude: { not: null },
+      longitude: { not: null }
+    },
+    select: {
+      id: true,
+      latitude: true,
+      longitude: true,
+      address: true,
+      neighborhood: true
+    },
+    take: 100
+  });
+
   return {
     peopleCount,
+    peopleLocations,
     activeCases,
     pendingDerivations,
     pendingPurchaseOrders,
