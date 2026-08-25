@@ -460,3 +460,16 @@ model VerificationToken {
   expires    DateTime
   @@unique([identifier, token])
 }
+
+model Shelter {
+  id               String   @id @default(cuid())
+  name             String
+  address          String
+  coordinator      String
+  capacity         Int      @default(50)
+  occupied         Int      @default(0)
+  rationsDelivered Int      @default(0)
+  status           String   @default("HABILITADO")
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}

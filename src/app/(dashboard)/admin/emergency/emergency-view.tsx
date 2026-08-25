@@ -13,6 +13,7 @@ import {
   Home, Package, Plus, Radio, MapPin,
   Flame, Truck, Activity
 } from "lucide-react";
+import { EmptyState } from "@/components/ui/empty-state";
 import Link from "next/link";
 
 interface EmergencyViewProps {
@@ -39,6 +40,16 @@ interface EmergencyViewProps {
       status: string;
       areaName: string;
     }>;
+    shelters: Array<{
+      id: string;
+      name: string;
+      address: string;
+      coordinator: string;
+      capacity: number;
+      occupied: number;
+      rationsDelivered: number;
+      status: string;
+    }>;
     availableVehiclesCount: number;
   };
 }
@@ -47,41 +58,15 @@ export function EmergencyView({ initialData }: EmergencyViewProps) {
   const [isEmergencyActive, setIsEmergencyActive] = useState(true);
   const [activeTab, setActiveTab] = useState<"shelters" | "stock" | "incidents" | "protocols">("shelters");
 
-  const [shelters, setShelters] = useState([
-    {
-      id: "1",
-      name: "Polideportivo Municipal N° 1",
-      address: "Av. San Martín y Belgrano",
-      coordinator: "Lic. Andrea Gómez (11-4567-8901)",
-      capacity: 60,
-      occupied: 28,
-      rationsDelivered: 84,
-      status: "HABILITADO",
-    },
-    {
-      id: "2",
-      name: "Club Social y Deportivo Barrio Norte",
-      address: "Calle Los Pinos 1420",
-      coordinator: "Prof. Marcos Díaz (11-3456-7890)",
-      capacity: 40,
-      occupied: 14,
-      rationsDelivered: 42,
-      status: "HABILITADO",
-    },
-    {
-      id: "3",
-      name: "Escuela Primaria N° 12 (Reserva)",
-      address: "Rivadavia 850",
-      coordinator: "Directora Laura Pérez (11-2345-6789)",
-      capacity: 50,
-      occupied: 0,
-      rationsDelivered: 0,
-      status: "EN_GUARDIA",
-    },
-  ]);
-
+  const [shelters, setShelters] = useState(initialData.shelters);
   const [emergencyStock, setEmergencyStock] = useState(initialData.emergencyStock);
   const [incidents, setIncidents] = useState(initialData.incidents);
+
+  const [showAddShelter, setShowAddShelter] = useState(false);
+  const [shelterName, setShelterName] = useState("");
+  const [shelterAddress, setShelterAddress] = useState("");
+  const [shelterCoordinator, setShelterCoordinator] = useState("");
+  const [shelterCapacity, setShelterCapacity] = useState("50");
 
   const [newNeighborhood, setNewNeighborhood] = useState("");
   const [newAddress, setNewAddress] = useState("");
@@ -106,6 +91,32 @@ export function EmergencyView({ initialData }: EmergencyViewProps) {
     } else {
       toast.success("Protocolo de Emergencia Desactivado");
     }
+  };
+
+  const handleAddShelter = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!shelterName || !shelterAddress) {
+      toast.error("Complete el nombre y dirección del centro de evacuación");
+      return;
+    }
+
+    const newShelter = {
+      id: `shelter-${Date.now()}`,
+      name: shelterName,
+      address: shelterAddress,
+      coordinator: shelterCoordinator || "Guardia Municipal",
+      capacity: Number(shelterCapacity) || 50,
+      occupied: 0,
+      rationsDelivered: 0,
+      status: "HABILITADO",
+    };
+
+    setShelters([...shelters, newShelter]);
+    setShelterName("");
+    setShelterAddress("");
+    setShelterCoordinator("");
+    setShowAddShelter(false);
+    toast.success("Centro de evacuados registrado correctamente");
   };
 
   const handleAddIncident = (e: React.FormEvent) => {
@@ -148,9 +159,9 @@ export function EmergencyView({ initialData }: EmergencyViewProps) {
     toast.success(`Se despacharon 10 ${item.unit} de ${item.name} a territorio`);
   };
 
-  const totalCapacity = shelters.reduce((a, b) => a + b.capacity, 0);
+  const totalCapacity = shelters.reduce((a, b) => a + b.capacity, 0) || 1;
   const totalOccupied = shelters.reduce((a, b) => a + b.occupied, 0);
-  const totalFree = totalCapacity - totalOccupied;
+  const totalFree = Math.max(0, totalCapacity - totalOccupied);
   const occupancyPercentage = Math.round((totalOccupied / totalCapacity) * 100);
 
   return (
@@ -223,10 +234,10 @@ export function EmergencyView({ initialData }: EmergencyViewProps) {
               <div className="p-2 bg-blue-500/10 text-blue-500 rounded-xl"><Home className="h-4 w-4" /></div>
             </div>
             <div>
-              <p className="text-2xl font-black text-foreground">{totalOccupied} / {totalCapacity}</p>
-              <p className="text-xs text-muted-foreground font-semibold mt-0.5">{totalFree} plazas libres disponibles</p>
+              <p className="text-2xl font-black text-foreground">{totalOccupied} / {shelters.length > 0 ? totalCapacity : 0}</p>
+              <p className="text-xs text-muted-foreground font-semibold mt-0.5">{shelters.length > 0 ? `${totalFree} plazas libres` : 'Sin centros cargados'}</p>
             </div>
-            <Progress value={occupancyPercentage} className="h-2 bg-blue-500/10 [&>div]:bg-blue-600" />
+            <Progress value={shelters.length > 0 ? occupancyPercentage : 0} className="h-2 bg-blue-500/10 [&>div]:bg-blue-600" />
           </CardContent>
         </Card>
 
@@ -251,10 +262,10 @@ export function EmergencyView({ initialData }: EmergencyViewProps) {
               <div className="p-2 bg-emerald-500/10 text-emerald-500 rounded-xl"><Package className="h-4 w-4" /></div>
             </div>
             <div>
-              <p className="text-2xl font-black text-foreground">{emergencyStock.length} Rubros Clave</p>
+              <p className="text-2xl font-black text-foreground">{emergencyStock.length} Rubros Registrados</p>
               <p className="text-xs text-amber-500 font-bold mt-0.5">{emergencyStock.filter(s => s.status === 'CRITICO').length} en nivel de reposición</p>
             </div>
-            <Progress value={85} className="h-2 bg-emerald-500/10 [&>div]:bg-emerald-500" />
+            <Progress value={emergencyStock.length > 0 ? 85 : 0} className="h-2 bg-emerald-500/10 [&>div]:bg-emerald-500" />
           </CardContent>
         </Card>
 
@@ -266,9 +277,9 @@ export function EmergencyView({ initialData }: EmergencyViewProps) {
             </div>
             <div>
               <p className="text-2xl font-black text-foreground">{initialData.availableVehiclesCount} Equipos en Calle</p>
-              <p className="text-xs text-muted-foreground font-semibold mt-0.5">Sur, Ribera, Oeste y Centro</p>
+              <p className="text-xs text-muted-foreground font-semibold mt-0.5">Móviles disponibles en base</p>
             </div>
-            <Progress value={90} className="h-2 bg-purple-500/10 [&>div]:bg-purple-600" />
+            <Progress value={initialData.availableVehiclesCount > 0 ? 90 : 0} className="h-2 bg-purple-500/10 [&>div]:bg-purple-600" />
           </CardContent>
         </Card>
       </div>
@@ -305,45 +316,125 @@ export function EmergencyView({ initialData }: EmergencyViewProps) {
           }`}
         >
           <Package className="h-4 w-4" />
-          <span>Stock de Crisis</span>
+          <span>Stock de Crisis ({emergencyStock.length})</span>
         </button>
       </div>
 
       {activeTab === "shelters" && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 animate-in fade-in duration-300">
-          {shelters.map((shelter) => {
-            const percent = Math.round((shelter.occupied / shelter.capacity) * 100);
-            return (
-              <Card key={shelter.id} className="rounded-3xl border-border/60 shadow-sm bg-card p-6 space-y-4">
-                <div className="flex justify-between items-start">
-                  <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600 border-emerald-500/30 text-[10px] font-bold">
-                    {shelter.status}
-                  </Badge>
-                  <span className="text-xs font-black text-foreground">{percent}% OCUPADO</span>
-                </div>
-                <div>
-                  <h3 className="text-base font-black text-foreground">{shelter.name}</h3>
-                  <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
-                    <MapPin className="h-3.5 w-3.5 text-primary shrink-0" /> {shelter.address}
-                  </p>
-                </div>
+        <div className="space-y-4 animate-in fade-in duration-300">
+          <div className="flex justify-between items-center">
+            <h3 className="text-sm font-black text-foreground uppercase tracking-wider">
+              Centros de Evacuación Registrados ({shelters.length})
+            </h3>
+            <Button
+              onClick={() => setShowAddShelter(!showAddShelter)}
+              className="rounded-xl h-10 px-4 text-xs font-bold bg-primary text-primary-foreground"
+            >
+              <Plus className="mr-2 h-4 w-4" /> Registrar Nuevo Centro
+            </Button>
+          </div>
 
-                <div className="space-y-1.5">
-                  <div className="flex justify-between text-xs font-bold">
-                    <span className="text-muted-foreground">Camas Ocupadas:</span>
-                    <span className="text-foreground">{shelter.occupied} de {shelter.capacity}</span>
+          {showAddShelter && (
+            <Card className="rounded-3xl border-border/60 bg-card p-6 space-y-4 max-w-xl">
+              <h4 className="text-base font-black text-foreground">Alta de Centro de Evacuados</h4>
+              <form onSubmit={handleAddShelter} className="space-y-3">
+                <div className="space-y-1">
+                  <Label className="text-xs font-bold">Nombre del Establecimiento</Label>
+                  <Input
+                    value={shelterName}
+                    onChange={(e) => setShelterName(e.target.value)}
+                    placeholder="Ej: Polideportivo Municipal N° 1"
+                    className="rounded-xl h-10 text-xs"
+                    required
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs font-bold">Dirección / Ubicación</Label>
+                  <Input
+                    value={shelterAddress}
+                    onChange={(e) => setShelterAddress(e.target.value)}
+                    placeholder="Ej: Av. San Martín y Belgrano"
+                    className="rounded-xl h-10 text-xs"
+                    required
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label className="text-xs font-bold">Coordinador a Cargo</Label>
+                    <Input
+                      value={shelterCoordinator}
+                      onChange={(e) => setShelterCoordinator(e.target.value)}
+                      placeholder="Ej: Lic. Gómez (11-4567-8901)"
+                      className="rounded-xl h-10 text-xs"
+                    />
                   </div>
-                  <Progress value={percent} className="h-2" />
+                  <div className="space-y-1">
+                    <Label className="text-xs font-bold">Capacidad Total de Camas</Label>
+                    <Input
+                      type="number"
+                      value={shelterCapacity}
+                      onChange={(e) => setShelterCapacity(e.target.value)}
+                      className="rounded-xl h-10 text-xs"
+                    />
+                  </div>
                 </div>
+                <div className="flex gap-2 justify-end pt-2">
+                  <Button type="button" variant="outline" onClick={() => setShowAddShelter(false)} className="rounded-xl text-xs">
+                    Cancelar
+                  </Button>
+                  <Button type="submit" className="rounded-xl text-xs font-bold bg-primary text-primary-foreground">
+                    Guardar Centro
+                  </Button>
+                </div>
+              </form>
+            </Card>
+          )}
 
-                <div className="pt-3 border-t border-border/40 text-xs space-y-1 text-muted-foreground">
-                  <p className="font-bold text-foreground">COORDINADOR DE CENTRO</p>
-                  <p>{shelter.coordinator}</p>
-                  <p className="text-[11px] mt-1 font-semibold text-primary">🍱 Viandas y Raciones: {shelter.rationsDelivered} entregadas</p>
-                </div>
-              </Card>
-            );
-          })}
+          {shelters.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {shelters.map((shelter) => {
+                const percent = Math.round((shelter.occupied / shelter.capacity) * 100);
+                return (
+                  <Card key={shelter.id} className="rounded-3xl border-border/60 shadow-sm bg-card p-6 space-y-4">
+                    <div className="flex justify-between items-start">
+                      <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600 border-emerald-500/30 text-[10px] font-bold">
+                        {shelter.status}
+                      </Badge>
+                      <span className="text-xs font-black text-foreground">{percent}% OCUPADO</span>
+                    </div>
+                    <div>
+                      <h3 className="text-base font-black text-foreground">{shelter.name}</h3>
+                      <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+                        <MapPin className="h-3.5 w-3.5 text-primary shrink-0" /> {shelter.address}
+                      </p>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <div className="flex justify-between text-xs font-bold">
+                        <span className="text-muted-foreground">Camas Ocupadas:</span>
+                        <span className="text-foreground">{shelter.occupied} de {shelter.capacity}</span>
+                      </div>
+                      <Progress value={percent} className="h-2" />
+                    </div>
+
+                    <div className="pt-3 border-t border-border/40 text-xs space-y-1 text-muted-foreground">
+                      <p className="font-bold text-foreground">COORDINADOR DE CENTRO</p>
+                      <p>{shelter.coordinator}</p>
+                      <p className="text-[11px] mt-1 font-semibold text-primary">🍱 Viandas y Raciones: {shelter.rationsDelivered} entregadas</p>
+                    </div>
+                  </Card>
+                );
+              })}
+            </div>
+          ) : (
+            <EmptyState
+              type="default"
+              title="No hay Centros de Evacuación Registrados"
+              description="Aún no se han dado de alta centros de evacuados en el sistema para esta contingencia."
+              actionLabel="+ Registrar Centro de Evacuación"
+              onActionClick={() => setShowAddShelter(true)}
+            />
+          )}
         </div>
       )}
 
@@ -391,9 +482,11 @@ export function EmergencyView({ initialData }: EmergencyViewProps) {
                 </Card>
               ))
             ) : (
-              <p className="text-muted-foreground text-sm p-6 bg-card rounded-3xl border text-center">
-                No hay incidentes reportados en la base de datos en este momento.
-              </p>
+              <EmptyState
+                type="tasks"
+                title="Sin Alertas Territoriales Activas"
+                description="No existen incidentes o llamados de emergencia registrados en la base de datos."
+              />
             )}
           </div>
 
@@ -484,30 +577,40 @@ export function EmergencyView({ initialData }: EmergencyViewProps) {
             </Button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {emergencyStock.map((item) => (
-              <div key={item.id} className="p-4 rounded-2xl bg-muted/30 border border-border/40 flex items-center justify-between gap-4">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <Badge variant="outline" className={`text-[10px] font-bold ${item.status === 'CRITICO' ? 'bg-rose-500/10 text-rose-500 border-rose-500/30' : 'bg-emerald-500/10 text-emerald-600 border-emerald-500/30'}`}>
-                      {item.status}
-                    </Badge>
-                    <span className="text-[11px] font-bold text-muted-foreground">{item.areaName}</span>
+          {emergencyStock.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {emergencyStock.map((item) => (
+                <div key={item.id} className="p-4 rounded-2xl bg-muted/30 border border-border/40 flex items-center justify-between gap-4">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline" className={`text-[10px] font-bold ${item.status === 'CRITICO' ? 'bg-rose-500/10 text-rose-500 border-rose-500/30' : 'bg-emerald-500/10 text-emerald-600 border-emerald-500/30'}`}>
+                        {item.status}
+                      </Badge>
+                      <span className="text-[11px] font-bold text-muted-foreground">{item.areaName}</span>
+                    </div>
+                    <h4 className="text-sm font-black text-foreground mt-1">{item.name}</h4>
+                    <p className="text-xs font-bold text-primary mt-0.5">{item.quantity} {item.unit} disponibles</p>
                   </div>
-                  <h4 className="text-sm font-black text-foreground mt-1">{item.name}</h4>
-                  <p className="text-xs font-bold text-primary mt-0.5">{item.quantity} {item.unit} disponibles</p>
-                </div>
 
-                <Button
-                  onClick={() => handleDispatchStock(item)}
-                  size="sm"
-                  className="rounded-xl font-bold text-xs bg-primary text-primary-foreground shrink-0"
-                >
-                  Despachar 10
-                </Button>
-              </div>
-            ))}
-          </div>
+                  <Button
+                    onClick={() => handleDispatchStock(item)}
+                    size="sm"
+                    className="rounded-xl font-bold text-xs bg-primary text-primary-foreground shrink-0"
+                  >
+                    Despachar 10
+                  </Button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <EmptyState
+              type="stock"
+              title="No hay Insumos de Contingencia en Base de Datos"
+              description="Aún no se han ingresado materiales de depósito en el sistema."
+              actionLabel="+ Cargar Insumos en Depósito"
+              actionHref="/admin/stock"
+            />
+          )}
         </Card>
       )}
     </div>
