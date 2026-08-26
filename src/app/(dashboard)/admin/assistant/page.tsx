@@ -8,11 +8,15 @@ import { Input } from "@/components/ui/input";
 import {
   Sparkles, Send, Bot, User, TrendingUp, Users, Car, FileText,
   RefreshCw, Package, Volume2, VolumeX, Mic, MicOff, MapPin,
-  FileSpreadsheet, CheckCircle2, ArrowUpRight
+  FileSpreadsheet, CheckCircle2, ArrowUpRight, Copy, Download
 } from "lucide-react";
 import { toast } from "sonner";
 import { useTheme } from "next-themes";
-import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip as RechartsTooltip, Cell, Pie, PieChart } from "recharts";
+import {
+  Bar, BarChart, ResponsiveContainer, XAxis, YAxis,
+  Tooltip as RechartsTooltip, Cell, Pie, PieChart,
+  Line, LineChart, Area, AreaChart
+} from "recharts";
 
 interface Message {
   id: string;
@@ -127,6 +131,37 @@ export default function AssistantPage() {
 
     setCurrentlySpeakingId(msgId);
     window.speechSynthesis.speak(utterance);
+  };
+
+  const copyToClipboard = (text: string) => {
+    const cleanText = text
+      .replace(/###/g, "")
+      .replace(/####/g, "")
+      .replace(/\*\*/g, "")
+      .replace(/\*/g, "")
+      .replace(/`/g, "")
+      .replace(/\[([^\]]+)\]\((.*?)\)/g, "$1")
+      .trim();
+
+    navigator.clipboard.writeText(cleanText);
+    toast.success("Respuesta copiada al portapapeles");
+  };
+
+  const exportToCSV = (title: string, data: any[]) => {
+    if (!data || data.length === 0) return;
+    const keys = Object.keys(data[0]);
+    const csvContent = "data:text/csv;charset=utf-8,"
+      + keys.join(",") + "\n"
+      + data.map(row => keys.map(k => `"${row[k]}"`).join(",")).join("\n");
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `${title.replace(/\s+/g, "_")}_datos.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success("Datos exportados a CSV correctamente");
   };
 
   const handleActionButton = (act: { label: string; actionType: string; payload?: any }) => {
@@ -327,10 +362,58 @@ export default function AssistantPage() {
 
   const renderChart = (chart: any) => {
     if (!chart || !chart.data || chart.data.length === 0) return null;
+    const chartTitle = chart.title || "Gráfico de Análisis de Datos";
+
     return (
       <div className="mt-4 p-5 rounded-2xl border border-border/40 shadow-sm bg-card/60 backdrop-blur-sm w-full min-h-[220px]">
-        <p className="text-xs font-black uppercase tracking-wider text-muted-foreground mb-4">{chart.title || "Gráfico de datos"}</p>
-        {chart.type === "bar" ? (
+        <div className="flex items-center justify-between mb-4">
+          <p className="text-xs font-black uppercase tracking-wider text-muted-foreground">{chartTitle}</p>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => exportToCSV(chartTitle, chart.data)}
+            className="h-7 text-[10px] font-bold gap-1 text-primary hover:bg-primary/10 rounded-lg"
+            title="Exportar datos del gráfico a CSV / Excel"
+          >
+            <Download className="h-3 w-3" /> Exportar CSV
+          </Button>
+        </div>
+
+        {chart.type === "line" ? (
+          <ResponsiveContainer width="100%" height={200}>
+            <LineChart data={chart.data}>
+              <XAxis dataKey="name" stroke="#888888" fontSize={10} tickLine={false} axisLine={false} />
+              <YAxis stroke="#888888" fontSize={10} tickLine={false} axisLine={false} />
+              <RechartsTooltip
+                contentStyle={{
+                  backgroundColor: isDark ? '#0f172a' : '#ffffff',
+                  borderRadius: '12px',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  color: isDark ? '#f8fafc' : '#0f172a',
+                  fontSize: '11px'
+                }}
+              />
+              <Line type="monotone" dataKey="value" stroke="#3b82f6" strokeWidth={3} dot={{ r: 4, fill: '#3b82f6' }} />
+            </LineChart>
+          </ResponsiveContainer>
+        ) : chart.type === "area" ? (
+          <ResponsiveContainer width="100%" height={200}>
+            <AreaChart data={chart.data}>
+              <XAxis dataKey="name" stroke="#888888" fontSize={10} tickLine={false} axisLine={false} />
+              <YAxis stroke="#888888" fontSize={10} tickLine={false} axisLine={false} />
+              <RechartsTooltip
+                contentStyle={{
+                  backgroundColor: isDark ? '#0f172a' : '#ffffff',
+                  borderRadius: '12px',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  color: isDark ? '#f8fafc' : '#0f172a',
+                  fontSize: '11px'
+                }}
+              />
+              <Area type="monotone" dataKey="value" stroke="#10b981" fill="#10b981" fillOpacity={0.2} strokeWidth={2} />
+            </AreaChart>
+          </ResponsiveContainer>
+        ) : chart.type === "bar" ? (
           <ResponsiveContainer width="100%" height={200}>
             <BarChart data={chart.data}>
               <XAxis dataKey="name" stroke="#888888" fontSize={10} tickLine={false} axisLine={false} />
@@ -340,7 +423,6 @@ export default function AssistantPage() {
                   backgroundColor: isDark ? '#0f172a' : '#ffffff',
                   borderRadius: '12px',
                   border: '1px solid rgba(255,255,255,0.1)',
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
                   color: isDark ? '#f8fafc' : '#0f172a',
                   fontSize: '11px'
                 }}
@@ -394,9 +476,9 @@ export default function AssistantPage() {
             <div className="p-2 bg-blue-500/10 text-blue-500 rounded-xl animate-pulse">
               <Sparkles className="h-5 w-5" />
             </div>
-            <h2 className="text-3xl font-black tracking-tight text-foreground">Asistente de IA</h2>
+            <h2 className="text-3xl font-black tracking-tight text-foreground">Asistente de IA (Data Analytics)</h2>
           </div>
-          <p className="text-muted-foreground text-xs sm:text-sm">Consultas en lenguaje natural de la gestión municipal.</p>
+          <p className="text-muted-foreground text-xs sm:text-sm">Consultas y análisis dinámico de la base de datos municipal en tiempo real.</p>
         </div>
         <Button
           variant="outline"
@@ -456,7 +538,7 @@ export default function AssistantPage() {
                   <div className={`rounded-3xl p-5 shadow-xs text-foreground relative ${
                     m.sender === "user"
                       ? "bg-primary/10 border border-primary/20 rounded-tr-none text-foreground font-semibold"
-                      : "bg-muted/40 border border-border/40 rounded-tl-none w-full pr-12 text-foreground"
+                      : "bg-muted/40 border border-border/40 rounded-tl-none w-full pr-16 text-foreground"
                   }`}>
                     {m.sender === "user" ? (
                       <p className="text-xs font-semibold leading-relaxed">{m.text}</p>
@@ -510,17 +592,26 @@ export default function AssistantPage() {
                       </div>
                     )}
                     {m.sender === "assistant" && m.text && (
-                      <button
-                        onClick={() => handleSpeakText(m.id, m.text)}
-                        className={`absolute top-4 right-4 p-2 rounded-xl transition-all ${
-                          currentlySpeakingId === m.id
-                            ? "bg-rose-500/20 text-rose-500 animate-pulse"
-                            : "bg-muted/40 hover:bg-muted text-muted-foreground hover:text-foreground"
-                        }`}
-                        title={currentlySpeakingId === m.id ? "Detener lectura" : "Escuchar respuesta en voz alta"}
-                      >
-                        {currentlySpeakingId === m.id ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
-                      </button>
+                      <div className="absolute top-4 right-4 flex items-center gap-1">
+                        <button
+                          onClick={() => copyToClipboard(m.text)}
+                          className="p-1.5 rounded-xl bg-muted/40 hover:bg-muted text-muted-foreground hover:text-foreground transition-all"
+                          title="Copiar respuesta al portapapeles"
+                        >
+                          <Copy className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          onClick={() => handleSpeakText(m.id, m.text)}
+                          className={`p-1.5 rounded-xl transition-all ${
+                            currentlySpeakingId === m.id
+                              ? "bg-rose-500/20 text-rose-500 animate-pulse"
+                              : "bg-muted/40 hover:bg-muted text-muted-foreground hover:text-foreground"
+                          }`}
+                          title={currentlySpeakingId === m.id ? "Detener lectura" : "Escuchar respuesta en voz alta"}
+                        >
+                          {currentlySpeakingId === m.id ? <VolumeX className="h-3.5 w-3.5" /> : <Volume2 className="h-3.5 w-3.5" />}
+                        </button>
+                      </div>
                     )}
                   </div>
                 </div>
@@ -536,7 +627,7 @@ export default function AssistantPage() {
                       <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
                     </span>
                     <p className="text-xs font-semibold text-muted-foreground animate-pulse">
-                      Consultando base de datos municipal en tiempo real...
+                      Analizando datos municipales y generando visualizaciones...
                     </p>
                   </div>
                 </div>
@@ -549,7 +640,7 @@ export default function AssistantPage() {
                 <Input
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
-                  placeholder={isListening ? "Escuchando voz..." : "Formule una consulta administrativa o solicite un reporte..."}
+                  placeholder={isListening ? "Escuchando voz..." : "Formule una consulta de datos o pida un gráfico..."}
                   className="rounded-2xl h-11 bg-background text-foreground border-border/60 text-xs shadow-xs focus-visible:ring-primary"
                   disabled={loading}
                 />
