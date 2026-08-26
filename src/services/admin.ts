@@ -153,16 +153,21 @@ export async function createProvider(rawData: z.infer<typeof CreateProviderSchem
 
 export async function getVehicles() {
   const now = new Date();
+  const yesterday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
   return await prisma.vehicle.findMany({
     include: {
       _count: { select: { reservations: true } },
       reservations: {
         where: {
-          status: { in: ['APROBADA', 'EN_CURSO'] },
-          startDate: { lte: now },
-          endDate: { gte: now }
+          status: { in: ['APROBADA', 'EN_CURSO', 'PENDIENTE'] },
+          endDate: { gte: yesterday }
         },
-        take: 1
+        include: {
+          user: {
+            select: { name: true }
+          }
+        },
+        orderBy: { startDate: 'asc' }
       },
       fuelRecords: { orderBy: { date: 'desc' } }
     },
