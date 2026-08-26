@@ -4,34 +4,29 @@ import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
 
+const parseLocalDate = (dateStr: string | null) => {
+  if (!dateStr) return null;
+  if (dateStr.includes("Z") || dateStr.includes("+") || (dateStr.includes("-") && dateStr.length > 19)) {
+    return new Date(dateStr);
+  }
+  return new Date(`${dateStr}:00-03:00`);
+};
+
 export async function rescheduleTaskAction(id: string, dueDateStr: string, viewerIds?: string) {
   const session = await auth();
-  if (!session?.user?.id) {
-    return { success: false, error: "No autorizado" };
-  }
+  if (!session?.user?.id) return { success: false, error: "No autorizado" };
 
   try {
     const task = await prisma.task.findUnique({ where: { id } });
-    if (!task) {
-      return { success: false, error: "Tarea no encontrada" };
-    }
-
-    // Only creator/assigned user can reschedule
+    if (!task) return { success: false, error: "Tarea no encontrada" };
     if (task.userId !== session.user.id && session.user.role !== "SUPERADMIN") {
       return { success: false, error: "No autorizado para modificar esta tarea" };
     }
 
-    const updateData: any = {
-      dueDate: dueDateStr ? new Date(dueDateStr) : null
-    };
-    if (viewerIds !== undefined) {
-      updateData.viewerIds = viewerIds;
-    }
+    const updateData: any = { dueDate: parseLocalDate(dueDateStr) };
+    if (viewerIds !== undefined) updateData.viewerIds = viewerIds;
 
-    await prisma.task.update({
-      where: { id },
-      data: updateData
-    });
+    await prisma.task.update({ where: { id }, data: updateData });
 
     revalidatePath("/admin/calendar");
     revalidatePath("/tasks");
@@ -43,17 +38,11 @@ export async function rescheduleTaskAction(id: string, dueDateStr: string, viewe
 
 export async function rescheduleReservationAction(id: string, startDateStr: string, endDateStr: string) {
   const session = await auth();
-  if (!session?.user?.id) {
-    return { success: false, error: "No autorizado" };
-  }
+  if (!session?.user?.id) return { success: false, error: "No autorizado" };
 
   try {
     const reservation = await prisma.vehicleReservation.findUnique({ where: { id } });
-    if (!reservation) {
-      return { success: false, error: "Reserva no encontrada" };
-    }
-
-    // Only assigned user or director/admin can reschedule
+    if (!reservation) return { success: false, error: "Reserva no encontrada" };
     if (reservation.userId !== session.user.id && session.user.role !== "SUPERADMIN" && session.user.role !== "ADMIN_GENERAL") {
       return { success: false, error: "No autorizado para modificar esta reserva" };
     }
@@ -61,8 +50,8 @@ export async function rescheduleReservationAction(id: string, startDateStr: stri
     await prisma.vehicleReservation.update({
       where: { id },
       data: {
-        startDate: new Date(startDateStr),
-        endDate: new Date(endDateStr)
+        startDate: parseLocalDate(startDateStr)!,
+        endDate: parseLocalDate(endDateStr)!
       }
     });
 
@@ -76,21 +65,15 @@ export async function rescheduleReservationAction(id: string, startDateStr: stri
 
 export async function reschedulePurchaseOrderAction(id: string, deliveryDateStr: string) {
   const session = await auth();
-  if (!session?.user?.id) {
-    return { success: false, error: "No autorizado" };
-  }
+  if (!session?.user?.id) return { success: false, error: "No autorizado" };
 
   try {
     const order = await prisma.purchaseOrder.findUnique({ where: { id } });
-    if (!order) {
-      return { success: false, error: "Orden de compra no encontrada" };
-    }
+    if (!order) return { success: false, error: "Orden de compra no encontrada" };
 
     await prisma.purchaseOrder.update({
       where: { id },
-      data: {
-        deliveryDate: deliveryDateStr ? new Date(deliveryDateStr) : null
-      }
+      data: { deliveryDate: parseLocalDate(deliveryDateStr) }
     });
 
     revalidatePath("/admin/calendar");
@@ -104,9 +87,7 @@ export async function reschedulePurchaseOrderAction(id: string, deliveryDateStr:
 
 export async function createSharedTaskAction(title: string, description: string, dueDateStr: string, viewerIds: string) {
   const session = await auth();
-  if (!session?.user?.id) {
-    return { success: false, error: "No autorizado" };
-  }
+  if (!session?.user?.id) return { success: false, error: "No autorizado" };
 
   try {
     await prisma.task.create({
@@ -114,7 +95,7 @@ export async function createSharedTaskAction(title: string, description: string,
         title,
         description,
         userId: session.user.id,
-        dueDate: dueDateStr ? new Date(dueDateStr) : null,
+        dueDate: parseLocalDate(dueDateStr),
         viewerIds: viewerIds || null,
         status: "PENDIENTE"
       }
