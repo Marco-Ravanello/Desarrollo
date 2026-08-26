@@ -5,28 +5,31 @@ import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
 import { ReservationStatus, VehicleStatus } from "@prisma/client";
 
-/**
- * Solicita una reserva de vehículo (Estado: PENDIENTE)
- */
+const parseLocalDate = (dateStr: string) => {
+  if (!dateStr) return new Date();
+  if (dateStr.includes("Z") || dateStr.includes("+") || (dateStr.includes("-") && dateStr.length > 19)) {
+    return new Date(dateStr);
+  }
+  return new Date(`${dateStr}:00-03:00`);
+};
+
 export async function createVehicleReservationAction(formData: FormData) {
   const session = await auth();
   if (!session?.user) return { error: "No autorizado" };
 
   const vehicleId = formData.get("vehicleId") as string;
-  const startDate = new Date(formData.get("startDate") as string);
-  const endDate = new Date(formData.get("endDate") as string);
+  const startDate = parseLocalDate(formData.get("startDate") as string);
+  const endDate = parseLocalDate(formData.get("endDate") as string);
   const reason = formData.get("reason") as string;
   const areaId = (session.user as any).areaId || null;
 
   try {
-    // 1. Validar que el vehículo no esté en taller o fuera de servicio
     const vehicle = await prisma.vehicle.findUnique({ where: { id: vehicleId } });
     if (!vehicle) return { error: "Vehículo no encontrado" };
     if (vehicle.status !== 'DISPONIBLE') {
       return { error: `El vehículo no está disponible para reserva (Estado: ${vehicle.status})` };
     }
 
-    // 2. Validar superposición de reservas (solo para aprobadas o en curso)
     const overlapping = await prisma.vehicleReservation.findFirst({
       where: {
         vehicleId,
@@ -43,7 +46,6 @@ export async function createVehicleReservationAction(formData: FormData) {
       return { error: "El vehículo ya tiene una reserva confirmada en ese horario" };
     }
 
-    // 3. Crear reserva en estado PENDIENTE
     const reservation = await prisma.vehicleReservation.create({
       data: {
         vehicleId,
@@ -56,7 +58,6 @@ export async function createVehicleReservationAction(formData: FormData) {
       }
     });
 
-    // 4. Auditoría
     await prisma.auditLog.create({
       data: {
         userId: session.user.id!,
@@ -67,7 +68,6 @@ export async function createVehicleReservationAction(formData: FormData) {
       }
     });
 
-    // 5. Notificar a administradores (Simulado mediante creación de notificación en BD)
     const admins = await prisma.user.findMany({
       where: { role: { in: ['SUPERADMIN', 'ADMIN_GENERAL'] } }
     });
@@ -92,9 +92,6 @@ export async function createVehicleReservationAction(formData: FormData) {
   }
 }
 
-/**
- * Actualiza el estado de una reserva (Aprobar/Rechazar/Finalizar)
- */
 export async function updateReservationStatusAction(reservationId: string, newStatus: ReservationStatus, observations?: string) {
   const session = await auth();
   if (!session?.user) return { error: "No autorizado" };
@@ -112,7 +109,6 @@ export async function updateReservationStatusAction(reservationId: string, newSt
       data: { status: newStatus, observations }
     });
 
-    // Auditoría
     await prisma.auditLog.create({
       data: {
         userId: session.user.id!,
@@ -123,7 +119,6 @@ export async function updateReservationStatusAction(reservationId: string, newSt
       }
     });
 
-    // Notificar al solicitante
     await prisma.notification.create({
       data: {
         userId: reservation.userId,
@@ -141,9 +136,6 @@ export async function updateReservationStatusAction(reservationId: string, newSt
   }
 }
 
-/**
- * Actualiza el estado de un vehículo (Taller, etc)
- */
 export async function updateVehicleStatusAction(vehicleId: string, status: VehicleStatus) {
   const session = await auth();
   if (!session?.user || (session.user.role !== 'SUPERADMIN' && session.user.role !== 'ADMIN_GENERAL')) {
@@ -163,9 +155,6 @@ export async function updateVehicleStatusAction(vehicleId: string, status: Vehic
   }
 }
 
-/**
- * Carga de combustible con validación de límite
- */
 export async function createFuelRecordAction(formData: FormData) {
   const session = await auth();
   if (!session?.user) return { error: "No autorizado" };
@@ -176,7 +165,7 @@ export async function createFuelRecordAction(formData: FormData) {
   const liters = parseFloat(formData.get("liters") as string);
   const ticketNumber = formData.get("ticketNumber") as string;
 
-  const date = new Date(dateStr);
+  const date = parseLocalDate(dateStr);
   const startOfMonth = new Date(date.getFullYear(), date.getMonth(), 1);
   const endOfMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0);
 
