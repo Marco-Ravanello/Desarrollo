@@ -30,28 +30,24 @@ interface UnifiedCalendarProps {
 
 type CalendarViewType = "month" | "week" | "day" | "agenda";
 
-// Active administrative hours
-const HOURS = Array.from({ length: 15 }, (_, i) => i + 7); // 7:00 AM to 9:00 PM
+const HOURS = Array.from({ length: 15 }, (_, i) => i + 7);
 
 export function UnifiedCalendar({ reservations, purchaseOrders, tasks, users, currentUserId }: UnifiedCalendarProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [view, setView] = useState<CalendarViewType>("week");
 
-  // Filtering States
   const [showReservations, setShowReservations] = useState(true);
   const [showOrders, setShowOrders] = useState(true);
   const [showTasks, setShowTasks] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Modal States
   const [selectedEvent, setSelectedEvent] = useState<any | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [isRescheduling, setIsRescheduling] = useState(false);
   const [rescheduleDate, setRescheduleDate] = useState("");
   const [rescheduleTime, setRescheduleTime] = useState("08:00");
-  const [rescheduleEndTime, setRescheduleEndTime] = useState("10:00"); // For reservations only
+  const [rescheduleEndTime, setRescheduleEndTime] = useState("10:00");
 
-  // Add Task Form States
   const [newTaskTitle, setNewTaskTitle] = useState("");
   const [newTaskDesc, setNewTaskDescription] = useState("");
   const [newTaskDueDate, setNewTaskDueDate] = useState("");
@@ -59,7 +55,6 @@ export function UnifiedCalendar({ reservations, purchaseOrders, tasks, users, cu
   const [newTaskViewerIds, setNewTaskViewerIds] = useState<string[]>([]);
   const [isSaving, setIsSaving] = useState(false);
 
-  // Month & Day navigation helpers
   const prevMonth = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
   const nextMonth = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
   const prevWeek = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate() - 7));
@@ -68,10 +63,8 @@ export function UnifiedCalendar({ reservations, purchaseOrders, tasks, users, cu
   const nextDay = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate() + 1));
   const monthNames = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
 
-  // Normalize all calendar items
   const allEvents: any[] = [];
 
-  // 1. Add Vehicle Reservations
   if (showReservations) {
     reservations.forEach(r => {
       allEvents.push({
@@ -80,13 +73,12 @@ export function UnifiedCalendar({ reservations, purchaseOrders, tasks, users, cu
         title: `Reserva: ${r.vehicle.brand} ${r.vehicle.model} (${r.vehicle.plate})`,
         startDate: new Date(r.startDate),
         endDate: new Date(r.endDate),
-        color: "bg-blue-500/10 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800",
+        color: "bg-blue-500/15 text-blue-600 dark:text-blue-300 border-blue-500/30",
         raw: r
       });
     });
   }
 
-  // 2. Add Purchase Order Deliveries
   if (showOrders) {
     purchaseOrders.forEach(o => {
       if (o.deliveryDate) {
@@ -96,14 +88,13 @@ export function UnifiedCalendar({ reservations, purchaseOrders, tasks, users, cu
           title: `Entrega OC: N° ${o.number}`,
           startDate: new Date(o.deliveryDate),
           endDate: new Date(o.deliveryDate),
-          color: "bg-emerald-500/10 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800",
+          color: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-300 border-emerald-500/30",
           raw: o
         });
       }
     });
   }
 
-  // 3. Add Tasks with Shared Visibility Filter
   if (showTasks) {
     tasks.forEach(t => {
       if (t.dueDate) {
@@ -117,7 +108,7 @@ export function UnifiedCalendar({ reservations, purchaseOrders, tasks, users, cu
             title: `Tarea: ${t.title}`,
             startDate: new Date(t.dueDate),
             endDate: new Date(t.dueDate),
-            color: "bg-amber-500/10 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800",
+            color: "bg-amber-500/15 text-amber-600 dark:text-amber-300 border-amber-500/30",
             raw: t,
             isOwner
           });
@@ -126,20 +117,17 @@ export function UnifiedCalendar({ reservations, purchaseOrders, tasks, users, cu
     });
   }
 
-  // Filter events based on search query
   const filteredEvents = allEvents.filter(e =>
     e.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     (e.raw?.description && e.raw.description.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
-  // Month Grid Calculations
   const daysInMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
   const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).getDay();
 
-  // Week Grid Calculations
   const startOfWeek = new Date(currentDate);
   const day = startOfWeek.getDay();
-  const diff = startOfWeek.getDate() - day + (day === 0 ? -6 : 1); // adjust when day is sunday
+  const diff = startOfWeek.getDate() - day + (day === 0 ? -6 : 1);
   startOfWeek.setDate(diff);
 
   const weekDays = [];
@@ -149,7 +137,6 @@ export function UnifiedCalendar({ reservations, purchaseOrders, tasks, users, cu
     weekDays.push(d);
   }
 
-  // HTML5 Drag & Drop Logic
   const handleDragStart = (e: React.DragEvent, eventItem: any) => {
     e.dataTransfer.setData("text/plain", JSON.stringify({ id: eventItem.id, type: eventItem.type }));
     e.dataTransfer.effectAllowed = "move";
@@ -177,7 +164,6 @@ export function UnifiedCalendar({ reservations, purchaseOrders, tasks, users, cu
       } else if (type === "order") {
         res = await reschedulePurchaseOrderAction(id, computedStart.toISOString());
       } else if (type === "reservation") {
-        // For reservations, default to 2 hours reservation length
         const computedEnd = new Date(computedStart);
         computedEnd.setHours(computedStart.getHours() + 2);
         res = await rescheduleReservationAction(id, computedStart.toISOString(), computedEnd.toISOString());
@@ -193,7 +179,6 @@ export function UnifiedCalendar({ reservations, purchaseOrders, tasks, users, cu
     }
   };
 
-  // Handle Rescheduling Submission
   const handleReschedule = async () => {
     if (!selectedEvent) return;
     setIsRescheduling(true);
@@ -225,7 +210,6 @@ export function UnifiedCalendar({ reservations, purchaseOrders, tasks, users, cu
     }
   };
 
-  // Handle Add Task Submission
   const handleAddTask = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTaskTitle) {
@@ -270,41 +254,40 @@ export function UnifiedCalendar({ reservations, purchaseOrders, tasks, users, cu
 
   return (
     <div className="grid grid-cols-1 xl:grid-cols-4 gap-8">
-      {/* Filters Sidebar */}
       <div className="xl:col-span-1 space-y-6">
-        <Card className="bg-white/75 dark:bg-card/75 backdrop-blur-md border border-border/40 shadow-municipal p-6 space-y-6">
+        <Card className="bg-card text-card-foreground border border-border/60 shadow-sm p-6 space-y-6 rounded-3xl">
           <div>
-            <h3 className="text-sm font-black uppercase tracking-widest text-muted-foreground mb-4">Filtrar Agenda</h3>
+            <h3 className="text-xs font-black uppercase tracking-widest text-muted-foreground mb-4">Filtrar Agenda</h3>
             <Input
               placeholder="Buscar evento..."
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
-              className="bg-slate-50/50 dark:bg-slate-900/30 rounded-xl"
+              className="bg-muted/40 border-border/60 text-foreground rounded-xl text-xs"
             />
           </div>
 
           <div className="space-y-3">
-            <h4 className="text-[10px] font-black uppercase tracking-wider text-slate-400">Categorías de Logística</h4>
+            <h4 className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">Categorías de Logística</h4>
             <div className="flex flex-col gap-2.5">
-              <label className="flex items-center gap-3 cursor-pointer text-sm font-semibold select-none group">
+              <label className="flex items-center gap-3 cursor-pointer text-xs font-bold text-foreground select-none group">
                 <input
                   type="checkbox"
                   checked={showReservations}
                   onChange={e => setShowReservations(e.target.checked)}
-                  className="rounded text-blue-600 focus:ring-blue-500 h-4 w-4 border-slate-300"
+                  className="rounded text-primary focus:ring-primary h-4 w-4 border-border"
                 />
-                <span className="group-hover:text-blue-500 transition-colors flex items-center gap-2">
+                <span className="group-hover:text-primary transition-colors flex items-center gap-2">
                   <div className="w-2.5 h-2.5 rounded-full bg-blue-500" />
                   Reservas de Vehículos
                 </span>
               </label>
 
-              <label className="flex items-center gap-3 cursor-pointer text-sm font-semibold select-none group">
+              <label className="flex items-center gap-3 cursor-pointer text-xs font-bold text-foreground select-none group">
                 <input
                   type="checkbox"
                   checked={showOrders}
                   onChange={e => setShowOrders(e.target.checked)}
-                  className="rounded text-emerald-600 focus:ring-emerald-500 h-4 w-4 border-slate-300"
+                  className="rounded text-emerald-600 focus:ring-emerald-500 h-4 w-4 border-border"
                 />
                 <span className="group-hover:text-emerald-500 transition-colors flex items-center gap-2">
                   <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
@@ -312,12 +295,12 @@ export function UnifiedCalendar({ reservations, purchaseOrders, tasks, users, cu
                 </span>
               </label>
 
-              <label className="flex items-center gap-3 cursor-pointer text-sm font-semibold select-none group">
+              <label className="flex items-center gap-3 cursor-pointer text-xs font-bold text-foreground select-none group">
                 <input
                   type="checkbox"
                   checked={showTasks}
                   onChange={e => setShowTasks(e.target.checked)}
-                  className="rounded text-amber-600 focus:ring-amber-500 h-4 w-4 border-slate-300"
+                  className="rounded text-amber-600 focus:ring-amber-500 h-4 w-4 border-border"
                 />
                 <span className="group-hover:text-amber-500 transition-colors flex items-center gap-2">
                   <div className="w-2.5 h-2.5 rounded-full bg-amber-500" />
@@ -327,16 +310,15 @@ export function UnifiedCalendar({ reservations, purchaseOrders, tasks, users, cu
             </div>
           </div>
 
-          {/* Drag and Drop instructions */}
-          <div className="p-3.5 rounded-xl bg-blue-500/10 border border-blue-200 text-[10px] text-blue-700 font-bold space-y-1">
-             <p className="uppercase tracking-widest text-blue-800">💡 Tip de Productividad</p>
-             <p className="leading-relaxed">¡Puedes arrastrar y soltar cualquier reserva o tarea a otra hora o día del calendario para reagendarla al instante!</p>
+          <div className="p-3.5 rounded-2xl bg-primary/10 border border-primary/20 text-[11px] text-primary font-bold space-y-1">
+             <p className="uppercase tracking-widest text-primary">💡 Tip de Productividad</p>
+             <p className="leading-relaxed opacity-90">¡Puedes arrastrar y soltar cualquier reserva o tarea a otra hora o día del calendario para reagendarla al instante!</p>
           </div>
 
           <div className="pt-4 border-t border-border/40">
              <Button
                onClick={() => setShowAddModal(true)}
-               className="w-full bg-[#004a80] hover:bg-[#00365d] text-white rounded-xl gap-2 font-bold shadow-lg shadow-blue-500/10"
+               className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl gap-2 font-bold text-xs uppercase tracking-wider h-11 shadow-md shadow-primary/20"
              >
                 <Plus className="h-4 w-4" /> Nueva Tarea Compartida
              </Button>
@@ -344,13 +326,11 @@ export function UnifiedCalendar({ reservations, purchaseOrders, tasks, users, cu
         </Card>
       </div>
 
-      {/* Main Calendar Space */}
       <div className="xl:col-span-3 space-y-6">
-        <Card className="bg-white/75 dark:bg-card/75 backdrop-blur-md border border-border/40 shadow-municipal overflow-hidden rounded-[2rem]">
-          {/* Calendar Header Controls */}
-          <div className="p-6 border-b border-border/40 flex flex-col md:flex-row justify-between items-center gap-4 bg-slate-50/40 dark:bg-slate-900/10">
+        <Card className="bg-card text-card-foreground border border-border/60 shadow-sm overflow-hidden rounded-[2rem]">
+          <div className="p-6 border-b border-border/40 flex flex-col md:flex-row justify-between items-center gap-4 bg-muted/20">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-primary/10 text-primary rounded-xl">
+              <div className="p-2.5 bg-primary/10 text-primary rounded-2xl border border-primary/20">
                 <Calendar className="h-5 w-5" />
               </div>
               <h3 className="font-black text-xl text-foreground">
@@ -362,13 +342,12 @@ export function UnifiedCalendar({ reservations, purchaseOrders, tasks, users, cu
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
-              {/* Navigation Arrows */}
-              <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-0.5 rounded-xl border border-border/30">
+              <div className="flex items-center bg-muted/60 p-0.5 rounded-2xl border border-border/40">
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={view === "month" ? prevMonth : view === "week" ? prevWeek : view === "day" ? prevDay : prevWeek}
-                  className="h-8 w-8 rounded-lg"
+                  className="h-8 w-8 rounded-xl text-foreground"
                 >
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
@@ -376,7 +355,7 @@ export function UnifiedCalendar({ reservations, purchaseOrders, tasks, users, cu
                   variant="ghost"
                   size="sm"
                   onClick={() => setCurrentDate(new Date())}
-                  className="h-8 px-3 rounded-lg text-xs font-bold uppercase tracking-wider"
+                  className="h-8 px-3 rounded-xl text-xs font-bold uppercase tracking-wider text-foreground"
                 >
                   Hoy
                 </Button>
@@ -384,19 +363,18 @@ export function UnifiedCalendar({ reservations, purchaseOrders, tasks, users, cu
                   variant="ghost"
                   size="icon"
                   onClick={view === "month" ? nextMonth : view === "week" ? nextWeek : view === "day" ? nextDay : nextWeek}
-                  className="h-8 w-8 rounded-lg"
+                  className="h-8 w-8 rounded-xl text-foreground"
                 >
                   <ChevronRight className="h-4 w-4" />
                 </Button>
               </div>
 
-              {/* View Switches */}
-              <div className="flex bg-slate-100 dark:bg-slate-800 p-0.5 rounded-xl border border-border/30">
+              <div className="flex bg-muted/60 p-0.5 rounded-2xl border border-border/40">
                 <Button
                   onClick={() => setView("month")}
                   variant={view === "month" ? "secondary" : "ghost"}
                   size="sm"
-                  className={`h-8 text-xs font-bold px-3 rounded-lg uppercase tracking-wider ${view === "month" ? "bg-white dark:bg-card shadow-sm" : ""}`}
+                  className={`h-8 text-xs font-bold px-3 rounded-xl uppercase tracking-wider ${view === "month" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"}`}
                 >
                   Mes
                 </Button>
@@ -404,7 +382,7 @@ export function UnifiedCalendar({ reservations, purchaseOrders, tasks, users, cu
                   onClick={() => setView("week")}
                   variant={view === "week" ? "secondary" : "ghost"}
                   size="sm"
-                  className={`h-8 text-xs font-bold px-3 rounded-lg uppercase tracking-wider ${view === "week" ? "bg-white dark:bg-card shadow-sm" : ""}`}
+                  className={`h-8 text-xs font-bold px-3 rounded-xl uppercase tracking-wider ${view === "week" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"}`}
                 >
                   Semana
                 </Button>
@@ -412,7 +390,7 @@ export function UnifiedCalendar({ reservations, purchaseOrders, tasks, users, cu
                   onClick={() => setView("day")}
                   variant={view === "day" ? "secondary" : "ghost"}
                   size="sm"
-                  className={`h-8 text-xs font-bold px-3 rounded-lg uppercase tracking-wider ${view === "day" ? "bg-white dark:bg-card shadow-sm" : ""}`}
+                  className={`h-8 text-xs font-bold px-3 rounded-xl uppercase tracking-wider ${view === "day" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"}`}
                 >
                   Día
                 </Button>
@@ -420,7 +398,7 @@ export function UnifiedCalendar({ reservations, purchaseOrders, tasks, users, cu
                   onClick={() => setView("agenda")}
                   variant={view === "agenda" ? "secondary" : "ghost"}
                   size="sm"
-                  className={`h-8 text-xs font-bold px-3 rounded-lg uppercase tracking-wider ${view === "agenda" ? "bg-white dark:bg-card shadow-sm" : ""}`}
+                  className={`h-8 text-xs font-bold px-3 rounded-xl uppercase tracking-wider ${view === "agenda" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"}`}
                 >
                   Agenda
                 </Button>
@@ -428,27 +406,23 @@ export function UnifiedCalendar({ reservations, purchaseOrders, tasks, users, cu
             </div>
           </div>
 
-          {/* Month View Grid */}
           {view === "month" && (
             <div>
-              <div className="grid grid-cols-7 text-center border-b border-border/30 bg-slate-50/10 py-2.5">
+              <div className="grid grid-cols-7 text-center border-b border-border/40 bg-muted/30 py-2.5">
                 {["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"].map(day => (
-                  <div key={day} className="text-[10px] font-black uppercase tracking-widest text-slate-400">{day}</div>
+                  <div key={day} className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">{day}</div>
                 ))}
               </div>
-              <div className="grid grid-cols-7 border-b border-border/30">
-                {/* Empty starting cells */}
+              <div className="grid grid-cols-7 border-b border-border/40">
                 {Array.from({ length: firstDayOfMonth }).map((_, i) => (
-                  <div key={`empty-${i}`} className="h-32 border-b border-r border-border/30 bg-slate-50/10 dark:bg-slate-900/5" />
+                  <div key={`empty-${i}`} className="h-32 border-b border-r border-border/40 bg-muted/10" />
                 ))}
 
-                {/* Day cells */}
                 {Array.from({ length: daysInMonth }).map((_, i) => {
                   const d = i + 1;
                   const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), d);
                   const isToday = new Date().toDateString() === date.toDateString();
 
-                  // Find events for this specific day
                   const dayEvents = filteredEvents.filter(e => {
                     const start = new Date(e.startDate);
                     start.setHours(0,0,0,0);
@@ -462,12 +436,12 @@ export function UnifiedCalendar({ reservations, purchaseOrders, tasks, users, cu
                       key={d}
                       onDragOver={handleDragOver}
                       onDrop={(ev) => handleDropOnSlot(ev, date, 9, 0)}
-                      className={`h-32 border-b border-r border-border/30 p-1.5 flex flex-col overflow-y-auto cursor-pointer relative group transition-colors hover:bg-slate-50/30 dark:hover:bg-slate-900/10 ${
-                        isToday ? "bg-blue-50/20 dark:bg-blue-950/10" : ""
+                      className={`h-32 border-b border-r border-border/40 p-1.5 flex flex-col overflow-y-auto cursor-pointer relative group transition-colors hover:bg-muted/20 ${
+                        isToday ? "bg-primary/10" : ""
                       }`}
                     >
                       <span className={`text-[10px] font-black w-5 h-5 rounded-full flex items-center justify-center mb-1.5 ${
-                        isToday ? "bg-primary text-white font-black" : "text-slate-400"
+                        isToday ? "bg-primary text-primary-foreground font-black" : "text-muted-foreground"
                       }`}>
                         {d}
                       </span>
@@ -487,7 +461,7 @@ export function UnifiedCalendar({ reservations, purchaseOrders, tasks, users, cu
                                 setRescheduleEndTime(e.endDate.toTimeString().split(" ")[0].substring(0, 5));
                               }
                             }}
-                            className={`text-[9px] px-1.5 py-1 rounded-lg border font-bold truncate leading-tight shadow-sm cursor-grab active:cursor-grabbing transition-all hover:scale-102 ${e.color}`}
+                            className={`text-[9px] px-1.5 py-1 rounded-lg border font-bold truncate leading-tight shadow-xs cursor-grab active:cursor-grabbing transition-all hover:scale-102 ${e.color}`}
                             title={`${e.title} (${formatTime(e.startDate)})`}
                           >
                             <span className="opacity-75 font-mono mr-1">{formatTime(e.startDate)}</span>
@@ -502,22 +476,20 @@ export function UnifiedCalendar({ reservations, purchaseOrders, tasks, users, cu
             </div>
           )}
 
-          {/* Hourly Week View (Split by Hour and Half Hour Rows) */}
           {view === "week" && (
             <div className="overflow-x-auto">
               <div className="min-w-[800px]">
-                {/* Header Row */}
-                <div className="grid grid-cols-8 border-b border-border/30 bg-slate-50/10 py-3 text-center">
-                  <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 border-r border-border/30">Horario</div>
+                <div className="grid grid-cols-8 border-b border-border/40 bg-muted/30 py-3 text-center">
+                  <div className="text-[10px] font-black uppercase tracking-widest text-muted-foreground border-r border-border/40">Horario</div>
                   {weekDays.map((date, idx) => {
                     const isToday = new Date().toDateString() === date.toDateString();
                     return (
-                      <div key={idx} className="flex flex-col items-center justify-center border-r border-border/30 last:border-r-0">
-                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                      <div key={idx} className="flex flex-col items-center justify-center border-r border-border/40 last:border-r-0">
+                        <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">
                           {["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"][idx]}
                         </span>
                         <span className={`text-sm font-black w-7 h-7 rounded-full flex items-center justify-center mt-1 ${
-                          isToday ? "bg-primary text-white" : "text-foreground"
+                          isToday ? "bg-primary text-primary-foreground" : "text-foreground"
                         }`}>
                           {date.getDate()}
                         </span>
@@ -526,27 +498,23 @@ export function UnifiedCalendar({ reservations, purchaseOrders, tasks, users, cu
                   })}
                 </div>
 
-                {/* Grid Rows */}
-                <div className="divide-y divide-border/20 max-h-[600px] overflow-y-auto">
+                <div className="divide-y divide-border/30 max-h-[600px] overflow-y-auto">
                   {HOURS.map(hour => {
                     return [0, 30].map(minute => {
                       const timeStr = `${hour.toString().padStart(2, "0")}:${minute.toString().padStart(2, "0")}`;
 
                       return (
-                        <div key={timeStr} className="grid grid-cols-8 hover:bg-slate-50/10 dark:hover:bg-slate-900/5">
-                          {/* Time Column */}
-                          <div className="text-[10px] font-mono font-bold text-muted-foreground p-2 border-r border-border/30 flex items-center justify-center bg-slate-50/30 dark:bg-slate-900/5 select-none">
+                        <div key={timeStr} className="grid grid-cols-8 hover:bg-muted/20">
+                          <div className="text-[10px] font-mono font-bold text-muted-foreground p-2 border-r border-border/40 flex items-center justify-center bg-muted/20 select-none">
                             {timeStr}
                           </div>
 
-                          {/* Day Columns */}
                           {weekDays.map((date, dayIdx) => {
                             const currentSlotStart = new Date(date);
                             currentSlotStart.setHours(hour, minute, 0, 0);
                             const currentSlotEnd = new Date(currentSlotStart);
                             currentSlotEnd.setMinutes(currentSlotStart.getMinutes() + 30);
 
-                            // Find events overlapping with this specific 30-min window
                             const slotEvents = filteredEvents.filter(e => {
                               const start = new Date(e.startDate);
                               const end = new Date(e.endDate);
@@ -559,7 +527,7 @@ export function UnifiedCalendar({ reservations, purchaseOrders, tasks, users, cu
                                 key={dayIdx}
                                 onDragOver={handleDragOver}
                                 onDrop={(ev) => handleDropOnSlot(ev, date, hour, minute)}
-                                className="border-r border-border/30 last:border-r-0 p-1.5 min-h-[44px] relative group flex flex-col gap-1 transition-all"
+                                className="border-r border-border/40 last:border-r-0 p-1.5 min-h-[44px] relative group flex flex-col gap-1 transition-all"
                               >
                                 {slotEvents.map(e => {
                                   const isExactStart = new Date(e.startDate).getHours() === hour && new Date(e.startDate).getMinutes() === minute;
@@ -576,7 +544,7 @@ export function UnifiedCalendar({ reservations, purchaseOrders, tasks, users, cu
                                           setRescheduleEndTime(e.endDate.toTimeString().split(" ")[0].substring(0, 5));
                                         }
                                       }}
-                                      className={`p-1 px-2 rounded-lg border text-[9px] font-black leading-tight cursor-grab active:cursor-grabbing shadow-sm transition-transform hover:scale-102 ${e.color}`}
+                                      className={`p-1 px-2 rounded-lg border text-[9px] font-black leading-tight cursor-grab active:cursor-grabbing shadow-xs transition-transform hover:scale-102 ${e.color}`}
                                       title={`${e.title} (${formatTime(e.startDate)} - ${formatTime(e.endDate)})`}
                                     >
                                       {isExactStart && <span className="font-mono text-[8px] mr-1 opacity-75">{formatTime(e.startDate)}</span>}
@@ -596,7 +564,6 @@ export function UnifiedCalendar({ reservations, purchaseOrders, tasks, users, cu
             </div>
           )}
 
-          {/* Hourly Day View */}
           {view === "day" && (
             <div className="grid grid-cols-1 divide-y divide-border/20 max-h-[600px] overflow-y-auto">
               {HOURS.map(hour => {
@@ -619,14 +586,12 @@ export function UnifiedCalendar({ reservations, purchaseOrders, tasks, users, cu
                       key={timeStr}
                       onDragOver={handleDragOver}
                       onDrop={(ev) => handleDropOnSlot(ev, currentDate, hour, minute)}
-                      className="grid grid-cols-12 hover:bg-slate-50/10 dark:hover:bg-slate-900/5 min-h-[50px]"
+                      className="grid grid-cols-12 hover:bg-muted/20 min-h-[50px]"
                     >
-                      {/* Time Code */}
-                      <div className="col-span-2 text-xs font-mono font-bold text-muted-foreground p-3 border-r border-border/30 flex items-center justify-center bg-slate-50/30 dark:bg-slate-900/5 select-none">
+                      <div className="col-span-2 text-xs font-mono font-bold text-muted-foreground p-3 border-r border-border/40 flex items-center justify-center bg-muted/20 select-none">
                         {timeStr}
                       </div>
 
-                      {/* Event Holder */}
                       <div className="col-span-10 p-2 flex flex-wrap gap-2 items-center">
                         {slotEvents.map(e => (
                           <div
@@ -641,7 +606,7 @@ export function UnifiedCalendar({ reservations, purchaseOrders, tasks, users, cu
                                 setRescheduleEndTime(e.endDate.toTimeString().split(" ")[0].substring(0, 5));
                               }
                             }}
-                            className={`p-2 rounded-xl border text-[10px] font-black cursor-grab active:cursor-grabbing shadow-sm flex items-center gap-2 transition-transform hover:scale-102 ${e.color}`}
+                            className={`p-2 rounded-xl border text-[10px] font-black cursor-grab active:cursor-grabbing shadow-xs flex items-center gap-2 transition-transform hover:scale-102 ${e.color}`}
                           >
                             <Clock className="h-3.5 w-3.5 shrink-0 opacity-70" />
                             <span>
@@ -658,7 +623,6 @@ export function UnifiedCalendar({ reservations, purchaseOrders, tasks, users, cu
             </div>
           )}
 
-          {/* Agenda / List View */}
           {view === "agenda" && (
             <div className="divide-y divide-border/20 p-6">
               {filteredEvents.length === 0 ? (
@@ -679,12 +643,11 @@ export function UnifiedCalendar({ reservations, purchaseOrders, tasks, users, cu
                           setRescheduleEndTime(e.endDate.toTimeString().split(" ")[0].substring(0, 5));
                         }
                       }}
-                      className="py-4 flex items-start md:items-center justify-between gap-4 group cursor-pointer hover:bg-slate-50/50 dark:hover:bg-slate-900/10 px-4 rounded-xl transition-all"
+                      className="py-4 flex items-start md:items-center justify-between gap-4 group cursor-pointer hover:bg-muted/20 px-4 rounded-xl transition-all"
                     >
                       <div className="flex items-start md:items-center gap-4">
-                        {/* Event Date Block */}
-                        <div className="p-2 bg-slate-100 dark:bg-slate-800 rounded-xl text-center shrink-0 w-16 shadow-inner">
-                          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                        <div className="p-2 bg-muted rounded-xl text-center shrink-0 w-16 shadow-xs border border-border/40">
+                          <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">
                             {e.startDate.toLocaleDateString('es-AR', {weekday: 'short'})}
                           </p>
                           <p className="text-lg font-black text-foreground">
@@ -692,7 +655,6 @@ export function UnifiedCalendar({ reservations, purchaseOrders, tasks, users, cu
                           </p>
                         </div>
 
-                        {/* Title & Description */}
                         <div>
                           <h4 className="font-bold text-sm text-foreground group-hover:text-primary transition-colors flex items-center gap-2">
                             {e.title}
@@ -707,7 +669,7 @@ export function UnifiedCalendar({ reservations, purchaseOrders, tasks, users, cu
                       </div>
 
                       <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-black text-slate-400 flex items-center gap-1 uppercase tracking-wider italic">
+                        <span className="text-[10px] font-black text-muted-foreground flex items-center gap-1 uppercase tracking-wider italic">
                           <Clock className="h-3 w-3" />
                           {formatTime(e.startDate)}
                         </span>
@@ -720,11 +682,9 @@ export function UnifiedCalendar({ reservations, purchaseOrders, tasks, users, cu
         </Card>
       </div>
 
-      {/* Floating Modal (Glassmorphic Dialog) */}
       {selectedEvent && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm transition-opacity animate-in fade-in duration-300">
-          <Card className="w-full max-w-lg bg-white/90 dark:bg-[#131B2E]/95 backdrop-blur-md border border-border/40 shadow-municipal-lg p-6 space-y-6 relative rounded-3xl animate-in zoom-in-95 duration-200">
-            {/* Close Button */}
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs transition-opacity animate-in fade-in duration-300">
+          <Card className="w-full max-w-lg bg-card border border-border/60 shadow-xl p-6 space-y-6 relative rounded-3xl animate-in zoom-in-95 duration-200">
             <Button
               variant="ghost"
               size="icon"
@@ -734,7 +694,6 @@ export function UnifiedCalendar({ reservations, purchaseOrders, tasks, users, cu
               <X className="h-4 w-4" />
             </Button>
 
-            {/* Header info */}
             <div className="space-y-2">
               <Badge className={`rounded-full px-3 py-0.5 text-[10px] font-black tracking-widest border-none w-fit ${selectedEvent.color}`}>
                 {selectedEvent.type === "reservation" ? "RESERVA DE VEHÍCULO" : selectedEvent.type === "order" ? "ENTREGA DE ORDEN" : "TAREA ADMINISTRATIVA"}
@@ -742,19 +701,18 @@ export function UnifiedCalendar({ reservations, purchaseOrders, tasks, users, cu
               <h3 className="text-xl font-black text-foreground tracking-tight">{selectedEvent.title}</h3>
             </div>
 
-            {/* Event detail card */}
-            <div className="bg-slate-50/50 dark:bg-slate-900/30 rounded-2xl border p-4 space-y-3.5">
+            <div className="bg-muted/40 rounded-2xl border border-border/40 p-4 space-y-3.5">
               {selectedEvent.type === "reservation" && (
                 <>
-                  <div className="flex items-center gap-2.5 text-sm font-semibold">
+                  <div className="flex items-center gap-2.5 text-sm font-semibold text-foreground">
                     <Clock className="h-4 w-4 text-blue-500" />
                     <span>Período: <span className="text-muted-foreground font-medium">{selectedEvent.startDate.toLocaleString('es-AR')} al {selectedEvent.endDate.toLocaleString('es-AR')}</span></span>
                   </div>
-                  <div className="flex items-center gap-2.5 text-sm font-semibold">
+                  <div className="flex items-center gap-2.5 text-sm font-semibold text-foreground">
                     <User className="h-4 w-4 text-blue-500" />
                     <span>Responsable: <span className="text-muted-foreground font-medium">{selectedEvent.raw.user.name}</span></span>
                   </div>
-                  <div className="flex items-center gap-2.5 text-sm font-semibold">
+                  <div className="flex items-center gap-2.5 text-sm font-semibold text-foreground">
                     <Briefcase className="h-4 w-4 text-blue-500" />
                     <span>Área: <span className="text-muted-foreground font-medium">{selectedEvent.raw.user.area?.name || "Sin Área"}</span></span>
                   </div>
@@ -768,30 +726,30 @@ export function UnifiedCalendar({ reservations, purchaseOrders, tasks, users, cu
 
               {selectedEvent.type === "order" && (
                 <>
-                  <div className="flex items-center gap-2.5 text-sm font-semibold">
+                  <div className="flex items-center gap-2.5 text-sm font-semibold text-foreground">
                     <Clock className="h-4 w-4 text-emerald-500" />
                     <span>Entrega Pactada: <span className="text-muted-foreground font-medium">{selectedEvent.startDate.toLocaleString('es-AR')}</span></span>
                   </div>
-                  <div className="flex items-center gap-2.5 text-sm font-semibold">
+                  <div className="flex items-center gap-2.5 text-sm font-semibold text-foreground">
                     <User className="h-4 w-4 text-emerald-500" />
                     <span>Proveedor: <span className="text-muted-foreground font-medium">{selectedEvent.raw.providerName || "No registrado"}</span></span>
                   </div>
                   {selectedEvent.raw.providerCuit && (
-                    <div className="flex items-center gap-2.5 text-sm font-semibold">
+                    <div className="flex items-center gap-2.5 text-sm font-semibold text-foreground">
                       <Briefcase className="h-4 w-4 text-emerald-500" />
                       <span>CUIT: <span className="text-muted-foreground font-medium">{selectedEvent.raw.providerCuit}</span></span>
                     </div>
                   )}
-                  <div className="flex items-center gap-2.5 text-sm font-semibold">
+                  <div className="flex items-center gap-2.5 text-sm font-semibold text-foreground">
                      <ShoppingBag className="h-4 w-4 text-emerald-500" />
-                     <span>Importe total: <span className="text-emerald-600 font-bold">${Number(selectedEvent.raw.amount).toLocaleString('es-AR')}</span></span>
+                     <span>Importe total: <span className="text-emerald-500 font-bold">${Number(selectedEvent.raw.amount).toLocaleString('es-AR')}</span></span>
                   </div>
                 </>
               )}
 
               {selectedEvent.type === "task" && (
                 <>
-                  <div className="flex items-center gap-2.5 text-sm font-semibold">
+                  <div className="flex items-center gap-2.5 text-sm font-semibold text-foreground">
                     <Clock className="h-4 w-4 text-amber-500" />
                     <span>Vencimiento: <span className="text-muted-foreground font-medium">{selectedEvent.startDate.toLocaleString('es-AR')}</span></span>
                   </div>
@@ -809,7 +767,6 @@ export function UnifiedCalendar({ reservations, purchaseOrders, tasks, users, cu
               )}
             </div>
 
-            {/* Rescheduling Form */}
             <div className="space-y-4 pt-4 border-t border-border/20">
               <h4 className="text-xs font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
                 <Edit2 className="h-3.5 w-3.5" /> Reprogramar Horarios de Logística
@@ -818,33 +775,33 @@ export function UnifiedCalendar({ reservations, purchaseOrders, tasks, users, cu
               <div className="flex flex-col gap-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label className="text-xs font-bold uppercase tracking-wider">Fecha</Label>
+                    <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Fecha</Label>
                     <Input
                       type="date"
                       value={rescheduleDate}
                       onChange={e => setRescheduleDate(e.target.value)}
-                      className="bg-slate-50/50 dark:bg-slate-900/30 rounded-xl"
+                      className="bg-muted/40 border-border/60 rounded-xl text-xs"
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label className="text-xs font-bold uppercase tracking-wider">{selectedEvent.type === "reservation" ? "Hora Inicio" : "Hora"}</Label>
+                    <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{selectedEvent.type === "reservation" ? "Hora Inicio" : "Hora"}</Label>
                     <Input
                       type="time"
                       value={rescheduleTime}
                       onChange={e => setRescheduleTime(e.target.value)}
-                      className="bg-slate-50/50 dark:bg-slate-900/30 rounded-xl"
+                      className="bg-muted/40 border-border/60 rounded-xl text-xs"
                     />
                   </div>
 
                   {selectedEvent.type === "reservation" && (
                     <div className="space-y-2 col-span-2">
-                      <Label className="text-xs font-bold uppercase tracking-wider">Hora Fin</Label>
+                      <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Hora Fin</Label>
                       <Input
                         type="time"
                         value={rescheduleEndTime}
                         onChange={e => setRescheduleEndTime(e.target.value)}
-                        className="bg-slate-50/50 dark:bg-slate-900/30 rounded-xl"
+                        className="bg-muted/40 border-border/60 rounded-xl text-xs"
                       />
                     </div>
                   )}
@@ -855,14 +812,14 @@ export function UnifiedCalendar({ reservations, purchaseOrders, tasks, users, cu
                     type="button"
                     variant="outline"
                     onClick={() => setSelectedEvent(null)}
-                    className="rounded-xl"
+                    className="rounded-xl text-xs"
                   >
                     Cancelar
                   </Button>
                   <Button
                     onClick={handleReschedule}
                     disabled={isRescheduling}
-                    className="bg-[#004a80] hover:bg-[#00365d] text-white rounded-xl gap-2 font-bold shadow-lg"
+                    className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl gap-2 font-bold text-xs shadow-md"
                   >
                     {isRescheduling ? "Guardando..." : "Guardar Cambios"}
                   </Button>
@@ -870,7 +827,6 @@ export function UnifiedCalendar({ reservations, purchaseOrders, tasks, users, cu
               </div>
             </div>
 
-            {/* View Full Link */}
             <div className="flex justify-start">
                <Link
                  href={
@@ -887,10 +843,9 @@ export function UnifiedCalendar({ reservations, purchaseOrders, tasks, users, cu
         </div>
       )}
 
-      {/* Floating Add Shared Task Modal (Glassmorphic Dialog) */}
       {showAddModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm transition-opacity animate-in fade-in duration-300">
-          <Card className="w-full max-w-xl bg-white/90 dark:bg-[#131B2E]/95 backdrop-blur-md border border-border/40 shadow-municipal-lg p-6 space-y-6 relative rounded-3xl animate-in zoom-in-95 duration-200 overflow-y-auto max-h-[90vh]">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs transition-opacity animate-in fade-in duration-300">
+          <Card className="w-full max-w-xl bg-card border border-border/60 shadow-xl p-6 space-y-6 relative rounded-3xl animate-in zoom-in-95 duration-200 overflow-y-auto max-h-[90vh]">
             <Button
               variant="ghost"
               size="icon"
@@ -901,75 +856,74 @@ export function UnifiedCalendar({ reservations, purchaseOrders, tasks, users, cu
             </Button>
 
             <div className="space-y-1">
-              <h3 className="text-2xl font-black text-foreground tracking-tight uppercase tracking-tighter">Nueva Tarea Compartida</h3>
+              <h3 className="text-2xl font-black text-foreground tracking-tight uppercase">Nueva Tarea Compartida</h3>
               <p className="text-sm text-muted-foreground font-medium">Cree tareas administrativas y elija qué agentes municipales pueden visualizarlas.</p>
             </div>
 
             <form onSubmit={handleAddTask} className="space-y-5">
               <div className="space-y-2">
-                <Label htmlFor="title" className="text-xs font-bold uppercase tracking-widest text-slate-400">Título de la Tarea</Label>
+                <Label htmlFor="title" className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Título de la Tarea</Label>
                 <Input
                   id="title"
                   placeholder="Ej: Entrega de documentación de resmas"
                   value={newTaskTitle}
                   onChange={e => setNewTaskTitle(e.target.value)}
                   required
-                  className="bg-slate-50/50 dark:bg-slate-900/30 rounded-xl h-11"
+                  className="bg-muted/40 border-border/60 rounded-xl h-11 text-xs"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="desc" className="text-xs font-bold uppercase tracking-widest text-slate-400">Descripción / Detalles</Label>
+                <Label htmlFor="desc" className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Descripción / Detalles</Label>
                 <textarea
                   id="desc"
                   rows={2}
                   placeholder="Detalle los objetivos o motivo de la tarea..."
                   value={newTaskDesc}
                   onChange={e => setNewTaskDescription(e.target.value)}
-                  className="flex min-h-[60px] w-full rounded-xl border border-input bg-slate-50/50 dark:bg-slate-900/30 px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="flex min-h-[60px] w-full rounded-xl border border-border/60 bg-muted/40 px-3 py-2 text-xs ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 text-foreground"
                 />
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="dueDate" className="text-xs font-bold uppercase tracking-widest text-slate-400">Fecha de Vencimiento</Label>
+                  <Label htmlFor="dueDate" className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Fecha de Vencimiento</Label>
                   <Input
                     id="dueDate"
                     type="date"
                     value={newTaskDueDate}
                     onChange={e => setNewTaskDueDate(e.target.value)}
                     required
-                    className="bg-slate-50/50 dark:bg-slate-900/30 rounded-xl h-11"
+                    className="bg-muted/40 border-border/60 rounded-xl h-11 text-xs"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="dueTime" className="text-xs font-bold uppercase tracking-widest text-slate-400">Hora de Vencimiento</Label>
+                  <Label htmlFor="dueTime" className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Hora de Vencimiento</Label>
                   <Input
                     id="dueTime"
                     type="time"
                     value={newTaskDueTime}
                     onChange={e => setNewTaskDueTime(e.target.value)}
                     required
-                    className="bg-slate-50/50 dark:bg-slate-900/30 rounded-xl h-11"
+                    className="bg-muted/40 border-border/60 rounded-xl h-11 text-xs"
                   />
                 </div>
               </div>
 
-              {/* Shared Visibility Invites Checklist */}
               <div className="space-y-3.5 pt-2">
-                <Label className="text-xs font-bold uppercase tracking-widest text-slate-400 flex items-center gap-1">
+                <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-1">
                   <Eye className="h-4 w-4 text-amber-500" /> Invitar Agentes a Ver esta Tarea
                 </Label>
 
-                <div className="border border-border/30 rounded-xl p-3.5 max-h-40 overflow-y-auto bg-slate-50/50 dark:bg-slate-900/30 space-y-2">
+                <div className="border border-border/40 rounded-xl p-3.5 max-h-40 overflow-y-auto bg-muted/30 space-y-2">
                   {users.map(u => (
-                    <label key={u.id} className="flex items-center gap-3 cursor-pointer text-xs font-bold select-none group">
+                    <label key={u.id} className="flex items-center gap-3 cursor-pointer text-xs font-bold select-none group text-foreground">
                       <input
                         type="checkbox"
                         checked={newTaskViewerIds.includes(u.id)}
                         onChange={() => handleViewerToggle(u.id)}
-                        className="rounded text-amber-600 focus:ring-amber-500 h-4.5 w-4.5 border-slate-300"
+                        className="rounded text-amber-600 focus:ring-amber-500 h-4.5 w-4.5 border-border"
                       />
                       <span className="group-hover:text-primary transition-colors flex items-center gap-2">
                          <div className="w-5 h-5 rounded-full bg-accent/20 text-accent flex items-center justify-center font-bold text-[10px] uppercase">
@@ -987,14 +941,14 @@ export function UnifiedCalendar({ reservations, purchaseOrders, tasks, users, cu
                   type="button"
                   variant="outline"
                   onClick={() => setShowAddModal(false)}
-                  className="rounded-xl"
+                  className="rounded-xl text-xs"
                 >
                   Cancelar
                 </Button>
                 <Button
                   type="submit"
                   disabled={isSaving}
-                  className="bg-[#004a80] hover:bg-[#00365d] text-white rounded-xl gap-2 font-bold shadow-lg"
+                  className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl gap-2 font-bold text-xs shadow-md"
                 >
                   {isSaving ? "Creando..." : "Crear y Compartir"}
                 </Button>
