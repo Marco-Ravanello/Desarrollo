@@ -15,23 +15,22 @@ interface TimelineEvent {
 export function CitizenTimeline({ events }: { events: TimelineEvent[] }) {
   if (events.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-12 text-muted-foreground border-2 border-dashed rounded-3xl">
+      <div className="flex flex-col items-center justify-center py-12 text-muted-foreground border-2 border-dashed border-border/60 rounded-3xl bg-muted/20">
         <History className="h-10 w-10 mb-2 opacity-20" />
-        <p>No hay eventos registrados en la línea de tiempo.</p>
+        <p className="text-xs font-bold">No hay eventos registrados en la línea de tiempo.</p>
       </div>
     );
   }
 
   return (
-    <div className="relative space-y-8 before:absolute before:inset-0 before:ml-5 before:-translate-x-px before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-slate-200 before:to-transparent dark:before:via-slate-800">
-      {events.map((event, idx) => (
+    <div className="relative space-y-8 before:absolute before:inset-0 before:ml-5 before:-translate-x-px before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-border/60 before:to-transparent">
+      {events.map((event) => (
         <div key={event.id} className="relative flex items-start gap-6 group">
-          {/* Icon node */}
-          <div className={`mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-4 border-background shadow-sm transition-all group-hover:scale-110 z-10 ${
-            event.type === 'INTERVENTION' ? 'bg-blue-100 text-blue-600' :
-            event.type === 'CASE_CREATED' ? 'bg-emerald-100 text-emerald-600' :
-            event.type === 'CASE_CLOSED' ? 'bg-slate-100 text-slate-600' :
-            'bg-amber-100 text-amber-600'
+          <div className={`mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-4 border-background shadow-xs transition-all group-hover:scale-110 z-10 ${
+            event.type === 'INTERVENTION' ? 'bg-blue-500/15 text-blue-500' :
+            event.type === 'CASE_CREATED' ? 'bg-emerald-500/15 text-emerald-500' :
+            event.type === 'CASE_CLOSED' ? 'bg-muted text-muted-foreground' :
+            'bg-amber-500/15 text-amber-500'
           }`}>
              {event.type === 'INTERVENTION' && <ActivityIcon className="h-4 w-4" />}
              {event.type === 'CASE_CREATED' && <FileText className="h-4 w-4" />}
@@ -42,9 +41,9 @@ export function CitizenTimeline({ events }: { events: TimelineEvent[] }) {
           <div className="flex-1 space-y-1.5 pb-2">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                 <h4 className="font-black text-slate-800 dark:text-slate-100 leading-none">{event.title}</h4>
+                 <h4 className="font-black text-foreground leading-none text-sm">{event.title}</h4>
                  {event.area && (
-                    <Badge variant="outline" className="text-[9px] uppercase font-bold py-0 h-4 border-slate-200">
+                    <Badge variant="outline" className="text-[9px] uppercase font-bold py-0 h-4 border-border text-foreground">
                         {event.area}
                     </Badge>
                  )}
@@ -54,7 +53,7 @@ export function CitizenTimeline({ events }: { events: TimelineEvent[] }) {
               </time>
             </div>
             {event.description && (
-               <p className="text-sm text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-900/50 p-3 rounded-2xl border border-slate-100 dark:border-slate-800">
+               <p className="text-xs text-muted-foreground bg-muted/30 p-3 rounded-2xl border border-border/40 leading-relaxed font-medium">
                   {event.description}
                </p>
             )}

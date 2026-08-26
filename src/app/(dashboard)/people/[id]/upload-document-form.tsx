@@ -40,20 +40,20 @@ export function UploadDocumentForm({ personId, caseId }: { personId?: string, ca
   }
 
   return (
-    <form onSubmit={handleSubmit} className="mt-6 p-4 border rounded-lg bg-slate-50 dark:bg-slate-900/50 space-y-4">
+    <form onSubmit={handleSubmit} className="mt-6 p-4 border border-border/60 rounded-2xl bg-muted/30 space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="file" className="text-xs font-bold uppercase text-slate-500">Adjuntar Nuevo Documento</Label>
+        <Label htmlFor="file" className="text-xs font-bold uppercase text-muted-foreground">Adjuntar Nuevo Documento</Label>
         <div className="flex gap-2">
-          <Input id="file" name="file" type="file" required disabled={uploading} className="bg-background" />
+          <Input id="file" name="file" type="file" required disabled={uploading} className="bg-background text-foreground border-border/60 text-xs" />
           <input type="hidden" name="personId" value={personId || ""} />
           <input type="hidden" name="caseId" value={caseId || ""} />
-          <Button type="submit" disabled={uploading}>
+          <Button type="submit" disabled={uploading} className="bg-primary text-primary-foreground font-bold text-xs uppercase">
             {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
             <span className="ml-2">{uploading ? "Subiendo..." : "Subir"}</span>
           </Button>
         </div>
       </div>
-      <p className="text-[10px] text-slate-400">Formatos permitidos: PDF, JPG, PNG. Máx 5MB.</p>
+      <p className="text-[10px] text-muted-foreground">Formatos permitidos: PDF, JPG, PNG. Máx 5MB.</p>
     </form>
   );
 }
