@@ -14,9 +14,9 @@ function formatRelativeTime(date: Date) {
 
 export async function getEmergencyData() {
   try {
-    const [realCases, supplies, vehicles] = await Promise.all([
+    const [realCases, supplies, vehicles, shelters] = await Promise.all([
       prisma.case.findMany({
-        take: 10,
+        take: 20,
         orderBy: { createdAt: 'desc' },
         include: {
           area: true,
@@ -28,7 +28,9 @@ export async function getEmergencyData() {
       }).catch(() => []),
       prisma.vehicle.findMany({
         where: { status: 'DISPONIBLE' }
-      }).catch(() => [])
+      }).catch(() => []),
+      // @ts-ignore
+      prisma.shelter ? prisma.shelter.findMany({ orderBy: { createdAt: 'desc' } }).catch(() => []) : Promise.resolve([])
     ]);
 
     const incidents = realCases.map((c) => ({
@@ -40,12 +42,12 @@ export async function getEmergencyData() {
       affectedPeople: 1,
       time: formatRelativeTime(c.createdAt),
       status: c.status === 'CERRADO' ? 'ASISTIDO' : 'EN_CURSO',
-      squad: c.area?.name || "Defensa Civil + Cuadrilla Social",
+      squad: c.area?.name || "Defensa Civil + Guardia Territorial",
       personName: c.person ? `${c.person.lastName}, ${c.person.firstName}` : null,
       personDni: c.person?.dni || null
     }));
 
-    const emergencyStock = supplies.length > 0 ? supplies.map((s) => ({
+    const emergencyStock = supplies.map((s) => ({
       id: s.id,
       name: s.name,
       quantity: s.stock,
@@ -53,19 +55,23 @@ export async function getEmergencyData() {
       unit: "unidades",
       status: s.stock <= (s.minStock || 10) ? "CRITICO" : "OPTIMO",
       areaName: s.area?.name || "Depósito Central"
-    })) : [
-      { id: "1", name: "Colchones Ignífugos", quantity: 180, minNeeded: 100, unit: "unidades", status: "OPTIMO", areaName: "Depósito Central" },
-      { id: "2", name: "Frazadas y Mantas Térmicas", quantity: 350, minNeeded: 200, unit: "unidades", status: "OPTIMO", areaName: "Depósito Central" },
-      { id: "3", name: "Bidones de Agua Mineral (5L)", quantity: 1200, minNeeded: 500, unit: "litros", status: "OPTIMO", areaName: "Depósito Central" },
-      { id: "4", name: "Kits de Alimentos No Perecederos", quantity: 420, minNeeded: 150, unit: "bolsas", status: "OPTIMO", areaName: "Depósito Central" },
-      { id: "5", name: "Chapas Acanaladas Zinc (Sinusoidal)", quantity: 85, minNeeded: 100, unit: "chapas", status: "CRITICO", areaName: "Hábitat" },
-      { id: "6", name: "Tirantes de Madera (3x2x4m)", quantity: 140, minNeeded: 120, unit: "tirantes", status: "OPTIMO", areaName: "Hábitat" },
-      { id: "7", name: "Botas de Goma y Capas de Lluvia", quantity: 65, minNeeded: 80, unit: "pares", status: "CRITICO", areaName: "Defensa Civil" },
-    ];
+    }));
+
+    const realShelters = shelters.map((sh: any) => ({
+      id: sh.id,
+      name: sh.name,
+      address: sh.address,
+      coordinator: sh.coordinator,
+      capacity: sh.capacity,
+      occupied: sh.occupied,
+      rationsDelivered: sh.rationsDelivered,
+      status: sh.status
+    }));
 
     return {
       incidents,
       emergencyStock,
+      shelters: realShelters,
       availableVehiclesCount: vehicles.length
     };
   } catch (error) {
@@ -73,6 +79,7 @@ export async function getEmergencyData() {
     return {
       incidents: [],
       emergencyStock: [],
+      shelters: [],
       availableVehiclesCount: 0
     };
   }
