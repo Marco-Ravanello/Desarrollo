@@ -809,6 +809,52 @@ export async function queryAIAssistant(
 async function handleChartRequest(query: string): Promise<AIResponse> {
   const cleanQuery = query.toLowerCase();
 
+  // 0. Meta-pregunta sobre capacidad de generar gráficos
+  const isMetaChartQuery = cleanQuery.includes("podes hacer") || cleanQuery.includes("podés hacer") ||
+                           cleanQuery.includes("cualquier") || cleanQuery.includes("qué gráficos") ||
+                           cleanQuery.includes("que graficos") || cleanQuery.includes("tipos de gráfico") ||
+                           cleanQuery.includes("tipos de grafico") || cleanQuery.includes("qué tipo") ||
+                           cleanQuery.includes("que tipo");
+
+  if (isMetaChartQuery) {
+    const casesByArea = await prisma.case.groupBy({
+      by: ['areaId'],
+      _count: { _all: true },
+    });
+    const areas = await prisma.area.findMany();
+    const fallbackChartData = areas.map(area => {
+      const count = casesByArea.find(c => c.areaId === area.id)?._count._all || 0;
+      return { name: area.name.replace("Dirección de ", "").replace("Coordinación de ", "").substring(0, 22), value: count };
+    }).filter(a => a.value > 0);
+
+    return {
+      intent: "chart_capabilities",
+      answer: `### Capacidades de Generación de Gráficos del Asistente
+¡Sí! Puedo generar gráficos interactivos en tiempo real basados en cualquier módulo de la base de datos municipal.
+
+#### Gráficos que puedes pedirme en lenguaje natural:
+1. **Casos Sociales por Área Municipal** (ej: *"mostrar gráfico de casos por área"*).
+2. **Casos por Rango Etario / Edad** (ej: *"mostrar un gráfico de casos por edad"*).
+3. **Distribución de Casos por Género** (ej: *"dibujar gráfico de casos por género"*).
+4. **Severidad y Prioridad de Casos** (ej: *"mostrar gráfico de casos por prioridad"*).
+5. **Presupuesto Ejecutado por Dirección ($ ARS)** (ej: *"mostrar gráfico de presupuesto por área"*).
+6. **Monto Comprometido por Proveedor** (ej: *"gráficos de órdenes de compra por proveedor"*).
+7. **Modalidades de Contratación de Personal** (ej: *"gráficos de personal por contrato"*).
+8. **Operatividad de la Flota Logística** (ej: *"gráficos de vehículos por estado"*).
+9. **Distribución por Inicial de Apellido/Nombre** (ej: *"gráficos por inicial de apellido"*).
+
+*A continuación te muestro un ejemplo del gráfico consolidado de Casos Sociales por Área Municipal:*`,
+      dataSummary: {
+        chart: {
+          type: "bar",
+          title: "Casos por Área Municipal",
+          color: "#3b82f6",
+          data: fallbackChartData
+        }
+      }
+    };
+  }
+
   // 1. Gráfico por Inicial de Apellido o Nombre
   if (cleanQuery.includes("letra") || cleanQuery.includes("inicial") || cleanQuery.includes("apellido") || cleanQuery.includes("nombre")) {
     const people = await prisma.person.findMany();
