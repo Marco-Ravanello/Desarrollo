@@ -4,6 +4,7 @@ import fs from "fs/promises";
 import path from "path";
 import { findPeopleNearPoint } from "@/services/spatial";
 import { callGeminiAnonymized } from "@/services/gemini-ai";
+import { searchFichaSocialByDni, calculateCrossPrograms, getProgramCatalog } from "@/services/ficha-social";
 
 export interface AIResponse {
   answer: string;
@@ -656,6 +657,11 @@ export async function queryAIAssistantStream(
       query.includes("acevedo") || query.includes("aylen") || query.includes("victoria")
     ) {
       dbResponse = await handleSocialQuery(query);
+    } else if (
+      query.includes("ficha social") || query.includes("ficha 360") || query.includes("cruce de datos") ||
+      query.includes("cruce de programas") || query.includes("programas sociales") || query.includes("matriz de cruce")
+    ) {
+      dbResponse = await handleFichaSocialAIQuery(queryText);
     } else if (
       query.includes("insumo") || query.includes("stock") || query.includes("inventario") ||
       query.includes("deposito") || query.includes("depósito")
@@ -2280,6 +2286,56 @@ La unidad automotriz ha quedado reservada y bloqueada para su uso exclusivo dura
   }
 
   return handleGeneralFallback(query);
+}
+
+export async function handleFichaSocialAIQuery(query: string): Promise<AIResponse> {
+  const cleanQuery = query.toLowerCase();
+  const dniMatch = cleanQuery.replace(/[^0-9]/g, "").match(/\b\d{7,8}\b/);
+  if (dniMatch) {
+    const targetDni = dniMatch[0];
+    const ficha = await searchFichaSocialByDni(targetDni);
+    if (ficha.encontrado && ficha.nombre_detectado) {
+      let answer = `### Ficha Social Unificada 360°: ${ficha.nombre_detectado}\n\n`;
+      answer += `Se ha realizado el cruce de datos en todas las bases del municipio para el DNI **${ficha.dni}**:\n\n`;
+      answer += `*   **Ciudadano:** ${ficha.nombre_detectado} (DNI/CUIL: ${ficha.dni})\n`;
+      answer += `*   **Total de Programas Sociales Activos:** **${ficha.total_programas} programas**\n\n`;
+      answer += `#### Programas y Prestaciones Detectadas:\n`;
+      if (ficha.detalle_programas) {
+        Object.entries(ficha.detalle_programas).forEach(([progName, detalle]) => {
+          answer += `*   **${progName}:** Roles: \`${detalle.roles.join(", ")}\` (${detalle.cantidad_registros} registro/s)\n`;
+        });
+      }
+      if (ficha.relaciones_familiares && ficha.relaciones_familiares.length > 0) {
+        answer += `\n#### Árbol de Vínculos Familiares Inferido:\n`;
+        ficha.relaciones_familiares.forEach((rel, idx) => {
+          answer += `${idx + 1}. **${rel.nombre_completo}** (DNI: ${rel.dni}) — *${rel.tipo_relacion}* (Cruzado en: ${rel.programas.join(", ")})\n`;
+        });
+      }
+      return {
+        intent: "ficha_social_lookup",
+        answer,
+        dataSummary: {
+          hasResults: true,
+          ficha,
+          sources: [{ type: "Ciudadano 360°", name: `${ficha.nombre_detectado}`, url: "/ficha-social" }],
+          actions: [{ label: "Ver Ficha 360° Completa", actionType: "NAVIGATE", payload: { path: "/ficha-social" } }]
+        }
+      };
+    }
+  }
+
+  const catalog = await getProgramCatalog();
+  const progsToCross = catalog.slice(0, 2).map(p => p.nombre);
+  const cruce = await calculateCrossPrograms(progsToCross, "interseccion", { limit: 10 });
+  return {
+    intent: "cruce_programas_render",
+    answer: `### Matriz de Cruce de Programas Sociales\n\nSe calcularon las intersecciones y duplicidades en tiempo real para **${progsToCross.join(" + ")}**:\n\n*   **Total de Personas Coincidentes:** **${cruce.total_coincidencias.toLocaleString("es-AR")} personas**`,
+    dataSummary: {
+      hasResults: true,
+      sources: [{ type: "Matriz de Cruces", name: "Cruce de Programas 3F", url: "/ficha-social/cruces" }],
+      actions: [{ label: "Ver Matriz de Cruces Masivos", actionType: "NAVIGATE", payload: { path: "/ficha-social/cruces" } }]
+    }
+  };
 }
 
 export async function handleSpatialProximityQuery(query: string): Promise<AIResponse> {
