@@ -4,6 +4,7 @@ import fs from "fs/promises";
 import path from "path";
 import { findPeopleNearPoint } from "@/services/spatial";
 import { callGeminiAnonymized } from "@/services/gemini-ai";
+import { searchFichaSocialByDni, calculateCrossPrograms, getProgramCatalog } from "@/services/ficha-social";
 
 export interface AIResponse {
   answer: string;
@@ -657,6 +658,11 @@ export async function queryAIAssistantStream(
     ) {
       dbResponse = await handleSocialQuery(query);
     } else if (
+      query.includes("ficha social") || query.includes("ficha 360") || query.includes("cruce de datos") ||
+      query.includes("cruce de programas") || query.includes("programas sociales") || query.includes("matriz de cruce")
+    ) {
+      dbResponse = await handleFichaSocialAIQuery(queryText);
+    } else if (
       query.includes("insumo") || query.includes("stock") || query.includes("inventario") ||
       query.includes("deposito") || query.includes("depósito")
     ) {
@@ -808,6 +814,52 @@ export async function queryAIAssistant(
 
 async function handleChartRequest(query: string): Promise<AIResponse> {
   const cleanQuery = query.toLowerCase();
+
+  // 0. Meta-pregunta sobre capacidad de generar gráficos
+  const isMetaChartQuery = cleanQuery.includes("podes hacer") || cleanQuery.includes("podés hacer") ||
+                           cleanQuery.includes("cualquier") || cleanQuery.includes("qué gráficos") ||
+                           cleanQuery.includes("que graficos") || cleanQuery.includes("tipos de gráfico") ||
+                           cleanQuery.includes("tipos de grafico") || cleanQuery.includes("qué tipo") ||
+                           cleanQuery.includes("que tipo");
+
+  if (isMetaChartQuery) {
+    const casesByArea = await prisma.case.groupBy({
+      by: ['areaId'],
+      _count: { _all: true },
+    });
+    const areas = await prisma.area.findMany();
+    const fallbackChartData = areas.map(area => {
+      const count = casesByArea.find(c => c.areaId === area.id)?._count._all || 0;
+      return { name: area.name.replace("Dirección de ", "").replace("Coordinación de ", "").substring(0, 22), value: count };
+    }).filter(a => a.value > 0);
+
+    return {
+      intent: "chart_capabilities",
+      answer: `### Capacidades de Generación de Gráficos del Asistente
+¡Sí! Puedo generar gráficos interactivos en tiempo real basados en cualquier módulo de la base de datos municipal.
+
+#### Gráficos que puedes pedirme en lenguaje natural:
+1. **Casos Sociales por Área Municipal** (ej: *"mostrar gráfico de casos por área"*).
+2. **Casos por Rango Etario / Edad** (ej: *"mostrar un gráfico de casos por edad"*).
+3. **Distribución de Casos por Género** (ej: *"dibujar gráfico de casos por género"*).
+4. **Severidad y Prioridad de Casos** (ej: *"mostrar gráfico de casos por prioridad"*).
+5. **Presupuesto Ejecutado por Dirección ($ ARS)** (ej: *"mostrar gráfico de presupuesto por área"*).
+6. **Monto Comprometido por Proveedor** (ej: *"gráficos de órdenes de compra por proveedor"*).
+7. **Modalidades de Contratación de Personal** (ej: *"gráficos de personal por contrato"*).
+8. **Operatividad de la Flota Logística** (ej: *"gráficos de vehículos por estado"*).
+9. **Distribución por Inicial de Apellido/Nombre** (ej: *"gráficos por inicial de apellido"*).
+
+*A continuación te muestro un ejemplo del gráfico consolidado de Casos Sociales por Área Municipal:*`,
+      dataSummary: {
+        chart: {
+          type: "bar",
+          title: "Casos por Área Municipal",
+          color: "#3b82f6",
+          data: fallbackChartData
+        }
+      }
+    };
+  }
 
   // 1. Gráfico por Inicial de Apellido o Nombre
   if (cleanQuery.includes("letra") || cleanQuery.includes("inicial") || cleanQuery.includes("apellido") || cleanQuery.includes("nombre")) {
@@ -2234,6 +2286,56 @@ La unidad automotriz ha quedado reservada y bloqueada para su uso exclusivo dura
   }
 
   return handleGeneralFallback(query);
+}
+
+export async function handleFichaSocialAIQuery(query: string): Promise<AIResponse> {
+  const cleanQuery = query.toLowerCase();
+  const dniMatch = cleanQuery.replace(/[^0-9]/g, "").match(/\b\d{7,8}\b/);
+  if (dniMatch) {
+    const targetDni = dniMatch[0];
+    const ficha = await searchFichaSocialByDni(targetDni);
+    if (ficha.encontrado && ficha.nombre_detectado) {
+      let answer = `### Ficha Social Unificada 360°: ${ficha.nombre_detectado}\n\n`;
+      answer += `Se ha realizado el cruce de datos en todas las bases del municipio para el DNI **${ficha.dni}**:\n\n`;
+      answer += `*   **Ciudadano:** ${ficha.nombre_detectado} (DNI/CUIL: ${ficha.dni})\n`;
+      answer += `*   **Total de Programas Sociales Activos:** **${ficha.total_programas} programas**\n\n`;
+      answer += `#### Programas y Prestaciones Detectadas:\n`;
+      if (ficha.detalle_programas) {
+        Object.entries(ficha.detalle_programas).forEach(([progName, detalle]) => {
+          answer += `*   **${progName}:** Roles: \`${detalle.roles.join(", ")}\` (${detalle.cantidad_registros} registro/s)\n`;
+        });
+      }
+      if (ficha.relaciones_familiares && ficha.relaciones_familiares.length > 0) {
+        answer += `\n#### Árbol de Vínculos Familiares Inferido:\n`;
+        ficha.relaciones_familiares.forEach((rel, idx) => {
+          answer += `${idx + 1}. **${rel.nombre_completo}** (DNI: ${rel.dni}) — *${rel.tipo_relacion}* (Cruzado en: ${rel.programas.join(", ")})\n`;
+        });
+      }
+      return {
+        intent: "ficha_social_lookup",
+        answer,
+        dataSummary: {
+          hasResults: true,
+          ficha,
+          sources: [{ type: "Ciudadano 360°", name: `${ficha.nombre_detectado}`, url: "/ficha-social" }],
+          actions: [{ label: "Ver Ficha 360° Completa", actionType: "NAVIGATE", payload: { path: "/ficha-social" } }]
+        }
+      };
+    }
+  }
+
+  const catalog = await getProgramCatalog();
+  const progsToCross = catalog.slice(0, 2).map(p => p.nombre);
+  const cruce = await calculateCrossPrograms(progsToCross, "interseccion", { limit: 10 });
+  return {
+    intent: "cruce_programas_render",
+    answer: `### Matriz de Cruce de Programas Sociales\n\nSe calcularon las intersecciones y duplicidades en tiempo real para **${progsToCross.join(" + ")}**:\n\n*   **Total de Personas Coincidentes:** **${cruce.total_coincidencias.toLocaleString("es-AR")} personas**`,
+    dataSummary: {
+      hasResults: true,
+      sources: [{ type: "Matriz de Cruces", name: "Cruce de Programas 3F", url: "/ficha-social/cruces" }],
+      actions: [{ label: "Ver Matriz de Cruces Masivos", actionType: "NAVIGATE", payload: { path: "/ficha-social/cruces" } }]
+    }
+  };
 }
 
 export async function handleSpatialProximityQuery(query: string): Promise<AIResponse> {

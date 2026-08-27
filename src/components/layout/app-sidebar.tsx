@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { LayoutDashboard, Users, ShieldAlert, ClipboardList, LogOut, Briefcase, Car, UserCog, ChevronLeft, ChevronRight, CheckCircle2, MapPin, Wallet, Building2, FileSpreadsheet, Calendar, Sparkles, CloudRain, Settings, Tv } from "lucide-react";
+import { LayoutDashboard, Users, ShieldAlert, ClipboardList, LogOut, Briefcase, Car, UserCog, ChevronLeft, ChevronRight, CheckCircle2, MapPin, Wallet, Building2, FileSpreadsheet, Calendar, Sparkles, CloudRain, Settings, Tv, Network } from "lucide-react";
 import { useSession, signOut } from "next-auth/react";
 import { getAreaNavColor, getAreaBgColor } from "@/lib/area-theme";
 import { Button } from "@/components/ui/button";
@@ -31,6 +31,7 @@ export function AppSidebar() {
 
   const navigation = [
     { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard, color: "text-blue-500" },
+    { title: "Ficha Social 360°", url: "/ficha-social", icon: Network, color: "text-indigo-500 font-bold" },
     { title: "Mapa Social", url: "/maps", icon: MapPin, color: "text-emerald-500" },
     { title: "Mis Tareas", url: "/tasks", icon: CheckCircle2, color: "text-amber-500" },
     { title: "Registro Único", url: "/people", icon: Users, color: "text-purple-500" },
@@ -88,7 +89,7 @@ export function AppSidebar() {
         <div className="pb-2">
           {!isCollapsed && <p className="px-3 text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Principal</p>}
           {navigation.map((item) => {
-            const isActive = pathname === item.url;
+            const isActive = pathname === item.url || (item.url !== "/dashboard" && pathname.startsWith(item.url));
             return (
               <Link
                 key={item.title}
