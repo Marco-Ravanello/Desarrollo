@@ -42,15 +42,15 @@ export async function getDashboardStats(filters?: { from: Date; to: Date }) {
       criticalCases,
       peopleLocations
     ] = await Promise.all([
-      prisma.person.count({ where: { createdAt: dateFilter } }).catch(() => 0),
-      prisma.case.count({ where: { status: { in: ['ABIERTO', 'EN_PROCESO'] }, createdAt: dateFilter } }).catch(() => 0),
-      prisma.derivation.count({ where: { status: 'PENDIENTE', createdAt: dateFilter } }).catch(() => 0),
-      prisma.purchaseOrder.count({ where: { status: 'PENDIENTE_APROBACION', createdAt: dateFilter } }).catch(() => 0),
-      prisma.invoice.count({ where: { status: 'PENDIENTE', createdAt: dateFilter } }).catch(() => 0),
+      prisma.person.count().catch(() => 0),
+      prisma.case.count({ where: { status: { in: ['ABIERTO', 'EN_PROCESO'] } } }).catch(() => 0),
+      prisma.derivation.count({ where: { status: 'PENDIENTE' } }).catch(() => 0),
+      prisma.purchaseOrder.count({ where: { status: 'PENDIENTE_APROBACION' } }).catch(() => 0),
+      prisma.invoice.count({ where: { status: 'PENDIENTE' } }).catch(() => 0),
       prisma.supplyItem.count({ where: { stock: { lte: 0 } } }).catch(() => 0),
       prisma.vehicle.count().catch(() => 0),
       prisma.task.count({ where: { status: 'PENDIENTE', dueDate: { gte: from, lte: to } } }).catch(() => 0),
-      prisma.case.count({ where: { priority: 'URGENTE', status: { in: ['ABIERTO', 'EN_PROCESO'] }, createdAt: dateFilter } }).catch(() => 0),
+      prisma.case.count({ where: { priority: 'URGENTE', status: { in: ['ABIERTO', 'EN_PROCESO'] } } }).catch(() => 0),
       prisma.person.findMany({
         where: { latitude: { not: null }, longitude: { not: null } },
         select: { id: true, latitude: true, longitude: true, address: true },

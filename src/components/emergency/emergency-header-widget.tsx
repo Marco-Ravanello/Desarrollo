@@ -11,19 +11,21 @@ export function EmergencyHeaderWidget() {
   const [dismissBanner, setDismissBanner] = useState(false);
 
   useEffect(() => {
-    const saved = localStorage.getItem("emergency-mode-active");
+    const saved = localStorage.getItem("muni-emergency-mode") || localStorage.getItem("emergency-mode-active");
     if (saved) setIsEmergencyActive(JSON.parse(saved));
 
     const handleStorageChange = () => {
-      const updated = localStorage.getItem("emergency-mode-active");
-      if (updated) setIsEmergencyActive(JSON.parse(updated));
+      const updated = localStorage.getItem("muni-emergency-mode") || localStorage.getItem("emergency-mode-active");
+      if (updated !== null) setIsEmergencyActive(JSON.parse(updated));
     };
 
     window.addEventListener("storage", handleStorageChange);
+    window.addEventListener("muni-emergency-toggle", handleStorageChange);
     window.addEventListener("emergency-toggle", handleStorageChange);
 
     return () => {
       window.removeEventListener("storage", handleStorageChange);
+      window.removeEventListener("muni-emergency-toggle", handleStorageChange);
       window.removeEventListener("emergency-toggle", handleStorageChange);
     };
   }, []);
@@ -31,7 +33,9 @@ export function EmergencyHeaderWidget() {
   const toggleEmergency = () => {
     const nextState = !isEmergencyActive;
     setIsEmergencyActive(nextState);
+    localStorage.setItem("muni-emergency-mode", JSON.stringify(nextState));
     localStorage.setItem("emergency-mode-active", JSON.stringify(nextState));
+    window.dispatchEvent(new Event("muni-emergency-toggle"));
     window.dispatchEvent(new Event("emergency-toggle"));
   };
 

@@ -1,6 +1,6 @@
 export const dynamic = "force-dynamic";
 import { getPeople } from "@/services/people";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { MapPin, Users } from "lucide-react";
 import { DynamicMapView } from "@/components/maps/dynamic-map-view";
 
@@ -36,7 +36,9 @@ export default async function MapsPage() {
               <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest leading-none mb-1">Georreferenciados</p>
               <div className="flex items-baseline gap-2">
                 <p className="text-2xl font-black">{peopleWithCoords.length}</p>
-                <p className="text-xs font-bold text-emerald-600">{(peopleWithCoords.length / people.length * 100).toFixed(0)}%</p>
+                <p className="text-xs font-bold text-emerald-600">
+                  {people.length > 0 ? (peopleWithCoords.length / people.length * 100).toFixed(0) : 0}%
+                </p>
               </div>
            </div>
         </div>

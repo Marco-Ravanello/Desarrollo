@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { LayoutDashboard, Users, ShieldAlert, ClipboardList, LogOut, Briefcase, Car, UserCog, ChevronLeft, ChevronRight, CheckCircle2, MapPin, Wallet, Building2, FileSpreadsheet, Calendar, Sparkles, CloudRain, Settings, Tv, Network } from "lucide-react";
+import { LayoutDashboard, Users, ShieldAlert, ClipboardList, LogOut, Briefcase, Car, UserCog, ChevronLeft, ChevronRight, CheckCircle2, MapPin, Wallet, Building2, FileSpreadsheet, Calendar, Sparkles, CloudRain, Settings, Tv, Network, HeartHandshake } from "lucide-react";
 import { useSession, signOut } from "next-auth/react";
 import { getAreaNavColor, getAreaBgColor } from "@/lib/area-theme";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { GlobalSearch } from "@/components/search/global-search";
 import { ThemeToggle } from "./theme-toggle";
+import { hasPermission, PERMISSIONS } from "@/lib/permissions";
 
 export function AppSidebar() {
   const { data: session } = useSession();
@@ -51,14 +52,19 @@ export function AppSidebar() {
     ...(user?.role === 'SUPERADMIN' ? [
       { title: "Importar Datos", url: "/admin/interventions", icon: FileSpreadsheet, color: "text-slate-400" },
       { title: "Usuarios", url: "/admin/users", icon: UserCog, color: "text-slate-400" },
-      { title: "Auditoría", url: "/admin/audit", icon: ClipboardList, color: "text-slate-400" }
     ] : []),
+    ...(user?.role && hasPermission(user.role as any, PERMISSIONS.VIEW_AUDIT_LOGS) ? [
+      { title: "Auditoría", url: "/admin/audit", icon: ClipboardList, color: "text-slate-400" }
+    ] : [])
   ];
 
   const socialAreas = [
     { title: "Protección Social", url: "/areas/social", icon: ClipboardList, color: "emerald" },
     { title: "Niñez y Familia", url: "/areas/ninez", icon: ClipboardList, color: "amber" },
     { title: "Hábitat y Vivienda", url: "/areas/habitat", icon: Building2, color: "blue" },
+    ...(user?.role && hasPermission(user.role as any, PERMISSIONS.VIEW_SENSITIVE_CASES) ? [
+      { title: "Violencia y Género", url: "/areas/violence", icon: ShieldAlert, color: "rose" }
+    ] : [])
   ];
 
   const sidebarColor = getAreaBgColor(user?.role === 'SUPERADMIN' ? 'slate' : (user as any)?.area?.color);
