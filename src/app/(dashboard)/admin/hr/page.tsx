@@ -7,8 +7,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
-  Users, UserPlus, Download, BarChart2,
-  Plus, CheckCircle2, Calendar, Wallet, PieChart
+  Users, UserPlus, BarChart2,
+  Plus, Calendar, Wallet, PieChart
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -22,6 +22,7 @@ import {
 import { CreateHRForm } from "./create-hr-form";
 import { AgentActionsMenu } from "./agent-actions-menu";
 import { HRFilters } from "./hr-filters";
+import { UniversalExportMenu } from "@/components/ui/universal-export-menu";
 
 export default async function HRPage({
   searchParams
@@ -62,6 +63,30 @@ export default async function HRPage({
     } : null
   }));
 
+  const exportColumns = [
+    { header: "Legajo", accessorKey: "fileNumber" },
+    { header: "DNI", accessorKey: "dni" },
+    { header: "Apellido", accessorKey: "lastName" },
+    { header: "Nombre", accessorKey: "firstName" },
+    { header: "Área", accessorKey: "areaName" },
+    { header: "Cargo / Función", accessorKey: "position" },
+    { header: "Contrato", accessorKey: "contractType" },
+    { header: "Estado", accessorKey: "status" },
+    { header: "Sueldo ($)", accessorKey: "salary" }
+  ];
+
+  const exportData = sanitizedRecords.map(r => ({
+    fileNumber: r.fileNumber || "S/L",
+    dni: r.dni,
+    lastName: r.lastName,
+    firstName: r.firstName,
+    areaName: r.area?.name || "Sin Área",
+    position: r.position || "Sin Cargo",
+    contractType: r.contractType || "MENSUALIZADO",
+    status: r.status || "ACTIVO",
+    salary: r.salary ? `$ ${r.salary.toLocaleString("es-AR")}` : "$ 0"
+  }));
+
   return (
     <div className="space-y-10 pb-20">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
@@ -70,13 +95,19 @@ export default async function HRPage({
           <p className="text-muted-foreground text-lg font-medium italic">Gestión integral y control presupuestario de la nómina.</p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-           <Button variant="outline" className="rounded-xl h-11 px-4 gap-2 border-border/60 hover:bg-muted/50 transition-all font-bold">
-              <Download className="h-4 w-4" /> Exportar Planilla
-           </Button>
+           <UniversalExportMenu
+              data={exportData}
+              columns={exportColumns}
+              filename="nomina_personal_municipal"
+              title="Nómina Oficial de Agentes Municipales"
+              subtitle="RECURSOS HUMANOS Y LIQUIDACIÓN DE SUELDOS"
+              label="Exportar Nómina"
+              orientation="landscape"
+           />
            <Sheet>
               <SheetTrigger asChild>
-                <Button className="rounded-xl h-11 px-6 gap-2 bg-primary hover:bg-primary/90 text-primary-foreground font-bold shadow-md transition-all">
-                    <Plus className="h-5 w-5" /> Nuevo Agente
+                <Button className="rounded-2xl h-10 px-5 gap-2 bg-primary hover:bg-primary/90 text-primary-foreground font-bold shadow-md transition-all">
+                    <Plus className="h-4 w-4" /> Nuevo Agente
                 </Button>
               </SheetTrigger>
               <SheetContent side="right" className="sm:max-w-xl w-full border-l border-border bg-background rounded-l-[2rem] shadow-2xl p-8 overflow-y-auto">

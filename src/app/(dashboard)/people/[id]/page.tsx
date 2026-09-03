@@ -14,6 +14,7 @@ import { UploadDocumentForm } from "./upload-document-form";
 import { CitizenTimeline } from "@/components/timeline/citizen-timeline";
 import { CloseCaseButton } from "./close-case-button";
 import { AddFamilyMemberForm } from "./add-family-member-form";
+import { EditPersonDialog } from "./edit-person-dialog";
 import { removeFromFamily } from "../actions/family-actions";
 
 export default async function PersonDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -28,20 +29,29 @@ export default async function PersonDetailPage({ params }: { params: Promise<{ i
 
   if (!person) notFound();
 
+  const isViolenceCase = (c: any) =>
+    c.area?.name === "Violencia de Género" ||
+    c.area?.name?.toLowerCase().includes("violencia");
+
   const allowedCases = person.cases.filter(c => {
-    if (c.area.name === "Violencia de Género") {
+    if (isViolenceCase(c)) {
       return userRole === "SUPERADMIN" || userRole === "DIRECCION_GENERAL" || userRole === "VIOLENCIA_GENERO";
     }
     return true;
   });
+
+  const allowedCaseIds = new Set(allowedCases.map(c => c.id));
 
   const activeCases = allowedCases.filter(c => c.status !== 'CERRADO');
   const closedCases = allowedCases.filter(c => c.status === 'CERRADO');
 
   const familyMembers = person.family?.members.filter(m => m.id !== person.id) || [];
 
+  const filteredInterventions = person.interventions.filter(i => !i.caseId || allowedCaseIds.has(i.caseId));
+  const filteredDocuments = person.documents.filter(d => !d.caseId || allowedCaseIds.has(d.caseId));
+
   const timelineEvents: any[] = [
-    ...person.cases.map(c => ({
+    ...allowedCases.map(c => ({
       id: `case-start-${c.id}`,
       type: 'CASE_CREATED',
       date: c.createdAt.toISOString(),
@@ -49,21 +59,21 @@ export default async function PersonDetailPage({ params }: { params: Promise<{ i
       area: c.area.name,
       description: c.description
     })),
-    ...person.cases.filter(c => c.status === 'CERRADO').map(c => ({
+    ...allowedCases.filter(c => c.status === 'CERRADO').map(c => ({
         id: `case-end-${c.id}`,
         type: 'CASE_CLOSED',
         date: c.updatedAt.toISOString(),
         title: `Cierre de Caso: ${c.title}`,
         area: c.area.name
     })),
-    ...person.interventions.map(i => ({
+    ...filteredInterventions.map(i => ({
       id: i.id,
       type: 'INTERVENTION',
       date: i.date.toISOString(),
       title: `Intervención Social`,
       description: i.description
     })),
-    ...person.documents.map(d => ({
+    ...filteredDocuments.map(d => ({
         id: d.id,
         type: 'DOCUMENT',
         date: d.createdAt.toISOString(),
@@ -73,18 +83,22 @@ export default async function PersonDetailPage({ params }: { params: Promise<{ i
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <div className="h-16 w-16 bg-blue-500/10 text-blue-500 rounded-full flex items-center justify-center font-bold text-xl border-2 border-blue-500/30">
-          {person.firstName[0]}{person.lastName[0]}
-        </div>
-        <div>
-          <h2 className="text-3xl font-bold text-foreground">{person.lastName}, {person.firstName}</h2>
-          <div className="flex gap-2 items-center mt-1">
-            <Badge variant="outline" className="border-border text-foreground">DNI: {person.dni}</Badge>
-            {person.email && <Badge variant="secondary" className="font-normal">{person.email}</Badge>}
-            {person.familyId && <Badge className="bg-emerald-500/10 text-emerald-600 border-none font-bold text-xs">En Grupo Familiar</Badge>}
+      <div className="flex justify-between items-center flex-wrap gap-4">
+        <div className="flex items-center gap-4">
+          <div className="h-16 w-16 bg-blue-500/10 text-blue-500 rounded-full flex items-center justify-center font-bold text-xl border-2 border-blue-500/30">
+            {person.firstName[0]}{person.lastName[0]}
+          </div>
+          <div>
+            <h2 className="text-3xl font-bold text-foreground">{person.lastName}, {person.firstName}</h2>
+            <div className="flex gap-2 items-center mt-1">
+              <Badge variant="outline" className="border-border text-foreground font-mono">DNI: {person.dni}</Badge>
+              {person.email && <Badge variant="secondary" className="font-normal">{person.email}</Badge>}
+              {person.familyId && <Badge className="bg-emerald-500/10 text-emerald-600 border-none font-bold text-xs">En Grupo Familiar</Badge>}
+            </div>
           </div>
         </div>
+
+        <EditPersonDialog person={person} />
       </div>
 
       <div className="grid md:grid-cols-3 gap-6">
@@ -126,8 +140,8 @@ export default async function PersonDetailPage({ params }: { params: Promise<{ i
                   {activeCases.map(c => (
                     <div key={c.id} className="p-4 border border-border/60 rounded-2xl flex justify-between items-center bg-muted/20 shadow-xs hover:border-primary/50 transition-all">
                       <div className="flex items-center gap-4">
-                        <div className={`p-2 rounded-full ${c.area.name === "Violencia de Género" ? "bg-rose-500/10 text-rose-500" : "bg-blue-500/10 text-blue-500"}`}>
-                           {c.area.name === "Violencia de Género" ? <ShieldAlert className="h-4 w-4" /> : <FileIcon className="h-4 w-4" />}
+                        <div className={`p-2 rounded-full ${isViolenceCase(c) ? "bg-rose-500/10 text-rose-500" : "bg-blue-500/10 text-blue-500"}`}>
+                           {isViolenceCase(c) ? <ShieldAlert className="h-4 w-4" /> : <FileIcon className="h-4 w-4" />}
                         </div>
                         <div>
                           <p className="font-bold text-foreground leading-none">{c.title}</p>
@@ -221,9 +235,9 @@ export default async function PersonDetailPage({ params }: { params: Promise<{ i
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-xs font-black text-muted-foreground uppercase tracking-widest">Documentación Adjunta</h3>
               </div>
-              {person.documents.length === 0 ? <p className="text-muted-foreground text-center text-sm py-4 border rounded-2xl border-dashed border-border/60 font-medium">No hay documentos adjuntos.</p> : (
+              {filteredDocuments.length === 0 ? <p className="text-muted-foreground text-center text-sm py-4 border rounded-2xl border-dashed border-border/60 font-medium">No hay documentos adjuntos.</p> : (
                 <div className="grid grid-cols-1 gap-2">
-                  {person.documents.map(d => (
+                  {filteredDocuments.map(d => (
                     <div key={d.id} className="p-3 border border-border/60 rounded-2xl flex justify-between items-center bg-muted/20 hover:bg-muted/40 transition-colors">
                       <div className="flex items-center gap-3">
                         <FileIcon className="h-4 w-4 text-muted-foreground" />

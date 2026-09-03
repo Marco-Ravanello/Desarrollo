@@ -12,6 +12,11 @@ import {
   RotateCcw, Database, Upload, Image as ImageIcon, Trash2, Link as LinkIcon
 } from "lucide-react";
 import { MunicipalCrest } from "@/components/ui/municipal-crest";
+import {
+  getSystemSettingsAction,
+  saveSystemSettingsAction,
+  resetSystemSettingsAction
+} from "@/app/(dashboard)/admin/actions/settings-actions";
 
 export default function MunicipalSettingsPage() {
   const [activeTab, setActiveTab] = useState<"identity" | "contact" | "security">("identity");
@@ -37,12 +42,24 @@ export default function MunicipalSettingsPage() {
   });
 
   useEffect(() => {
-    const saved = localStorage.getItem("muni-system-settings");
-    if (saved) {
-      try {
-        setSettings((prev) => ({ ...prev, ...JSON.parse(saved) }));
-      } catch (e) {}
+    async function loadSettings() {
+      // Intenta consultar la BD primero
+      const res = await getSystemSettingsAction();
+      if (res.success && res.settings) {
+        setSettings((prev) => ({ ...prev, ...res.settings }));
+        localStorage.setItem("muni-system-settings", JSON.stringify(res.settings));
+        return;
+      }
+
+      // Fallback a localStorage si en BD no hay aún
+      const saved = localStorage.getItem("muni-system-settings");
+      if (saved) {
+        try {
+          setSettings((prev) => ({ ...prev, ...JSON.parse(saved) }));
+        } catch (e) {}
+      }
     }
+    loadSettings();
   }, []);
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -72,24 +89,43 @@ export default function MunicipalSettingsPage() {
     toast.info("Escudo oficial predeterminado restablecido");
   };
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
-    setTimeout(() => {
+    try {
+      // Guardar en base de datos
+      const res = await saveSystemSettingsAction(settings);
+      if (!res.success) {
+        toast.error("Error al persistir en base de datos", { description: res.error });
+      }
+
+      // Sincronizar en localStorage para renderizado ultrarrápido en el cliente
       localStorage.setItem("muni-system-settings", JSON.stringify(settings));
       window.dispatchEvent(new Event("muni-settings-updated"));
-      setLoading(false);
+
       toast.success("Configuración e Identidad Municipal guardadas", {
         description: "El nuevo logo y los datos institucionales se actualizaron en toda la plataforma."
       });
-    }, 400);
+    } catch (error) {
+      toast.error("Error al guardar la configuración");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleReset = () => {
-    localStorage.removeItem("muni-system-settings");
-    window.dispatchEvent(new Event("muni-settings-updated"));
-    window.location.reload();
+  const handleReset = async () => {
+    setLoading(true);
+    try {
+      await resetSystemSettingsAction();
+      localStorage.removeItem("muni-system-settings");
+      window.dispatchEvent(new Event("muni-settings-updated"));
+      window.location.reload();
+    } catch (e) {
+      toast.error("Error al restablecer la configuración");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -107,6 +143,7 @@ export default function MunicipalSettingsPage() {
           <Button
             variant="outline"
             onClick={handleReset}
+            disabled={loading}
             className="rounded-2xl h-11 px-4 text-xs font-bold border-border/60"
           >
             <RotateCcw className="mr-2 h-4 w-4" /> Restaurar Predeterminados

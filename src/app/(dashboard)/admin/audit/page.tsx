@@ -7,10 +7,11 @@ import { Badge } from "@/components/ui/badge";
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { Activity, User, Calendar, Database } from "lucide-react";
+import { hasPermission, PERMISSIONS } from "@/lib/permissions";
 
 export default async function AuditPage() {
   const session = await auth();
-  if (session?.user?.role !== 'SUPERADMIN') {
+  if (!session?.user || !hasPermission(session.user.role as any, PERMISSIONS.VIEW_AUDIT_LOGS)) {
     redirect("/dashboard");
   }
 
@@ -18,8 +19,8 @@ export default async function AuditPage() {
 
   const getActionBadge = (action: string) => {
     switch (action) {
-      case 'CREATE': return <Badge className="bg-emerald-100 text-emerald-700">CREACIÓN</Badge>;
-      case 'UPDATE': return <Badge className="bg-blue-100 text-blue-700">ACTUALIZACIÓN</Badge>;
+      case 'CREATE': return <Badge className="bg-emerald-500/10 text-emerald-600 border-emerald-500/30">CREACIÓN</Badge>;
+      case 'UPDATE': return <Badge className="bg-blue-500/10 text-blue-600 border-blue-500/30">ACTUALIZACIÓN</Badge>;
       case 'DELETE': return <Badge variant="destructive">ELIMINACIÓN</Badge>;
       case 'LOGIN': return <Badge variant="outline">INGRESO</Badge>;
       default: return <Badge variant="secondary">{action}</Badge>;
@@ -29,64 +30,64 @@ export default async function AuditPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-3xl font-bold tracking-tight">Registro de Auditoría</h2>
-        <p className="text-slate-500">Seguimiento de acciones realizadas por los usuarios en el sistema.</p>
+        <h2 className="text-3xl font-bold tracking-tight text-foreground">Registro de Auditoría</h2>
+        <p className="text-muted-foreground">Seguimiento de acciones realizadas por los usuarios en el sistema.</p>
       </div>
 
-      <Card>
+      <Card className="bg-card text-card-foreground border border-border/60 rounded-3xl shadow-xs">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Activity className="h-5 w-5 text-slate-400" />
+          <CardTitle className="flex items-center gap-2 text-foreground">
+            <Activity className="h-5 w-5 text-primary" />
             Acciones Recientes
           </CardTitle>
-          <CardDescription>Mostrando los últimos 100 eventos registrados.</CardDescription>
+          <CardDescription className="text-muted-foreground">Mostrando los últimos 100 eventos registrados.</CardDescription>
         </CardHeader>
         <CardContent>
           <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Fecha y Hora</TableHead>
-                <TableHead>Usuario</TableHead>
-                <TableHead>Acción</TableHead>
-                <TableHead>Entidad</TableHead>
-                <TableHead>Detalles</TableHead>
+            <TableHeader className="bg-muted/40">
+              <TableRow className="border-border/40">
+                <TableHead className="font-bold">Fecha y Hora</TableHead>
+                <TableHead className="font-bold">Usuario</TableHead>
+                <TableHead className="font-bold">Acción</TableHead>
+                <TableHead className="font-bold">Entidad</TableHead>
+                <TableHead className="font-bold">Detalles</TableHead>
               </TableRow>
             </TableHeader>
-            <TableBody>
+            <TableBody className="divide-y divide-border/30">
               {logs.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center py-10 text-slate-500">
+                  <TableCell colSpan={5} className="text-center py-10 text-muted-foreground italic">
                     No se han registrado acciones de auditoría aún.
                   </TableCell>
                 </TableRow>
               ) : (
                 logs.map((log) => (
-                  <TableRow key={log.id}>
+                  <TableRow key={log.id} className="hover:bg-muted/20">
                     <TableCell className="whitespace-nowrap">
-                      <div className="flex items-center gap-2 text-xs">
-                        <Calendar className="h-3 w-3 text-slate-400" />
+                      <div className="flex items-center gap-2 text-xs font-mono text-muted-foreground">
+                        <Calendar className="h-3 w-3 text-muted-foreground" />
                         {new Date(log.createdAt).toLocaleString('es-AR')}
                       </div>
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-col">
-                        <span className="font-medium text-sm flex items-center gap-1">
-                          <User className="h-3 w-3 text-slate-400" /> {log.user.name}
+                        <span className="font-bold text-xs text-foreground flex items-center gap-1">
+                          <User className="h-3 w-3 text-muted-foreground" /> {log.user.name}
                         </span>
-                        <span className="text-[10px] text-slate-500">{log.user.area?.name || 'Sin área'}</span>
+                        <span className="text-[10px] text-muted-foreground">{log.user.area?.name || 'Sin área'}</span>
                       </div>
                     </TableCell>
                     <TableCell>
                       {getActionBadge(log.action)}
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-1 text-sm font-mono">
-                        <Database className="h-3 w-3 text-slate-400" /> {log.entity}
+                      <div className="flex items-center gap-1 text-xs font-mono font-bold text-foreground">
+                        <Database className="h-3 w-3 text-muted-foreground" /> {log.entity}
                       </div>
                     </TableCell>
                     <TableCell className="max-w-[300px]">
-                      <div className="text-xs text-slate-600 truncate" title={log.details || ''}>
-                        {log.details || <span className="italic text-slate-400">Sin detalles</span>}
+                      <div className="text-xs text-muted-foreground truncate" title={log.details || ''}>
+                        {log.details || <span className="italic text-muted-foreground/60">Sin detalles</span>}
                       </div>
                     </TableCell>
                   </TableRow>

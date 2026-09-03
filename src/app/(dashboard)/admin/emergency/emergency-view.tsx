@@ -15,6 +15,11 @@ import {
 } from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state";
 import Link from "next/link";
+import {
+  createShelterAction,
+  createEmergencyIncidentAction,
+  dispatchEmergencyStockAction
+} from "@/app/(dashboard)/admin/actions/emergency-actions";
 
 interface EmergencyViewProps {
   initialData: {
@@ -75,15 +80,28 @@ export function EmergencyView({ initialData }: EmergencyViewProps) {
   const [newPeople, setNewPeople] = useState("4");
 
   useEffect(() => {
-    const saved = localStorage.getItem("emergency-mode-active");
+    const saved = localStorage.getItem("muni-emergency-mode") || localStorage.getItem("emergency-mode-active");
     if (saved) setIsEmergencyActive(JSON.parse(saved));
+
+    const handleSync = () => {
+      const current = localStorage.getItem("muni-emergency-mode") || localStorage.getItem("emergency-mode-active");
+      if (current !== null) setIsEmergencyActive(JSON.parse(current));
+    };
+
+    window.addEventListener("muni-emergency-toggle", handleSync);
+    window.addEventListener("emergency-toggle", handleSync);
+    return () => {
+      window.removeEventListener("muni-emergency-toggle", handleSync);
+      window.removeEventListener("emergency-toggle", handleSync);
+    };
   }, []);
 
   const handleToggleEmergency = () => {
     const nextState = !isEmergencyActive;
     setIsEmergencyActive(nextState);
-    localStorage.setItem("emergency-mode-active", JSON.stringify(nextState));
     localStorage.setItem("muni-emergency-mode", JSON.stringify(nextState));
+    localStorage.setItem("emergency-mode-active", JSON.stringify(nextState));
+    window.dispatchEvent(new Event("muni-emergency-toggle"));
     window.dispatchEvent(new Event("emergency-toggle"));
 
     if (nextState) {
@@ -93,70 +111,93 @@ export function EmergencyView({ initialData }: EmergencyViewProps) {
     }
   };
 
-  const handleAddShelter = (e: React.FormEvent) => {
+  const handleAddShelter = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!shelterName || !shelterAddress) {
       toast.error("Complete el nombre y dirección del centro de evacuación");
       return;
     }
 
-    const newShelter = {
-      id: `shelter-${Date.now()}`,
-      name: shelterName,
-      address: shelterAddress,
-      coordinator: shelterCoordinator || "Guardia Municipal",
-      capacity: Number(shelterCapacity) || 50,
-      occupied: 0,
-      rationsDelivered: 0,
-      status: "HABILITADO",
-    };
+    const toastId = toast.loading("Guardando centro en base de datos...");
+    const formData = new FormData();
+    formData.append("name", shelterName);
+    formData.append("address", shelterAddress);
+    formData.append("coordinator", shelterCoordinator || "Guardia Municipal");
+    formData.append("capacity", shelterCapacity);
 
-    setShelters([...shelters, newShelter]);
-    setShelterName("");
-    setShelterAddress("");
-    setShelterCoordinator("");
-    setShowAddShelter(false);
-    toast.success("Centro de evacuados registrado correctamente");
+    const res = await createShelterAction(formData);
+
+    if (res.success && res.shelter) {
+      setShelters([...shelters, res.shelter]);
+      setShelterName("");
+      setShelterAddress("");
+      setShelterCoordinator("");
+      setShowAddShelter(false);
+      toast.success("Centro de evacuados registrado en BD con éxito", { id: toastId });
+    } else {
+      toast.error(res.error || "Error al guardar el centro", { id: toastId });
+    }
   };
 
-  const handleAddIncident = (e: React.FormEvent) => {
+  const handleAddIncident = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newNeighborhood || !newAddress) {
       toast.error("Por favor complete el barrio y dirección");
       return;
     }
 
-    const newInc = {
-      id: `incident-${Date.now()}`,
-      neighborhood: newNeighborhood,
-      address: newAddress,
-      type: newType,
-      priority: newPriority,
-      affectedPeople: Number(newPeople) || 1,
-      time: "Recién",
-      status: "EN_CURSO",
-      squad: "Defensa Civil + Guardia Territorial",
-      personName: "Reporte Directo COE",
-      personDni: null
-    };
+    const toastId = toast.loading("Registrando alerta territorial...");
+    const formData = new FormData();
+    formData.append("neighborhood", newNeighborhood);
+    formData.append("address", newAddress);
+    formData.append("type", newType);
+    formData.append("priority", newPriority);
 
-    setIncidents([newInc, ...incidents]);
-    setNewNeighborhood("");
-    setNewAddress("");
-    toast.success("Alerta de emergencia registrada y despachada");
+    const res = await createEmergencyIncidentAction(formData);
+
+    if (res.success && res.case) {
+      const newInc = {
+        id: res.case.id,
+        neighborhood: newNeighborhood,
+        address: newAddress,
+        type: newType,
+        priority: newPriority,
+        affectedPeople: Number(newPeople) || 1,
+        time: "Recién",
+        status: "EN_CURSO",
+        squad: "Defensa Civil + Guardia Territorial",
+        personName: "Reporte Directo COE",
+        personDni: null
+      };
+
+      setIncidents([newInc, ...incidents]);
+      setNewNeighborhood("");
+      setNewAddress("");
+      toast.success("Alerta registrada y despachada a la base de datos", { id: toastId });
+    } else {
+      toast.error(res.error || "Error al registrar incidente", { id: toastId });
+    }
   };
 
-  const handleDispatchStock = (item: any) => {
+  const handleDispatchStock = async (item: any) => {
     if (item.quantity <= 0) {
       toast.error("No hay stock disponible para despachar");
       return;
     }
-    setEmergencyStock(
-      emergencyStock.map((s) =>
-        s.id === item.id ? { ...s, quantity: Math.max(0, s.quantity - 10) } : s
-      )
-    );
-    toast.success(`Se despacharon 10 ${item.unit} de ${item.name} a territorio`);
+
+    const toastId = toast.loading(`Despachando ${item.name}...`);
+    const res = await dispatchEmergencyStockAction(item.id, 10);
+
+    if (res.success) {
+      setEmergencyStock(
+        emergencyStock.map((s) =>
+          s.id === item.id ? { ...s, quantity: res.newStock } : s
+        )
+      );
+      toast.success(`Se despacharon 10 ${item.unit} de ${item.name} a territorio`, { id: toastId });
+    } else {
+      toast.error(res.error || "Error al despachar insumo", { id: toastId });
+    }
   };
 
   const totalCapacity = shelters.reduce((a, b) => a + b.capacity, 0) || 1;

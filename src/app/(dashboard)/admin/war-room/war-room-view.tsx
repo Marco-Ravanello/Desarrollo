@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -39,6 +40,7 @@ interface WarRoomViewProps {
 }
 
 export function WarRoomView({ initialData }: WarRoomViewProps) {
+  const router = useRouter();
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [currentTime, setCurrentTime] = useState("");
   const [currentDate, setCurrentDate] = useState("");
@@ -61,30 +63,36 @@ export function WarRoomView({ initialData }: WarRoomViewProps) {
   }, []);
 
   useEffect(() => {
-    const saved = localStorage.getItem("muni-emergency-mode");
+    const saved = localStorage.getItem("muni-emergency-mode") || localStorage.getItem("emergency-mode-active");
     if (saved) setIsEmergencyActive(JSON.parse(saved));
 
     const handleStorage = () => {
-      const updated = localStorage.getItem("muni-emergency-mode");
-      if (updated) setIsEmergencyActive(JSON.parse(updated));
+      const updated = localStorage.getItem("muni-emergency-mode") || localStorage.getItem("emergency-mode-active");
+      if (updated !== null) setIsEmergencyActive(JSON.parse(updated));
     };
 
     window.addEventListener("storage", handleStorage);
-    return () => window.removeEventListener("storage", handleStorage);
+    window.addEventListener("muni-emergency-toggle", handleStorage);
+    window.addEventListener("emergency-toggle", handleStorage);
+    return () => {
+      window.removeEventListener("storage", handleStorage);
+      window.removeEventListener("muni-emergency-toggle", handleStorage);
+      window.removeEventListener("emergency-toggle", handleStorage);
+    };
   }, []);
 
   useEffect(() => {
     const timer = setInterval(() => {
       setCountdown((prev) => {
         if (prev <= 1) {
-          window.location.reload();
+          router.refresh();
           return 30;
         }
         return prev - 1;
       });
     }, 1000);
     return () => clearInterval(timer);
-  }, []);
+  }, [router]);
 
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {

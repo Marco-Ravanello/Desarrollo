@@ -1,4 +1,4 @@
-import { CheckCircle2, Circle, Clock, CreditCard, FileText, ShoppingCart, Landmark } from "lucide-react";
+import { CheckCircle2, FileText, ShoppingCart, Landmark, CreditCard } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface Stage {
@@ -24,33 +24,33 @@ export function OrderTimeline({ currentStatus }: { currentStatus: string }) {
     <div className="w-full py-6 px-4">
       <div className="relative flex justify-between">
         {/* Connection Line */}
-        <div className="absolute top-5 left-0 w-full h-0.5 bg-slate-100 -z-0" />
+        <div className="absolute top-5 left-0 w-full h-0.5 bg-muted -z-0" />
         <div
-          className="absolute top-5 left-0 h-0.5 bg-blue-500 transition-all duration-500 -z-0"
+          className="absolute top-5 left-0 h-0.5 bg-primary transition-all duration-500 -z-0"
           style={{ width: `${(stages.filter(s => s.status === 'completed').length - 1) / (stages.length - 1) * 100}%` }}
         />
 
-        {stages.map((stage, idx) => (
+        {stages.map((stage) => (
           <div key={stage.id} className="relative z-10 flex flex-col items-center group">
             <div className={cn(
-              "w-10 h-10 rounded-full flex items-center justify-center border-4 border-white shadow-sm transition-all",
-              stage.status === 'completed' ? "bg-blue-600 text-white" :
-              stage.status === 'current' ? "bg-white text-blue-600 border-blue-600 animate-pulse" :
-              "bg-slate-100 text-slate-400"
+              "w-10 h-10 rounded-full flex items-center justify-center border-4 border-background shadow-sm transition-all",
+              stage.status === 'completed' ? "bg-primary text-primary-foreground" :
+              stage.status === 'current' ? "bg-background text-primary border-primary animate-pulse" :
+              "bg-muted text-muted-foreground"
             )}>
               <stage.icon className="h-5 w-5" />
             </div>
             <div className="mt-2 text-center">
               <p className={cn(
                 "text-[10px] font-black uppercase tracking-widest",
-                stage.status === 'completed' ? "text-blue-600" :
-                stage.status === 'current' ? "text-blue-500" :
-                "text-slate-400"
+                stage.status === 'completed' ? "text-primary" :
+                stage.status === 'current' ? "text-primary" :
+                "text-muted-foreground"
               )}>
                 {stage.name}
               </p>
               {stage.status === 'current' && (
-                 <span className="text-[8px] font-bold text-blue-400 uppercase animate-pulse">En proceso</span>
+                 <span className="text-[8px] font-bold text-primary/80 uppercase animate-pulse">En proceso</span>
               )}
             </div>
           </div>
