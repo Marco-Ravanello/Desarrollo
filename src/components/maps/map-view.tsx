@@ -10,6 +10,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import dynamic from "next/dynamic";
 import domtoimage from "dom-to-image";
+import Link from "next/link";
 
 // Dynamic import for HeatmapView to keep Leaflet logic contained
 const HeatmapView = dynamic(
@@ -17,14 +18,22 @@ const HeatmapView = dynamic(
   { ssr: false }
 );
 
-// Fix Leaflet default icon issue
-const DefaultIcon = L.icon({
-  iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
-  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
+// Offline Municipal Vector SVG Marker Icon
+const svgMarkerHtml = `
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 36" width="30" height="42">
+    <path fill="#2563EB" stroke="#FFFFFF" stroke-width="1.5" d="M12 0C5.37 0 0 5.37 0 12c0 9 12 24 12 24s12-15 12-24c0-6.63-5.37-12-12-12z"/>
+    <circle cx="12" cy="11" r="5" fill="#FFFFFF"/>
+    <circle cx="12" cy="11" r="3" fill="#2563EB"/>
+  </svg>
+`;
+
+const DefaultMunicipalIcon = L.divIcon({
+  html: svgMarkerHtml,
+  className: "custom-municipal-marker",
+  iconSize: [30, 42],
+  iconAnchor: [15, 42],
+  popupAnchor: [0, -38]
 });
-L.Marker.prototype.options.icon = DefaultIcon;
 
 interface MapViewProps {
   people: any[];
@@ -155,6 +164,7 @@ export function MapView({ people }: MapViewProps) {
             <Marker
               key={person.id}
               position={[person.latitude, person.longitude]}
+              icon={DefaultMunicipalIcon}
             >
               <Popup className="custom-popup">
                 <div className="p-1 max-w-[200px] font-sans">
@@ -181,12 +191,11 @@ export function MapView({ people }: MapViewProps) {
                       </Badge>
                     ))}
                   </div>
-                  <a
-                    href={`/people/${person.id}`}
-                    className="mt-3 block text-center bg-primary text-primary-foreground text-[10px] font-bold py-1.5 rounded-lg hover:brightness-110 transition-all"
-                  >
-                    Ver Ficha Completa
-                  </a>
+                  <Button asChild size="sm" className="mt-3 w-full text-[10px] font-bold h-7">
+                    <Link href={`/people/${person.id}`}>
+                      Ver Ficha Completa
+                    </Link>
+                  </Button>
                 </div>
               </Popup>
             </Marker>

@@ -7,7 +7,7 @@ export async function getBudgetSummary() {
   const areas = await prisma.area.findMany({
     include: {
       purchaseOrders: {
-        where: { status: 'APROBADA' },
+        where: { status: { in: ['APROBADA', 'CUMPLIDA'] } },
         select: { amount: true }
       }
     }
