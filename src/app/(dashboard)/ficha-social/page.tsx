@@ -21,7 +21,7 @@ import Link from "next/link";
 import { toast } from "sonner";
 
 export default function FichaSocialPage() {
-  const [searchTerm, setSearchTerm] = useState("38452147");
+  const [searchTerm, setSearchTerm] = useState("34438385");
   const [suggestions, setSuggestions] = useState<SugerenciaBusqueda[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [ficha, setFicha] = useState<FichaSocialPersonaResponse | null>(null);
@@ -51,7 +51,7 @@ export default function FichaSocialPage() {
   };
 
   useEffect(() => {
-    handleSearch("38452147");
+    handleSearch("34438385");
   }, []);
 
   useEffect(() => {
@@ -115,7 +115,7 @@ export default function FichaSocialPage() {
                   setShowSuggestions(true);
                 }}
                 onFocus={() => setShowSuggestions(true)}
-                placeholder="Buscar por DNI, CUIL, Nombre o Apellido (Ej: 38452147 o Pérez)..."
+                placeholder="Buscar por DNI, CUIL, Nombre o Apellido (Ej: 34438385 o Pérez)..."
                 className="pl-11 h-12 rounded-2xl text-xs sm:text-sm bg-muted/30 border-border/60 focus-visible:ring-primary text-foreground font-medium"
               />
               {showSuggestions && suggestions.length > 0 && (
@@ -157,15 +157,6 @@ export default function FichaSocialPage() {
               <span>Consultar Ficha 360°</span>
             </Button>
           </form>
-
-          {ficha?.fuente_origen === "DATOS_LOCALES_EMULADOS" && (
-            <div className="mt-3 flex items-center gap-2 text-[11px] text-amber-500 bg-amber-500/10 border border-amber-500/20 px-3 py-1.5 rounded-xl">
-              <AlertCircle className="h-3.5 w-3.5 shrink-0" />
-              <span>
-                Microservicio Python offline en <code>localhost:8000</code>. Mostrando datos de contingencia simulados para pruebas inmediatas.
-              </span>
-            </div>
-          )}
         </CardContent>
       </Card>
 

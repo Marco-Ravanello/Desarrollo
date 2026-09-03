@@ -479,3 +479,57 @@ model SystemSetting {
   value     String   @db.Text
   updatedAt DateTime @updatedAt
 }
+
+model PadronUnificado {
+  dni                   String   @id
+  nombre_completo       String?
+  cantidad_programas    Int      @default(0)
+  programas_activos     String?  @db.Text
+  roles                 String?  @db.Text
+  dnis_familiares       String?  @db.Text
+  nombres_familiares    String?  @db.Text
+  localidad             String?
+  barrio                String?
+  direccion             String?
+  telefono              String?
+  email                 String?
+  fecha_nacimiento      String?
+  edad_aprox            String?
+  genero                String?
+  prog_centro_de_familia                                         Int @default(0)
+  prog_tarjeta_alimentar                                         Int @default(0)
+  prog_jardines_municipales                                      Int @default(0)
+  prog_colonias_municipales_2026                                 Int @default(0)
+  prog_colonias_barrios_populares_2026                           Int @default(0)
+  prog_centro_de_formacion_profesional_3f                        Int @default(0)
+  prog_intervenciones_desarrollo_humano                          Int @default(0)
+  prog_prestaciones_desarrollo_humano                            Int @default(0)
+  prog_tarjeta_mas_familia                                       Int @default(0)
+  prog_escuelas_municipales_emac_emmu_capacyt                    Int @default(0)
+  prog_espacios_de_educacion_no_formal_udis_apoyos_becas_envion   Int @default(0)
+  prog_curso_de_arbitros_deportes                                Int @default(0)
+  prog_gimnasio_municipal_deportes                               Int @default(0)
+  prog_natacion_municipal_deportes                               Int @default(0)
+  prog_servicios_locales_de_ninez_caseros_el_libertador_derqui   Int @default(0)
+  prog_programa_envion_edla_evita_el_libertador                  Int @default(0)
+  prog_comedores_comunitarios_programa_fosc                      Int @default(0)
+
+  @@map("padron_unificado")
+}
+
+model ParticipacionPrograma {
+  id                 BigInt   @id @default(autoincrement())
+  dni                String
+  nombre_completo    String?
+  programa           String
+  roles              String?
+  cantidad_registros Int      @default(1)
+  detalle_destacado  String?  @db.Text
+  telefono           String?
+  email              String?
+  direccion          String?
+  localidad          String?
+  barrio             String?
+
+  @@map("participaciones_programas")
+}
