@@ -5,7 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Phone, MapPin, ShieldAlert, Mail, History, Eye, FileIcon, ExternalLink, Users, UserMinus } from "lucide-react";
+import { Calendar, Phone, MapPin, ShieldAlert, Mail, History, Eye, FileIcon, ExternalLink, Users, UserMinus, Network } from "lucide-react";
 import { notFound } from "next/navigation";
 import { auth } from "@/auth";
 import { getAreas } from "@/services/cases";
@@ -33,7 +33,7 @@ export default async function PersonDetailPage({ params }: { params: Promise<{ i
     c.area?.name === "Violencia de Género" ||
     c.area?.name?.toLowerCase().includes("violencia");
 
-  const allowedCases = person.cases.filter(c => {
+  const allowedCases = (person.cases || []).filter(c => {
     if (isViolenceCase(c)) {
       return userRole === "SUPERADMIN" || userRole === "DIRECCION_GENERAL" || userRole === "VIOLENCIA_GENERO";
     }
@@ -47,14 +47,14 @@ export default async function PersonDetailPage({ params }: { params: Promise<{ i
 
   const familyMembers = person.family?.members.filter(m => m.id !== person.id) || [];
 
-  const filteredInterventions = person.interventions.filter(i => !i.caseId || allowedCaseIds.has(i.caseId));
-  const filteredDocuments = person.documents.filter(d => !d.caseId || allowedCaseIds.has(d.caseId));
+  const filteredInterventions = (person.interventions || []).filter(i => !i.caseId || allowedCaseIds.has(i.caseId));
+  const filteredDocuments = (person.documents || []).filter(d => !d.caseId || allowedCaseIds.has(d.caseId));
 
   const timelineEvents: any[] = [
     ...allowedCases.map(c => ({
       id: `case-start-${c.id}`,
       type: 'CASE_CREATED',
-      date: c.createdAt.toISOString(),
+      date: typeof c.createdAt === "string" ? c.createdAt : c.createdAt.toISOString(),
       title: `Apertura de Expediente: ${c.title}`,
       area: c.area.name,
       description: c.description
@@ -62,21 +62,21 @@ export default async function PersonDetailPage({ params }: { params: Promise<{ i
     ...allowedCases.filter(c => c.status === 'CERRADO').map(c => ({
         id: `case-end-${c.id}`,
         type: 'CASE_CLOSED',
-        date: c.updatedAt.toISOString(),
+        date: typeof c.updatedAt === "string" ? c.updatedAt : c.updatedAt.toISOString(),
         title: `Cierre de Caso: ${c.title}`,
         area: c.area.name
     })),
     ...filteredInterventions.map(i => ({
       id: i.id,
       type: 'INTERVENTION',
-      date: i.date.toISOString(),
+      date: typeof i.date === "string" ? i.date : i.date.toISOString(),
       title: `Intervención Social`,
       description: i.description
     })),
     ...filteredDocuments.map(d => ({
         id: d.id,
         type: 'DOCUMENT',
-        date: d.createdAt.toISOString(),
+        date: typeof d.createdAt === "string" ? d.createdAt : d.createdAt.toISOString(),
         title: `Documento Adjuntado: ${d.name}`
     }))
   ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
@@ -85,20 +85,39 @@ export default async function PersonDetailPage({ params }: { params: Promise<{ i
     <div className="space-y-6">
       <div className="flex justify-between items-center flex-wrap gap-4">
         <div className="flex items-center gap-4">
-          <div className="h-16 w-16 bg-blue-500/10 text-blue-500 rounded-full flex items-center justify-center font-bold text-xl border-2 border-blue-500/30">
+          <div className="h-16 w-16 bg-blue-500/10 text-blue-500 rounded-full flex items-center justify-center font-bold text-xl border-2 border-blue-500/30 shrink-0">
             {person.firstName[0]}{person.lastName[0]}
           </div>
           <div>
-            <h2 className="text-3xl font-bold text-foreground">{person.lastName}, {person.firstName}</h2>
-            <div className="flex gap-2 items-center mt-1">
-              <Badge variant="outline" className="border-border text-foreground font-mono">DNI: {person.dni}</Badge>
+            <div className="flex items-center gap-2 flex-wrap">
+              <h2 className="text-3xl font-bold text-foreground">{person.lastName}, {person.firstName}</h2>
+              {(person as any).barrio && (
+                <Badge variant="outline" className="border-primary/40 text-primary bg-primary/5 text-xs font-bold">
+                  Barrio {(person as any).barrio}
+                </Badge>
+              )}
+            </div>
+            <div className="flex flex-wrap gap-2 items-center mt-1.5">
+              <Badge variant="outline" className="border-border text-foreground font-mono font-bold">DNI: {person.dni}</Badge>
+              {(person as any).programasActivos && (person as any).programasActivos.length > 0 && (
+                <Badge className="bg-emerald-500/15 text-emerald-500 border border-emerald-500/30 font-bold text-xs">
+                  {(person as any).programasActivos.length} Programas Activos
+                </Badge>
+              )}
               {person.email && <Badge variant="secondary" className="font-normal">{person.email}</Badge>}
-              {person.familyId && <Badge className="bg-emerald-500/10 text-emerald-600 border-none font-bold text-xs">En Grupo Familiar</Badge>}
             </div>
           </div>
         </div>
 
-        <EditPersonDialog person={person} />
+        <div className="flex items-center gap-2">
+          <Button variant="outline" asChild className="rounded-2xl border-border/60 text-xs font-bold gap-2 text-indigo-500 hover:text-indigo-600">
+            <Link href={`/ficha-social`}>
+              <Network className="h-4 w-4" />
+              Ver Ficha 360°
+            </Link>
+          </Button>
+          <EditPersonDialog person={person} />
+        </div>
       </div>
 
       <div className="grid md:grid-cols-3 gap-6">
@@ -108,7 +127,10 @@ export default async function PersonDetailPage({ params }: { params: Promise<{ i
             <div className="flex items-center gap-2 text-sm text-foreground"><MapPin className="h-4 w-4 text-muted-foreground"/> {person.address || 'Sin dirección'}</div>
             <div className="flex items-center gap-2 text-sm text-foreground"><Phone className="h-4 w-4 text-muted-foreground"/> {person.phone || 'Sin teléfono'}</div>
             {person.email && <div className="flex items-center gap-2 text-sm text-foreground"><Mail className="h-4 w-4 text-muted-foreground"/> {person.email}</div>}
-            <div className="flex items-center gap-2 text-sm text-foreground"><Calendar className="h-4 w-4 text-muted-foreground"/> {person.birthDate?.toLocaleDateString('es-AR') || 'No registrada'}</div>
+            <div className="flex items-center gap-2 text-sm text-foreground">
+              <Calendar className="h-4 w-4 text-muted-foreground"/>
+              {person.birthDate ? new Date(person.birthDate).toLocaleDateString('es-AR') : ((person as any).edadAprox ? `Edad aprox: ${(person as any).edadAprox}` : 'No registrada')}
+            </div>
           </CardContent>
         </Card>
 
@@ -174,15 +196,15 @@ export default async function PersonDetailPage({ params }: { params: Promise<{ i
                   </div>
                 )}
 
-                {familyMembers.map(m => (
+                {familyMembers.map((m: any) => (
                   <div key={m.id} className="flex items-center justify-between p-3 border border-border/60 rounded-2xl bg-muted/20 hover:border-primary/50 transition-colors">
                     <Link href={`/people/${m.id}`} className="flex items-center gap-3">
                       <div className="h-8 w-8 bg-muted rounded-full flex items-center justify-center text-xs font-bold text-foreground">
-                        {m.firstName[0]}{m.lastName[0]}
+                        {m.firstName[0]}
                       </div>
                       <div className="flex flex-col">
                         <span className="text-sm font-bold truncate text-foreground">{m.firstName} {m.lastName}</span>
-                        <span className="text-[10px] text-muted-foreground">DNI: {m.dni}</span>
+                        <span className="text-[10px] text-muted-foreground">DNI: {m.dni || "N/R"}</span>
                       </div>
                     </Link>
                     <form action={async () => { "use server"; await removeFromFamily(m.id); }}>
