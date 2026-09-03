@@ -14,6 +14,7 @@ import { UploadDocumentForm } from "./upload-document-form";
 import { CitizenTimeline } from "@/components/timeline/citizen-timeline";
 import { CloseCaseButton } from "./close-case-button";
 import { AddFamilyMemberForm } from "./add-family-member-form";
+import { EditPersonDialog } from "./edit-person-dialog";
 import { removeFromFamily } from "../actions/family-actions";
 
 export default async function PersonDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -82,18 +83,22 @@ export default async function PersonDetailPage({ params }: { params: Promise<{ i
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <div className="h-16 w-16 bg-blue-500/10 text-blue-500 rounded-full flex items-center justify-center font-bold text-xl border-2 border-blue-500/30">
-          {person.firstName[0]}{person.lastName[0]}
-        </div>
-        <div>
-          <h2 className="text-3xl font-bold text-foreground">{person.lastName}, {person.firstName}</h2>
-          <div className="flex gap-2 items-center mt-1">
-            <Badge variant="outline" className="border-border text-foreground">DNI: {person.dni}</Badge>
-            {person.email && <Badge variant="secondary" className="font-normal">{person.email}</Badge>}
-            {person.familyId && <Badge className="bg-emerald-500/10 text-emerald-600 border-none font-bold text-xs">En Grupo Familiar</Badge>}
+      <div className="flex justify-between items-center flex-wrap gap-4">
+        <div className="flex items-center gap-4">
+          <div className="h-16 w-16 bg-blue-500/10 text-blue-500 rounded-full flex items-center justify-center font-bold text-xl border-2 border-blue-500/30">
+            {person.firstName[0]}{person.lastName[0]}
+          </div>
+          <div>
+            <h2 className="text-3xl font-bold text-foreground">{person.lastName}, {person.firstName}</h2>
+            <div className="flex gap-2 items-center mt-1">
+              <Badge variant="outline" className="border-border text-foreground font-mono">DNI: {person.dni}</Badge>
+              {person.email && <Badge variant="secondary" className="font-normal">{person.email}</Badge>}
+              {person.familyId && <Badge className="bg-emerald-500/10 text-emerald-600 border-none font-bold text-xs">En Grupo Familiar</Badge>}
+            </div>
           </div>
         </div>
+
+        <EditPersonDialog person={person} />
       </div>
 
       <div className="grid md:grid-cols-3 gap-6">

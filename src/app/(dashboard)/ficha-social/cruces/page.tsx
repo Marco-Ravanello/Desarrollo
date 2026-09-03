@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import {
-  Download, Search, CheckSquare, Square,
+  Search, CheckSquare, Square,
   Layers, ArrowLeft, Users, Building
 } from "lucide-react";
 import Link from "next/link";
@@ -23,6 +23,7 @@ import {
   Tooltip as RechartsTooltip, Cell
 } from "recharts";
 import { useTheme } from "next-themes";
+import { UniversalExportMenu } from "@/components/ui/universal-export-menu";
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6', '#06b6d4'];
 
@@ -75,15 +76,21 @@ export default function CrucesSocialesPage() {
     );
   };
 
-  const handleExportCSV = () => {
-    if (selectedPrograms.length === 0) {
-      toast.error("Seleccione programas para exportar.");
-      return;
-    }
-    const url = getExportCsvUrl(selectedPrograms, modo);
-    window.open(url, "_blank");
-    toast.success("Descargando archivo CSV con codificación UTF-8 BOM...");
-  };
+  const exportColumns = [
+    { header: "Nombre y Apellido", accessorKey: "nombre" },
+    { header: "DNI", accessorKey: "dni" },
+    { header: "Programas Activos", accessorKey: "programasStr" },
+    { header: "Barrio / Localidad", accessorKey: "barrio" },
+    { header: "Teléfono", accessorKey: "telefono" }
+  ];
+
+  const exportData = (cruceData?.resultados || []).map(row => ({
+    nombre: row.nombre,
+    dni: row.dni,
+    programasStr: row.programas.join(" | "),
+    barrio: row.contacto?.barrio || row.contacto?.localidad || "No especificado",
+    telefono: row.contacto?.telefono || "N/R"
+  }));
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
@@ -109,13 +116,15 @@ export default function CrucesSocialesPage() {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Button
-            onClick={handleExportCSV}
-            className="rounded-xl text-xs font-bold gap-2 bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs"
-          >
-            <Download className="h-4 w-4" />
-            Exportar CSV / Excel
-          </Button>
+          <UniversalExportMenu
+            data={exportData}
+            columns={exportColumns}
+            filename="matriz_cruces_sociales_3f"
+            title="Matriz de Beneficiarios y Cruces de Programas Sociales"
+            subtitle="AUDITORÍA SOCIAL Y COBERTURA POBLACIONAL"
+            label="Exportar Matriz"
+            orientation="landscape"
+          />
         </div>
       </div>
 
