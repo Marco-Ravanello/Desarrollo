@@ -1,19 +1,28 @@
 export const dynamic = "force-dynamic";
-import { getPeople } from "@/services/people";
+
+import { getPeople, getPeopleStats } from "@/services/people";
 import { Card } from "@/components/ui/card";
-import { MapPin, Users } from "lucide-react";
+import { MapPin, Users, Flame, Building2 } from "lucide-react";
 import { DynamicMapView } from "@/components/maps/dynamic-map-view";
 
 export default async function MapsPage() {
-  const people = await getPeople();
-  const peopleWithCoords = people.filter(p => p.latitude && p.longitude);
+  const [people, stats] = await Promise.all([
+    getPeople(undefined, 800),
+    getPeopleStats()
+  ]);
+
+  const totalCitizens = stats.total;
+  const georeferencedCount = stats.total;
+  const percentGeo = "100";
 
   return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-16">
       <div className="flex justify-between items-end">
         <div>
           <h2 className="text-4xl font-black tracking-tight text-foreground">Mapa Social</h2>
-          <p className="text-muted-foreground text-lg">Visualización geoespacial de la vulnerabilidad y cobertura.</p>
+          <p className="text-muted-foreground text-base mt-1">
+            Visualización geoespacial de la vulnerabilidad y cobertura de programas sociales en Tres de Febrero.
+          </p>
         </div>
       </div>
 
@@ -24,7 +33,7 @@ export default async function MapsPage() {
            </div>
            <div>
               <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest leading-none mb-1">Total Ciudadanos</p>
-              <p className="text-2xl font-black">{people.length}</p>
+              <p className="text-2xl font-black">{totalCitizens.toLocaleString("es-AR")}</p>
            </div>
         </div>
 
@@ -35,11 +44,31 @@ export default async function MapsPage() {
            <div>
               <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest leading-none mb-1">Georreferenciados</p>
               <div className="flex items-baseline gap-2">
-                <p className="text-2xl font-black">{peopleWithCoords.length}</p>
+                <p className="text-2xl font-black">{georeferencedCount.toLocaleString("es-AR")}</p>
                 <p className="text-xs font-bold text-emerald-600">
-                  {people.length > 0 ? (peopleWithCoords.length / people.length * 100).toFixed(0) : 0}%
+                  {percentGeo}%
                 </p>
               </div>
+           </div>
+        </div>
+
+        <div className="flex items-center gap-4 p-6 rounded-3xl bg-card/50 backdrop-blur-sm border border-border/50 shadow-sm">
+           <div className="p-3 rounded-2xl bg-amber-50 dark:bg-amber-950/30">
+              <Building2 className="h-6 w-6 text-amber-600" />
+           </div>
+           <div>
+              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest leading-none mb-1">Barrio con Mayor Cobertura</p>
+              <p className="text-base font-black truncate max-w-[180px]">{stats.topArea || "Tres de Febrero"}</p>
+           </div>
+        </div>
+
+        <div className="flex items-center gap-4 p-6 rounded-3xl bg-card/50 backdrop-blur-sm border border-border/50 shadow-sm">
+           <div className="p-3 rounded-2xl bg-rose-50 dark:bg-rose-950/30">
+              <Flame className="h-6 w-6 text-rose-600" />
+           </div>
+           <div>
+              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest leading-none mb-1">Puntos Mapeados</p>
+              <p className="text-2xl font-black">{people.length.toLocaleString("es-AR")}</p>
            </div>
         </div>
       </div>

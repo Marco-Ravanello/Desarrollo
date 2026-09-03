@@ -33,7 +33,7 @@ export async function getPeople(query?: string, limit: number = 60) {
 
   try {
     const rows: any[] = await prisma.$queryRawUnsafe(
-      `SELECT dni, nombre_completo, cantidad_programas, programas_activos, roles, barrio, localidad, direccion, telefono, email, edad_aprox
+      `SELECT dni, nombre_completo, cantidad_programas, programas_activos, roles, barrio, localidad, direccion, telefono, email, edad_aprox, latitude, longitude
        FROM padron_unificado
        WHERE ${where}
        ORDER BY cantidad_programas DESC, nombre_completo ASC
@@ -70,8 +70,15 @@ export async function getPeople(query?: string, limit: number = 60) {
           email: r.email || null,
           barrio: r.barrio || "",
           localidad: r.localidad || "Tres de Febrero",
+          latitude: r.latitude,
+          longitude: r.longitude,
           programasActivos: progs,
           casesCount: r.cantidad_programas || progs.length,
+          cases: progs.map((prog: string, idx: number) => ({
+            id: `prog-${r.dni}-${idx}`,
+            areaId: prog,
+            area: { id: prog, name: prog }
+          })),
           _count: {
             cases: r.cantidad_programas || progs.length
           },
@@ -200,6 +207,8 @@ export async function getPersonById(id: string) {
         edadAprox: p.edad_aprox || "No registrada",
         barrio: p.barrio || "",
         localidad: p.localidad || "Tres de Febrero",
+        latitude: p.latitude,
+        longitude: p.longitude,
         programasActivos: progs,
         roles: p.roles || "Beneficiario",
         family: familyMembers.length > 0 ? { id: `fam-${p.dni}`, name: `Familia de ${lastName}`, members: familyMembers } : null,
