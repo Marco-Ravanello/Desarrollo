@@ -16,10 +16,10 @@ export default function DashboardLayout({
   return (
     <Providers>
       <div className="flex min-h-screen bg-background relative transition-colors duration-300 print:bg-white print:text-black">
-        <aside className="print:hidden">
+        <aside className="sticky top-0 h-screen shrink-0 self-start print:hidden z-30">
           <AppSidebar />
         </aside>
-        <main className="flex-1 min-w-0 print:p-0">
+        <main className="flex-1 min-w-0 print:p-0 flex flex-col min-h-screen">
           <header className="h-16 sticky top-0 z-40 border-b border-border/40 bg-card/80 backdrop-blur-md flex items-center justify-between px-6 sm:px-8 shadow-xs text-foreground print:hidden">
             <div className="flex items-center gap-3 min-w-0">
               <div className="p-1.5 bg-primary/10 rounded-xl border border-primary/20 shrink-0 hidden sm:flex">
@@ -54,7 +54,7 @@ export default function DashboardLayout({
             </div>
           </header>
 
-          <div className="p-6 sm:p-8 bg-background/40 print:bg-white print:p-0">
+          <div className="p-6 sm:p-8 bg-background/40 print:bg-white print:p-0 flex-1">
             <PrintHeader />
             {children}
             <PrintFooter />

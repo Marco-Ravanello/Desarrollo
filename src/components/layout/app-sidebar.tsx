@@ -70,7 +70,7 @@ export function AppSidebar() {
   const sidebarColor = getAreaBgColor(user?.role === 'SUPERADMIN' ? 'slate' : (user as any)?.area?.color);
 
   return (
-    <div className={`${isCollapsed ? "w-20" : "w-72"} h-screen sticky top-0 bg-card text-card-foreground flex flex-col shrink-0 overflow-hidden transition-all duration-300 relative border-r border-border/60 shadow-sm z-30`}>
+    <div className={`${isCollapsed ? "w-20" : "w-72"} h-full bg-card text-card-foreground flex flex-col shrink-0 overflow-hidden transition-all duration-300 relative border-r border-border/60 shadow-sm`}>
       <Button
         variant="ghost"
         size="icon"
