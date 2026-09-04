@@ -83,9 +83,7 @@ export function MapView({ people }: MapViewProps) {
     return p.cases?.some((c: any) => c.areaId === filterArea);
   });
 
-  const center = filteredPeople.length > 0
-    ? [filteredPeople[0].latitude, filteredPeople[0].longitude] as [number, number]
-    : TRES_DE_FEBRERO_CENTER;
+  const center = TRES_DE_FEBRERO_CENTER;
 
   const areas = Array.from(new Set(
     people.flatMap(p => p.cases?.map((c: any) => ({ id: c.areaId, name: c.area?.name })) || [])
@@ -112,7 +110,7 @@ export function MapView({ people }: MapViewProps) {
         <div className="bg-background/80 backdrop-blur-md p-4 rounded-[2rem] shadow-2xl border border-border/50 min-w-[240px]">
           <div className="flex items-center gap-2 mb-3">
              <Filter className="h-3 w-3 text-primary" />
-             <label className="text-[10px] font-black text-muted-foreground uppercase tracking-tighter">Filtrar por Área</label>
+             <label className="text-[10px] font-black text-muted-foreground uppercase tracking-tighter">Filtrar por Área / Programa</label>
           </div>
           <select
             className="text-sm border-none focus:ring-0 cursor-pointer bg-muted/50 rounded-xl px-3 py-2 w-full font-bold appearance-none transition-colors hover:bg-muted"
@@ -167,7 +165,7 @@ export function MapView({ people }: MapViewProps) {
               icon={DefaultMunicipalIcon}
             >
               <Popup className="custom-popup">
-                <div className="p-1 max-w-[200px] font-sans">
+                <div className="p-1 max-w-[220px] font-sans">
                   <div className="flex items-center gap-2 mb-2">
                     <div className="bg-primary/10 p-1.5 rounded-full">
                       <User className="h-4 w-4 text-primary" />
@@ -176,20 +174,30 @@ export function MapView({ people }: MapViewProps) {
                   </div>
                   <div className="space-y-1 text-xs text-muted-foreground">
                     <div className="flex items-center gap-1">
-                      <MapPin className="h-3 w-3" /> {person.address || 'Sin dirección'}
+                      <MapPin className="h-3 w-3 text-primary shrink-0" />
+                      <span className="truncate">{person.barrio ? `Barrio ${person.barrio}` : (person.address || 'Sin dirección')}</span>
                     </div>
                     {person.phone && (
                       <div className="flex items-center gap-1">
-                        <Phone className="h-3 w-3" /> {person.phone}
+                        <Phone className="h-3 w-3 text-emerald-500 shrink-0" />
+                        <span className="font-mono">{person.phone}</span>
                       </div>
                     )}
                   </div>
-                  <div className="mt-3 pt-2 border-t flex flex-wrap gap-1">
-                    {person.cases?.slice(0, 2).map((c: any) => (
-                      <Badge key={c.id} variant="secondary" className="text-[9px] uppercase font-bold px-1 py-0 h-4">
-                        {c.area?.name}
-                      </Badge>
-                    ))}
+                  <div className="mt-2.5 pt-2 border-t flex flex-wrap gap-1">
+                    {person.programasActivos && person.programasActivos.length > 0 ? (
+                      person.programasActivos.slice(0, 2).map((prog: string, idx: number) => (
+                        <Badge key={idx} variant="outline" className="text-[9px] border-primary/30 text-primary font-bold px-1.5 py-0 h-4">
+                          {prog}
+                        </Badge>
+                      ))
+                    ) : (
+                      person.cases?.slice(0, 2).map((c: any) => (
+                        <Badge key={c.id} variant="secondary" className="text-[9px] uppercase font-bold px-1 py-0 h-4">
+                          {c.area?.name}
+                        </Badge>
+                      ))
+                    )}
                   </div>
                   <Button asChild size="sm" className="mt-3 w-full text-[10px] font-bold h-7">
                     <Link href={`/people/${person.id}`}>

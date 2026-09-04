@@ -30,8 +30,27 @@ export async function getDashboardStats(filters?: { from: Date; to: Date }) {
   const dateFilter = { gte: from, lte: to };
 
   try {
+    let realPeopleCount = 0;
+    try {
+      const padronCountRes: any[] = await prisma.$queryRawUnsafe(
+        `SELECT COUNT(*)::int as total FROM padron_unificado;`
+      );
+      realPeopleCount = padronCountRes[0]?.total || 0;
+    } catch (e) {}
+
+    let realLocations: any[] = [];
+    try {
+      const locRows: any[] = await prisma.$queryRawUnsafe(
+        `SELECT dni as id, latitude, longitude, barrio as neighborhood, direccion as address
+         FROM padron_unificado
+         WHERE latitude IS NOT NULL AND longitude IS NOT NULL
+         LIMIT 250;`
+      );
+      realLocations = locRows;
+    } catch (e) {}
+
     const [
-      peopleCount,
+      legacyPeopleCount,
       activeCases,
       pendingDerivations,
       pendingPurchaseOrders,
@@ -40,7 +59,7 @@ export async function getDashboardStats(filters?: { from: Date; to: Date }) {
       vehicleCount,
       todayTasks,
       criticalCases,
-      peopleLocations
+      legacyPeopleLocations
     ] = await Promise.all([
       prisma.person.count().catch(() => 0),
       prisma.case.count({ where: { status: { in: ['ABIERTO', 'EN_PROCESO'] } } }).catch(() => 0),
@@ -57,6 +76,9 @@ export async function getDashboardStats(filters?: { from: Date; to: Date }) {
         take: 100
       }).catch(() => [])
     ]);
+
+    const peopleCount = realPeopleCount > 0 ? realPeopleCount : legacyPeopleCount;
+    const peopleLocations = realLocations.length > 0 ? realLocations : legacyPeopleLocations;
 
     let occupiedVehicles = 0;
     try {

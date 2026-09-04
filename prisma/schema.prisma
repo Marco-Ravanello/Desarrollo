@@ -496,6 +496,8 @@ model PadronUnificado {
   fecha_nacimiento      String?
   edad_aprox            String?
   genero                String?
+  latitude              Float?
+  longitude             Float?
   prog_centro_de_familia                                         Int @default(0)
   prog_tarjeta_alimentar                                         Int @default(0)
   prog_jardines_municipales                                      Int @default(0)
