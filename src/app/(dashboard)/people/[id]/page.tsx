@@ -196,24 +196,42 @@ export default async function PersonDetailPage({ params }: { params: Promise<{ i
                   </div>
                 )}
 
-                {familyMembers.map((m: any) => (
-                  <div key={m.id} className="flex items-center justify-between p-3 border border-border/60 rounded-2xl bg-muted/20 hover:border-primary/50 transition-colors">
-                    <Link href={`/people/${m.id}`} className="flex items-center gap-3">
-                      <div className="h-8 w-8 bg-muted rounded-full flex items-center justify-center text-xs font-bold text-foreground">
-                        {m.firstName[0]}
-                      </div>
-                      <div className="flex flex-col">
-                        <span className="text-sm font-bold truncate text-foreground">{m.firstName} {m.lastName}</span>
-                        <span className="text-[10px] text-muted-foreground">DNI: {m.dni || "N/R"}</span>
-                      </div>
-                    </Link>
-                    <form action={async () => { "use server"; await removeFromFamily(m.id); }}>
-                      <Button variant="ghost" size="icon" className="h-7 w-7 text-rose-500 hover:text-rose-600 hover:bg-rose-500/10">
-                        <UserMinus className="h-4 w-4" />
-                      </Button>
-                    </form>
-                  </div>
-                ))}
+                {familyMembers.map((m: any) => {
+                  let rawName = m.firstName || "";
+                  let tagLabel = m.relationship || (m.lastName && m.lastName.startsWith("(") ? m.lastName.replace(/[()]/g, "") : null);
+
+                  const matchTag = rawName.match(/^(.*?)\s*[\(\[](.*?)[\)\]]$/);
+                  if (matchTag) {
+                    rawName = matchTag[1].trim();
+                    if (!tagLabel) tagLabel = matchTag[2].trim();
+                  }
+
+                  return (
+                    <div key={m.id} className="flex items-center justify-between p-3 border border-border/60 rounded-2xl bg-muted/20 hover:border-primary/50 transition-colors min-w-0 overflow-hidden gap-2">
+                      <Link href={`/people/${m.dni || m.id}`} className="flex items-center gap-3 min-w-0 flex-1">
+                        <div className="h-8 w-8 bg-muted rounded-full flex items-center justify-center text-xs font-bold text-foreground shrink-0">
+                          {rawName[0] || "F"}
+                        </div>
+                        <div className="flex flex-col min-w-0 flex-1">
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            <span className="text-sm font-bold truncate text-foreground block min-w-0 flex-1">{rawName}</span>
+                            {tagLabel && (
+                              <Badge variant="outline" className="text-[9px] py-0 px-1 border-primary/30 text-primary shrink-0">
+                                {tagLabel}
+                              </Badge>
+                            )}
+                          </div>
+                          <span className="text-[10px] text-muted-foreground font-mono truncate">DNI: {m.dni || "N/R"}</span>
+                        </div>
+                      </Link>
+                      <form action={async () => { "use server"; await removeFromFamily(m.id); }} className="shrink-0">
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-rose-500 hover:text-rose-600 hover:bg-rose-500/10 shrink-0">
+                          <UserMinus className="h-4 w-4 shrink-0" />
+                        </Button>
+                      </form>
+                    </div>
+                  );
+                })}
               </div>
 
               <AddFamilyMemberForm personId={person.id} />
