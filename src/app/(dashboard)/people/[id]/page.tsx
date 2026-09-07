@@ -111,7 +111,7 @@ export default async function PersonDetailPage({ params }: { params: Promise<{ i
 
         <div className="flex items-center gap-2">
           <Button variant="outline" asChild className="rounded-2xl border-border/60 text-xs font-bold gap-2 text-indigo-500 hover:text-indigo-600">
-            <Link href={`/ficha-social`}>
+            <Link href={`/ficha-social?dni=${person.dni}`}>
               <Network className="h-4 w-4" />
               Ver Ficha 360°
             </Link>
