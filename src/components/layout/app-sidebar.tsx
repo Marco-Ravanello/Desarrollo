@@ -70,7 +70,7 @@ export function AppSidebar() {
   const sidebarColor = getAreaBgColor(user?.role === 'SUPERADMIN' ? 'slate' : (user as any)?.area?.color);
 
   return (
-    <div className={`${isCollapsed ? "w-20" : "w-72"} h-full bg-card text-card-foreground flex flex-col shrink-0 overflow-hidden transition-all duration-300 relative border-r border-border/60 shadow-sm`}>
+    <div className={`${isCollapsed ? "w-20" : "w-72"} h-screen max-h-screen bg-card text-card-foreground flex flex-col shrink-0 overflow-hidden transition-all duration-300 relative border-r border-border/60 shadow-sm`}>
       <Button
         variant="ghost"
         size="icon"
@@ -80,7 +80,7 @@ export function AppSidebar() {
         {isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
       </Button>
 
-      <div className={`p-5 space-y-4 ${isCollapsed ? "px-3" : ""}`}>
+      <div className={`p-5 space-y-4 shrink-0 ${isCollapsed ? "px-3" : ""}`}>
         <div className={`text-2xl font-bold flex items-center gap-2.5 ${isCollapsed ? "justify-center" : ""}`}>
           <div className={`bg-primary p-2 rounded-2xl text-white shadow-lg shadow-primary/20 shrink-0`}>
             <Building2 className="h-6 w-6" />
@@ -91,7 +91,7 @@ export function AppSidebar() {
         {!isCollapsed && <GlobalSearch />}
       </div>
 
-      <nav className="flex-1 px-3 space-y-1 overflow-y-auto custom-scrollbar">
+      <nav className="flex-1 min-h-0 px-3 space-y-1 overflow-y-auto custom-scrollbar">
         <div className="pb-2">
           {!isCollapsed && <p className="px-3 text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Principal</p>}
           {navigation.map((item) => {
@@ -154,7 +154,7 @@ export function AppSidebar() {
         </div>
       </nav>
 
-      <div className="p-3 border-t border-border/60 bg-muted/20">
+      <div className="p-3 border-t border-border/60 bg-muted/20 shrink-0">
         <div className={`flex items-center gap-3 ${isCollapsed ? "justify-center" : "justify-between"}`}>
           <div className="flex items-center gap-2.5 min-w-0">
             <Avatar className="h-9 w-9 rounded-xl border border-border shrink-0">

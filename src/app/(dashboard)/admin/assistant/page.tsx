@@ -48,10 +48,15 @@ export default function AssistantPage() {
   const [isListening, setIsListening] = useState(false);
 
   const recognitionRef = useRef<any>(null);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTo({
+        top: chatContainerRef.current.scrollHeight,
+        behavior: "smooth"
+      });
+    }
   }, [messages, loading]);
 
   useEffect(() => {
@@ -469,7 +474,7 @@ export default function AssistantPage() {
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 h-[calc(100vh-8rem)] flex flex-col">
+    <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500 h-[calc(100vh-9.5rem)] max-h-[calc(100vh-9.5rem)] flex flex-col overflow-hidden">
       <div className="flex justify-between items-center shrink-0">
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-2">
@@ -490,14 +495,14 @@ export default function AssistantPage() {
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 flex-1 min-h-0">
-        <div className="lg:col-span-1 flex flex-col gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 flex-1 min-h-0 overflow-hidden">
+        <div className="lg:col-span-1 flex flex-col gap-4 min-h-0 overflow-hidden">
           <Card className="bg-card text-card-foreground border border-border/60 shadow-sm h-full flex flex-col overflow-hidden rounded-3xl">
             <CardHeader className="pb-3 shrink-0">
               <CardTitle className="text-xs font-black uppercase tracking-wider text-foreground">Consultas Frecuentes</CardTitle>
               <CardDescription className="text-[11px] text-muted-foreground">Selecciona un tema para consultar los datos reales al instante.</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-2.5 overflow-y-auto flex-1 pr-2">
+            <CardContent className="space-y-2.5 overflow-y-auto flex-1 min-h-0 pr-2 custom-scrollbar">
               {suggestions.map((s, idx) => (
                 <button
                   key={idx}
@@ -508,7 +513,7 @@ export default function AssistantPage() {
                   <div className={`p-2 rounded-xl ${s.bg} ${s.color} shrink-0 group-hover:scale-110 transition-transform`}>
                     <s.icon className="h-4 w-4" />
                   </div>
-                  <div className="space-y-0.5">
+                  <div className="space-y-0.5 min-w-0 flex-1">
                     <p className="text-xs font-bold text-foreground leading-tight">{s.label}</p>
                     <p className="text-[10px] text-muted-foreground line-clamp-2 leading-relaxed">Ej: "{s.query.substring(0, 40)}..."</p>
                   </div>
@@ -518,9 +523,9 @@ export default function AssistantPage() {
           </Card>
         </div>
 
-        <div className="lg:col-span-3 flex flex-col h-full">
-          <Card className="bg-card text-card-foreground border border-border/60 shadow-sm flex-1 flex flex-col overflow-hidden rounded-[2rem]">
-            <div className="flex-1 overflow-y-auto p-6 space-y-6">
+        <div className="lg:col-span-3 flex flex-col h-full min-h-0 overflow-hidden">
+          <Card className="bg-card text-card-foreground border border-border/60 shadow-sm flex-1 min-h-0 flex flex-col overflow-hidden rounded-[2rem]">
+            <div ref={chatContainerRef} className="flex-1 min-h-0 overflow-y-auto p-6 space-y-6 custom-scrollbar">
               {messages.map((m) => (
                 <div
                   key={m.id}
@@ -632,10 +637,9 @@ export default function AssistantPage() {
                   </div>
                 </div>
               )}
-              <div ref={messagesEndRef} />
             </div>
 
-            <div className="p-4 border-t border-border/40 bg-muted/20">
+            <div className="p-4 border-t border-border/40 bg-muted/20 shrink-0">
               <form onSubmit={handleFormSubmit} className="flex gap-2">
                 <Input
                   value={input}
