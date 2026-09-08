@@ -6,6 +6,42 @@ import { revalidatePath } from "next/cache";
 
 const SETTINGS_KEY = "muni-system-settings";
 
+export interface MunicipalSettings {
+  municipalityName: string;
+  provinceName: string;
+  secretariatName: string;
+  directionName: string;
+  mayorName: string;
+  secretaryName: string;
+  mainPhone: string;
+  emergencyPhone: string;
+  officialEmail: string;
+  officialWebsite: string;
+  headquartersAddress: string;
+  customLogoUrl: string;
+  sessionTimeout: string;
+  aiAnonymization: boolean;
+  maintenanceMode: boolean;
+}
+
+export const DEFAULT_MUNICIPAL_SETTINGS: MunicipalSettings = {
+  municipalityName: "Municipalidad de Tres de Febrero",
+  provinceName: "Provincia de Buenos Aires • República Argentina",
+  secretariatName: "Secretaría de Desarrollo Humano y Hábitat",
+  directionName: "Dirección General de Gestión Social y Hábitat",
+  mayorName: "Lic. Diego Valenzuela (Intendente Municipal)",
+  secretaryName: "Lic. Bautista Pino (Secretario General)",
+  mainPhone: "0800-888-0333 / Línea 147 (Atención al Vecino)",
+  emergencyPhone: "Línea 103 (Defensa Civil) • 107 (SAME) • 911",
+  officialEmail: "desarrollohumano@tresdefebrero.gov.ar",
+  officialWebsite: "https://www.tresdefebrero.gov.ar",
+  headquartersAddress: "Juan Bautista Alberdi 4840, Caseros, Tres de Febrero (B1678)",
+  customLogoUrl: "",
+  sessionTimeout: "8",
+  aiAnonymization: true,
+  maintenanceMode: false
+};
+
 export async function getSystemSettingsAction() {
   try {
     const record = await prisma.systemSetting.findUnique({
@@ -13,19 +49,25 @@ export async function getSystemSettingsAction() {
     });
 
     if (record?.value) {
-      return { success: true, settings: JSON.parse(record.value) };
+      const parsed = JSON.parse(record.value);
+      return { success: true, settings: { ...DEFAULT_MUNICIPAL_SETTINGS, ...parsed } };
     }
-    return { success: true, settings: null };
+    return { success: true, settings: DEFAULT_MUNICIPAL_SETTINGS };
   } catch (error: any) {
-    return { success: false, error: error.message || "Error al recuperar la configuración" };
+    return {
+      success: false,
+      settings: DEFAULT_MUNICIPAL_SETTINGS,
+      error: error.message || "Error al recuperar la configuración"
+    };
   }
 }
 
-export async function saveSystemSettingsAction(settings: any) {
+export async function saveSystemSettingsAction(settings: Partial<MunicipalSettings>) {
   const session = await auth();
 
   try {
-    const value = JSON.stringify(settings);
+    const merged = { ...DEFAULT_MUNICIPAL_SETTINGS, ...settings };
+    const value = JSON.stringify(merged);
 
     await prisma.systemSetting.upsert({
       where: { key: SETTINGS_KEY },
@@ -40,13 +82,14 @@ export async function saveSystemSettingsAction(settings: any) {
           action: "UPDATE_SYSTEM_SETTINGS",
           entity: "SystemSetting",
           entityId: SETTINGS_KEY,
-          details: `Configuración de identidad institucional actualizada por ${session.user.name || session.user.email}`
+          details: `Configuración de identidad institucional de Tres de Febrero actualizada por ${session.user.name || session.user.email}`
         }
       });
     }
 
     revalidatePath("/", "layout");
-    return { success: true };
+    revalidatePath("/admin/settings");
+    return { success: true, settings: merged };
   } catch (error: any) {
     return { success: false, error: error.message || "Error al guardar la configuración" };
   }
@@ -67,13 +110,14 @@ export async function resetSystemSettingsAction() {
           action: "RESET_SYSTEM_SETTINGS",
           entity: "SystemSetting",
           entityId: SETTINGS_KEY,
-          details: "Restablecimiento de configuración institucional a valores por defecto"
+          details: "Restablecimiento de configuración institucional a valores oficiales de Tres de Febrero"
         }
       });
     }
 
     revalidatePath("/", "layout");
-    return { success: true };
+    revalidatePath("/admin/settings");
+    return { success: true, settings: DEFAULT_MUNICIPAL_SETTINGS };
   } catch (error: any) {
     return { success: false, error: error.message || "Error al restablecer la configuración" };
   }

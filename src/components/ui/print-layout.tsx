@@ -15,6 +15,12 @@ export function PrintHeader({
   referenceNumber?: string;
 }) {
   const [currentDate, setCurrentDate] = useState("");
+  const [settings, setSettings] = useState({
+    municipalityName: "Municipalidad de Tres de Febrero",
+    provinceName: "Provincia de Buenos Aires • República Argentina",
+    secretariatName: "Secretaría de Desarrollo Humano y Hábitat",
+    directionName: "Dirección General de Gestión Social y Hábitat"
+  });
 
   useEffect(() => {
     try {
@@ -25,6 +31,20 @@ export function PrintHeader({
     } catch (e) {
       setCurrentDate(new Date().toISOString().slice(0, 10));
     }
+
+    const loadLocal = () => {
+      const saved = localStorage.getItem("muni-system-settings");
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          setSettings((prev) => ({ ...prev, ...parsed }));
+        } catch (e) {}
+      }
+    };
+
+    loadLocal();
+    window.addEventListener("muni-settings-updated", loadLocal);
+    return () => window.removeEventListener("muni-settings-updated", loadLocal);
   }, []);
 
   return (
@@ -32,17 +52,17 @@ export function PrintHeader({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="p-1 border border-slate-900 rounded-xl">
-            <MunicipalCrest className="h-12 w-12 text-slate-900" />
+            <MunicipalCrest className="h-12 w-12 text-slate-900" forceDefault />
           </div>
           <div>
             <p className="text-[10px] font-black tracking-[0.2em] uppercase text-slate-700">
-              MUNICIPALIDAD • REPÚBLICA ARGENTINA
+              {settings.municipalityName.toUpperCase()} • {settings.provinceName.toUpperCase()}
             </p>
             <h1 className="text-base font-black uppercase tracking-tight text-slate-900">
-              Secretaría de Desarrollo Humano y Hábitat
+              {settings.secretariatName}
             </h1>
             <p className="text-[11px] font-semibold text-slate-600">
-              Sistema Integrado de Gestión Social, Territorial y Logística
+              {settings.directionName}
             </p>
           </div>
         </div>
@@ -81,13 +101,34 @@ export function PrintHeader({
 }
 
 export function PrintFooter() {
+  const [settings, setSettings] = useState({
+    municipalityName: "Municipalidad de Tres de Febrero",
+    directionName: "Dirección General de Gestión Social y Hábitat"
+  });
+
+  useEffect(() => {
+    const loadLocal = () => {
+      const saved = localStorage.getItem("muni-system-settings");
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          setSettings((prev) => ({ ...prev, ...parsed }));
+        } catch (e) {}
+      }
+    };
+
+    loadLocal();
+    window.addEventListener("muni-settings-updated", loadLocal);
+    return () => window.removeEventListener("muni-settings-updated", loadLocal);
+  }, []);
+
   return (
     <div className="hidden print:flex flex-col w-full mt-12 pt-6 border-t-2 border-slate-900 text-slate-900 break-inside-avoid">
       <div className="grid grid-cols-2 gap-12 pt-8 pb-4">
         <div className="text-center space-y-1">
           <div className="border-t border-slate-400 w-48 mx-auto mb-1" />
           <p className="text-xs font-black uppercase text-slate-900">Firma y Sello del Agente</p>
-          <p className="text-[10px] text-slate-500">Funcionario Interviniente Municipal</p>
+          <p className="text-[10px] text-slate-500">{settings.directionName}</p>
         </div>
         <div className="text-center space-y-1">
           <div className="border-t border-slate-400 w-48 mx-auto mb-1" />
@@ -97,7 +138,7 @@ export function PrintFooter() {
       </div>
 
       <div className="flex justify-between items-center text-[9px] text-slate-500 pt-3 border-t border-slate-200 mt-4">
-        <span>Plataforma MuniGestión • Documento emitido bajo secreto fiscal y protección de datos (Ley 25.326).</span>
+        <span>{settings.municipalityName} • Plataforma MuniGestión • Documento emitido bajo secreto fiscal y protección de datos (Ley 25.326).</span>
         <span className="font-mono font-bold">Página 1 de 1</span>
       </div>
     </div>

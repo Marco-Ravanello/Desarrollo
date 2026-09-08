@@ -30,7 +30,7 @@ export default function DashboardLayout({
                   Secretaría de Desarrollo Humano y Hábitat
                 </h1>
                 <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-widest truncate hidden md:block">
-                  Municipalidad • Sistema Integrado de Gestión Pública
+                  Municipalidad de Tres de Febrero • Sistema Integrado de Gestión Pública
                 </p>
               </div>
             </div>

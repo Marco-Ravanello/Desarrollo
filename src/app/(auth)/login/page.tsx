@@ -54,7 +54,7 @@ export default function LoginPage() {
           </div>
           <div>
             <p className="text-[11px] font-black uppercase tracking-[0.25em] text-blue-400">
-              MUNICIPALIDAD • REPÚBLICA ARGENTINA
+              MUNICIPALIDAD DE TRES DE FEBRERO • REPÚBLICA ARGENTINA
             </p>
             <h1 className="text-3xl font-black text-white tracking-tight mt-1">MuniGestión</h1>
             <p className="text-xs text-slate-400 font-semibold mt-0.5">
@@ -81,7 +81,7 @@ export default function LoginPage() {
                   <Input
                     id="email"
                     type="email"
-                    placeholder="admin@municipio.gob.ar"
+                    placeholder="admin@tresdefebrero.gov.ar"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="pl-10 h-11 rounded-xl text-xs bg-muted/40 border-border/60 focus:bg-background"
