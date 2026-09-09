@@ -1,9 +1,7 @@
 export const dynamic = "force-dynamic";
 
-import {
-  getSystemSettingsAction,
-  DEFAULT_MUNICIPAL_SETTINGS
-} from "@/app/(dashboard)/admin/actions/settings-actions";
+import { getSystemSettingsAction } from "@/app/(dashboard)/admin/actions/settings-actions";
+import { DEFAULT_MUNICIPAL_SETTINGS } from "@/types/settings";
 import { MunicipalSettingsClient } from "./settings-client-form";
 
 export default async function MunicipalSettingsPage() {

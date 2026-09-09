@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import {
-  CheckCircle2, Clock, Calendar, AlertTriangle, ListCheck, ArrowRight
+  CheckCircle2, Clock, Calendar, AlertTriangle, ClipboardCheck, ArrowRight
 } from "lucide-react";
 import Link from "next/link";
 
@@ -39,7 +39,7 @@ export default async function TasksPage() {
         <div>
           <div className="flex items-center gap-2">
             <div className="p-2.5 rounded-2xl bg-primary/10 text-primary border border-primary/20">
-              <ListCheck className="h-6 w-6" />
+              <ClipboardCheck className="h-6 w-6" />
             </div>
             <div>
               <h1 className="text-2xl sm:text-3xl font-black text-foreground tracking-tight flex items-center gap-2">

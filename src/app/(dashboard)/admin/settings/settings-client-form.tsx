@@ -17,10 +17,9 @@ import { MunicipalLetterhead } from "@/components/ui/municipal-letterhead";
 import { PrintButton } from "@/components/ui/print-layout";
 import {
   saveSystemSettingsAction,
-  resetSystemSettingsAction,
-  DEFAULT_MUNICIPAL_SETTINGS,
-  MunicipalSettings
+  resetSystemSettingsAction
 } from "@/app/(dashboard)/admin/actions/settings-actions";
+import { MunicipalSettings, DEFAULT_MUNICIPAL_SETTINGS } from "@/types/settings";
 
 export function MunicipalSettingsClient({
   initialSettings
