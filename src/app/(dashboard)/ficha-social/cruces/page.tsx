@@ -321,7 +321,7 @@ export default function CrucesSocialesPage() {
                     </td>
                     <td className="px-4 py-3.5 text-right">
                       <Button variant="ghost" size="sm" asChild className="h-7 text-[11px] font-bold text-primary hover:bg-primary/10 rounded-lg">
-                        <Link href={`/ficha-social`}>
+                        <Link href={`/ficha-social?dni=${row.dni}`}>
                           Ver Ficha 360°
                         </Link>
                       </Button>

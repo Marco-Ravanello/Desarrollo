@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useTransition } from "react";
+import { useState, useEffect, useTransition, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   searchFichaSocialByDni,
   getSuggestions,
@@ -20,8 +21,10 @@ import {
 import Link from "next/link";
 import { toast } from "sonner";
 
-export default function FichaSocialPage() {
-  const [searchTerm, setSearchTerm] = useState("34438385");
+function FichaSocialContent() {
+  const searchParams = useSearchParams();
+  const dniFromUrl = searchParams.get("dni") || "";
+  const [searchTerm, setSearchTerm] = useState(dniFromUrl);
   const [suggestions, setSuggestions] = useState<SugerenciaBusqueda[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [ficha, setFicha] = useState<FichaSocialPersonaResponse | null>(null);
@@ -35,9 +38,13 @@ export default function FichaSocialPage() {
     }
     setShowSuggestions(false);
 
+    if (typeof window !== "undefined") {
+      window.history.replaceState(null, "", `/ficha-social?dni=${encodeURIComponent(term.trim())}`);
+    }
+
     startTransition(async () => {
       try {
-        const result = await searchFichaSocialByDni(term);
+        const result = await searchFichaSocialByDni(term.trim());
         setFicha(result);
         if (result.encontrado) {
           toast.success(`Ficha 360° cargada: ${result.nombre_detectado}`);
@@ -51,8 +58,12 @@ export default function FichaSocialPage() {
   };
 
   useEffect(() => {
-    handleSearch("34438385");
-  }, []);
+    const dniParam = searchParams.get("dni");
+    if (dniParam && dniParam.trim().length >= 4) {
+      setSearchTerm(dniParam.trim());
+      handleSearch(dniParam.trim());
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     if (searchTerm.trim().length >= 2) {
@@ -362,7 +373,65 @@ export default function FichaSocialPage() {
             El DNI o CUIL ingresado no figura actualmente en las bases de datos de programas sociales del municipio.
           </p>
         </Card>
+      ) : !ficha && !isPending ? (
+        <Card className="bg-card border border-border/60 shadow-xs rounded-3xl p-8 sm:p-12 text-center text-muted-foreground relative overflow-hidden">
+          <div className="absolute -right-10 -bottom-10 opacity-5 pointer-events-none">
+            <Network className="h-64 w-64 text-primary" />
+          </div>
+          <div className="max-w-xl mx-auto space-y-4">
+            <div className="h-16 w-16 mx-auto rounded-3xl bg-primary/10 text-primary border border-primary/20 flex items-center justify-center">
+              <Network className="h-8 w-8" />
+            </div>
+            <div>
+              <h3 className="text-xl font-black text-foreground tracking-tight">
+                Consulta de Ficha Social Unificada 360°
+              </h3>
+              <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
+                Ingrese un DNI, CUIL, Nombre o Apellido en la barra superior para consolidar en tiempo real los programas sociales activos, intervenciones municipales y vínculos familiares del ciudadano.
+              </p>
+            </div>
+
+            <div className="pt-4 border-t border-border/40 space-y-2">
+              <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                Ejemplos de consulta rápida para pruebas:
+              </p>
+              <div className="flex flex-wrap justify-center gap-2 pt-1">
+                {["34438385", "40123456", "38999888"].map((exampleDni) => (
+                  <Button
+                    key={exampleDni}
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setSearchTerm(exampleDni);
+                      handleSearch(exampleDni);
+                    }}
+                    className="rounded-xl border-primary/30 hover:border-primary/60 hover:bg-primary/10 text-xs font-bold gap-1.5"
+                  >
+                    <Sparkles className="h-3.5 w-3.5 text-primary" />
+                    DNI {exampleDni}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </Card>
       ) : null}
     </div>
+  );
+}
+
+export default function FichaSocialPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex flex-col items-center justify-center min-h-[400px] gap-3 text-muted-foreground">
+          <RefreshCw className="h-8 w-8 animate-spin text-primary" />
+          <p className="text-sm font-bold">Cargando Ficha Social Unificada...</p>
+        </div>
+      }
+    >
+      <FichaSocialContent />
+    </Suspense>
   );
 }

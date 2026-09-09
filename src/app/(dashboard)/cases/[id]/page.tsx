@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/button";
 import { auth } from "@/auth";
 import { hasPermission, PERMISSIONS } from "@/lib/permissions";
 import { QuickInterventionForm } from "./quick-intervention-form";
+import { PageBreadcrumbs } from "@/components/layout/breadcrumbs-context";
+import { getAreaDashboardUrl, getAreaShortName } from "@/components/layout/breadcrumbs";
 
 export default async function CaseDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
@@ -37,12 +39,22 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
   }
 
   const isClosed = caseData.status === "CERRADO";
+  const areaUrl = getAreaDashboardUrl(caseData.area.name);
+  const areaLabel = getAreaShortName(caseData.area.name);
+
+  const breadcrumbs = [
+    { label: "Áreas Sociales", href: "/areas/social" },
+    { label: areaLabel, href: areaUrl },
+    { label: `Expediente ${caseData.title.substring(0, 20)}...`, active: true }
+  ];
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
+      <PageBreadcrumbs items={breadcrumbs} />
+
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="icon" asChild className="rounded-xl">
-          <Link href={`/people/${caseData.personId}`}><ArrowLeft className="h-4 w-4" /></Link>
+          <Link href={areaUrl}><ArrowLeft className="h-4 w-4" /></Link>
         </Button>
         <div>
           <h2 className="text-3xl font-black tracking-tight text-foreground">{caseData.title}</h2>

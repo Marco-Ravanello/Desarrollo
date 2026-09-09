@@ -5,6 +5,8 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { authConfig } from "./auth.config";
 
+const DEACTIVATED_KEY = "muni-deactivated-users";
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
   adapter: PrismaAdapter(prisma) as any,
@@ -44,6 +46,18 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           if (!isPasswordValid) {
             console.warn(`❌ Contraseña inválida para: ${credentials.email}`);
             return null;
+          }
+
+          const record = await prisma.systemSetting.findUnique({
+            where: { key: DEACTIVATED_KEY }
+          });
+
+          if (record?.value) {
+            const deactivatedIds: string[] = JSON.parse(record.value);
+            if (deactivatedIds.includes(user.id)) {
+              console.warn(`⛔ Acceso rechazado: La cuenta ${user.email} se encuentra suspendida.`);
+              return null;
+            }
           }
 
           console.log(`✅ Login exitoso: ${user.email} (${user.role})`);

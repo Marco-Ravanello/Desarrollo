@@ -19,29 +19,73 @@ export const UpdatePersonSchema = z.object({
   email: z.string().email().or(z.string().length(0)).optional().nullable(),
 });
 
-export async function getPeople(query?: string, limit: number = 60) {
-  let where = "1=1";
-  if (query && query.trim()) {
-    const q = query.trim().replace(/'/g, "''");
+export interface GetPeopleOptions {
+  query?: string;
+  barrio?: string;
+  programa?: string;
+  page?: number;
+  limit?: number;
+}
+
+export interface PaginatedPeopleResult {
+  people: any[];
+  total: number;
+  totalPages: number;
+  currentPage: number;
+  pageSize: number;
+}
+
+export async function getPaginatedPeople(options: GetPeopleOptions = {}): Promise<PaginatedPeopleResult> {
+  const page = Math.max(1, Number(options.page) || 1);
+  const limit = Math.max(1, Math.min(100, Number(options.limit) || 20));
+  const offset = (page - 1) * limit;
+
+  let whereConditions: string[] = ["1=1"];
+
+  if (options.query && options.query.trim()) {
+    const q = options.query.trim().replace(/'/g, "''");
     const numQ = q.replace(/[^0-9]/g, "");
     if (numQ && numQ.length >= 4) {
-      where += ` AND (dni LIKE '%${numQ}%' OR LOWER(nombre_completo) LIKE '%${q.toLowerCase()}%' OR LOWER(barrio) LIKE '%${q.toLowerCase()}%')`;
+      whereConditions.push(
+        `(dni LIKE '%${numQ}%' OR LOWER(nombre_completo) LIKE '%${q.toLowerCase()}%' OR LOWER(barrio) LIKE '%${q.toLowerCase()}%' OR LOWER(direccion) LIKE '%${q.toLowerCase()}%')`
+      );
     } else {
-      where += ` AND (LOWER(nombre_completo) LIKE '%${q.toLowerCase()}%' OR LOWER(barrio) LIKE '%${q.toLowerCase()}%' OR LOWER(localidad) LIKE '%${q.toLowerCase()}%')`;
+      whereConditions.push(
+        `(LOWER(nombre_completo) LIKE '%${q.toLowerCase()}%' OR LOWER(barrio) LIKE '%${q.toLowerCase()}%' OR LOWER(localidad) LIKE '%${q.toLowerCase()}%' OR LOWER(direccion) LIKE '%${q.toLowerCase()}%')`
+      );
     }
   }
 
+  if (options.barrio && options.barrio.trim() && options.barrio !== "all") {
+    const b = options.barrio.trim().replace(/'/g, "''").toLowerCase();
+    whereConditions.push(
+      `(LOWER(barrio) LIKE '%${b}%' OR LOWER(localidad) LIKE '%${b}%' OR LOWER(direccion) LIKE '%${b}%')`
+    );
+  }
+
+  if (options.programa && options.programa.trim() && options.programa !== "all") {
+    const p = options.programa.trim().replace(/'/g, "''").toLowerCase();
+    whereConditions.push(`LOWER(programas_activos) LIKE '%${p}%'`);
+  }
+
+  const whereClause = whereConditions.join(" AND ");
+
   try {
+    const countRes: any[] = await prisma.$queryRawUnsafe(
+      `SELECT COUNT(*)::int as total FROM padron_unificado WHERE ${whereClause};`
+    );
+    const total = countRes[0]?.total || 0;
+
     const rows: any[] = await prisma.$queryRawUnsafe(
       `SELECT dni, nombre_completo, cantidad_programas, programas_activos, roles, barrio, localidad, direccion, telefono, email, edad_aprox, latitude, longitude
        FROM padron_unificado
-       WHERE ${where}
+       WHERE ${whereClause}
        ORDER BY cantidad_programas DESC, nombre_completo ASC
-       LIMIT ${limit};`
+       LIMIT ${limit} OFFSET ${offset};`
     );
 
     if (rows && rows.length > 0) {
-      return rows.map((r: any) => {
+      const mappedPeople = rows.map((r: any) => {
         let lastName = "";
         let firstName = "";
 
@@ -86,37 +130,144 @@ export async function getPeople(query?: string, limit: number = 60) {
           updatedAt: new Date()
         };
       });
+
+      return {
+        people: mappedPeople,
+        total,
+        totalPages: Math.ceil(total / limit),
+        currentPage: page,
+        pageSize: limit
+      };
     }
   } catch (err) {
-    console.error("Error al consultar padron_unificado en getPeople:", err);
+    console.error("Error al consultar padron_unificado en getPaginatedPeople:", err);
   }
 
-  const numericQuery = query ? query.replace(/[^0-9]/g, '') : null;
+  // Fallback a Prisma Person
+  const numericQuery = options.query ? options.query.replace(/[^0-9]/g, '') : null;
+  const wherePrisma: any = options.query ? {
+    OR: [
+      { firstName: { contains: options.query, mode: 'insensitive' } },
+      { lastName: { contains: options.query, mode: 'insensitive' } },
+      { dni: { contains: options.query } },
+      ...(numericQuery ? [{ dni: { contains: numericQuery } }] : []),
+    ]
+  } : {};
+
+  const totalPrisma = await prisma.person.count({ where: wherePrisma });
+
   const legacyPeople = await prisma.person.findMany({
-    where: query ? {
-      OR: [
-        { firstName: { contains: query, mode: 'insensitive' } },
-        { lastName: { contains: query, mode: 'insensitive' } },
-        { dni: { contains: query } },
-        ...(numericQuery ? [{ dni: { contains: numericQuery } }] : []),
-      ]
-    } : undefined,
+    where: wherePrisma,
     include: {
       family: true,
       cases: { include: { area: true } },
       _count: { select: { cases: true } }
     },
     orderBy: { lastName: 'asc' },
+    skip: offset,
     take: limit
   });
 
-  return legacyPeople.map(p => ({
+  const mappedLegacy = legacyPeople.map(p => ({
     ...p,
     barrio: "",
     localidad: "Tres de Febrero",
     programasActivos: p.cases.map(c => c.area.name),
     casesCount: p._count.cases
   }));
+
+  return {
+    people: mappedLegacy,
+    total: totalPrisma,
+    totalPages: Math.ceil(totalPrisma / limit),
+    currentPage: page,
+    pageSize: limit
+  };
+}
+
+export async function getPeople(query?: string, limit: number = 60) {
+  const result = await getPaginatedPeople({
+    query,
+    limit,
+    page: 1
+  });
+  return result.people;
+}
+
+export async function getPeopleFilterOptions() {
+  const defaultBarrios = [
+    "Caseros",
+    "Ciudadela",
+    "Barrio Derqui",
+    "Fuerte Apache (Ejército de los Andes)",
+    "El Libertador",
+    "Puerta 8",
+    "Ciudad Jardín Lomas del Palomar",
+    "El Palomar",
+    "Villa Bosch",
+    "Santos Lugares",
+    "Sáenz Peña",
+    "Loma Hermosa",
+    "Martín Coronado",
+    "Pablo Podestá",
+    "Churruca",
+    "Remedios de Escalada",
+    "11 de Septiembre",
+    "José Ingenieros",
+    "Villa Raffo"
+  ];
+
+  try {
+    const barriosRes: any[] = await prisma.$queryRawUnsafe(
+      `SELECT DISTINCT COALESCE(NULLIF(barrio, ''), 'Tres de Febrero') as barrio
+       FROM padron_unificado
+       WHERE barrio IS NOT NULL AND barrio != ''
+       ORDER BY barrio ASC
+       LIMIT 40;`
+    );
+
+    const dbBarrios = barriosRes.map((r: any) => r.barrio).filter(Boolean);
+    const mergedBarrios = Array.from(new Set([...defaultBarrios, ...dbBarrios])).sort();
+
+    const progsRes: any[] = await prisma.$queryRawUnsafe(
+      `SELECT DISTINCT programas_activos
+       FROM padron_unificado
+       WHERE programas_activos IS NOT NULL AND programas_activos != '';`
+    );
+
+    const progsSet = new Set<string>();
+    progsRes.forEach((r: any) => {
+      if (r.programas_activos) {
+        r.programas_activos
+          .split("|")
+          .map((p: string) => p.trim())
+          .filter(Boolean)
+          .forEach((p: string) => progsSet.add(p));
+      }
+    });
+
+    const programas = Array.from(progsSet).sort();
+
+    return {
+      barrios: mergedBarrios,
+      programas
+    };
+  } catch (err) {
+    console.error("Error al obtener opciones de filtro de padrón:", err);
+    return {
+      barrios: defaultBarrios,
+      programas: [
+        "Jardines Municipales",
+        "Tarjeta Alimentar",
+        "Centro de Familia",
+        "Programa Envión",
+        "Colonias Municipales 2026",
+        "Centro de Formación Profesional 3F",
+        "Intervenciones Desarrollo Humano",
+        "Servicios Locales de Niñez"
+      ]
+    };
+  }
 }
 
 export async function getPersonById(id: string) {

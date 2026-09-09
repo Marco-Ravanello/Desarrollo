@@ -16,6 +16,7 @@ import { CloseCaseButton } from "./close-case-button";
 import { AddFamilyMemberForm } from "./add-family-member-form";
 import { EditPersonDialog } from "./edit-person-dialog";
 import { removeFromFamily } from "../actions/family-actions";
+import { PageBreadcrumbs } from "@/components/layout/breadcrumbs-context";
 
 export default async function PersonDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
@@ -81,8 +82,15 @@ export default async function PersonDetailPage({ params }: { params: Promise<{ i
     }))
   ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
+  const breadcrumbs = [
+    { label: "Padrón Único", href: "/people" },
+    { label: `${person.lastName}, ${person.firstName}`, active: true }
+  ];
+
   return (
     <div className="space-y-6">
+      <PageBreadcrumbs items={breadcrumbs} />
+
       <div className="flex justify-between items-center flex-wrap gap-4">
         <div className="flex items-center gap-4">
           <div className="h-16 w-16 bg-blue-500/10 text-blue-500 rounded-full flex items-center justify-center font-bold text-xl border-2 border-blue-500/30 shrink-0">
@@ -111,7 +119,7 @@ export default async function PersonDetailPage({ params }: { params: Promise<{ i
 
         <div className="flex items-center gap-2">
           <Button variant="outline" asChild className="rounded-2xl border-border/60 text-xs font-bold gap-2 text-indigo-500 hover:text-indigo-600">
-            <Link href={`/ficha-social`}>
+            <Link href={`/ficha-social?dni=${person.dni}`}>
               <Network className="h-4 w-4" />
               Ver Ficha 360°
             </Link>
@@ -275,7 +283,7 @@ export default async function PersonDetailPage({ params }: { params: Promise<{ i
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-xs font-black text-muted-foreground uppercase tracking-widest">Documentación Adjunta</h3>
               </div>
-              {filteredDocuments.length === 0 ? <p className="text-muted-foreground text-center text-sm py-4 border rounded-2xl border-dashed border-border/60 font-medium">No hay documentos adjuntos.</p> : (
+              {filteredDocuments.length === 0 ? <p className="text-muted-foreground text-center text-sm py-4 border rounded-2xl border-dashed border-border/60 font-medium font-medium">No hay documentos adjuntos.</p> : (
                 <div className="grid grid-cols-1 gap-2">
                   {filteredDocuments.map(d => (
                     <div key={d.id} className="p-3 border border-border/60 rounded-2xl flex justify-between items-center bg-muted/20 hover:bg-muted/40 transition-colors">

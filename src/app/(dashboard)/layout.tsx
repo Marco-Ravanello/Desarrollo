@@ -4,6 +4,7 @@ import { NotificationBell } from "@/components/layout/notification-bell";
 import { EmergencyHeaderWidget } from "@/components/emergency/emergency-header-widget";
 import { MunicipalCrest } from "@/components/ui/municipal-crest";
 import { PrintHeader, PrintFooter } from "@/components/ui/print-layout";
+import { DashboardBreadcrumbs } from "@/components/layout/breadcrumbs";
 import { Button } from "@/components/ui/button";
 import { Tv } from "lucide-react";
 import Link from "next/link";
@@ -30,7 +31,7 @@ export default function DashboardLayout({
                   Secretaría de Desarrollo Humano y Hábitat
                 </h1>
                 <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-widest truncate hidden md:block">
-                  Municipalidad • Sistema Integrado de Gestión Pública
+                  Municipalidad de Tres de Febrero • Sistema Integrado de Gestión Pública
                 </p>
               </div>
             </div>
@@ -56,6 +57,7 @@ export default function DashboardLayout({
 
           <div className="p-6 sm:p-8 bg-background/40 print:bg-white print:p-0 flex-1">
             <PrintHeader />
+            <DashboardBreadcrumbs />
             {children}
             <PrintFooter />
           </div>

@@ -3,6 +3,7 @@
 import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
+import { MunicipalSettings, DEFAULT_MUNICIPAL_SETTINGS } from "@/types/settings";
 
 const SETTINGS_KEY = "muni-system-settings";
 
@@ -13,19 +14,25 @@ export async function getSystemSettingsAction() {
     });
 
     if (record?.value) {
-      return { success: true, settings: JSON.parse(record.value) };
+      const parsed = JSON.parse(record.value);
+      return { success: true, settings: { ...DEFAULT_MUNICIPAL_SETTINGS, ...parsed } };
     }
-    return { success: true, settings: null };
+    return { success: true, settings: DEFAULT_MUNICIPAL_SETTINGS };
   } catch (error: any) {
-    return { success: false, error: error.message || "Error al recuperar la configuración" };
+    return {
+      success: false,
+      settings: DEFAULT_MUNICIPAL_SETTINGS,
+      error: error.message || "Error al recuperar la configuración"
+    };
   }
 }
 
-export async function saveSystemSettingsAction(settings: any) {
+export async function saveSystemSettingsAction(settings: Partial<MunicipalSettings>) {
   const session = await auth();
 
   try {
-    const value = JSON.stringify(settings);
+    const merged = { ...DEFAULT_MUNICIPAL_SETTINGS, ...settings };
+    const value = JSON.stringify(merged);
 
     await prisma.systemSetting.upsert({
       where: { key: SETTINGS_KEY },
@@ -40,13 +47,14 @@ export async function saveSystemSettingsAction(settings: any) {
           action: "UPDATE_SYSTEM_SETTINGS",
           entity: "SystemSetting",
           entityId: SETTINGS_KEY,
-          details: `Configuración de identidad institucional actualizada por ${session.user.name || session.user.email}`
+          details: `Configuración de identidad institucional de Tres de Febrero actualizada por ${session.user.name || session.user.email}`
         }
       });
     }
 
     revalidatePath("/", "layout");
-    return { success: true };
+    revalidatePath("/admin/settings");
+    return { success: true, settings: merged };
   } catch (error: any) {
     return { success: false, error: error.message || "Error al guardar la configuración" };
   }
@@ -67,13 +75,14 @@ export async function resetSystemSettingsAction() {
           action: "RESET_SYSTEM_SETTINGS",
           entity: "SystemSetting",
           entityId: SETTINGS_KEY,
-          details: "Restablecimiento de configuración institucional a valores por defecto"
+          details: "Restablecimiento de configuración institucional a valores oficiales de Tres de Febrero"
         }
       });
     }
 
     revalidatePath("/", "layout");
-    return { success: true };
+    revalidatePath("/admin/settings");
+    return { success: true, settings: DEFAULT_MUNICIPAL_SETTINGS };
   } catch (error: any) {
     return { success: false, error: error.message || "Error al restablecer la configuración" };
   }
