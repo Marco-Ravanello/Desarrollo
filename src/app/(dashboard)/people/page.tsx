@@ -222,7 +222,7 @@ export default async function PeoplePage({
                           </Link>
                         </Button>
                         <Button variant="ghost" size="sm" asChild className="rounded-xl h-8 px-2.5 text-[11px] font-bold hover:bg-indigo-600 hover:text-white transition-all text-indigo-500 gap-1">
-                          <Link href={`/ficha-social`} title="Ver Ficha 360°">
+                          <Link href={`/ficha-social?dni=${p.dni}`} title="Ver Ficha 360°">
                             <Network className="h-3.5 w-3.5"/>
                             <span>360°</span>
                           </Link>
