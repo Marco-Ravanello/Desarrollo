@@ -474,7 +474,7 @@ export default function AssistantPage() {
   };
 
   return (
-    <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500 h-[calc(100vh-9.5rem)] max-h-[calc(100vh-9.5rem)] flex flex-col overflow-hidden">
+    <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500 h-[calc(100vh-8rem)] max-h-[calc(100vh-8rem)] flex flex-col overflow-hidden">
       <div className="flex justify-between items-center shrink-0">
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-2">
