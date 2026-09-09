@@ -1,12 +1,11 @@
 export const dynamic = "force-dynamic";
 
-import { getPeople, getPeopleStats } from "@/services/people";
+import { getPaginatedPeople, getPeopleFilterOptions, getPeopleStats } from "@/services/people";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Eye, Plus, Upload, Users, Calendar, Building2, Search, MapPin, Phone, Network } from "lucide-react";
+import { Eye, Plus, Upload, Users, Calendar, Building2, MapPin, Phone, Network, RotateCcw, UserX } from "lucide-react";
 import Link from "next/link";
 import {
   Sheet,
@@ -17,20 +16,41 @@ import {
   SheetTrigger
 } from "@/components/ui/sheet";
 import InterventionsAdminPage from "../admin/interventions/page";
+import { PeopleFilters } from "@/components/people/people-filters";
+import { PeoplePagination } from "@/components/people/people-pagination";
 
 export default async function PeoplePage({
   searchParams,
 }: {
-  searchParams: Promise<{ search?: string }>;
+  searchParams: Promise<{
+    search?: string;
+    barrio?: string;
+    programa?: string;
+    page?: string;
+    limit?: string;
+  }>;
 }) {
-  const { search } = await searchParams;
-  const [people, stats] = await Promise.all([
-    getPeople(search),
+  const { search, barrio, programa, page, limit } = await searchParams;
+
+  const pageNum = Math.max(1, Number(page) || 1);
+  const limitNum = Math.max(1, Math.min(100, Number(limit) || 20));
+
+  const [paginatedData, filterOptions, stats] = await Promise.all([
+    getPaginatedPeople({
+      query: search,
+      barrio,
+      programa,
+      page: pageNum,
+      limit: limitNum
+    }),
+    getPeopleFilterOptions(),
     getPeopleStats()
   ]);
 
+  const { people, total, totalPages, currentPage, pageSize } = paginatedData;
+
   return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-16">
+    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -113,32 +133,14 @@ export default async function PeoplePage({
         </Card>
       </div>
 
-      {/* Buscador de Padrón */}
-      <Card className="p-4 bg-card border border-border/60 rounded-3xl shadow-xs">
-        <form method="get" className="flex items-center gap-3">
-          <div className="relative flex-1">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              name="search"
-              defaultValue={search || ""}
-              placeholder="Buscar por DNI, Apellido, Nombre o Barrio (Ej: 34438385 o Iribarren o Ejército de los Andes)..."
-              className="pl-10 h-11 rounded-2xl border-border/60 bg-muted/20 text-xs font-semibold"
-            />
-          </div>
-          <Button type="submit" className="h-11 rounded-2xl px-5 text-xs font-bold gap-2 bg-primary text-primary-foreground">
-            <Search className="h-4 w-4" />
-            <span>Buscar en Padrón</span>
-          </Button>
-          {search && (
-            <Button variant="ghost" asChild className="h-11 rounded-2xl text-xs font-bold text-muted-foreground hover:text-foreground">
-              <Link href="/people">Limpiar</Link>
-            </Button>
-          )}
-        </form>
-      </Card>
+      {/* Componente de Filtros Avanzados */}
+      <PeopleFilters
+        barrios={filterOptions.barrios}
+        programas={filterOptions.programas}
+      />
 
       {/* Tabla de Ciudadanos */}
-      <Card className="border border-border/60 shadow-sm overflow-hidden rounded-3xl bg-card">
+      <Card className="border border-border/60 shadow-sm overflow-hidden rounded-3xl bg-card p-2 sm:p-4 space-y-4">
         <div className="overflow-x-auto">
           <Table>
             <TableHeader className="bg-muted/40">
@@ -233,14 +235,36 @@ export default async function PeoplePage({
                 ))
               ) : (
                 <TableRow>
-                  <td colSpan={6} className="text-center py-12 text-muted-foreground italic text-xs">
-                    No se encontraron ciudadanos que coincidan con la búsqueda.
-                  </td>
+                  <TableCell colSpan={6} className="text-center py-16 text-muted-foreground">
+                    <div className="flex flex-col items-center justify-center space-y-3">
+                      <UserX className="h-10 w-10 text-muted-foreground/40" />
+                      <div>
+                        <p className="text-sm font-bold text-foreground">No se encontraron ciudadanos empadronados</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          Pruebe ajustando la búsqueda por texto o limpiando los filtros de barrio y programa social.
+                        </p>
+                      </div>
+                      <Button variant="outline" asChild className="rounded-2xl text-xs font-bold gap-2 border-border/60">
+                        <Link href="/people">
+                          <RotateCcw className="h-3.5 w-3.5 text-primary" />
+                          Restablecer Filtros
+                        </Link>
+                      </Button>
+                    </div>
+                  </TableCell>
                 </TableRow>
               )}
             </TableBody>
           </Table>
         </div>
+
+        {/* Componente de Paginación Server-Side */}
+        <PeoplePagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={total}
+          pageSize={pageSize}
+        />
       </Card>
     </div>
   );
