@@ -42,6 +42,25 @@ interface SocialMapDashboardProps {
   };
 }
 
+function calculateHaversineDistance(
+  lat1: number,
+  lon1: number,
+  lat2: number,
+  lon2: number
+): number {
+  const R = 6371; // Earth's radius in km
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
 export function SocialMapDashboard({ initialPeople, stats }: SocialMapDashboardProps) {
   const [selectedLocalityId, setSelectedLocalityId] = useState<string>("all");
   const [selectedProgram, setSelectedProgram] = useState<string>("all");
@@ -68,16 +87,58 @@ export function SocialMapDashboard({ initialPeople, stats }: SocialMapDashboardP
   const filteredPeople = useMemo(() => {
     return initialPeople.filter((p) => {
       if (selectedLocalityId !== "all") {
-        const locName = selectedLocality.name.toLowerCase();
         const pLoc = (p.localidad || "").toLowerCase();
         const pBarrio = (p.barrio || "").toLowerCase();
         const pAddress = (p.address || "").toLowerCase();
 
-        const cleanLocalitySimple = locName.split("(")[0].trim().toLowerCase();
-        const matchesLoc =
-          pLoc.includes(cleanLocalitySimple) ||
-          pBarrio.includes(cleanLocalitySimple) ||
-          pAddress.includes(cleanLocalitySimple);
+        let matchesLoc = false;
+
+        if (selectedLocalityId === "ciudadela") {
+          matchesLoc =
+            (pLoc.includes("ciudadela") || pBarrio.includes("ciudadela") || pAddress.includes("ciudadela")) &&
+            !pBarrio.includes("norte") &&
+            !pBarrio.includes("sur") &&
+            !pBarrio.includes("ejército") &&
+            !pBarrio.includes("ejercito") &&
+            !pBarrio.includes("apache");
+        } else if (selectedLocalityId === "ciudadela-norte") {
+          matchesLoc =
+            pLoc.includes("ciudadela norte") ||
+            pBarrio.includes("ciudadela norte") ||
+            (pBarrio.includes("norte") && (pLoc.includes("ciudadela") || pAddress.includes("ciudadela")));
+        } else if (selectedLocalityId === "ciudadela-sur") {
+          matchesLoc =
+            pLoc.includes("ciudadela sur") ||
+            pBarrio.includes("ciudadela sur") ||
+            (pBarrio.includes("sur") && (pLoc.includes("ciudadela") || pAddress.includes("ciudadela")));
+        } else if (selectedLocalityId === "ejercito-de-los-andes") {
+          matchesLoc =
+            pBarrio.includes("ejército") ||
+            pBarrio.includes("ejercito") ||
+            pBarrio.includes("andes") ||
+            pBarrio.includes("apache") ||
+            pLoc.includes("ejército") ||
+            pLoc.includes("apache");
+        } else {
+          const cleanLocalitySimple = selectedLocality.name.split("(")[0].trim().toLowerCase();
+          matchesLoc =
+            pLoc.includes(cleanLocalitySimple) ||
+            pBarrio.includes(cleanLocalitySimple) ||
+            pAddress.includes(cleanLocalitySimple);
+        }
+
+        // GPS Proximity Fallback (~1.8 km) if coordinates exist
+        if (!matchesLoc && p.latitude && p.longitude) {
+          const dist = calculateHaversineDistance(
+            selectedLocality.coordinates[0],
+            selectedLocality.coordinates[1],
+            p.latitude,
+            p.longitude
+          );
+          if (dist <= 1.8) {
+            matchesLoc = true;
+          }
+        }
 
         if (!matchesLoc) return false;
       }
@@ -175,7 +236,7 @@ export function SocialMapDashboard({ initialPeople, stats }: SocialMapDashboardP
             <h1 className="text-2xl sm:text-3xl font-black text-foreground tracking-tight flex items-center gap-2">
               Cartografía Social GIS 3F
               <Badge className="bg-primary/20 text-primary border border-primary/30 text-[10px] font-bold uppercase py-0.5">
-                Georreferenciación 15 Localidades
+                Georreferenciación Localidades
               </Badge>
             </h1>
           </div>

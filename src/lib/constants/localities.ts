@@ -22,6 +22,30 @@ export const MUNICIPAL_LOCALITIES: LocalityInfo[] = [
     zoom: 15
   },
   {
+    id: "ciudadela",
+    name: "Ciudadela (Centro)",
+    coordinates: [-34.6361, -58.5411],
+    zoom: 14
+  },
+  {
+    id: "ciudadela-norte",
+    name: "Ciudadela Norte",
+    coordinates: [-34.6280, -58.5430],
+    zoom: 14
+  },
+  {
+    id: "ciudadela-sur",
+    name: "Ciudadela Sur",
+    coordinates: [-34.6430, -58.5390],
+    zoom: 14
+  },
+  {
+    id: "ejercito-de-los-andes",
+    name: "Barrio Ejército de los Andes (Fuerte Apache)",
+    coordinates: [-34.6225, -58.5442],
+    zoom: 15
+  },
+  {
     id: "ciudad_jardin",
     name: "Ciudad Jardín Lomas del Palomar",
     coordinates: [-34.5980, -58.5830],
