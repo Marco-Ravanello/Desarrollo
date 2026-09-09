@@ -22,6 +22,12 @@ export const MUNICIPAL_LOCALITIES: LocalityInfo[] = [
     zoom: 15
   },
   {
+    id: "barrio-derqui",
+    name: "Barrio Derqui (Caseros)",
+    coordinates: [-34.6005, -58.5720],
+    zoom: 15
+  },
+  {
     id: "ciudadela",
     name: "Ciudadela (Centro)",
     coordinates: [-34.6361, -58.5411],
@@ -43,6 +49,18 @@ export const MUNICIPAL_LOCALITIES: LocalityInfo[] = [
     id: "ejercito-de-los-andes",
     name: "Barrio Ejército de los Andes (Fuerte Apache)",
     coordinates: [-34.6225, -58.5442],
+    zoom: 15
+  },
+  {
+    id: "barrio-el-libertador",
+    name: "Barrio El Libertador",
+    coordinates: [-34.5680, -58.6050],
+    zoom: 15
+  },
+  {
+    id: "barrio-puerta-8",
+    name: "Barrio Puerta 8",
+    coordinates: [-34.5620, -58.6180],
     zoom: 15
   },
   {

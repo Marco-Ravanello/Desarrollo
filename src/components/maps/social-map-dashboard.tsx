@@ -93,7 +93,29 @@ export function SocialMapDashboard({ initialPeople, stats }: SocialMapDashboardP
 
         let matchesLoc = false;
 
-        if (selectedLocalityId === "ciudadela") {
+        if (selectedLocalityId === "caseros") {
+          matchesLoc =
+            pLoc.includes("caseros") ||
+            pBarrio.includes("caseros") ||
+            pAddress.includes("caseros") ||
+            pBarrio.includes("derqui");
+        } else if (selectedLocalityId === "barrio-derqui") {
+          matchesLoc =
+            pBarrio.includes("derqui") ||
+            pAddress.includes("derqui") ||
+            pLoc.includes("derqui");
+        } else if (selectedLocalityId === "barrio-el-libertador") {
+          matchesLoc =
+            pBarrio.includes("libertador") ||
+            pLoc.includes("libertador") ||
+            pAddress.includes("libertador");
+        } else if (selectedLocalityId === "barrio-puerta-8") {
+          matchesLoc =
+            pBarrio.includes("puerta 8") ||
+            pBarrio.includes("puerta ocho") ||
+            pAddress.includes("puerta 8") ||
+            pLoc.includes("puerta 8");
+        } else if (selectedLocalityId === "ciudadela") {
           matchesLoc =
             (pLoc.includes("ciudadela") || pBarrio.includes("ciudadela") || pAddress.includes("ciudadela")) &&
             !pBarrio.includes("norte") &&
