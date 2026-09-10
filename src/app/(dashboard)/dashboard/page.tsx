@@ -1,16 +1,20 @@
 export const dynamic = "force-dynamic";
+
 import { getDashboardStats } from "@/services/dashboard";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import {
   Users, FileText, ShoppingBag, ArrowRightLeft, Car,
-  CheckCircle2, ShieldAlert, Activity, Clock
+  CheckCircle2, ShieldAlert, Activity, Clock, Plus, UserPlus,
+  ArrowUpRight, ExternalLink, ShieldCheck
 } from "lucide-react";
 import { DashboardCharts } from "@/components/dashboard/dashboard-charts";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { ExecutiveReportButton } from "../admin/reports/executive-report-button";
 import { MiniHeatmapWidget } from "@/components/dashboard/mini-heatmap-widget";
 import { BudgetProgressWidget } from "@/components/dashboard/budget-progress-widget";
+import Link from "next/link";
 
 function getGreeting() {
   const hour = new Date().getHours();
@@ -19,20 +23,60 @@ function getGreeting() {
   return "Buenas noches";
 }
 
-function getActionBadge(action: string) {
+function getFormattedSpanishDate() {
+  const now = new Date();
+  const dateStr = now.toLocaleDateString("es-AR", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric"
+  });
+  return dateStr.charAt(0).toUpperCase() + dateStr.slice(1);
+}
+
+function getFormalActionBadge(action: string) {
   switch (action) {
     case "CREATE":
-      return <Badge className="text-[10px] font-bold uppercase bg-emerald-500/15 text-emerald-400 border border-emerald-500/25 rounded-md px-2 py-0.5">{action}</Badge>;
+      return (
+        <Badge className="text-[10px] font-bold uppercase bg-emerald-500/15 text-emerald-400 border border-emerald-500/25 rounded-md px-2 py-0.5">
+          Registro de Entrada
+        </Badge>
+      );
     case "UPDATE":
     case "UPDATE_STATUS":
-      return <Badge className="text-[10px] font-bold uppercase bg-blue-500/15 text-blue-400 border border-blue-500/25 rounded-md px-2 py-0.5">{action}</Badge>;
+      return (
+        <Badge className="text-[10px] font-bold uppercase bg-blue-500/15 text-blue-400 border border-blue-500/25 rounded-md px-2 py-0.5">
+          Actualización de Estado
+        </Badge>
+      );
     case "DELETE":
-      return <Badge className="text-[10px] font-bold uppercase bg-rose-500/15 text-rose-400 border border-rose-500/25 rounded-md px-2 py-0.5">{action}</Badge>;
+      return (
+        <Badge className="text-[10px] font-bold uppercase bg-rose-500/15 text-rose-400 border border-rose-500/25 rounded-md px-2 py-0.5">
+          Baja de Registro
+        </Badge>
+      );
     case "LOGIN":
-      return <Badge className="text-[10px] font-bold uppercase bg-slate-500/15 text-slate-400 border border-slate-500/25 rounded-md px-2 py-0.5">{action}</Badge>;
+      return (
+        <Badge className="text-[10px] font-bold uppercase bg-slate-500/15 text-slate-400 border border-slate-500/25 rounded-md px-2 py-0.5">
+          Inicio de Sesión
+        </Badge>
+      );
     default:
-      return <Badge className="text-[10px] font-bold uppercase bg-violet-500/15 text-violet-400 border border-violet-500/25 rounded-md px-2 py-0.5">{action}</Badge>;
+      return (
+        <Badge className="text-[10px] font-bold uppercase bg-violet-500/15 text-violet-400 border border-violet-500/25 rounded-md px-2 py-0.5">
+          Modificación Operativa
+        </Badge>
+      );
   }
+}
+
+function getEntityDeepLink(entity: string, entityId: string) {
+  const lower = (entity || "").toLowerCase();
+  if (lower.includes("person") || lower.includes("persona")) return `/people/${entityId}`;
+  if (lower.includes("case") || lower.includes("caso")) return `/cases/${entityId}`;
+  if (lower.includes("order") || lower.includes("orden")) return `/admin/purchase-orders/${entityId}`;
+  if (lower.includes("vehicle") || lower.includes("vehiculo")) return `/admin/vehicles`;
+  return `/admin/audit`;
 }
 
 function getRelativeTime(date: Date) {
@@ -49,11 +93,15 @@ function getRelativeTime(date: Date) {
 export default async function DashboardPage() {
   const stats = await getDashboardStats();
   const greeting = getGreeting();
+  const spanishDate = getFormattedSpanishDate();
 
   const mainCards = [
     {
       title: "Familias Registradas",
       value: stats.peopleCount,
+      formattedValue: Number(stats.peopleCount || 0).toLocaleString("es-AR"),
+      href: "/people",
+      hoverPrompt: "Ver Padrón ↗",
       icon: Users,
       color: "text-blue-400",
       iconBg: "bg-blue-500/15 ring-1 ring-blue-500/20",
@@ -63,6 +111,9 @@ export default async function DashboardPage() {
     {
       title: "Casos Activos",
       value: stats.activeCases,
+      formattedValue: Number(stats.activeCases || 0).toLocaleString("es-AR"),
+      href: "/cases",
+      hoverPrompt: "Ver Casos ↗",
       icon: FileText,
       color: "text-emerald-400",
       iconBg: "bg-emerald-500/15 ring-1 ring-emerald-500/20",
@@ -72,6 +123,9 @@ export default async function DashboardPage() {
     {
       title: "Tareas Pendientes",
       value: stats.todayTasks,
+      formattedValue: Number(stats.todayTasks || 0).toLocaleString("es-AR"),
+      href: "/tasks",
+      hoverPrompt: "Ver Agenda ↗",
       icon: CheckCircle2,
       color: "text-amber-400",
       iconBg: "bg-amber-500/15 ring-1 ring-amber-500/20",
@@ -81,6 +135,9 @@ export default async function DashboardPage() {
     {
       title: "Alertas Críticas",
       value: stats.criticalCases,
+      formattedValue: Number(stats.criticalCases || 0).toLocaleString("es-AR"),
+      href: "/cases?priority=URGENTE",
+      hoverPrompt: "Atender Alertas ↗",
       icon: ShieldAlert,
       color: "text-rose-400",
       iconBg: "bg-rose-500/15 ring-1 ring-rose-500/20",
@@ -90,9 +147,9 @@ export default async function DashboardPage() {
   ];
 
   const adminCards = [
-    { title: "OC Pendientes", value: stats.pendingPurchaseOrders, icon: ShoppingBag, color: "text-indigo-400", bg: "bg-indigo-500/10" },
-    { title: "Derivaciones", value: stats.pendingDerivations, icon: ArrowRightLeft, color: "text-sky-400", bg: "bg-sky-500/10" },
-    { title: "Vehículos Libres", value: `${stats.vehicleStats.available}/${stats.vehicleStats.total}`, icon: Car, color: "text-teal-400", bg: "bg-teal-500/10" },
+    { title: "OC Pendientes", value: stats.pendingPurchaseOrders, href: "/admin/purchase-orders", icon: ShoppingBag, color: "text-indigo-400", bg: "bg-indigo-500/10" },
+    { title: "Derivaciones", value: stats.pendingDerivations, href: "/cases", icon: ArrowRightLeft, color: "text-sky-400", bg: "bg-sky-500/10" },
+    { title: "Vehículos Libres", value: `${stats.vehicleStats.available}/${stats.vehicleStats.total}`, href: "/admin/vehicles", icon: Car, color: "text-teal-400", bg: "bg-teal-500/10" },
   ];
 
   return (
@@ -100,10 +157,17 @@ export default async function DashboardPage() {
       {/* Executive Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <p className="text-sm font-medium text-muted-foreground mb-1">{greeting}</p>
+          <div className="flex flex-wrap items-center gap-2 mb-1">
+            <span className="text-sm font-semibold text-primary">{greeting}</span>
+            <span className="text-muted-foreground/40">•</span>
+            <span className="text-xs font-medium text-muted-foreground">{spanishDate}</span>
+            <Badge className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] font-black uppercase px-2 py-0.5 ml-2">
+              ● Gestión Municipal Activa
+            </Badge>
+          </div>
           <h2 className="text-3xl font-black tracking-tight text-foreground">Panel de Control</h2>
           <p className="text-muted-foreground/70 text-sm mt-1">
-            Resumen estratégico de la gestión municipal.
+            Resumen estratégico de la gestión municipal Tres de Febrero.
             {stats.criticalCases > 0 && (
               <span className="ml-2 text-rose-400 font-semibold">
                 {stats.criticalCases} {stats.criticalCases === 1 ? "alerta crítica activa" : "alertas críticas activas"}.
@@ -111,61 +175,80 @@ export default async function DashboardPage() {
             )}
           </p>
         </div>
-        <ExecutiveReportButton />
+
+        <div className="flex flex-wrap items-center gap-2">
+          <Link href="/cases/new">
+            <Button size="sm" className="h-9 rounded-2xl gap-1.5 font-bold text-xs bg-primary text-primary-foreground hover:bg-primary/90 shadow-md">
+              <Plus className="h-4 w-4" /> Nuevo Caso
+            </Button>
+          </Link>
+          <Link href="/people/new">
+            <Button size="sm" variant="outline" className="h-9 rounded-2xl gap-1.5 font-bold text-xs border-border/60 hover:bg-accent shadow-xs">
+              <UserPlus className="h-4 w-4" /> Cargar Persona
+            </Button>
+          </Link>
+          <ExecutiveReportButton />
+        </div>
       </div>
 
-      {/* Main KPI Cards */}
+      {/* Main KPI Cards (Navigable Links) */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {mainCards.map((card) => (
-          <Card
-            key={card.title}
-            className="border border-white/[0.06] shadow-xl hover:shadow-2xl transition-all duration-300 group overflow-hidden bg-card/60 backdrop-blur-md relative"
-          >
-            <CardHeader className="flex flex-row items-start justify-between pb-2 space-y-0 relative z-10">
-              <CardTitle className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest leading-tight">
-                {card.title}
-              </CardTitle>
-              <div className={`p-2.5 rounded-xl ${card.iconBg} group-hover:scale-110 transition-transform duration-300 shrink-0`}>
-                <card.icon className={`h-5 w-5 ${card.color}`} />
+          <Link key={card.title} href={card.href} className="block group">
+            <Card className="border border-white/[0.06] shadow-xl group-hover:border-primary/40 group-hover:shadow-2xl transition-all duration-300 overflow-hidden bg-card/60 backdrop-blur-md relative">
+              <CardHeader className="flex flex-row items-start justify-between pb-2 space-y-0 relative z-10">
+                <CardTitle className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest leading-tight group-hover:text-primary transition-colors">
+                  {card.title}
+                </CardTitle>
+                <div className={`p-2.5 rounded-xl ${card.iconBg} group-hover:scale-110 transition-transform duration-300 shrink-0`}>
+                  <card.icon className={`h-5 w-5 ${card.color}`} />
+                </div>
+              </CardHeader>
+              <CardContent className="relative z-10 pb-4">
+                <div className="text-4xl font-black text-foreground mb-2 tracking-tighter font-mono">
+                  {card.formattedValue}
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className={`flex items-center gap-1.5 text-[11px] font-semibold ${card.trendColor}`}>
+                    <div className="w-1 h-1 rounded-full bg-current animate-pulse" />
+                    {card.trend}
+                  </div>
+                  <span className="text-[10px] font-bold text-primary opacity-0 group-hover:opacity-100 transition-opacity">
+                    {card.hoverPrompt}
+                  </span>
+                </div>
+              </CardContent>
+              {/* Ghost icon */}
+              <div className="absolute -right-3 -bottom-3 w-20 h-20 opacity-[0.04] group-hover:opacity-[0.08] transition-opacity duration-500 pointer-events-none">
+                <card.icon className="w-full h-full" />
               </div>
-            </CardHeader>
-            <CardContent className="relative z-10 pb-4">
-              <div className="text-4xl font-black text-foreground mb-2 tracking-tighter">
-                {card.value}
-              </div>
-              <div className={`flex items-center gap-1.5 text-[11px] font-semibold ${card.trendColor}`}>
-                <div className="w-1 h-1 rounded-full bg-current animate-pulse" />
-                {card.trend}
-              </div>
-            </CardContent>
-            {/* Ghost icon */}
-            <div className="absolute -right-3 -bottom-3 w-20 h-20 opacity-[0.04] group-hover:opacity-[0.07] transition-opacity duration-500 pointer-events-none">
-              <card.icon className="w-full h-full" />
-            </div>
-          </Card>
+            </Card>
+          </Link>
         ))}
       </div>
 
-      {/* Admin Status Cards */}
+      {/* Admin Status Cards (Navigable Links) */}
       <div className="grid gap-3 md:grid-cols-3">
         {adminCards.map((card) => (
-          <div
-            key={card.title}
-            className="flex items-center gap-3 px-4 py-3 rounded-xl bg-card/50 backdrop-blur-sm border border-white/[0.06] shadow-md hover:border-white/[0.1] transition-all duration-200"
-          >
-            <div className={`p-2 rounded-lg ${card.bg}`}>
-              <card.icon className={`h-4 w-4 ${card.color}`} />
+          <Link key={card.title} href={card.href} className="block group">
+            <div className="flex items-center justify-between px-4 py-3 rounded-2xl bg-card/50 backdrop-blur-sm border border-white/[0.06] shadow-md group-hover:border-primary/30 group-hover:bg-card/70 transition-all duration-200">
+              <div className="flex items-center gap-3">
+                <div className={`p-2 rounded-xl ${card.bg} group-hover:scale-105 transition-transform`}>
+                  <card.icon className={`h-4 w-4 ${card.color}`} />
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest group-hover:text-foreground transition-colors">{card.title}</p>
+                  <p className="text-lg font-black text-foreground leading-tight font-mono">{card.value}</p>
+                </div>
+              </div>
+              <ArrowUpRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
             </div>
-            <div>
-              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">{card.title}</p>
-              <p className="text-lg font-black text-foreground leading-tight">{card.value}</p>
-            </div>
-          </div>
+          </Link>
         ))}
       </div>
 
       {/* Budget Execution Thermometer */}
-      <BudgetProgressWidget executedAmount={stats.executedAmount} totalBudget={stats.totalBudget} />
+      <BudgetProgressWidget executedAmount={stats.executedAmount} totalBudget={stats.totalBudget} areas={stats.areas} />
 
       {/* Charts */}
       <DashboardCharts
@@ -173,6 +256,11 @@ export default async function DashboardPage() {
         poStatusData={stats.poStatusData}
         trendData={stats.trends}
         areas={stats.areas}
+        executedAmount={stats.executedAmount}
+        resolvedCasesCount={stats.resolvedCasesCount}
+        activeCases={stats.activeCases}
+        vehicleStats={stats.vehicleStats}
+        pendingDerivations={stats.pendingDerivations}
       />
 
       {/* Bottom Section: Heatmap Widget & Recent Activity Feed */}
@@ -180,18 +268,28 @@ export default async function DashboardPage() {
         <div className="md:col-span-5 lg:col-span-4">
           <MiniHeatmapWidget peopleLocations={stats.peopleLocations} />
         </div>
+
         <div className="md:col-span-7 lg:col-span-8">
-          <Card className="bg-card/60 backdrop-blur-md border border-white/[0.06] shadow-xl h-full">
-            <CardHeader className="flex flex-row items-center gap-3 pb-3">
-              <div className="p-2 rounded-lg bg-blue-500/10">
-                <Activity className="h-4 w-4 text-blue-400" />
+          <Card className="bg-card/60 backdrop-blur-md border border-white/[0.06] shadow-xl h-full flex flex-col justify-between">
+            <CardHeader className="flex flex-row items-center justify-between pb-3">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-blue-500/10">
+                  <Activity className="h-4 w-4 text-blue-400" />
+                </div>
+                <div>
+                  <CardTitle className="text-sm font-bold text-foreground">Actividad Reciente</CardTitle>
+                  <CardDescription className="text-xs">Últimas acciones registradas en el sistema municipal.</CardDescription>
+                </div>
               </div>
-              <div>
-                <CardTitle className="text-sm font-bold text-foreground">Actividad Reciente</CardTitle>
-                <CardDescription className="text-xs">Últimas acciones realizadas en la plataforma.</CardDescription>
-              </div>
+
+              <Link href="/admin/audit">
+                <Button variant="ghost" size="sm" className="h-7 text-[10px] font-bold text-primary gap-1 uppercase">
+                  Historial de Auditoría <ExternalLink className="h-3 w-3" />
+                </Button>
+              </Link>
             </CardHeader>
-            <CardContent className="pt-0">
+
+            <CardContent className="pt-0 flex-1 flex flex-col justify-between">
               {stats.recentActivity.length > 0 ? (
                 <Table>
                   <TableHeader>
@@ -199,31 +297,40 @@ export default async function DashboardPage() {
                       <TableHead className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Cuándo</TableHead>
                       <TableHead className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Usuario</TableHead>
                       <TableHead className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Acción</TableHead>
-                      <TableHead className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Entidad</TableHead>
+                      <TableHead className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Registro</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {stats.recentActivity.map((log) => (
                       <TableRow key={log.id} className="border-white/[0.04] hover:bg-white/[0.02] transition-colors">
                         <TableCell>
-                          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                          <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-mono">
                             <Clock className="h-3 w-3 shrink-0" />
                             {getRelativeTime(log.createdAt)}
                           </div>
                         </TableCell>
+
                         <TableCell>
                           <div className="flex items-center gap-2">
                             <div className="h-6 w-6 rounded-full bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center shrink-0">
                               <span className="text-[9px] font-bold text-white">{log.user.name?.[0] || "U"}</span>
                             </div>
-                            <span className="text-sm font-medium text-foreground truncate max-w-[120px]">
+                            <span className="text-xs font-medium text-foreground truncate max-w-[120px]">
                               {log.user.name}
                             </span>
                           </div>
                         </TableCell>
-                        <TableCell>{getActionBadge(log.action)}</TableCell>
-                        <TableCell className="text-xs text-muted-foreground font-mono">
-                          {log.entity} <span className="text-slate-600">#{log.entityId.substring(0, 6)}</span>
+
+                        <TableCell>{getFormalActionBadge(log.action)}</TableCell>
+
+                        <TableCell>
+                          <Link
+                            href={getEntityDeepLink(log.entity, log.entityId)}
+                            className="text-xs text-muted-foreground hover:text-primary font-mono flex items-center gap-1 group"
+                          >
+                            <span>{log.entity}</span>
+                            <span className="text-slate-500 group-hover:text-primary">#{log.entityId.substring(0, 6)}</span>
+                          </Link>
                         </TableCell>
                       </TableRow>
                     ))}
