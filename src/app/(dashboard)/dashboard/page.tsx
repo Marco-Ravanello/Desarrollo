@@ -173,6 +173,11 @@ export default async function DashboardPage() {
         poStatusData={stats.poStatusData}
         trendData={stats.trends}
         areas={stats.areas}
+        executedAmount={stats.executedAmount}
+        resolvedCasesCount={stats.resolvedCasesCount}
+        activeCases={stats.activeCases}
+        vehicleStats={stats.vehicleStats}
+        pendingDerivations={stats.pendingDerivations}
       />
 
       {/* Bottom Section: Heatmap Widget & Recent Activity Feed */}
