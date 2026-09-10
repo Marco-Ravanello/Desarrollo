@@ -11,7 +11,7 @@ import { toast } from "sonner";
 import {
   ShieldAlert, AlertTriangle, Phone,
   Home, Package, Plus, Radio, MapPin,
-  Flame, Truck, Activity
+  Flame, Truck, Activity, Waves
 } from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state";
 import Link from "next/link";
@@ -20,6 +20,9 @@ import {
   createEmergencyIncidentAction,
   dispatchEmergencyStockAction
 } from "@/app/(dashboard)/admin/actions/emergency-actions";
+import { EmergencyRadarData } from "@/types/emergency";
+import { WeatherRadarWidget } from "@/components/emergency/weather-radar-widget";
+import { HydrologicalRiskMap } from "@/components/emergency/hydrological-risk-map";
 
 interface EmergencyViewProps {
   initialData: {
@@ -56,12 +59,13 @@ interface EmergencyViewProps {
       status: string;
     }>;
     availableVehiclesCount: number;
+    radarData: EmergencyRadarData;
   };
 }
 
 export function EmergencyView({ initialData }: EmergencyViewProps) {
   const [isEmergencyActive, setIsEmergencyActive] = useState(true);
-  const [activeTab, setActiveTab] = useState<"shelters" | "stock" | "incidents" | "protocols">("shelters");
+  const [activeTab, setActiveTab] = useState<"radar" | "shelters" | "incidents" | "stock">("radar");
 
   const [shelters, setShelters] = useState(initialData.shelters);
   const [emergencyStock, setEmergencyStock] = useState(initialData.emergencyStock);
@@ -325,7 +329,18 @@ export function EmergencyView({ initialData }: EmergencyViewProps) {
         </Card>
       </div>
 
-      <div className="flex items-center gap-2 p-1.5 bg-muted/40 rounded-2xl border border-border/50 max-w-2xl overflow-x-auto">
+      <div className="flex items-center gap-2 p-1.5 bg-muted/40 rounded-2xl border border-border/50 max-w-3xl overflow-x-auto">
+        <button
+          onClick={() => setActiveTab("radar")}
+          className={`flex items-center gap-2 py-2.5 px-4 rounded-xl text-xs font-bold transition-all shrink-0 ${
+            activeTab === "radar"
+              ? "bg-primary text-primary-foreground shadow-sm"
+              : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <Radio className="h-4 w-4" />
+          <span>Radar SMN & Riesgo Hídrico</span>
+        </button>
         <button
           onClick={() => setActiveTab("shelters")}
           className={`flex items-center gap-2 py-2.5 px-4 rounded-xl text-xs font-bold transition-all shrink-0 ${
@@ -360,6 +375,22 @@ export function EmergencyView({ initialData }: EmergencyViewProps) {
           <span>Stock de Crisis ({emergencyStock.length})</span>
         </button>
       </div>
+
+      {activeTab === "radar" && (
+        <div className="space-y-6 animate-in fade-in duration-300">
+          <WeatherRadarWidget
+            alert={initialData.radarData.alert}
+            cells={initialData.radarData.radarCells}
+            metrics={initialData.radarData.metrics}
+            lastSweep={initialData.radarData.lastRadarSweep}
+          />
+
+          <HydrologicalRiskMap
+            zones={initialData.radarData.hydrologicalZones}
+            vulnerableStats={initialData.radarData.vulnerableStats}
+          />
+        </div>
+      )}
 
       {activeTab === "shelters" && (
         <div className="space-y-4 animate-in fade-in duration-300">
