@@ -1,7 +1,9 @@
 "use client";
+
 import { useEffect } from "react";
 import { MapContainer, TileLayer, useMap } from "react-leaflet";
 import L from "leaflet";
+import { useTheme } from "next-themes";
 import "leaflet/dist/leaflet.css";
 import "leaflet.heat";
 
@@ -18,15 +20,15 @@ function HeatmapLayer({ points }: { points: [number, number, number][] }) {
 
     // @ts-ignore - leaflet.heat adds heatLayer to L
     const heat = L.heatLayer(points, {
-      radius: 20,
-      blur: 12,
+      radius: 22,
+      blur: 14,
       maxZoom: 15,
       gradient: {
-        0.4: "blue",
-        0.6: "cyan",
-        0.7: "lime",
-        0.8: "yellow",
-        1.0: "red"
+        0.2: "#0055ff",
+        0.4: "#00f0ff",
+        0.6: "#00ff66",
+        0.8: "#ffea00",
+        1.0: "#ff0055"
       }
     }).addTo(map);
 
@@ -39,17 +41,24 @@ function HeatmapLayer({ points }: { points: [number, number, number][] }) {
 }
 
 export function MiniHeatmapInner({ locations }: { locations: LocationPoint[] }) {
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
+
   const TRES_DE_FEBRERO_CENTER: [number, number] = [-34.603, -58.558];
 
-  const heatPoints: [number, number, number][] = locations.map((loc) => [
+  const heatPoints: [number, number, number][] = (locations || []).map((loc) => [
     loc.latitude,
     loc.longitude,
-    0.6
+    0.7
   ]);
 
   const center: [number, number] = heatPoints.length > 0
     ? [heatPoints[0][0], heatPoints[0][1]]
     : TRES_DE_FEBRERO_CENTER;
+
+  const tileUrl = isDark
+    ? "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+    : "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png";
 
   return (
     <MapContainer
@@ -60,11 +69,11 @@ export function MiniHeatmapInner({ locations }: { locations: LocationPoint[] }) 
       scrollWheelZoom={false}
       doubleClickZoom={false}
       style={{ height: "220px", width: "100%" }}
-      className="z-10 rounded-xl"
+      className="z-10 rounded-xl overflow-hidden"
     >
       <TileLayer
-        attribution=""
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        attribution='&copy; <a href="https://carto.com/">CARTO</a>'
+        url={tileUrl}
       />
       <HeatmapLayer points={heatPoints} />
     </MapContainer>
