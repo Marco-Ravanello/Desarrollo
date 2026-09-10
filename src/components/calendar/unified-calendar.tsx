@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   ChevronLeft, ChevronRight, Calendar, User, Briefcase,
   Clock, CheckSquare, ShoppingBag, Plus, X, Globe, Eye,
@@ -32,7 +32,7 @@ type CalendarViewType = "month" | "week" | "day" | "agenda";
 
 const HOURS = Array.from({ length: 15 }, (_, i) => i + 7);
 
-export function UnifiedCalendar({ reservations, purchaseOrders, tasks, users, currentUserId }: UnifiedCalendarProps) {
+export function UnifiedCalendar({ reservations = [], purchaseOrders = [], tasks = [], users = [], currentUserId }: UnifiedCalendarProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [miniCalMonth, setMiniCalMonth] = useState(new Date());
   const [view, setView] = useState<CalendarViewType>("week");
@@ -73,12 +73,17 @@ export function UnifiedCalendar({ reservations, purchaseOrders, tasks, users, cu
 
   const allEvents: any[] = [];
 
-  if (showReservations) {
+  if (showReservations && Array.isArray(reservations)) {
     reservations.forEach((r) => {
+      if (!r) return;
+      const brand = r.vehicle?.brand || "Vehículo";
+      const model = r.vehicle?.model || "Oficial";
+      const plate = r.vehicle?.plate || "S/P";
+
       allEvents.push({
         id: r.id,
         type: "reservation",
-        title: `Reserva: ${r.vehicle.brand} ${r.vehicle.model} (${r.vehicle.plate})`,
+        title: `Reserva: ${brand} ${model} (${plate})`,
         startDate: new Date(r.startDate),
         endDate: new Date(r.endDate),
         color: "bg-blue-500/10 text-blue-500 border-l-4 border-l-blue-500 border-border/40 hover:bg-blue-500/20",
@@ -89,13 +94,13 @@ export function UnifiedCalendar({ reservations, purchaseOrders, tasks, users, cu
     });
   }
 
-  if (showOrders) {
+  if (showOrders && Array.isArray(purchaseOrders)) {
     purchaseOrders.forEach((o) => {
-      if (o.deliveryDate) {
+      if (o && o.deliveryDate) {
         allEvents.push({
           id: o.id,
           type: "order",
-          title: `Entrega OC: N° ${o.number}`,
+          title: `Entrega OC: N° ${o.number || "S/N"}`,
           startDate: new Date(o.deliveryDate),
           endDate: new Date(o.deliveryDate),
           color: "bg-emerald-500/10 text-emerald-500 border-l-4 border-l-emerald-500 border-border/40 hover:bg-emerald-500/20",
@@ -107,9 +112,9 @@ export function UnifiedCalendar({ reservations, purchaseOrders, tasks, users, cu
     });
   }
 
-  if (showTasks) {
+  if (showTasks && Array.isArray(tasks)) {
     tasks.forEach((t) => {
-      if (t.dueDate) {
+      if (t && t.dueDate) {
         const isOwner = t.userId === currentUserId;
         const isAllowedViewer = t.viewerIds && t.viewerIds.split(",").map((s: string) => s.trim()).includes(currentUserId);
 
@@ -117,7 +122,7 @@ export function UnifiedCalendar({ reservations, purchaseOrders, tasks, users, cu
           allEvents.push({
             id: t.id,
             type: "task",
-            title: `Tarea: ${t.title}`,
+            title: `Tarea: ${t.title || "Sin Título"}`,
             startDate: new Date(t.dueDate),
             endDate: new Date(t.dueDate),
             color: "bg-amber-500/10 text-amber-500 border-l-4 border-l-amber-500 border-border/40 hover:bg-amber-500/20",
@@ -572,6 +577,7 @@ export function UnifiedCalendar({ reservations, purchaseOrders, tasks, users, cu
                               onClick={(ev) => {
                                 ev.stopPropagation();
                                 setSelectedEvent(e);
+                                setSearchQuery("");
                                 setRescheduleDate(e.startDate.toISOString().split("T")[0]);
                                 setRescheduleTime(e.startDate.toTimeString().split(" ")[0].substring(0, 5));
                                 if (e.type === "reservation") {
@@ -693,6 +699,7 @@ export function UnifiedCalendar({ reservations, purchaseOrders, tasks, users, cu
                                       onDragStart={(ev) => handleDragStart(ev, e)}
                                       onClick={() => {
                                         setSelectedEvent(e);
+                                        setSearchQuery("");
                                         setRescheduleDate(e.startDate.toISOString().split("T")[0]);
                                         setRescheduleTime(e.startDate.toTimeString().split(" ")[0].substring(0, 5));
                                         if (e.type === "reservation") {
@@ -808,6 +815,7 @@ export function UnifiedCalendar({ reservations, purchaseOrders, tasks, users, cu
                         key={e.id}
                         onClick={() => {
                           setSelectedEvent(e);
+                          setSearchQuery("");
                           setRescheduleDate(e.startDate.toISOString().split("T")[0]);
                           setRescheduleTime(e.startDate.toTimeString().split(" ")[0].substring(0, 5));
                           if (e.type === "reservation") {
@@ -883,13 +891,13 @@ export function UnifiedCalendar({ reservations, purchaseOrders, tasks, users, cu
                   </div>
                   <div className="flex items-center gap-2.5 text-sm font-semibold text-foreground">
                     <User className="h-4 w-4 text-blue-500" />
-                    <span>Responsable: <span className="text-muted-foreground font-medium">{selectedEvent.raw.user.name}</span></span>
+                    <span>Responsable: <span className="text-muted-foreground font-medium">{selectedEvent.raw?.user?.name || "Agente Municipal"}</span></span>
                   </div>
                   <div className="flex items-center gap-2.5 text-sm font-semibold text-foreground">
                     <Briefcase className="h-4 w-4 text-blue-500" />
-                    <span>Área: <span className="text-muted-foreground font-medium">{selectedEvent.raw.user.area?.name || "Sin Área"}</span></span>
+                    <span>Área: <span className="text-muted-foreground font-medium">{selectedEvent.raw?.user?.area?.name || "Sin Área"}</span></span>
                   </div>
-                  {selectedEvent.raw.reason && (
+                  {selectedEvent.raw?.reason && (
                     <div className="pt-2 border-t border-border/20 text-xs text-muted-foreground italic font-medium">
                       Motivo: "{selectedEvent.raw.reason}"
                     </div>
@@ -905,9 +913,9 @@ export function UnifiedCalendar({ reservations, purchaseOrders, tasks, users, cu
                   </div>
                   <div className="flex items-center gap-2.5 text-sm font-semibold text-foreground">
                     <User className="h-4 w-4 text-emerald-500" />
-                    <span>Proveedor: <span className="text-muted-foreground font-medium">{selectedEvent.raw.providerName || "No registrado"}</span></span>
+                    <span>Proveedor: <span className="text-muted-foreground font-medium">{selectedEvent.raw?.providerName || "No registrado"}</span></span>
                   </div>
-                  {selectedEvent.raw.providerCuit && (
+                  {selectedEvent.raw?.providerCuit && (
                     <div className="flex items-center gap-2.5 text-sm font-semibold text-foreground">
                       <Briefcase className="h-4 w-4 text-emerald-500" />
                       <span>CUIT: <span className="text-muted-foreground font-medium">{selectedEvent.raw.providerCuit}</span></span>
@@ -915,7 +923,7 @@ export function UnifiedCalendar({ reservations, purchaseOrders, tasks, users, cu
                   )}
                   <div className="flex items-center gap-2.5 text-sm font-semibold text-foreground">
                     <ShoppingBag className="h-4 w-4 text-emerald-500" />
-                    <span>Importe total: <span className="text-emerald-500 font-bold">${Number(selectedEvent.raw.amount).toLocaleString("es-AR")}</span></span>
+                    <span>Importe total: <span className="text-emerald-500 font-bold">${Number(selectedEvent.raw?.amount || 0).toLocaleString("es-AR")}</span></span>
                   </div>
                 </>
               )}
@@ -926,12 +934,12 @@ export function UnifiedCalendar({ reservations, purchaseOrders, tasks, users, cu
                     <Clock className="h-4 w-4 text-amber-500" />
                     <span>Vencimiento: <span className="text-muted-foreground font-medium">{selectedEvent.startDate.toLocaleString("es-AR")}</span></span>
                   </div>
-                  {selectedEvent.raw.description && (
+                  {selectedEvent.raw?.description && (
                     <div className="pt-2 border-t border-border/20 text-xs text-muted-foreground italic font-medium">
                       Detalle: "{selectedEvent.raw.description}"
                     </div>
                   )}
-                  {selectedEvent.raw.viewerIds && (
+                  {selectedEvent.raw?.viewerIds && (
                     <div className="pt-2 border-t border-border/20 flex items-center gap-1.5 text-[10px] text-muted-foreground uppercase font-bold tracking-wider">
                       <Eye className="h-3 w-3 text-amber-500" /> Compartida con {selectedEvent.raw.viewerIds.split(",").length} agentes
                     </div>
