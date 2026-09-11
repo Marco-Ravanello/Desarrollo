@@ -66,13 +66,43 @@ export async function searchGlobalAction(query: string) {
     })
   ]);
 
-  return {
-    citizens: citizens.map((c: any) => ({
+  // Buscar Ciudadanos en padron_unificado
+  let padronCitizens: any[] = [];
+  try {
+    const q = trimmedQuery.replace(/'/g, "''");
+    const numQ = numericQuery;
+    let whereSQL = `LOWER(nombre_completo) LIKE '%${q.toLowerCase()}%'`;
+    if (numQ && numQ.length >= 4) {
+      whereSQL += ` OR dni LIKE '%${numQ}%'`;
+    }
+    padronCitizens = await prisma.$queryRawUnsafe(
+      `SELECT dni, nombre_completo, barrio FROM padron_unificado WHERE ${whereSQL} LIMIT 5;`
+    );
+  } catch (e) {
+    console.error("Error searching padron in global search:", e);
+  }
+
+  const padronResults = padronCitizens.map((p: any) => ({
+    id: p.dni,
+    title: p.nombre_completo,
+    subtitle: `DNI ${p.dni}${p.barrio ? ` • ${p.barrio}` : ''}`,
+    url: `/people/${p.dni}`
+  }));
+
+  // Fusionar evitando DNIs duplicados
+  const existingDnis = new Set(citizens.map((c: any) => c.dni));
+  const mergedCitizens = [
+    ...citizens.map((c: any) => ({
       id: c.id,
       title: `${c.lastName}, ${c.firstName}`,
       subtitle: `DNI ${c.dni}`,
       url: `/people/${c.id}`
     })),
+    ...padronResults.filter((p: any) => !existingDnis.has(p.id))
+  ].slice(0, 5);
+
+  return {
+    citizens: mergedCitizens,
     cases: cases.map((c: any) => ({
       id: c.id,
       title: c.title,
@@ -83,7 +113,7 @@ export async function searchGlobalAction(query: string) {
       id: h.id,
       title: `${h.lastName}, ${h.firstName}`,
       subtitle: `${h.area?.name || 'Sin Área'} • Leg. ${h.fileNumber || '---'}`,
-      url: `/admin/hr` // Link directly to HR list for now, or specific view if it existed
+      url: `/admin/hr`
     })),
     agreements: agreements.map((a: any) => ({
       id: a.id,
