@@ -23,44 +23,65 @@ export async function updatePersonAction(id: string, formData: FormData) {
   }
 
   // Verificar que el DNI no pertenezca a otra persona
-  const existingPerson = await prisma.person.findFirst({
+  const existingPersonWithDni = await prisma.person.findFirst({
     where: {
       dni,
-      NOT: { id }
+      NOT: { OR: [{ id }, { dni: id }] }
     }
   });
 
-  if (existingPerson) {
-    return { success: false, error: `El DNI ${dni} ya pertenece a otro ciudadano (${existingPerson.lastName}, ${existingPerson.firstName})` };
+  if (existingPersonWithDni) {
+    return { success: false, error: `El DNI ${dni} ya pertenece a otro ciudadano (${existingPersonWithDni.lastName}, ${existingPersonWithDni.firstName})` };
   }
 
   try {
     const birthDate = birthDateStr ? new Date(birthDateStr) : null;
 
-    const updatedPerson = await prisma.person.update({
-      where: { id },
-      data: {
-        dni,
-        firstName,
-        lastName,
-        address,
-        phone,
-        email,
-        birthDate
-      }
+    let targetPerson = await prisma.person.findFirst({
+      where: { OR: [{ id }, { dni: id }, { dni }] }
     });
+
+    let updatedPerson;
+    if (targetPerson) {
+      updatedPerson = await prisma.person.update({
+        where: { id: targetPerson.id },
+        data: {
+          dni,
+          firstName,
+          lastName,
+          address,
+          phone,
+          email,
+          birthDate
+        }
+      });
+    } else {
+      updatedPerson = await prisma.person.create({
+        data: {
+          id,
+          dni,
+          firstName,
+          lastName,
+          address,
+          phone,
+          email,
+          birthDate
+        }
+      });
+    }
 
     await prisma.auditLog.create({
       data: {
         userId: session.user.id,
         action: "UPDATE",
         entity: "Person",
-        entityId: id,
+        entityId: updatedPerson.id,
         details: `Actualización de datos del ciudadano: ${updatedPerson.lastName}, ${updatedPerson.firstName} (DNI: ${updatedPerson.dni})`
       }
     });
 
     revalidatePath(`/people/${id}`);
+    revalidatePath(`/people/${updatedPerson.id}`);
     revalidatePath("/people");
     revalidatePath("/ficha-social");
     revalidatePath("/maps");

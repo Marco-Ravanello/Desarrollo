@@ -5,6 +5,7 @@ import { join, basename, resolve } from "path";
 import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
+import { ensurePersonInPrisma } from "@/services/people";
 
 export async function uploadDocumentAction(formData: FormData) {
   const session = await auth();
@@ -17,6 +18,12 @@ export async function uploadDocumentAction(formData: FormData) {
   if (!file || file.size === 0) return { error: "No se seleccionó ningún archivo válido" };
 
   try {
+    let validPersonId = null;
+    if (personId) {
+      const person = await ensurePersonInPrisma(personId);
+      validPersonId = person ? person.id : null;
+    }
+
     const uploadsDir = resolve(process.cwd(), "public", "uploads");
 
     // Ensure directory exists recursively
@@ -41,7 +48,7 @@ export async function uploadDocumentAction(formData: FormData) {
         name: file.name,
         url: `/uploads/${safeFilename}`,
         fileType: file.type,
-        personId: personId || null,
+        personId: validPersonId,
         caseId: caseId || null,
       }
     });
@@ -57,6 +64,7 @@ export async function uploadDocumentAction(formData: FormData) {
     });
 
     if (personId) revalidatePath(`/people/${personId}`);
+    if (validPersonId) revalidatePath(`/people/${validPersonId}`);
     if (caseId) revalidatePath(`/people/${personId || 'any'}`);
 
     return { success: true, fileName: file.name };

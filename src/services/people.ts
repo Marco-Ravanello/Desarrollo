@@ -35,6 +35,62 @@ export interface PaginatedPeopleResult {
   pageSize: number;
 }
 
+export async function ensurePersonInPrisma(personIdOrDni: string) {
+  if (!personIdOrDni) return null;
+
+  // 1. Buscar si ya existe en Person por id o por dni
+  let person = await prisma.person.findFirst({
+    where: {
+      OR: [
+        { id: personIdOrDni },
+        { dni: personIdOrDni }
+      ]
+    }
+  });
+
+  if (person) return person;
+
+  // 2. Si no existe, buscar en padron_unificado
+  const padronRows: any[] = await prisma.$queryRawUnsafe(
+    `SELECT * FROM padron_unificado WHERE dni = $1 LIMIT 1;`,
+    personIdOrDni
+  );
+
+  if (padronRows && padronRows.length > 0) {
+    const p = padronRows[0];
+    let lastName = "Ciudadano";
+    let firstName = "";
+
+    if (p.nombre_completo && p.nombre_completo.includes(",")) {
+      const parts = p.nombre_completo.split(",");
+      lastName = parts[0].trim();
+      firstName = parts.slice(1).join(",").trim();
+    } else {
+      const parts = (p.nombre_completo || "").trim().split(" ");
+      lastName = parts[0] || "Ciudadano";
+      firstName = parts.slice(1).join(" ") || "";
+    }
+
+    // 3. Crear en la tabla Person (usando el DNI como ID para compatibilidad de rutas)
+    person = await prisma.person.create({
+      data: {
+        id: p.dni,
+        dni: p.dni,
+        firstName,
+        lastName,
+        address: p.direccion || (p.barrio ? `Barrio ${p.barrio}` : "Tres de Febrero"),
+        phone: p.telefono || null,
+        email: p.email || null,
+        gender: p.genero || null,
+      }
+    });
+
+    return person;
+  }
+
+  return null;
+}
+
 export async function getPaginatedPeople(options: GetPeopleOptions = {}): Promise<PaginatedPeopleResult> {
   const page = Math.max(1, Number(options.page) || 1);
   const limit = Math.max(1, Math.min(100, Number(options.limit) || 20));
@@ -323,7 +379,7 @@ export async function getPersonById(id: string) {
 
       const progs = (p.programas_activos || "").split("|").map((prog: string) => prog.trim()).filter(Boolean);
 
-      const cases = progs.map((progName: string, idx: number) => ({
+      const syntheticCases = progs.map((progName: string, idx: number) => ({
         id: `case-prog-${idx}`,
         title: `Asistencia: ${progName}`,
         description: `Programa social activo en padrón municipal de Tres de Febrero. Roles: ${p.roles || "Beneficiario"}`,
@@ -337,13 +393,29 @@ export async function getPersonById(id: string) {
         }
       }));
 
-      const interventions = partRows.map((part: any, idx: number) => ({
+      const syntheticInterventions = partRows.map((part: any, idx: number) => ({
         id: `part-${idx}`,
         title: part.programa,
         description: part.detalle_destacado || `Prestación registrada con rol: ${part.roles}`,
         date: new Date(),
         area: { name: part.programa }
       }));
+
+      // Fetch real Prisma cases, interventions, and documents if present
+      const prismaRecord = await prisma.person.findFirst({
+        where: { OR: [{ id: p.dni }, { dni: p.dni }] },
+        include: {
+          cases: { include: { area: true } },
+          interventions: { orderBy: { date: 'desc' } },
+          documents: true,
+        }
+      });
+
+      const realCases = prismaRecord?.cases || [];
+      const allCases = [...realCases, ...syntheticCases];
+      const realInterventions = prismaRecord?.interventions || [];
+      const allInterventions = [...realInterventions, ...syntheticInterventions];
+      const allDocuments = prismaRecord?.documents || [];
 
       return {
         id: p.dni,
@@ -363,9 +435,9 @@ export async function getPersonById(id: string) {
         programasActivos: progs,
         roles: p.roles || "Beneficiario",
         family: familyMembers.length > 0 ? { id: `fam-${p.dni}`, name: `Familia de ${lastName}`, members: familyMembers } : null,
-        cases,
-        interventions,
-        documents: [],
+        cases: allCases,
+        interventions: allInterventions,
+        documents: allDocuments,
         createdAt: new Date(),
         updatedAt: new Date()
       };
