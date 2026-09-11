@@ -18,6 +18,7 @@ import { Progress } from "@/components/ui/progress";
 import { OrderTimeline } from "./order-timeline";
 import { OrderAuditTimeline } from "./order-audit-timeline";
 import { OrderStatusActions } from "../order-status-actions";
+import { PrintOrderButton } from "./print-order-button";
 
 export default async function OrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -71,9 +72,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
         </div>
         <div className="flex items-center gap-2">
             <OrderStatusActions orderId={order.id} currentStatus={order.status} />
-            <Button className="bg-primary text-primary-foreground font-black text-xs uppercase tracking-widest px-6 rounded-xl">
-                Exportar PDF
-            </Button>
+            <PrintOrderButton />
         </div>
       </div>
 
