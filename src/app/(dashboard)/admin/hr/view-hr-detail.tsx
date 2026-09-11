@@ -262,8 +262,13 @@ export function ViewHRDetail({ agent }: { agent: any }) {
       )}
 
       <div className="pt-2 pb-6">
-        <Button variant="outline" className="w-full rounded-xl h-11 border-border font-bold hover:bg-accent text-xs">
-          Descargar Ficha del Legajo Digital (PDF)
+        <Button
+          variant="outline"
+          onClick={() => window.print()}
+          className="w-full rounded-xl h-11 border-border font-bold hover:bg-accent text-xs flex items-center justify-center gap-2"
+        >
+          <FileText className="h-4 w-4" />
+          Descargar Ficha del Legajo Digital (Imprimir / PDF)
         </Button>
       </div>
     </div>

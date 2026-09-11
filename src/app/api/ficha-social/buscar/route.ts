@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { auth } from "@/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -13,6 +14,11 @@ function cleanDni(input: string): string {
 }
 
 export async function GET(request: Request) {
+  const session = await auth();
+  if (!session?.user) {
+    return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+  }
+
   try {
     const { searchParams } = new URL(request.url);
     const rawDni = searchParams.get("dni") || "";

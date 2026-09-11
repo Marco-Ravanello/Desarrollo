@@ -32,12 +32,13 @@ async function main() {
     where: { email: 'admin@municipio.gob.ar' },
     update: {
       password: hashedPassword,
+      role: 'SUPERADMIN',
     },
     create: {
       email: 'admin@municipio.gob.ar',
       name: 'Administrador General',
       password: hashedPassword,
-      role: 'ADMIN_GENERAL',
+      role: 'SUPERADMIN',
       areaId: adminArea?.id,
     },
   });

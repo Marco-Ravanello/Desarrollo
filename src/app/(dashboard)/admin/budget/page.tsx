@@ -2,7 +2,7 @@ export const dynamic = "force-dynamic";
 
 import { getBudgetSummary } from "@/app/(dashboard)/admin/actions/budget-actions";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Wallet, TrendingUp, Coins, ExternalLink, Activity } from "lucide-react";
+import { Wallet, TrendingUp, Coins, ExternalLink, Activity, FileCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { BudgetEditDialog } from "@/app/(dashboard)/admin/budget/budget-edit-dialog";
@@ -43,10 +43,18 @@ export default async function BudgetPage() {
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
-      <div className="flex justify-between items-end">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-3xl font-black tracking-tight text-foreground">Gestión de Presupuesto</h2>
           <p className="text-muted-foreground text-base">Monitoreo y ejecución presupuestaria de las secretarías municipales.</p>
+        </div>
+
+        <div className="flex gap-2">
+          <Button asChild variant="outline" className="rounded-xl font-bold gap-2">
+            <Link href="/admin/agreements">
+              <FileCheck className="h-4 w-4 text-primary" /> Ver Convenios Institucionales
+            </Link>
+          </Button>
         </div>
       </div>
 

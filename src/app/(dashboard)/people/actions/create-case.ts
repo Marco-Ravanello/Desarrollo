@@ -1,6 +1,7 @@
 "use server";
 
 import { createCase } from "@/services/cases";
+import { ensurePersonInPrisma } from "@/services/people";
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
 import prisma from "@/lib/prisma";
@@ -16,8 +17,11 @@ export async function createCaseAction(formData: FormData) {
   const description = formData.get("description") as string;
 
   try {
+    const person = await ensurePersonInPrisma(personId);
+    if (!person) return { error: "No se encontró el ciudadano para asociar el caso" };
+
     const newCase = await createCase({
-      personId,
+      personId: person.id,
       areaId,
       title,
       description
@@ -40,10 +44,11 @@ export async function createCaseAction(formData: FormData) {
         admin.id,
         "Nuevo Caso Abierto",
         `Se ha registrado un nuevo caso: "${title}"`,
-        `/people/${personId}`
+        `/people/${person.id}`
       );
     }
 
+    revalidatePath(`/people/${person.id}`);
     revalidatePath(`/people/${personId}`);
     return { success: true };
   } catch (error) {

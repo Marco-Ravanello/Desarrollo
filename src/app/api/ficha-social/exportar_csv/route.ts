@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { auth } from "@/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -24,6 +25,11 @@ const PROGRAM_TO_COLUMN: Record<string, string> = {
 };
 
 export async function GET(request: Request) {
+  const session = await auth();
+  if (!session?.user) {
+    return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+  }
+
   try {
     const { searchParams } = new URL(request.url);
     const programasParam = searchParams.get("programas") || "";
@@ -34,15 +40,15 @@ export async function GET(request: Request) {
     const columns: string[] = [];
     requestedProgs.forEach((p) => {
       const col = PROGRAM_TO_COLUMN[p] || (Object.values(PROGRAM_TO_COLUMN).includes(p) ? p : null);
-      if (col) columns.push(col);
+      if (col && /^[a-zA-Z0-9_]+$/.test(col)) columns.push(col);
     });
 
     let whereClause = "1=1";
     if (columns.length > 0) {
       if (modo === "union") {
-        whereClause = `(${columns.map((c) => `${c} = 1`).join(" OR ")})`;
+        whereClause = `(${columns.map((c) => `"${c}" = 1`).join(" OR ")})`;
       } else {
-        whereClause = `(${columns.map((c) => `${c} = 1`).join(" AND ")})`;
+        whereClause = `(${columns.map((c) => `"${c}" = 1`).join(" AND ")})`;
       }
     }
 

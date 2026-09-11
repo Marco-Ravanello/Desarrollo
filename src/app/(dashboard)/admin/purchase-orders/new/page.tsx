@@ -1,9 +1,14 @@
 export const dynamic = "force-dynamic";
+
 import { getProviders } from "@/services/admin";
+import { getAreas } from "@/services/cases";
 import { CreatePurchaseOrderForm } from "./create-order-form";
 
 export default async function NewPurchaseOrderPage() {
-  const providers = await getProviders();
+  const [providers, areas] = await Promise.all([
+    getProviders(),
+    getAreas()
+  ]);
 
   return (
     <div className="space-y-6">
@@ -14,7 +19,7 @@ export default async function NewPurchaseOrderPage() {
         </p>
       </div>
 
-      <CreatePurchaseOrderForm providers={providers} />
+      <CreatePurchaseOrderForm providers={providers} areas={areas} />
     </div>
   );
 }

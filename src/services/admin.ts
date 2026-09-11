@@ -12,6 +12,7 @@ export const CreatePurchaseOrderItemSchema = z.object({
 
 export const CreatePurchaseOrderSchema = z.object({
   number: z.string(),
+  areaId: z.string().optional().nullable(),
   providerId: z.string().optional().nullable(),
   providerName: z.string().optional().nullable(),
   providerCuit: z.string().optional().nullable(),
@@ -108,6 +109,7 @@ export async function createPurchaseOrder(rawData: z.infer<typeof CreatePurchase
   return await prisma.purchaseOrder.create({
     data: {
       number: data.number,
+      areaId: data.areaId || null,
       providerId: data.providerId || null,
       providerName: data.providerName || null,
       providerCuit: data.providerCuit || null,

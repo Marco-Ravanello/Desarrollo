@@ -234,7 +234,7 @@ export default async function VehiclesPage() {
                         </div>
                       </TableCell>
                       <TableCell className="text-right">
-                        <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="flex justify-end gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                           <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" asChild>
                             <Link href={`/admin/vehicles/${v.id}`} title="Ver Historial">
                               <Clock className="h-4 w-4 text-muted-foreground" />
