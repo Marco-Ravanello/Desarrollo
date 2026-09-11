@@ -21,8 +21,11 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
 
   if (!caseData) notFound();
 
-  // Validar permiso para casos sensibles
-  if (caseData.area.name === "Violencia de Género") {
+  // Validar permiso para casos sensibles (Violencia de Género)
+  const isViolenceCase =
+    caseData.area.name === "Violencia de Género" ||
+    caseData.area.name.toLowerCase().includes("violencia");
+  if (isViolenceCase) {
     const canView = hasPermission(session.user.role as any, PERMISSIONS.VIEW_SENSITIVE_CASES);
     if (!canView) {
       return (
