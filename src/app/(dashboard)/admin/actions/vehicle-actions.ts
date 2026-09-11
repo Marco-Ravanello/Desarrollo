@@ -167,7 +167,7 @@ export async function createFuelRecordAction(formData: FormData) {
 
   const date = parseLocalDate(dateStr);
   const startOfMonth = new Date(date.getFullYear(), date.getMonth(), 1);
-  const endOfMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+  const endOfMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0, 23, 59, 59, 999);
 
   try {
     const vehicle = await prisma.vehicle.findUnique({

@@ -93,7 +93,7 @@ export async function ensurePersonInPrisma(personIdOrDni: string) {
 
 export async function getPaginatedPeople(options: GetPeopleOptions = {}): Promise<PaginatedPeopleResult> {
   const page = Math.max(1, Number(options.page) || 1);
-  const limit = Math.max(1, Math.min(100, Number(options.limit) || 20));
+  const limit = Math.max(1, Math.min(1000, Number(options.limit) || 20));
   const offset = (page - 1) * limit;
 
   let whereConditions: string[] = ["1=1"];
