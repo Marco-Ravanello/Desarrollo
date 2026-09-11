@@ -8,7 +8,6 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { createPurchaseOrderAction } from "../../actions/create-purchase-order";
-import { Combobox } from "@/components/ui/combobox";
 import { Plus, Trash2, Info } from "lucide-react";
 import dynamic from "next/dynamic";
 
@@ -16,11 +15,12 @@ const OCRScanner = dynamic(() => import("@/components/ocr/ocr-scanner").then(mod
   ssr: false,
 });
 
-export function CreatePurchaseOrderForm({ providers }: { providers: any[] }) {
+export function CreatePurchaseOrderForm({ providers, areas = [] }: { providers: any[]; areas?: any[] }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [orderData, setOrderData] = useState({
     number: "",
+    areaId: "",
     amount: "",
     providerId: "",
     providerName: "",
@@ -108,6 +108,7 @@ export function CreatePurchaseOrderForm({ providers }: { providers: any[] }) {
 
     setLoading(true);
     const formData = new FormData(e.currentTarget);
+    formData.append("areaId", orderData.areaId);
     formData.append("items", JSON.stringify(items));
 
     try {
@@ -148,6 +149,21 @@ export function CreatePurchaseOrderForm({ providers }: { providers: any[] }) {
                 value={orderData.number}
                 onChange={(e) => setOrderData({...orderData, number: e.target.value})}
               />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="areaId">Secretaría / Área Solicitante</Label>
+              <select
+                id="areaId"
+                name="areaId"
+                value={orderData.areaId}
+                onChange={(e) => setOrderData({ ...orderData, areaId: e.target.value })}
+                className="w-full flex h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                <option value="">Seleccione un área...</option>
+                {areas.map((area: any) => (
+                  <option key={area.id} value={area.id}>{area.name}</option>
+                ))}
+              </select>
             </div>
             <div className="space-y-2">
               <Label htmlFor="providerNumber">N° de Proveedor</Label>

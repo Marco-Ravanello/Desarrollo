@@ -8,6 +8,7 @@ import { revalidatePath } from "next/cache";
 export async function createPurchaseOrderAction(formData: FormData) {
   const session = await auth();
   const number = formData.get("number") as string;
+  const areaId = formData.get("areaId") as string;
   const providerId = formData.get("providerId") as string;
   const providerName = formData.get("providerName") as string;
   const providerCuit = formData.get("providerCuit") as string;
@@ -28,6 +29,7 @@ export async function createPurchaseOrderAction(formData: FormData) {
   try {
     const order = await createPurchaseOrder({
       number,
+      areaId: areaId || null,
       providerId,
       providerName,
       providerCuit,
@@ -46,6 +48,8 @@ export async function createPurchaseOrderAction(formData: FormData) {
     }
 
     revalidatePath("/admin/purchase-orders");
+    revalidatePath("/admin/budget");
+    revalidatePath("/dashboard");
     return { success: true, id: order.id };
   } catch (error: any) {
     if (error.code === 'P2002') {
