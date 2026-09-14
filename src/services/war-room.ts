@@ -14,8 +14,15 @@ function formatRelativeTime(date: Date) {
 
 export async function getWarRoomData() {
   try {
+    let totalFamilies = 0;
+    try {
+      const padronCountRes: any[] = await prisma.$queryRawUnsafe(`SELECT COUNT(*)::int as total FROM padron_unificado;`);
+      totalFamilies = padronCountRes[0]?.total || 0;
+    } catch (e) {
+      totalFamilies = await prisma.person.count().catch(() => 0);
+    }
+
     const [
-      totalFamilies,
       activeCriticalCases,
       resolvedToday,
       activeVehicles,
@@ -25,7 +32,6 @@ export async function getWarRoomData() {
       areasWithCases,
       supplies
     ] = await Promise.all([
-      prisma.person.count().catch(() => 0),
       prisma.case.count({
         where: {
           priority: { in: ['URGENTE', 'ALTA'] },
@@ -64,7 +70,7 @@ export async function getWarRoomData() {
       ? `$ ${budgetTotal.toLocaleString("es-AR")}`
       : "$ 0";
 
-    let emergencyStockPercent = 85;
+    let emergencyStockPercent = 0;
     if (supplies.length > 0) {
       const totalStock = supplies.reduce((acc, item) => acc + item.stock, 0);
       const totalMin = supplies.reduce((acc, item) => acc + item.minStock, 0);
@@ -82,10 +88,10 @@ export async function getWarRoomData() {
       status: c.status
     }));
 
-    const totalActiveCasesAll = areasWithCases.reduce((acc, a) => acc + a._count.cases, 0) || 1;
+    const totalActiveCasesAll = areasWithCases.reduce((acc, a) => acc + a._count.cases, 0);
     const areaStatus = areasWithCases.map((a) => {
       const activeCount = a._count.cases;
-      const percentage = Math.min(100, Math.max(15, Math.round((activeCount / totalActiveCasesAll) * 100) + 40));
+      const percentage = totalActiveCasesAll > 0 ? Math.round((activeCount / totalActiveCasesAll) * 100) : 0;
       return {
         id: a.id,
         name: a.name,
@@ -100,7 +106,7 @@ export async function getWarRoomData() {
       activeCriticalCases,
       resolvedToday,
       activeVehicles,
-      totalVehicles: totalVehicles || 24,
+      totalVehicles,
       emergencyStockPercent,
       committedBudgetFormatted,
       territorialAlerts,

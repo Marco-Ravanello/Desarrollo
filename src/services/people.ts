@@ -174,11 +174,7 @@ export async function getPaginatedPeople(options: GetPeopleOptions = {}): Promis
           longitude: r.longitude,
           programasActivos: progs,
           casesCount: r.cantidad_programas || progs.length,
-          cases: progs.map((prog: string, idx: number) => ({
-            id: `prog-${r.dni}-${idx}`,
-            areaId: prog,
-            area: { id: prog, name: prog }
-          })),
+          cases: [],
           _count: {
             cases: r.cantidad_programas || progs.length
           },
@@ -379,20 +375,6 @@ export async function getPersonById(id: string) {
 
       const progs = (p.programas_activos || "").split("|").map((prog: string) => prog.trim()).filter(Boolean);
 
-      const syntheticCases = progs.map((progName: string, idx: number) => ({
-        id: `case-prog-${idx}`,
-        title: `Asistencia: ${progName}`,
-        description: `Programa social activo en padrón municipal de Tres de Febrero. Roles: ${p.roles || "Beneficiario"}`,
-        status: "ACTIVO",
-        priority: "MEDIA",
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        area: {
-          id: `area-${idx}`,
-          name: progName
-        }
-      }));
-
       const syntheticInterventions = partRows.map((part: any, idx: number) => ({
         id: `part-${idx}`,
         title: part.programa,
@@ -401,18 +383,30 @@ export async function getPersonById(id: string) {
         area: { name: part.programa }
       }));
 
-      // Fetch real Prisma cases, interventions, and documents if present
+      // Fetch real Prisma cases, interventions, and documents
+      const realCases = await prisma.case.findMany({
+        where: {
+          OR: [
+            { personId: p.dni },
+            { person: { dni: p.dni } }
+          ]
+        },
+        include: {
+          area: true,
+          interventions: { orderBy: { date: 'desc' } },
+          documents: true
+        },
+        orderBy: { updatedAt: 'desc' }
+      });
+
       const prismaRecord = await prisma.person.findFirst({
         where: { OR: [{ id: p.dni }, { dni: p.dni }] },
         include: {
-          cases: { include: { area: true } },
           interventions: { orderBy: { date: 'desc' } },
           documents: true,
         }
       });
 
-      const realCases = prismaRecord?.cases || [];
-      const allCases = [...realCases, ...syntheticCases];
       const realInterventions = prismaRecord?.interventions || [];
       const allInterventions = [...realInterventions, ...syntheticInterventions];
       const allDocuments = prismaRecord?.documents || [];
@@ -435,7 +429,7 @@ export async function getPersonById(id: string) {
         programasActivos: progs,
         roles: p.roles || "Beneficiario",
         family: familyMembers.length > 0 ? { id: `fam-${p.dni}`, name: `Familia de ${lastName}`, members: familyMembers } : null,
-        cases: allCases,
+        cases: realCases,
         interventions: allInterventions,
         documents: allDocuments,
         createdAt: new Date(),
@@ -462,7 +456,14 @@ export async function getPeopleStats() {
     const countRes: any[] = await prisma.$queryRawUnsafe(
       `SELECT COUNT(*)::int as total FROM padron_unificado;`
     );
-    const total = countRes[0]?.total || 0;
+    const total = countRes[0]?.total || await prisma.person.count();
+
+    const avgRes: any[] = await prisma.$queryRawUnsafe(
+      `SELECT ROUND(AVG(NULLIF(regexp_replace(edad_aprox, '[^0-9]', '', 'g'), '')::numeric))::int as avg_age
+       FROM padron_unificado
+       WHERE edad_aprox IS NOT NULL AND edad_aprox != '';`
+    );
+    const avgAge = avgRes[0]?.avg_age || 0;
 
     const topBarrioRes: any[] = await prisma.$queryRawUnsafe(
       `SELECT COALESCE(NULLIF(barrio, ''), 'Tres de Febrero') as barrio, COUNT(*)::int as cant
@@ -471,18 +472,19 @@ export async function getPeopleStats() {
        ORDER BY cant DESC
        LIMIT 1;`
     );
-    const topArea = topBarrioRes[0]?.barrio || "Desarrollo Humano";
+    const topArea = topBarrioRes[0]?.barrio || "Tres de Febrero";
 
     return {
-      total: total > 0 ? total : await prisma.person.count(),
-      avgAge: 33,
-      topArea: `${topArea}`
+      total,
+      avgAge,
+      topArea
     };
   } catch (err) {
+    const fallbackTotal = await prisma.person.count().catch(() => 0);
     return {
-      total: await prisma.person.count(),
+      total: fallbackTotal,
       avgAge: 0,
-      topArea: "Desarrollo Humano"
+      topArea: "Tres de Febrero"
     };
   }
 }

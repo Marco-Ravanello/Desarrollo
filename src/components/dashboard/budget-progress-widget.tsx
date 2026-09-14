@@ -11,10 +11,7 @@ import {
   CheckCircle2,
   ChevronDown,
   ChevronUp,
-  ExternalLink,
   Building2,
-  PieChart,
-  Zap,
   ArrowUpRight
 } from "lucide-react";
 import Link from "next/link";
@@ -26,15 +23,15 @@ interface BudgetProgressWidgetProps {
 }
 
 export function BudgetProgressWidget({
-  executedAmount = 14850000,
-  totalBudget = 60000000,
+  executedAmount = 0,
+  totalBudget = 0,
   areas = []
 }: BudgetProgressWidgetProps) {
   const [isExpanded, setIsExpanded] = React.useState(false);
 
-  const effectiveBudget = totalBudget > 0 ? totalBudget : 60000000;
+  const effectiveBudget = totalBudget;
   const remainingBudget = Math.max(0, effectiveBudget - executedAmount);
-  const percentage = Math.min(100, Math.round((executedAmount / effectiveBudget) * 100));
+  const percentage = effectiveBudget > 0 ? Math.min(100, Math.round((executedAmount / effectiveBudget) * 100)) : 0;
 
   // Compute burn rate (ritmo de gasto proyectado mensual o consumo diario)
   const daysInYear = 365;
@@ -90,16 +87,6 @@ export function BudgetProgressWidget({
   };
 
   const StatusIcon = colorStyle.icon;
-
-  // Compute area metrics if not supplied or empty
-  const defaultAreaAllocations = areas.length > 0
-    ? areas
-    : [
-        { name: "Desarrollo Social & Hábitat", annualBudget: 22000000, executedBudget: 6200000 },
-        { name: "Niñez, Adolescencia y Familia", annualBudget: 15000000, executedBudget: 3800000 },
-        { name: "Asistencia contra Violencia de Género", annualBudget: 12000000, executedBudget: 2900000 },
-        { name: "Coordinación Operativa & Logística", annualBudget: 11000000, executedBudget: 1950000 }
-      ];
 
   return (
     <Card className="bg-card/60 backdrop-blur-md border border-white/[0.06] shadow-xl overflow-hidden transition-all duration-300">
@@ -243,34 +230,42 @@ export function BudgetProgressWidget({
               </Link>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {defaultAreaAllocations.map((a: any, idx: number) => {
-                const areaAnnual = Number(a.annualBudget || 0);
-                const areaExecuted = Number(a.executedBudget || 0);
-                const areaPercent = areaAnnual > 0 ? Math.min(100, Math.round((areaExecuted / areaAnnual) * 100)) : 0;
+            {areas && areas.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {areas.map((a: any, idx: number) => {
+                  const areaAnnual = Number(a.annualBudget || 0);
+                  const areaExecuted = Number(a.executedBudget || 0);
+                  const areaPercent = areaAnnual > 0 ? Math.min(100, Math.round((areaExecuted / areaAnnual) * 100)) : 0;
 
-                return (
-                  <div key={a.name || idx} className="p-3.5 rounded-2xl bg-muted/30 border border-border/40 space-y-2">
-                    <div className="flex items-center justify-between text-xs font-bold">
-                      <span className="text-foreground truncate max-w-[200px]">{a.name}</span>
-                      <span className="font-mono text-emerald-400">{areaPercent}%</span>
-                    </div>
+                  return (
+                    <div key={a.name || idx} className="p-3.5 rounded-2xl bg-muted/30 border border-border/40 space-y-2">
+                      <div className="flex items-center justify-between text-xs font-bold">
+                        <span className="text-foreground truncate max-w-[200px]">{a.name}</span>
+                        <span className="font-mono text-emerald-400">{areaPercent}%</span>
+                      </div>
 
-                    <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-primary rounded-full transition-all duration-500"
-                        style={{ width: `${areaPercent}%` }}
-                      />
-                    </div>
+                      <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-primary rounded-full transition-all duration-500"
+                          style={{ width: `${areaPercent}%` }}
+                        />
+                      </div>
 
-                    <div className="flex justify-between items-center text-[10px] text-muted-foreground font-mono">
-                      <span>Ejecutado: {formatCurrency(areaExecuted)}</span>
-                      <span>Partida: {formatCurrency(areaAnnual)}</span>
+                      <div className="flex justify-between items-center text-[10px] text-muted-foreground font-mono">
+                        <span>Ejecutado: {formatCurrency(areaExecuted)}</span>
+                        <span>Partida: {formatCurrency(areaAnnual)}</span>
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="p-4 rounded-2xl bg-muted/20 border border-border/40 text-center">
+                <p className="text-xs font-medium text-muted-foreground">
+                  No se han registrado partidas presupuestarias por secretaría en el sistema.
+                </p>
+              </div>
+            )}
           </div>
         )}
       </CardContent>
