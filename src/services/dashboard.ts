@@ -133,10 +133,9 @@ export async function getDashboardStats(filters?: { from: Date; to: Date }) {
       });
 
       // Enrich areas with annualBudget and executedBudget
-      const defaultBudgetPerArea = 60000000 / Math.max(areas.length, 1);
-      areas = areas.map((a, idx) => {
-        const annual = Number(a.annualBudget || 0) > 0 ? Number(a.annualBudget) : defaultBudgetPerArea;
-        const executed = orderMap.get(a.id) || (annual * (0.2 + (idx * 0.08) % 0.4));
+      areas = areas.map((a) => {
+        const annual = Number(a.annualBudget || 0);
+        const executed = orderMap.get(a.id) || 0;
         return {
           ...a,
           annualBudget: annual,
@@ -191,14 +190,6 @@ export async function getDashboardStats(filters?: { from: Date; to: Date }) {
       totalBudget = Number(totalBudgetAgg._sum.annualBudget || 0);
     } catch (e) {}
 
-    // Ensure reference budget baseline ($60,000,000 ARS)
-    if (totalBudget < 60000000) {
-      totalBudget = 60000000;
-    }
-    if (executedAmount === 0) {
-      executedAmount = 14850000;
-    }
-
     let trends: any[] = [];
     try {
       trends = await getTrendData();
@@ -248,8 +239,8 @@ export async function getDashboardStats(filters?: { from: Date; to: Date }) {
       todayTasks: 0,
       criticalCases: 0,
       peopleLocations: [],
-      executedAmount: 14850000,
-      totalBudget: 60000000,
+      executedAmount: 0,
+      totalBudget: 0,
       areas: [],
       vehicleStats: { total: 0, occupied: 0, available: 0 },
       trends: getFallbackTrendData()
@@ -267,14 +258,11 @@ function getFallbackTrendData() {
     last6Months.push(monthNames[idx]);
   }
 
-  const baseEntered = [42, 58, 65, 84, 92, 110];
-  const baseResolved = [35, 48, 56, 72, 85, 98];
-
-  return last6Months.map((m, idx) => ({
+  return last6Months.map((m) => ({
     month: m,
-    ingresados: baseEntered[idx] || 50,
-    resueltos: baseResolved[idx] || 40,
-    casos: baseEntered[idx] || 50
+    ingresados: 0,
+    resueltos: 0,
+    casos: 0
   }));
 }
 
