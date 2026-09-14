@@ -101,7 +101,11 @@ export function DashboardCharts({
   const totalCasesCombined = (activeCases || 0) + (resolvedCasesCount || 0);
   const resolutionRatePercent = totalCasesCombined > 0
     ? Math.round((resolvedCasesCount / totalCasesCombined) * 100)
-    : 78;
+    : 0;
+
+  const fleetPercent = vehicleStats.total > 0
+    ? Math.round((vehicleStats.available / vehicleStats.total) * 100)
+    : 0;
 
   const totalOrdersCount = poStatusData.reduce((acc, curr) => acc + (curr.value || 0), 0);
   const formattedExecutedAmount = (executedAmount / 1000000).toFixed(2);
@@ -274,11 +278,11 @@ export function DashboardCharts({
                   <Car className="h-3.5 w-3.5 text-blue-500" /> Disponibilidad de Flota
                 </span>
                 <span className="text-blue-400 font-mono text-sm font-black">
-                  {vehicleStats.total > 0 ? Math.round((vehicleStats.available / vehicleStats.total) * 100) : 100}%
+                  {fleetPercent}%
                 </span>
               </div>
               <Progress
-                value={vehicleStats.total > 0 ? (vehicleStats.available / vehicleStats.total) * 100 : 100}
+                value={fleetPercent}
                 className="h-2.5 rounded-full bg-muted"
               />
               <p className="text-[10px] text-muted-foreground">

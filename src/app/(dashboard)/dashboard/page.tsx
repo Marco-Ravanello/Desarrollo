@@ -105,7 +105,7 @@ export default async function DashboardPage() {
       icon: Users,
       color: "text-blue-400",
       iconBg: "bg-blue-500/15 ring-1 ring-blue-500/20",
-      trend: "+2% este mes",
+      trend: "Padrón Unificado Activo",
       trendColor: "text-emerald-400",
     },
     {
