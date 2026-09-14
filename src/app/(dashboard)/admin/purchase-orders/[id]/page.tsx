@@ -210,31 +210,14 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
           {/* Attachments Section */}
           <Card className="rounded-3xl border border-border/60 shadow-xs bg-card text-card-foreground overflow-hidden">
             <CardHeader className="bg-muted/30 border-b border-border/40">
-                <CardTitle className="text-xs font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2">
-                    <Paperclip className="h-4 w-4" /> Documentación Adjunta
-                </CardTitle>
+              <CardTitle className="text-xs font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+                <Paperclip className="h-4 w-4" /> Documentación Adjunta
+              </CardTitle>
             </CardHeader>
-            <CardContent className="p-0">
-                <div className="divide-y divide-border/40">
-                    <div className="p-4 flex items-center justify-between hover:bg-muted/20 transition-colors cursor-pointer">
-                        <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 rounded-xl bg-rose-500/10 text-rose-500 flex items-center justify-center">
-                                <FileText className="h-5 w-5" />
-                            </div>
-                            <div>
-                                <p className="text-xs font-black text-foreground">Orden_Firmada_{order.number}.pdf</p>
-                                <p className="text-[10px] text-muted-foreground font-bold uppercase">PDF • 2.4 MB • 12/05/2026</p>
-                            </div>
-                        </div>
-                        <Button variant="ghost" size="sm" className="text-primary font-bold text-[10px]">DESCARGAR</Button>
-                    </div>
-                    <div className="p-4 flex items-center justify-center border-dashed border-2 border-border/60 m-4 rounded-2xl bg-muted/20">
-                        <Button variant="ghost" className="text-muted-foreground flex flex-col gap-1 h-auto py-4">
-                            <PlusIcon className="h-5 w-5" />
-                            <span className="text-[10px] font-black uppercase">Subir Documento (Factura, Remito, etc)</span>
-                        </Button>
-                    </div>
-                </div>
+            <CardContent className="p-6 text-center text-muted-foreground">
+              <FileText className="h-8 w-8 mx-auto mb-2 opacity-30" />
+              <p className="text-xs font-bold">No se registran documentos digitalizados adjuntos para esta orden.</p>
+              <p className="text-[10px] text-muted-foreground mt-1">Los comprobantes de entrega, facturas y remitos cargados aparecerán en esta sección.</p>
             </CardContent>
           </Card>
         </div>
@@ -334,12 +317,4 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
       </div>
     </div>
   );
-}
-
-function PlusIcon({ className }: { className?: string }) {
-    return (
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className={className}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-        </svg>
-    )
 }
