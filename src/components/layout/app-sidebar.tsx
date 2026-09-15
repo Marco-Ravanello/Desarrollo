@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { LayoutDashboard, Users, ShieldAlert, ClipboardList, LogOut, Briefcase, Car, UserCog, ChevronLeft, ChevronRight, CheckCircle2, MapPin, Wallet, Building2, FileSpreadsheet, Calendar, Sparkles, CloudRain, Settings, Tv, Network, HeartHandshake } from "lucide-react";
+import { MunicipalCrest } from "@/components/ui/municipal-crest";
 import { useSession, signOut } from "next-auth/react";
 import { getAreaNavColor, getAreaBgColor } from "@/lib/area-theme";
 import { Button } from "@/components/ui/button";
@@ -83,18 +84,26 @@ export function AppSidebar() {
 
       <div className={`p-5 space-y-4 shrink-0 ${isCollapsed ? "px-3" : ""}`}>
         <div className={`text-2xl font-bold flex items-center gap-2.5 ${isCollapsed ? "justify-center" : ""}`}>
-          <div className={`bg-primary p-2 rounded-2xl text-white shadow-lg shadow-primary/20 shrink-0`}>
-            <Building2 className="h-6 w-6" />
+          <div className="h-11 w-11 rounded-2xl overflow-hidden shrink-0 border border-primary/20 bg-white p-1 shadow-sm flex items-center justify-center">
+            <MunicipalCrest className="h-full w-full" />
           </div>
-          {!isCollapsed && <span className="tracking-tight truncate font-black text-primary text-xl">MuniGestión</span>}
+          {!isCollapsed && (
+            <div className="flex flex-col min-w-0 leading-tight">
+              <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground truncate">
+                TRES DE FEBRERO
+              </span>
+              <span className="tracking-tight truncate font-black text-[#163C68] dark:text-blue-400 text-lg font-heading">
+                MuniGestión <span className="text-[#F69321]">3F</span>
+              </span>
+            </div>
+          )}
         </div>
-
         {!isCollapsed && <GlobalSearch />}
       </div>
 
       <nav className="flex-1 min-h-0 px-3 space-y-1 overflow-y-auto custom-scrollbar">
         <div className="pb-2">
-          {!isCollapsed && <p className="px-3 text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Principal</p>}
+          {!isCollapsed && <p className="px-3 text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-2 font-heading">Principal</p>}
           {navigation.map((item) => {
             const isActive = pathname === item.url || (item.url !== "/dashboard" && pathname.startsWith(item.url));
             return (
@@ -105,10 +114,10 @@ export function AppSidebar() {
                 className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all group mb-1 ${
                   isCollapsed ? "justify-center" : ""
                 } ${
-                  isActive ? "bg-primary text-primary-foreground shadow-sm font-bold" : "text-muted-foreground hover:text-foreground hover:bg-muted/60 font-medium"
+                  isActive ? "bg-[#163C68] text-white shadow-sm font-bold border-l-4 border-[#F69321]" : "text-muted-foreground hover:text-foreground hover:bg-muted/60 font-medium"
                 }`}
               >
-                <item.icon className={`h-5 w-5 shrink-0 ${isActive ? "text-primary-foreground" : item.color} group-hover:text-primary transition-colors`} />
+                <item.icon className={`h-5 w-5 shrink-0 ${isActive ? "text-white" : item.color} group-hover:text-primary transition-colors`} />
                 {!isCollapsed && <span className="text-sm truncate">{item.title}</span>}
               </Link>
             );
@@ -116,7 +125,7 @@ export function AppSidebar() {
         </div>
 
         <div className="pt-3 pb-2">
-          {!isCollapsed && <p className="px-3 text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Administración</p>}
+          {!isCollapsed && <p className="px-3 text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-2 font-heading">Administración</p>}
           {adminNav.map((item) => {
             const isActive = pathname.startsWith(item.url);
             return (
@@ -127,7 +136,7 @@ export function AppSidebar() {
                 className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all group mb-1 ${
                   isCollapsed ? "justify-center" : ""
                 } ${
-                  isActive ? "bg-primary/10 text-primary font-bold dark:bg-primary/20" : "text-muted-foreground hover:text-foreground hover:bg-muted/60 font-medium"
+                  isActive ? "bg-primary/10 text-primary font-bold dark:bg-primary/20 border-l-4 border-[#F69321]" : "text-muted-foreground hover:text-foreground hover:bg-muted/60 font-medium"
                 }`}
               >
                 <item.icon className={`h-5 w-5 shrink-0 ${isActive ? "text-primary" : "text-muted-foreground"} group-hover:text-primary transition-colors`} />
