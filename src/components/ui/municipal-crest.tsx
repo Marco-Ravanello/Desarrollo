@@ -24,9 +24,9 @@ export function MunicipalCrest({
             return;
           }
         }
-        setCustomLogo(null);
+        setCustomLogo("/logo-3f.jpg");
       } catch (e) {
-        setCustomLogo(null);
+        setCustomLogo("/logo-3f.jpg");
       }
     };
 
@@ -59,12 +59,12 @@ export function MunicipalCrest({
     >
       <defs>
         <linearGradient id="crestGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#2563eb" />
-          <stop offset="100%" stopColor="#1e40af" />
+          <stop offset="0%" stopColor="#163C68" />
+          <stop offset="100%" stopColor="#0E2A49" />
         </linearGradient>
         <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#f59e0b" />
-          <stop offset="100%" stopColor="#d97706" />
+          <stop offset="0%" stopColor="#F69321" />
+          <stop offset="100%" stopColor="#DB7A0B" />
         </linearGradient>
       </defs>
       <path

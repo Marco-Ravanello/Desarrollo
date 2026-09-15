@@ -43,21 +43,24 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950 items-center justify-center p-4 relative overflow-hidden">
-      <div className="absolute -top-32 -left-32 w-96 h-96 bg-blue-600/20 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute -bottom-32 -right-32 w-96 h-96 bg-amber-500/15 rounded-full blur-3xl pointer-events-none" />
+    <div className="flex min-h-screen bg-gradient-to-br from-[#0E2A49] via-[#163C68] to-[#000D1D] items-center justify-center p-4 relative overflow-hidden">
+      <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#163C68] via-[#163C68] to-[#F69321]" />
+      <div className="absolute -top-32 -left-32 w-96 h-96 bg-[#163C68]/40 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute -bottom-32 -right-32 w-96 h-96 bg-[#F69321]/20 rounded-full blur-3xl pointer-events-none" />
 
       <div className="w-full max-w-md relative z-10 space-y-6">
         <div className="flex flex-col items-center text-center space-y-3">
-          <div className="p-4 bg-white/10 dark:bg-card/60 backdrop-blur-xl rounded-3xl border border-white/15 shadow-2xl">
+          <div className="p-3 bg-white rounded-3xl border border-white/20 shadow-2xl">
             <MunicipalCrest className="h-16 w-16" />
           </div>
           <div>
-            <p className="text-[11px] font-black uppercase tracking-[0.25em] text-blue-400">
+            <p className="text-[11px] font-black uppercase tracking-[0.25em] text-[#F6BF80]">
               MUNICIPALIDAD DE TRES DE FEBRERO • REPÚBLICA ARGENTINA
             </p>
-            <h1 className="text-3xl font-black text-white tracking-tight mt-1">MuniGestión</h1>
-            <p className="text-xs text-slate-400 font-semibold mt-0.5">
+            <h1 className="text-3xl font-black text-white tracking-tight mt-1 font-heading">
+              MuniGestión <span className="text-[#F69321]">3F</span>
+            </h1>
+            <p className="text-xs text-[#B8D0EB] font-semibold mt-0.5">
               Secretaría de Desarrollo Humano y Hábitat
             </p>
           </div>
@@ -65,7 +68,7 @@ export default function LoginPage() {
 
         <Card className="border border-white/10 shadow-2xl bg-card/90 backdrop-blur-xl rounded-[2rem] text-card-foreground">
           <CardHeader className="space-y-1 pb-4">
-            <CardTitle className="text-lg font-black tracking-tight">Acceso Institucional</CardTitle>
+            <CardTitle className="text-lg font-black tracking-tight font-heading">Acceso Institucional</CardTitle>
             <CardDescription className="text-xs">
               Ingrese con sus credenciales de agente o funcionario municipal.
             </CardDescription>
@@ -120,7 +123,7 @@ export default function LoginPage() {
           </CardContent>
         </Card>
 
-        <div className="flex items-center justify-center gap-2 text-[11px] font-semibold text-slate-400/90 text-center">
+        <div className="flex items-center justify-center gap-2 text-[11px] font-semibold text-[#B8D0EB]/90 text-center">
           <ShieldCheck className="h-4 w-4 text-emerald-400 shrink-0" />
           <span>Servidor Seguro • Cifrado de Datos de Extremo a Extremo</span>
         </div>

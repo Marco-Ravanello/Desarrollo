@@ -4,53 +4,66 @@
 
 @layer base {
   :root {
-    --background: 210 40% 98%;
-    --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    /* Canvas & Superficies Oficiales */
+    --background: 0 0% 99.2%;        /* #FDFDFD */
+    --foreground: 213 100% 6%;       /* #000D1D */
+    --card: 0 0% 100%;               /* #FFFFFF */
+    --card-foreground: 213 100% 6%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    /* Municipal Blue #004a80 */
-    --primary: 205 100% 25%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    /* Municipal Orange #f5a623 */
-    --accent: 37 91% 55%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 32.1% 91.4%;
-    --input: 214.3 32.1% 91.4%;
-    --ring: 205 100% 25%;
+    --popover-foreground: 213 100% 6%;
+
+    /* 3F Primario: Azul Primario #163C68 */
+    --primary: 212 65% 25%;
+    --primary-foreground: 0 0% 100%;
+
+    /* 3F Secundario: Azul Claro #E0EEFF */
+    --secondary: 213 100% 94%;
+    --secondary-foreground: 212 65% 25%;
+
+    /* Neutros */
+    --muted: 0 0% 97.3%;              /* #F8F8F8 */
+    --muted-foreground: 212 28% 40%;  /* #2F4054 */
+
+    /* 3F Acento: Naranja Institucional #F69321 */
+    --accent: 32 93% 55%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 68% 48%;         /* #DB3D3D */
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 0 0% 90%;               /* #E5E5E5 */
+    --input: 0 0% 90%;
+    --ring: 212 65% 25%;
     --radius: 0.75rem;
   }
 
   .dark {
-    /* Beautiful deep blue-slate/graphite background color #0B0F19 */
-    --background: 223 39% 7%;
-    --foreground: 210 40% 98%;
-    /* Sleek card color slightly lighter #131B2E */
-    --card: 223 41% 12%;
-    --card-foreground: 210 40% 98%;
-    --popover: 223 41% 12%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 205 100% 45%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 223 30% 18%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 223 30% 18%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 37 91% 45%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    /* Fine elegant border color */
-    --border: 223 30% 18%;
-    --input: 223 30% 18%;
-    --ring: 205 100% 45%;
+    /* 3F Azul Oscuro #0E2A49 */
+    --background: 211 68% 10%;
+    --foreground: 212 58% 90%;        /* #B8D0EB */
+    --card: 211 68% 14%;              /* #0E2A49 */
+    --card-foreground: 212 58% 95%;
+    --popover: 211 68% 14%;
+    --popover-foreground: 212 58% 95%;
+
+    --primary: 212 70% 55%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 211 60% 20%;
+    --secondary-foreground: 212 58% 95%;
+
+    --muted: 211 50% 18%;
+    --muted-foreground: 212 30% 70%;
+
+    --accent: 32 93% 55%;             /* #F69321 */
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 62% 40%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 211 50% 20%;
+    --input: 211 50% 20%;
+    --ring: 32 93% 55%;
   }
 }
 
