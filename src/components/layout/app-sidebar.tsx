@@ -33,6 +33,7 @@ export function AppSidebar() {
   const navigation = [
     { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard, color: "text-blue-500" },
     { title: "Ficha Social 360°", url: "/ficha-social", icon: Network, color: "text-indigo-500 font-bold" },
+    { title: "Expedientes", url: "/cases", icon: ClipboardList, color: "text-rose-500 font-bold" },
     { title: "Mapa Social", url: "/maps", icon: MapPin, color: "text-emerald-500" },
     { title: "Mis Tareas", url: "/tasks", icon: CheckCircle2, color: "text-amber-500" },
     { title: "Registro Único", url: "/people", icon: Users, color: "text-purple-500" },

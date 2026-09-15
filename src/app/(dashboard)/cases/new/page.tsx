@@ -25,16 +25,10 @@ export default async function NewCasePage({
   const areas = await getAreas();
 
   let preselectedPerson = null;
-
   if (personId) {
     preselectedPerson = await getPersonById(personId);
   } else if (dni) {
-    const raw = await prisma.person.findUnique({
-      where: { dni }
-    });
-    if (raw) {
-      preselectedPerson = await getPersonById(raw.id);
-    }
+    preselectedPerson = await getPersonById(dni);
   }
 
   const formattedPerson = preselectedPerson

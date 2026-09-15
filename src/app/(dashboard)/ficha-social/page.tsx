@@ -391,29 +391,6 @@ function FichaSocialContent() {
               </p>
             </div>
 
-            <div className="pt-4 border-t border-border/40 space-y-2">
-              <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                Ejemplos de consulta rápida para pruebas:
-              </p>
-              <div className="flex flex-wrap justify-center gap-2 pt-1">
-                {["34438385", "40123456", "38999888"].map((exampleDni) => (
-                  <Button
-                    key={exampleDni}
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      setSearchTerm(exampleDni);
-                      handleSearch(exampleDni);
-                    }}
-                    className="rounded-xl border-primary/30 hover:border-primary/60 hover:bg-primary/10 text-xs font-bold gap-1.5"
-                  >
-                    <Sparkles className="h-3.5 w-3.5 text-primary" />
-                    DNI {exampleDni}
-                  </Button>
-                ))}
-              </div>
-            </div>
           </div>
         </Card>
       ) : null}

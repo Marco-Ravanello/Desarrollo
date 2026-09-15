@@ -3,7 +3,7 @@
 import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
-import { getPeople } from "@/services/people";
+import { getPeople, ensurePersonInPrisma } from "@/services/people";
 
 export async function addCaseInterventionAction(caseId: string, description: string) {
   const session = await auth();
@@ -124,16 +124,13 @@ export async function createCentralizedCaseAction(input: CreateCentralizedCaseIn
   }
 
   try {
-    let person = await prisma.person.findUnique({
-      where: { dni: cleanDni }
-    });
-
+    let person = await ensurePersonInPrisma(cleanDni);
     if (!person) {
       person = await prisma.person.create({
         data: {
           dni: cleanDni,
-          firstName: input.firstName?.trim() || "Vecino",
-          lastName: input.lastName?.trim() || "S/D",
+          firstName: input.firstName?.trim() || "Ciudadano",
+          lastName: input.lastName?.trim() || "Registrado",
           address: input.address?.trim() || undefined,
           phone: input.phone?.trim() || undefined,
           email: input.email?.trim() || undefined

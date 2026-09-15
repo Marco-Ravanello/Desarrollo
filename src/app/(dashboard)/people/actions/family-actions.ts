@@ -57,12 +57,14 @@ export async function addFamilyMember(personId: string, memberDni: string) {
 export async function removeFromFamily(personId: string) {
   const session = await auth();
   if (!session?.user?.id) throw new Error("No autorizado");
-
-  await prisma.person.update({
-    where: { id: personId },
-    data: { familyId: null, isFamilyHead: false }
-  });
-
+  const person = await ensurePersonInPrisma(personId);
+  if (person) {
+    await prisma.person.update({
+      where: { id: person.id },
+      data: { familyId: null, isFamilyHead: false }
+    });
+    revalidatePath(`/people/${person.id}`);
+  }
   revalidatePath(`/people/${personId}`);
   return { success: true };
 }
