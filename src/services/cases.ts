@@ -139,3 +139,77 @@ export async function updateCaseStatus(id: string, status?: string, priority?: s
     data
   });
 }
+
+export interface GetCasesFilters {
+  query?: string;
+  areaId?: string;
+  status?: string;
+  priority?: string;
+  page?: number;
+  limit?: number;
+}
+
+export async function getAllCases(filters: GetCasesFilters = {}) {
+  const page = Math.max(1, filters.page || 1);
+  const limit = Math.max(1, Math.min(100, filters.limit || 20));
+  const skip = (page - 1) * limit;
+  const where: any = {};
+
+  if (filters.areaId && filters.areaId !== "all") {
+    where.areaId = filters.areaId;
+  }
+  if (filters.status && filters.status !== "all") {
+    where.status = filters.status;
+  }
+  if (filters.priority && filters.priority !== "all") {
+    where.priority = filters.priority;
+  }
+  if (filters.query && filters.query.trim()) {
+    const q = filters.query.trim();
+    where.OR = [
+      { title: { contains: q, mode: "insensitive" } },
+      { description: { contains: q, mode: "insensitive" } },
+      { person: { firstName: { contains: q, mode: "insensitive" } } },
+      { person: { lastName: { contains: q, mode: "insensitive" } } },
+      { person: { dni: { contains: q } } },
+    ];
+  }
+
+  const [cases, total, totalActive, totalUrgent, totalClosed] = await Promise.all([
+    prisma.case.findMany({
+      where,
+      include: {
+        person: true,
+        area: true,
+        interventions: {
+          orderBy: { date: "desc" },
+          take: 1,
+        },
+        _count: {
+          select: { interventions: true, documents: true },
+        },
+      },
+      orderBy: { updatedAt: "desc" },
+      skip,
+      take: limit,
+    }),
+    prisma.case.count({ where }),
+    prisma.case.count({ where: { status: { in: ["ABIERTO", "EN_PROCESO"] } } }),
+    prisma.case.count({ where: { priority: "URGENTE", status: { in: ["ABIERTO", "EN_PROCESO"] } } }),
+    prisma.case.count({ where: { status: "CERRADO" } }),
+  ]);
+
+  return {
+    cases,
+    total,
+    totalPages: Math.ceil(total / limit),
+    currentPage: page,
+    pageSize: limit,
+    stats: {
+      totalAll: total,
+      active: totalActive,
+      urgent: totalUrgent,
+      closed: totalClosed,
+    },
+  };
+}
