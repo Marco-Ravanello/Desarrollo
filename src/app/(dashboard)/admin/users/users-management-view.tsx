@@ -43,14 +43,17 @@ interface UsersManagementViewProps {
   areas: AreaItem[];
   deactivatedIds: string[];
   currentUserId: string;
+  autoOpenNew?: boolean;
 }
 
 export function UsersManagementView({
   users,
   areas,
   deactivatedIds,
-  currentUserId
+  currentUserId,
+  autoOpenNew = false
 }: UsersManagementViewProps) {
+  const [isCreateOpen, setIsCreateOpen] = useState(Boolean(autoOpenNew));
   const [searchQuery, setSearchQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState<string>("TODOS");
   const [statusFilter, setStatusFilter] = useState<"TODOS" | "ACTIVOS" | "INACTIVOS">("TODOS");
@@ -158,21 +161,21 @@ export function UsersManagementView({
         </div>
 
         <div className="flex items-center gap-2">
-          <Sheet>
+          <Sheet open={isCreateOpen} onOpenChange={setIsCreateOpen}>
             <SheetTrigger asChild>
-              <Button className="rounded-2xl h-11 px-5 font-bold text-xs uppercase tracking-wider bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20 gap-2">
+              <Button className="rounded-2xl h-11 px-5 font-bold text-xs uppercase tracking-wider bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20 gap-2 font-heading">
                 <Plus className="h-4 w-4" />
                 <span>Nuevo Usuario</span>
               </Button>
             </SheetTrigger>
             <SheetContent side="right" className="sm:max-w-md w-full bg-card border-l border-border/60 p-6 overflow-y-auto">
               <SheetHeader className="mb-4">
-                <SheetTitle className="text-xl font-black">Alta de Funcionario</SheetTitle>
+                <SheetTitle className="text-xl font-black font-heading">Alta de Funcionario</SheetTitle>
                 <SheetDescription className="text-xs">
                   Creación de credenciales para agentes de Tres de Febrero.
                 </SheetDescription>
               </SheetHeader>
-              <CreateUserForm areas={areas} />
+              <CreateUserForm areas={areas} onSuccess={() => setIsCreateOpen(false)} />
             </SheetContent>
           </Sheet>
         </div>

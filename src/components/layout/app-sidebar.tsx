@@ -3,6 +3,7 @@
 import * as React from "react";
 import { LayoutDashboard, Users, ShieldAlert, ClipboardList, LogOut, Briefcase, Car, UserCog, ChevronLeft, ChevronRight, CheckCircle2, MapPin, Wallet, Building2, FileSpreadsheet, Calendar, Sparkles, CloudRain, Settings, Tv, Network, HeartHandshake } from "lucide-react";
 import { MunicipalCrest } from "@/components/ui/municipal-crest";
+import { UserNav } from "./user-nav";
 import { useSession, signOut } from "next-auth/react";
 import { getAreaNavColor, getAreaBgColor } from "@/lib/area-theme";
 import { Button } from "@/components/ui/button";
@@ -51,9 +52,14 @@ export function AppSidebar() {
     { title: "Recursos Humanos", url: "/admin/hr", icon: UserCog, color: "text-slate-400" },
     { title: "Emergencia Climática", url: "/admin/emergency", icon: CloudRain, color: "text-amber-500 font-bold" },
     { title: "Configuración", url: "/admin/settings", icon: Settings, color: "text-slate-400" },
-    ...(user?.role === 'SUPERADMIN' ? [
+    ...(user?.role && (
+      user.role === 'SUPERADMIN' ||
+      user.role === 'DIRECCION_GENERAL' ||
+      user.role === 'ADMIN_GENERAL' ||
+      hasPermission(user.role as any, PERMISSIONS.MANAGE_USERS)
+    ) ? [
       { title: "Importar Datos", url: "/admin/interventions", icon: FileSpreadsheet, color: "text-slate-400" },
-      { title: "Usuarios", url: "/admin/users", icon: UserCog, color: "text-slate-400" },
+      { title: "Usuarios", url: "/admin/users", icon: UserCog, color: "text-slate-400 font-bold" },
     ] : []),
     ...(user?.role && hasPermission(user.role as any, PERMISSIONS.VIEW_AUDIT_LOGS) ? [
       { title: "Auditoría", url: "/admin/audit", icon: ClipboardList, color: "text-slate-400" }
@@ -165,22 +171,12 @@ export function AppSidebar() {
       </nav>
 
       <div className="p-3 border-t border-border/60 bg-muted/20 shrink-0">
-        <div className={`flex items-center gap-3 ${isCollapsed ? "justify-center" : "justify-between"}`}>
-          <div className="flex items-center gap-2.5 min-w-0">
-            <Avatar className="h-9 w-9 rounded-xl border border-border shrink-0">
-              <AvatarFallback className="bg-primary/10 text-primary font-bold text-xs">
-                {user?.name?.[0] || 'U'}
-              </AvatarFallback>
-            </Avatar>
-            {!isCollapsed && (
-              <div className="min-w-0 flex-1">
-                <p className="text-xs font-bold text-foreground truncate">{user?.name || "Usuario"}</p>
-                <p className="text-[10px] text-muted-foreground font-semibold uppercase truncate">{user?.role || "Agente"}</p>
-              </div>
-            )}
+        <div className={`flex items-center gap-2 ${isCollapsed ? "justify-center" : "justify-between"}`}>
+          <div className="min-w-0 flex-1">
+            <UserNav variant="sidebar" isCollapsed={isCollapsed} />
           </div>
           {!isCollapsed && (
-            <div className="flex items-center gap-1 shrink-0">
+            <div className="flex items-center gap-0.5 shrink-0">
               <ThemeToggle />
               <Button
                 variant="ghost"
