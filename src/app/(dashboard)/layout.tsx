@@ -2,6 +2,7 @@ import { AppSidebar } from "@/components/layout/app-sidebar";
 import { Providers } from "@/components/providers/session-provider";
 import { NotificationBell } from "@/components/layout/notification-bell";
 import { EmergencyHeaderWidget } from "@/components/emergency/emergency-header-widget";
+import { UserNav } from "@/components/layout/user-nav";
 import { MunicipalCrest } from "@/components/ui/municipal-crest";
 import { PrintHeader, PrintFooter } from "@/components/ui/print-layout";
 import { DashboardBreadcrumbs } from "@/components/layout/breadcrumbs";
@@ -55,6 +56,8 @@ export default function DashboardLayout({
 
               <EmergencyHeaderWidget />
               <NotificationBell />
+              <div className="h-6 w-px bg-border/60 mx-1 hidden sm:block" />
+              <UserNav variant="header" />
             </div>
           </header>
 

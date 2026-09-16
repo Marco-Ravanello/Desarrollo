@@ -21,7 +21,13 @@ const ROLE_LABELS: Record<Role, string> = {
   VIOLENCIA_GENERO: "VIOLENCIA_GENERO - Abordaje Confidencial de Casos"
 };
 
-export function CreateUserForm({ areas }: { areas: any[] }) {
+export function CreateUserForm({
+  areas,
+  onSuccess
+}: {
+  areas: any[];
+  onSuccess?: () => void;
+}) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
 
@@ -34,6 +40,7 @@ export function CreateUserForm({ areas }: { areas: any[] }) {
     if (res.success) {
       toast.success("Agente municipal registrado con éxito");
       (e.target as HTMLFormElement).reset();
+      if (onSuccess) onSuccess();
       router.refresh();
     } else {
       toast.error(res.error || "Error al crear el usuario");

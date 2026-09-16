@@ -8,16 +8,27 @@ import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { hasPermission, PERMISSIONS } from "@/lib/permissions";
 
-export default async function UsersPage() {
+export default async function UsersPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ new?: string; create?: string }>;
+}) {
   const session = await auth();
   if (!session?.user?.id) redirect("/login");
 
   const userRole = session.user.role;
-  const canManage = hasPermission(userRole, PERMISSIONS.MANAGE_USERS) || userRole === "SUPERADMIN";
+  const canManage =
+    hasPermission(userRole, PERMISSIONS.MANAGE_USERS) ||
+    userRole === "SUPERADMIN" ||
+    userRole === "DIRECCION_GENERAL" ||
+    userRole === "ADMIN_GENERAL";
 
   if (!canManage) {
     redirect("/dashboard");
   }
+
+  const { new: isNew, create } = await searchParams;
+  const autoOpenNew = Boolean(isNew === "true" || isNew === "1" || create === "true" || create === "1");
 
   const [users, areas, deactivatedIds] = await Promise.all([
     getUsers(),
@@ -31,6 +42,7 @@ export default async function UsersPage() {
       areas={areas as any}
       deactivatedIds={deactivatedIds}
       currentUserId={session.user.id}
+      autoOpenNew={autoOpenNew}
     />
   );
 }
