@@ -5,8 +5,19 @@ import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
 import bcrypt from "bcryptjs";
 import { Role } from "@prisma/client";
+import { hasPermission, PERMISSIONS } from "@/lib/permissions";
 
 const DEACTIVATED_KEY = "muni-deactivated-users";
+
+function canManageUsers(role?: string | null): boolean {
+  if (!role) return false;
+  return (
+    role === "SUPERADMIN" ||
+    role === "ADMIN_GENERAL" ||
+    role === "DIRECCION_GENERAL" ||
+    hasPermission(role as any, PERMISSIONS.MANAGE_USERS)
+  );
+}
 
 export async function getDeactivatedUserIds(): Promise<string[]> {
   try {
@@ -25,8 +36,8 @@ export async function getDeactivatedUserIds(): Promise<string[]> {
 
 export async function createUserAction(formData: FormData) {
   const session = await auth();
-  if (!session?.user || session.user.role !== 'SUPERADMIN') {
-    return { error: "Solo los administradores generales pueden crear usuarios" };
+  if (!session?.user || !canManageUsers(session.user.role)) {
+    return { error: "Solo los administradores autorizados pueden crear usuarios" };
   }
 
   const name = formData.get("name") as string;
@@ -79,7 +90,7 @@ export interface UpdateUserInput {
 
 export async function updateUserAction(input: UpdateUserInput) {
   const session = await auth();
-  if (!session?.user || session.user.role !== 'SUPERADMIN') {
+  if (!session?.user || !canManageUsers(session.user.role)) {
     return { success: false, error: "No tiene permisos para modificar usuarios" };
   }
 
@@ -155,7 +166,7 @@ export async function updateUserAction(input: UpdateUserInput) {
 
 export async function toggleUserStatusAction(userId: string) {
   const session = await auth();
-  if (!session?.user || session.user.role !== 'SUPERADMIN') {
+  if (!session?.user || !canManageUsers(session.user.role)) {
     return { success: false, error: "No autorizado" };
   }
 
