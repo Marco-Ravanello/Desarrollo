@@ -36,3 +36,21 @@ export function getAreaNavColor(colorName?: string | null) {
 export function getAreaBgColor(colorName?: string | null) {
   return AREA_BG_COLORS[colorName || "blue"] || AREA_BG_COLORS.blue;
 }
+
+export function getAreaDashboardUrl(areaName?: string): string {
+  if (!areaName) return "/areas/social";
+  const name = areaName.toLowerCase();
+  if (name.includes("hábitat") || name.includes("habitat") || name.includes("vivienda")) return "/areas/habitat";
+  if (name.includes("niñez") || name.includes("ninez") || name.includes("familia")) return "/areas/ninez";
+  if (name.includes("violencia") || name.includes("género") || name.includes("genero")) return "/areas/violence";
+  return "/areas/social";
+}
+
+export function getAreaShortName(areaName?: string): string {
+  if (!areaName) return "Protección Social";
+  const name = areaName.toLowerCase();
+  if (name.includes("hábitat") || name.includes("habitat") || name.includes("vivienda")) return "Hábitat y Vivienda";
+  if (name.includes("niñez") || name.includes("ninez") || name.includes("familia")) return "Niñez y Familia";
+  if (name.includes("violencia") || name.includes("género") || name.includes("genero")) return "Violencia de Género";
+  return "Protección Social";
+}

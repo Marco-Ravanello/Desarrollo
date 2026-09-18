@@ -1,5 +1,7 @@
 export const dynamic = "force-dynamic";
+
 import { getCaseById } from "@/services/cases";
+import { ensurePersonInPrisma } from "@/services/people";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { notFound, redirect } from "next/navigation";
@@ -10,21 +12,32 @@ import { auth } from "@/auth";
 import { hasPermission, PERMISSIONS } from "@/lib/permissions";
 import { QuickInterventionForm } from "./quick-intervention-form";
 import { PageBreadcrumbs } from "@/components/layout/breadcrumbs-context";
-import { getAreaDashboardUrl, getAreaShortName } from "@/components/layout/breadcrumbs";
+import { getAreaDashboardUrl, getAreaShortName } from "@/lib/area-theme";
 
 export default async function CaseDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
   if (!session?.user) redirect("/login");
 
-  const { id } = await params;
+  const resolvedParams = await params;
+  const id = decodeURIComponent(resolvedParams?.id || "");
+
   const caseData = await getCaseById(id);
 
   if (!caseData) notFound();
 
+  let person: any = caseData.person;
+  if (!person && caseData.personId) {
+    person = await ensurePersonInPrisma(caseData.personId);
+  }
+
+  const areaName = caseData.area?.name || "Dirección General de Desarrollo Humano y Hábitat";
+  const titleStr = caseData.title || "Expediente Social";
+
   // Validar permiso para casos sensibles (Violencia de Género)
   const isViolenceCase =
-    caseData.area.name === "Violencia de Género" ||
-    caseData.area.name.toLowerCase().includes("violencia");
+    areaName === "Violencia de Género" ||
+    areaName.toLowerCase().includes("violencia");
+
   if (isViolenceCase) {
     const canView = hasPermission(session.user.role as any, PERMISSIONS.VIEW_SENSITIVE_CASES);
     if (!canView) {
@@ -42,13 +55,13 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
   }
 
   const isClosed = caseData.status === "CERRADO";
-  const areaUrl = getAreaDashboardUrl(caseData.area.name);
-  const areaLabel = getAreaShortName(caseData.area.name);
+  const areaUrl = getAreaDashboardUrl(areaName);
+  const areaLabel = getAreaShortName(areaName);
 
   const breadcrumbs = [
     { label: "Áreas Sociales", href: "/areas/social" },
     { label: areaLabel, href: areaUrl },
-    { label: `Expediente ${caseData.title.substring(0, 20)}...`, active: true }
+    { label: `Expediente ${titleStr.substring(0, 20)}...`, active: true }
   ];
 
   return (
@@ -60,10 +73,10 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
           <Link href={areaUrl}><ArrowLeft className="h-4 w-4" /></Link>
         </Button>
         <div>
-          <h2 className="text-3xl font-black tracking-tight text-foreground">{caseData.title}</h2>
+          <h2 className="text-3xl font-black tracking-tight text-foreground">{titleStr}</h2>
           <div className="flex items-center gap-2 mt-1">
              <Badge variant={isClosed ? 'secondary' : 'default'} className="font-bold uppercase text-[10px]">{caseData.status}</Badge>
-             <span className="text-muted-foreground text-sm font-semibold">{caseData.area.name}</span>
+             <span className="text-muted-foreground text-sm font-semibold">{areaName}</span>
           </div>
         </div>
       </div>
@@ -88,11 +101,11 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
             </div>
 
             {!isClosed && (
-              <QuickInterventionForm caseId={caseData.id} caseTitle={caseData.title} />
+              <QuickInterventionForm caseId={caseData.id} caseTitle={titleStr} />
             )}
 
             <CardContent className="px-0 pt-2">
-              {caseData.interventions.length === 0 ? (
+              {!caseData.interventions || caseData.interventions.length === 0 ? (
                 <p className="text-muted-foreground text-sm text-center py-6 border border-dashed border-border/60 rounded-2xl font-medium">No hay intervenciones registradas en este expediente.</p>
               ) : (
                 <div className="space-y-3">
@@ -115,18 +128,26 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
           <Card className="rounded-3xl border border-border/60 shadow-sm bg-card">
             <CardHeader><CardTitle className="text-lg font-bold text-foreground">Información del Ciudadano</CardTitle></CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex items-center gap-2">
-                <User className="h-4 w-4 text-muted-foreground" />
-                <Link href={`/people/${caseData.personId}`} className="font-bold text-foreground hover:underline">
-                  {caseData.person.lastName}, {caseData.person.firstName}
-                </Link>
-              </div>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground font-semibold">
-                <Tag className="h-4 w-4 text-muted-foreground" /> DNI {caseData.person.dni}
-              </div>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground font-semibold">
-                <MapPin className="h-4 w-4 text-muted-foreground" /> {caseData.person.address || 'Sin dirección'}
-              </div>
+              {person ? (
+                <>
+                  <div className="flex items-center gap-2">
+                    <User className="h-4 w-4 text-muted-foreground" />
+                    <Link href={`/people/${person.dni || person.id}`} className="font-bold text-foreground hover:underline">
+                      {person.lastName}, {person.firstName}
+                    </Link>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground font-semibold">
+                    <Tag className="h-4 w-4 text-muted-foreground" /> DNI {person.dni}
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground font-semibold">
+                    <MapPin className="h-4 w-4 text-muted-foreground" /> {person.address || 'Sin dirección'}
+                  </div>
+                </>
+              ) : (
+                <div className="text-xs text-muted-foreground italic">
+                  Información del titular no disponible
+                </div>
+              )}
             </CardContent>
           </Card>
 

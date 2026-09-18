@@ -36,17 +36,23 @@ export async function getAreas() {
 }
 
 export async function getCaseById(id: string) {
-  return await prisma.case.findUnique({
-    where: { id },
-    include: {
-      person: true,
-      area: true,
-      interventions: {
-        orderBy: { date: 'desc' }
-      },
-      documents: true
-    }
-  });
+  if (!id) return null;
+  try {
+    return await prisma.case.findUnique({
+      where: { id },
+      include: {
+        person: true,
+        area: true,
+        interventions: {
+          orderBy: { date: 'desc' }
+        },
+        documents: true
+      }
+    });
+  } catch (error) {
+    console.error(`Error in getCaseById for id=${id}:`, error);
+    return null;
+  }
 }
 
 export async function getAreaDashboardData(areaKeywords: string[]) {
