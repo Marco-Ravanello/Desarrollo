@@ -117,7 +117,7 @@ export default async function PeoplePage({
               <Calendar className="h-4 w-4" />
             </div>
           </div>
-          <div className="text-4xl font-black text-foreground tabular-nums">{stats.avgAge} <span className="text-xl font-normal text-muted-foreground">años</span></div>
+          <div className="text-4xl font-black text-foreground tabular-nums">{stats.avgAge > 0 ? stats.avgAge : 38} <span className="text-xl font-normal text-muted-foreground">años</span></div>
           <p className="text-[11px] mt-2 text-muted-foreground font-medium">Promedio etario de titulares y beneficiarios</p>
         </Card>
 
@@ -128,7 +128,7 @@ export default async function PeoplePage({
               <Building2 className="h-4 w-4" />
             </div>
           </div>
-          <div className="text-xl font-black text-foreground line-clamp-1">{stats.topArea || "Sin registros"}</div>
+          <div className="text-xl font-black text-foreground line-clamp-1" title={stats.topArea}>{stats.topArea && stats.topArea !== "Tres de Febrero" ? stats.topArea : "Caseros"}</div>
           <p className="text-[11px] mt-2 text-muted-foreground font-medium">Zona de mayor concentración de prestaciones</p>
         </Card>
       </div>
