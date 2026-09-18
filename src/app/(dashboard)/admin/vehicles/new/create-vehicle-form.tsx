@@ -30,9 +30,9 @@ export function CreateVehicleForm() {
   }
 
   return (
-    <Card className="max-w-2xl mx-auto shadow-xl border-t-4 border-t-[#004a80] rounded-3xl">
+    <Card className="max-w-2xl mx-auto shadow-xl border-t-4 border-t-primary rounded-3xl bg-card text-card-foreground">
       <CardHeader>
-        <CardTitle className="text-2xl text-[#004a80]">Registrar Nueva Unidad</CardTitle>
+        <CardTitle className="text-2xl text-foreground font-heading">Registrar Nueva Unidad</CardTitle>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -99,7 +99,7 @@ export function CreateVehicleForm() {
             <Button type="button" variant="ghost" className="flex-1 rounded-xl" onClick={() => router.back()}>
               Cancelar
             </Button>
-            <Button type="submit" disabled={loading} className="flex-1 bg-[#004a80] hover:bg-[#00365d] text-white rounded-xl">
+            <Button type="submit" disabled={loading} className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl shadow-md">
               {loading ? "Registrando..." : "Guardar Vehículo"}
             </Button>
           </div>
