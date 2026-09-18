@@ -48,7 +48,7 @@ export async function toggleTaskAction(id: string, currentStatus: string) {
     throw new Error("Tarea no encontrada");
   }
 
-  if (task.userId !== session.user.id && session.user.role !== "SUPERADMIN") {
+  if (task.userId !== session.user.id && session.user.role !== "SUPERADMIN" && session.user.role !== "ADMIN_GENERAL" && session.user.role !== "DIRECCION_GENERAL") {
     throw new Error("Sin permisos para modificar esta tarea");
   }
 
@@ -71,7 +71,7 @@ export async function deleteTaskAction(id: string) {
     throw new Error("Tarea no encontrada");
   }
 
-  if (task.userId !== session.user.id && session.user.role !== "SUPERADMIN") {
+  if (task.userId !== session.user.id && session.user.role !== "SUPERADMIN" && session.user.role !== "ADMIN_GENERAL" && session.user.role !== "DIRECCION_GENERAL") {
     throw new Error("Sin permisos para eliminar esta tarea");
   }
 
