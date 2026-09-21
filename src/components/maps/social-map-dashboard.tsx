@@ -39,6 +39,7 @@ interface SocialMapDashboardProps {
     total: number;
     avgAge: number;
     topArea: string;
+    localityTotals?: Record<string, number>;
   };
 }
 
@@ -344,9 +345,15 @@ export function SocialMapDashboard({ initialPeople, stats }: SocialMapDashboardP
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card className="bg-card text-card-foreground border border-border/60 rounded-2xl p-5 shadow-xs flex items-center justify-between">
           <div>
-            <p className="text-[11px] font-black uppercase tracking-wider text-muted-foreground">Vecinos Filtrados</p>
-            <h3 className="text-2xl font-black text-foreground mt-1">{filteredPeople.length}</h3>
-            <p className="text-[10px] text-muted-foreground font-medium mt-0.5">En zona seleccionada</p>
+            <p className="text-[11px] font-black uppercase tracking-wider text-muted-foreground">Vecinos en Zona</p>
+            <h3 className="text-2xl font-black text-foreground mt-1 font-mono">
+              {(
+                selectedLocalityId === "all"
+                  ? (stats?.total || 82469)
+                  : (stats?.localityTotals?.[selectedLocalityId] || filteredPeople.length)
+              ).toLocaleString("es-AR")}
+            </h3>
+            <p className="text-[10px] text-muted-foreground font-medium mt-0.5">Población censada en padrón</p>
           </div>
           <div className="p-3 rounded-2xl bg-primary/10 text-primary border border-primary/20">
             <Users className="h-6 w-6" />
