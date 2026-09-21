@@ -4,7 +4,7 @@ import fs from "fs/promises";
 import path from "path";
 import { findPeopleNearPoint } from "@/services/spatial";
 import { callGeminiAnonymized } from "@/services/gemini-ai";
-import { searchFichaSocialByDni, calculateCrossPrograms, getProgramCatalog } from "@/services/ficha-social";
+import { searchFichaSocialByDni, getFichaSocialByDniFromDb, calculateCrossPrograms, getProgramCatalog } from "@/services/ficha-social";
 
 export interface AIResponse {
   answer: string;
@@ -2391,7 +2391,7 @@ export async function handleFichaSocialAIQuery(query: string): Promise<AIRespons
   const dniMatch = cleanQuery.replace(/[^0-9]/g, "").match(/\b\d{7,8}\b/);
   if (dniMatch) {
     const targetDni = dniMatch[0];
-    const ficha = await searchFichaSocialByDni(targetDni);
+    const ficha = await getFichaSocialByDniFromDb(targetDni);
     if (ficha.encontrado && ficha.nombre_detectado) {
       let answer = `### Ficha Social Unificada 360°: ${ficha.nombre_detectado}\n\n`;
       answer += `Se ha realizado el cruce de datos en todas las bases del municipio para el DNI **${ficha.dni}**:\n\n`;

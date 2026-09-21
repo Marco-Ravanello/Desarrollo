@@ -97,47 +97,60 @@ export async function getPaginatedPeople(options: GetPeopleOptions = {}): Promis
   const offset = (page - 1) * limit;
 
   let whereConditions: string[] = ["1=1"];
+  const params: any[] = [];
+  let paramIdx = 1;
 
   if (options.query && options.query.trim()) {
-    const q = options.query.trim().replace(/'/g, "''");
+    const q = options.query.trim();
     const numQ = q.replace(/[^0-9]/g, "");
     if (numQ && numQ.length >= 4) {
       whereConditions.push(
-        `(dni LIKE '%${numQ}%' OR LOWER(nombre_completo) LIKE '%${q.toLowerCase()}%' OR LOWER(barrio) LIKE '%${q.toLowerCase()}%' OR LOWER(direccion) LIKE '%${q.toLowerCase()}%')`
+        `(dni LIKE $${paramIdx} OR LOWER(nombre_completo) LIKE $${paramIdx + 1} OR LOWER(barrio) LIKE $${paramIdx + 1} OR LOWER(direccion) LIKE $${paramIdx + 1})`
       );
+      params.push(`%${numQ}%`, `%${q.toLowerCase()}%`);
+      paramIdx += 2;
     } else {
       whereConditions.push(
-        `(LOWER(nombre_completo) LIKE '%${q.toLowerCase()}%' OR LOWER(barrio) LIKE '%${q.toLowerCase()}%' OR LOWER(localidad) LIKE '%${q.toLowerCase()}%' OR LOWER(direccion) LIKE '%${q.toLowerCase()}%')`
+        `(LOWER(nombre_completo) LIKE $${paramIdx} OR LOWER(barrio) LIKE $${paramIdx} OR LOWER(localidad) LIKE $${paramIdx} OR LOWER(direccion) LIKE $${paramIdx})`
       );
+      params.push(`%${q.toLowerCase()}%`);
+      paramIdx += 1;
     }
   }
 
   if (options.barrio && options.barrio.trim() && options.barrio !== "all") {
-    const b = options.barrio.trim().replace(/'/g, "''").toLowerCase();
+    const b = options.barrio.trim().toLowerCase();
     whereConditions.push(
-      `(LOWER(barrio) LIKE '%${b}%' OR LOWER(localidad) LIKE '%${b}%' OR LOWER(direccion) LIKE '%${b}%')`
+      `(LOWER(barrio) LIKE $${paramIdx} OR LOWER(localidad) LIKE $${paramIdx} OR LOWER(direccion) LIKE $${paramIdx})`
     );
+    params.push(`%${b}%`);
+    paramIdx += 1;
   }
 
   if (options.programa && options.programa.trim() && options.programa !== "all") {
-    const p = options.programa.trim().replace(/'/g, "''").toLowerCase();
-    whereConditions.push(`LOWER(programas_activos) LIKE '%${p}%'`);
+    const p = options.programa.trim().toLowerCase();
+    whereConditions.push(`LOWER(programas_activos) LIKE $${paramIdx}`);
+    params.push(`%${p}%`);
+    paramIdx += 1;
   }
 
   const whereClause = whereConditions.join(" AND ");
 
   try {
     const countRes: any[] = await prisma.$queryRawUnsafe(
-      `SELECT COUNT(*)::int as total FROM padron_unificado WHERE ${whereClause};`
+      `SELECT COUNT(*)::int as total FROM padron_unificado WHERE ${whereClause};`,
+      ...params
     );
     const total = countRes[0]?.total || 0;
 
+    const queryParams = [...params, limit, offset];
     const rows: any[] = await prisma.$queryRawUnsafe(
       `SELECT dni, nombre_completo, cantidad_programas, programas_activos, roles, barrio, localidad, direccion, telefono, email, edad_aprox, latitude, longitude
        FROM padron_unificado
        WHERE ${whereClause}
        ORDER BY cantidad_programas DESC, nombre_completo ASC
-       LIMIT ${limit} OFFSET ${offset};`
+       LIMIT $${paramIdx} OFFSET $${paramIdx + 1};`,
+      ...queryParams
     );
 
     if (rows && rows.length > 0) {
