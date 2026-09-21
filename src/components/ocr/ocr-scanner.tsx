@@ -52,7 +52,7 @@ export function OCRScanner({ onScanComplete }: OCRScannerProps) {
 
   const processPDF = async (file: File): Promise<string> => {
     const pdfjs = await import("pdfjs-dist");
-    pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+    pdfjs.GlobalWorkerOptions.workerSrc = new URL("pdfjs-dist/build/pdf.worker.min.mjs", import.meta.url).toString();
     const arrayBuffer = await file.arrayBuffer();
     const pdf = await pdfjs.getDocument({ data: arrayBuffer }).promise;
     let fullText = "";
@@ -112,7 +112,9 @@ export function OCRScanner({ onScanComplete }: OCRScannerProps) {
           reader.readAsDataURL(file);
         });
         const processedImage = await imgPromise;
-        const worker = await createWorker(["spa"]);
+        const worker = await createWorker("spa", 1, {
+          langPath: "/tessdata",
+        });
         const { data: { text: ocrText } } = await worker.recognize(processedImage);
         text = ocrText;
         await worker.terminate();

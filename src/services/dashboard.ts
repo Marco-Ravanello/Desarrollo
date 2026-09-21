@@ -25,8 +25,17 @@ export function parseDateRange(range?: string, fromStr?: string, toStr?: string)
   return { from, to };
 }
 
+let dashboardCache: { data: any; timestamp: number; key: string } | null = null;
+const DASHBOARD_CACHE_TTL = 45 * 1000; // 45 segundos
+
 export async function getDashboardStats(filters?: { from: Date; to: Date }) {
   const { from, to } = filters || parseDateRange("30days");
+  const cacheKey = `${from.toISOString()}_${to.toISOString()}`;
+
+  if (dashboardCache && dashboardCache.key === cacheKey && (Date.now() - dashboardCache.timestamp < DASHBOARD_CACHE_TTL)) {
+    return dashboardCache.data;
+  }
+
   const dateFilter = { gte: from, lte: to };
 
   try {
@@ -70,7 +79,7 @@ export async function getDashboardStats(filters?: { from: Date; to: Date }) {
       prisma.derivation.count({ where: { status: 'PENDIENTE' } }).catch(() => 0),
       prisma.purchaseOrder.count({ where: { status: 'PENDIENTE_APROBACION' } }).catch(() => 0),
       prisma.invoice.count({ where: { status: 'PENDIENTE' } }).catch(() => 0),
-      prisma.supplyItem.count({ where: { stock: { lte: 0 } } }).catch(() => 0),
+      prisma.$queryRawUnsafe(`SELECT COUNT(*)::int as total FROM "SupplyItem" WHERE stock <= "minStock" OR stock <= 0;`).then((res: any) => res[0]?.total || 0).catch(() => 0),
       prisma.vehicle.count().catch(() => 0),
       prisma.task.count({ where: { status: 'PENDIENTE', dueDate: { gte: from, lte: to } } }).catch(() => 0),
       prisma.case.count({ where: { priority: 'URGENTE', status: { in: ['ABIERTO', 'EN_PROCESO'] } } }).catch(() => 0),
@@ -197,7 +206,7 @@ export async function getDashboardStats(filters?: { from: Date; to: Date }) {
       trends = getFallbackTrendData();
     }
 
-    return {
+    const statsResult = {
       peopleCount,
       activeCases,
       resolvedCasesCount,
@@ -222,6 +231,14 @@ export async function getDashboardStats(filters?: { from: Date; to: Date }) {
       },
       trends
     };
+
+    dashboardCache = {
+      data: statsResult,
+      timestamp: Date.now(),
+      key: cacheKey
+    };
+
+    return statsResult;
   } catch (error) {
     console.error("Dashboard Stats Fetch Error:", error);
     return {

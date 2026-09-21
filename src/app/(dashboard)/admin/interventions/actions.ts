@@ -48,54 +48,96 @@ export async function importInterventionsAction(data: any[]) {
   if (!session?.user) throw new Error("No autorizado");
 
   let createdCount = 0;
-  let errors = [];
+  let errors: string[] = [];
 
-  for (const row of data) {
+  const validRows = data.filter(row => {
+    const dni = String(row.DNI || row.dni || row.Documento || "").trim();
+    if (!dni) {
+      errors.push("Fila saltada: DNI faltante");
+      return false;
+    }
+    return true;
+  });
+
+  if (validRows.length === 0) {
+    return { success: true, createdCount: 0, errors };
+  }
+
+  const uniqueDnis = Array.from(new Set(validRows.map(row => String(row.DNI || row.dni || row.Documento || "").trim())));
+
+  // 1. Bulk preload existing persons and areas
+  const existingPersons = await prisma.person.findMany({
+    where: { dni: { in: uniqueDnis } }
+  });
+  const personMap = new Map(existingPersons.map(p => [p.dni, p]));
+
+  const allAreas = await prisma.area.findMany();
+  const areaMap = new Map(allAreas.map(a => [a.name.toLowerCase().trim(), a]));
+
+  // Find missing persons and create them in bulk
+  const missingPersonsList: { dni: string; firstName: string; lastName: string }[] = [];
+  for (const row of validRows) {
+    const dni = String(row.DNI || row.dni || row.Documento || "").trim();
+    if (!personMap.has(dni) && !missingPersonsList.some(p => p.dni === dni)) {
+      const Nombre = String(row.Nombre || row.firstName || "").trim() || "S/N";
+      const Apellido = String(row.Apellido || row.lastName || "").trim() || "S/A";
+      missingPersonsList.push({
+        dni,
+        firstName: Nombre,
+        lastName: Apellido
+      });
+    }
+  }
+
+  if (missingPersonsList.length > 0) {
+    await prisma.person.createMany({
+      data: missingPersonsList,
+      skipDuplicates: true
+    });
+
+    const newlyCreatedPersons = await prisma.person.findMany({
+      where: { dni: { in: missingPersonsList.map(p => p.dni) } }
+    });
+    newlyCreatedPersons.forEach(p => personMap.set(p.dni, p));
+  }
+
+  const personIds = Array.from(personMap.values()).map(p => p.id);
+  const existingCases = await prisma.case.findMany({
+    where: { personId: { in: personIds } }
+  });
+  const caseMap = new Map(existingCases.map(c => [`${c.personId}_${c.areaId}_${c.title}`, c]));
+
+  for (const row of validRows) {
     try {
-      // Intentar mapear nombres de columnas comunes
-      const DNI = String(row.DNI || row.dni || row.Documento || "");
-      const Nombre = String(row.Nombre || row.firstName || "");
-      const Apellido = String(row.Apellido || row.lastName || "");
-      const Area = String(row.Area || row.area || "");
-      const Caso = String(row.Caso || row.Asunto || row.title || "Caso Migrado");
+      const DNI = String(row.DNI || row.dni || row.Documento || "").trim();
+      const AreaName = String(row.Area || row.area || "").toLowerCase().trim();
+      const Caso = String(row.Caso || row.Asunto || row.title || "Caso Migrado").trim();
       const Descripcion = String(row.Descripcion || row.Observaciones || row.description || "Sin descripción");
       const FechaStr = row.Fecha || row.date || null;
 
-      if (!DNI) {
-        errors.push("Fila saltada: DNI faltante");
+      const person = personMap.get(DNI);
+      if (!person) {
+        errors.push(`Persona no encontrada para DNI ${DNI}`);
         continue;
       }
 
-      // 1. Find or create Person
-      let person = await prisma.person.findUnique({ where: { dni: DNI } });
-      if (!person) {
-        person = await prisma.person.create({
-          data: {
-            dni: DNI,
-            firstName: Nombre || "S/N",
-            lastName: Apellido || "S/A",
+      let area = areaMap.get(AreaName);
+      if (!area) {
+        for (const [name, a] of areaMap.entries()) {
+          if (name.includes(AreaName) || AreaName.includes(name)) {
+            area = a;
+            break;
           }
-        });
+        }
       }
-
-      // 2. Find Area
-      const area = await prisma.area.findFirst({
-        where: { name: { contains: Area, mode: 'insensitive' } }
-      });
 
       if (!area) {
-        errors.push(`Área no encontrada: ${Area} para DNI ${DNI}`);
+        errors.push(`Área no encontrada: ${row.Area || row.area} para DNI ${DNI}`);
         continue;
       }
 
-      // 3. Find or create Case
-      let dbCase = await prisma.case.findFirst({
-        where: {
-          personId: person.id,
-          areaId: area.id,
-          title: Caso
-        }
-      });
+      const caseKey = `${person.id}_${area.id}_${Caso}`;
+      let dbCase = caseMap.get(caseKey);
 
       if (!dbCase) {
         dbCase = await prisma.case.create({
@@ -106,9 +148,9 @@ export async function importInterventionsAction(data: any[]) {
             status: 'ABIERTO'
           }
         });
+        caseMap.set(caseKey, dbCase);
       }
 
-      // 4. Create Intervention
       await prisma.intervention.create({
         data: {
           caseId: dbCase.id,

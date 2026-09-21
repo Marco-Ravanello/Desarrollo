@@ -717,7 +717,7 @@ export async function getPeopleStats() {
 /**
  * Obtiene personas para el mapa social asignando coordenadas según centroides de localidades cuando no hay GPS explícito
  */
-export async function getPeopleForMap(limit = 10000) {
+export async function getPeopleForMap(limit = 1500) {
   const people = await getPeople(undefined, limit);
 
   const LOCALITY_CENTROIDS: Record<string, [number, number]> = {
