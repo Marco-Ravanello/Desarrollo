@@ -4,7 +4,8 @@ import { createHRRecord } from "@/services/hr";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import prisma from "@/lib/prisma";
-import { HRStatus } from "@prisma/client";
+import { HRStatus, HRRecord } from "@prisma/client";
+import { ActionResult } from "@/types/actions";
 
 function buildTasksPayload(formData: FormData) {
   const tasksRaw = formData.get("tasks") as string || "";
@@ -18,10 +19,10 @@ function buildTasksPayload(formData: FormData) {
   return tasksRaw;
 }
 
-export async function createHRRecordAction(formData: FormData) {
+export async function createHRRecordAction(formData: FormData): Promise<ActionResult<HRRecord>> {
   const session = await auth();
   if (!session?.user || (session.user.role !== 'SUPERADMIN' && session.user.role !== 'ADMIN_GENERAL')) {
-    return { error: "No autorizado" };
+    return { success: false, error: "No autorizado" };
   }
 
   const tasksPayload = buildTasksPayload(formData);
@@ -45,19 +46,19 @@ export async function createHRRecordAction(formData: FormData) {
   };
 
   try {
-    await createHRRecord(data);
+    const newRecord = await createHRRecord(data);
     revalidatePath("/admin/hr");
-    return { success: true };
+    return { success: true, data: newRecord };
   } catch (error) {
     console.error(error);
-    return { error: "Error al crear el legajo" };
+    return { success: false, error: "Error al crear el legajo" };
   }
 }
 
-export async function updateHRRecordAction(id: string, formData: FormData) {
+export async function updateHRRecordAction(id: string, formData: FormData): Promise<ActionResult<HRRecord>> {
   const session = await auth();
   if (!session?.user || (session.user.role !== 'SUPERADMIN' && session.user.role !== 'ADMIN_GENERAL')) {
-    return { error: "No autorizado" };
+    return { success: false, error: "No autorizado" };
   }
 
   const tasksPayload = buildTasksPayload(formData);
@@ -81,19 +82,19 @@ export async function updateHRRecordAction(id: string, formData: FormData) {
   };
 
   try {
-    await prisma.hRRecord.update({ where: { id }, data });
+    const updatedRecord = await prisma.hRRecord.update({ where: { id }, data });
     revalidatePath("/admin/hr");
-    return { success: true };
+    return { success: true, data: updatedRecord };
   } catch (error) {
     console.error(error);
-    return { error: "Error al actualizar el legajo" };
+    return { success: false, error: "Error al actualizar el legajo" };
   }
 }
 
-export async function deleteHRRecordAction(id: string) {
+export async function deleteHRRecordAction(id: string): Promise<ActionResult<void>> {
   const session = await auth();
   if (!session?.user || (session.user.role !== 'SUPERADMIN' && session.user.role !== 'ADMIN_GENERAL')) {
-    return { error: "No autorizado" };
+    return { success: false, error: "No autorizado" };
   }
 
   try {
@@ -102,6 +103,6 @@ export async function deleteHRRecordAction(id: string) {
     return { success: true };
   } catch (error) {
     console.error(error);
-    return { error: "Error al dar de baja el agente" };
+    return { success: false, error: "Error al dar de baja el agente" };
   }
 }

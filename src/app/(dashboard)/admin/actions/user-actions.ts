@@ -4,8 +4,9 @@ import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
 import bcrypt from "bcryptjs";
-import { Role } from "@prisma/client";
+import { Role, User } from "@prisma/client";
 import { hasPermission, PERMISSIONS } from "@/lib/permissions";
+import { ActionResult } from "@/types/actions";
 
 function canManageUsers(role?: string | null): boolean {
   if (!role) return false;
@@ -17,10 +18,10 @@ function canManageUsers(role?: string | null): boolean {
   );
 }
 
-export async function createUserAction(formData: FormData) {
+export async function createUserAction(formData: FormData): Promise<ActionResult<User>> {
   const session = await auth();
   if (!session?.user || !canManageUsers(session.user.role)) {
-    return { error: "Solo los administradores autorizados pueden crear usuarios" };
+    return { success: false, error: "Solo los administradores autorizados pueden crear usuarios" };
   }
 
   const name = formData.get("name") as string;
@@ -54,11 +55,11 @@ export async function createUserAction(formData: FormData) {
     });
 
     revalidatePath("/admin/users");
-    return { success: true };
+    return { success: true, data: user, message: "Agente municipal registrado con éxito" };
   } catch (error) {
     console.error(error);
-    if ((error as any).code === 'P2002') return { error: "Ya existe un usuario con ese email" };
-    return { error: "Error al crear el usuario" };
+    if ((error as any).code === 'P2002') return { success: false, error: "Ya existe un usuario con ese email" };
+    return { success: false, error: "Error al crear el usuario" };
   }
 }
 
@@ -72,7 +73,7 @@ export interface UpdateUserInput {
   isActive?: boolean;
 }
 
-export async function updateUserAction(input: UpdateUserInput) {
+export async function updateUserAction(input: UpdateUserInput): Promise<ActionResult<User>> {
   const session = await auth();
   if (!session?.user || !canManageUsers(session.user.role)) {
     return { success: false, error: "No tiene permisos para modificar usuarios" };
@@ -127,14 +128,14 @@ export async function updateUserAction(input: UpdateUserInput) {
     });
 
     revalidatePath("/admin/users");
-    return { success: true, user: updatedUser };
+    return { success: true, data: updatedUser, message: "Usuario actualizado con éxito" };
   } catch (error: any) {
     console.error("Error al actualizar usuario:", error);
     return { success: false, error: error.message || "Error al actualizar el usuario" };
   }
 }
 
-export async function toggleUserStatusAction(userId: string) {
+export async function toggleUserStatusAction(userId: string): Promise<ActionResult<{ isDeactivated: boolean }>> {
   const session = await auth();
   if (!session?.user || !canManageUsers(session.user.role)) {
     return { success: false, error: "No autorizado" };
@@ -171,7 +172,7 @@ export async function toggleUserStatusAction(userId: string) {
     });
 
     revalidatePath("/admin/users");
-    return { success: true, isDeactivated: !newActiveState };
+    return { success: true, data: { isDeactivated: !newActiveState } };
   } catch (error: any) {
     return { success: false, error: error.message || "Error al alternar estado del usuario" };
   }
