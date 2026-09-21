@@ -29,6 +29,9 @@ export async function getSystemSettingsAction() {
 
 export async function saveSystemSettingsAction(settings: Partial<MunicipalSettings>) {
   const session = await auth();
+  if (!session?.user || (session.user.role !== 'SUPERADMIN' && session.user.role !== 'ADMIN_GENERAL')) {
+    return { success: false, error: "No autorizado" };
+  }
 
   try {
     const merged = { ...DEFAULT_MUNICIPAL_SETTINGS, ...settings };
@@ -62,6 +65,9 @@ export async function saveSystemSettingsAction(settings: Partial<MunicipalSettin
 
 export async function resetSystemSettingsAction() {
   const session = await auth();
+  if (!session?.user || (session.user.role !== 'SUPERADMIN' && session.user.role !== 'ADMIN_GENERAL')) {
+    return { success: false, error: "No autorizado" };
+  }
 
   try {
     await prisma.systemSetting.deleteMany({

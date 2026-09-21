@@ -1,6 +1,7 @@
 "use server";
 
 import prisma from "@/lib/prisma";
+import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
 
 export async function getBudgetSummary() {
@@ -29,9 +30,35 @@ export async function getBudgetSummary() {
 }
 
 export async function updateAreaBudget(areaId: string, amount: number) {
-  await prisma.area.update({
-    where: { id: areaId },
-    data: { annualBudget: amount }
-  });
-  revalidatePath("/admin/budget");
+  const session = await auth();
+
+  if (!session?.user || (session.user.role !== 'SUPERADMIN' && session.user.role !== 'ADMIN_GENERAL')) {
+    return { success: false, error: "No autorizado" };
+  }
+
+  if (typeof amount !== "number" || isNaN(amount) || amount < 0) {
+    return { success: false, error: "Monto de presupuesto inválido" };
+  }
+
+  try {
+    const updatedArea = await prisma.area.update({
+      where: { id: areaId },
+      data: { annualBudget: amount }
+    });
+
+    await prisma.auditLog.create({
+      data: {
+        userId: session.user.id!,
+        action: 'UPDATE_BUDGET',
+        entity: 'Area',
+        entityId: areaId,
+        details: `Presupuesto de secretaría ${updatedArea.name} actualizado a $${amount.toLocaleString('es-AR')}`
+      }
+    });
+
+    revalidatePath("/admin/budget");
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message || "Error al actualizar presupuesto" };
+  }
 }

@@ -7,6 +7,10 @@ import { revalidatePath } from "next/cache";
 
 export async function createPurchaseOrderAction(formData: FormData) {
   const session = await auth();
+  if (!session?.user?.id) {
+    return { success: false, error: "No autorizado" };
+  }
+
   const number = formData.get("number") as string;
   const areaId = formData.get("areaId") as string;
   const providerId = formData.get("providerId") as string;

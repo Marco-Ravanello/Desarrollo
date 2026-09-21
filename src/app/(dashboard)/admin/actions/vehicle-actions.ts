@@ -96,6 +96,11 @@ export async function updateReservationStatusAction(reservationId: string, newSt
   const session = await auth();
   if (!session?.user) return { error: "No autorizado" };
 
+  const role = session.user.role;
+  if (role !== "SUPERADMIN" && role !== "ADMIN_GENERAL" && role !== "DIRECTOR_AREA") {
+    return { error: "No tiene permisos para modificar la reserva" };
+  }
+
   try {
     const reservation = await prisma.vehicleReservation.findUnique({
       where: { id: reservationId },

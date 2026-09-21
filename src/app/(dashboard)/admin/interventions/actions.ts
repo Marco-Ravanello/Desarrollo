@@ -6,7 +6,12 @@ import { revalidatePath } from "next/cache";
 
 export async function exportInterventionsAction() {
   const session = await auth();
-  if (!session?.user) throw new Error("No autorizado");
+  if (!session?.user?.id) throw new Error("No autorizado");
+
+  const role = session.user.role;
+  if (role !== "SUPERADMIN" && role !== "ADMIN_GENERAL" && role !== "DIRECCION_GENERAL") {
+    throw new Error("No tiene permisos para exportar datos sociales de intervenciones");
+  }
 
   const interventions = await prisma.intervention.findMany({
     include: {
@@ -16,6 +21,16 @@ export async function exportInterventionsAction() {
       }
     },
     orderBy: { date: 'desc' }
+  });
+
+  await prisma.auditLog.create({
+    data: {
+      userId: session.user.id,
+      action: 'EXPORT_INTERVENTIONS',
+      entity: 'Intervention',
+      entityId: 'ALL',
+      details: `Exportación masiva de ${interventions.length} registros de intervenciones sociales`
+    }
   });
 
   return interventions.map(i => ({

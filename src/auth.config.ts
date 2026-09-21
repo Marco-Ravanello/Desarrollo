@@ -11,6 +11,12 @@ export const authConfig = {
       const isLoggedIn = !!auth?.user;
       const isAuthPage = nextUrl.pathname.startsWith("/login");
 
+      if (nextUrl.pathname.startsWith("/api/")) {
+        if (!isLoggedIn) {
+          return Response.json({ error: "No autorizado. Inicie sesión." }, { status: 401 });
+        }
+      }
+
       if (isAuthPage) {
         if (isLoggedIn) {
           // In Colab/Tunnel, nextUrl might sometimes have a localhost base when we want the tunnel URL.

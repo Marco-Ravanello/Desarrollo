@@ -24,11 +24,27 @@ import { AgentActionsMenu } from "./agent-actions-menu";
 import { HRFilters } from "./hr-filters";
 import { UniversalExportMenu } from "@/components/ui/universal-export-menu";
 
+import { auth } from "@/auth";
+import { redirect } from "next/navigation";
+
 export default async function HRPage({
   searchParams
 }: {
   searchParams: Promise<{ q?: string, area?: string, status?: string }>
 }) {
+  const session = await auth();
+  if (!session?.user?.id) redirect("/login");
+
+  const userRole = session.user.role;
+  const canAccess =
+    userRole === "SUPERADMIN" ||
+    userRole === "ADMIN_GENERAL" ||
+    userRole === "DIRECCION_GENERAL";
+
+  if (!canAccess) {
+    redirect("/dashboard");
+  }
+
   const { q, area, status } = await searchParams;
 
   const records = await getHRRecords({ query: q, areaId: area, status });
