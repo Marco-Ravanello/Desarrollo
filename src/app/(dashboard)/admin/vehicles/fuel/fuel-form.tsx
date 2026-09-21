@@ -153,7 +153,7 @@ export function FuelForm({ vehicles }: { vehicles: any[] }) {
         <Button type="button" variant="ghost" className="flex-1 rounded-xl" onClick={() => router.back()}>
           Cancelar
         </Button>
-        <Button type="submit" disabled={loading} className="flex-1 bg-[#004a80] hover:bg-[#00365d] text-white rounded-xl shadow-lg shadow-blue-900/20">
+        <Button type="submit" disabled={loading} className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl shadow-md">
           {loading ? "Registrando..." : "Guardar Carga"}
         </Button>
       </div>
