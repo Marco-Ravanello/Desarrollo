@@ -48,8 +48,8 @@ export default async function PersonDetailPage({ params }: { params: Promise<{ i
 
   const familyMembers = person.family?.members.filter(m => m.id !== person.id) || [];
 
-  const filteredInterventions = (person.interventions || []).filter(i => !i.caseId || allowedCaseIds.has(i.caseId));
-  const filteredDocuments = (person.documents || []).filter(d => !d.caseId || allowedCaseIds.has(d.caseId));
+  const filteredInterventions = (person.interventions || []).filter((i: any) => !i.caseId || allowedCaseIds.has(i.caseId));
+  const filteredDocuments = (person.documents || []).filter((d: any) => !d.caseId || allowedCaseIds.has(d.caseId));
 
   const timelineEvents: any[] = [
     ...allowedCases.map(c => ({
@@ -197,7 +197,7 @@ export default async function PersonDetailPage({ params }: { params: Promise<{ i
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                {familyMembers.length === 0 && !person.familyId && (
+                {familyMembers.length === 0 && !(person as any).familyId && (
                   <div className="md:col-span-2 flex flex-col items-center justify-center py-8 text-muted-foreground border rounded-2xl border-dashed border-border/60">
                     <Users className="h-10 w-10 mb-2 opacity-20" />
                     <p className="text-sm text-center font-medium">No se han registrado vínculos familiares.</p>

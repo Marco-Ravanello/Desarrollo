@@ -99,6 +99,11 @@ export function MapView({
     return p.cases?.some((c: any) => c.areaId === filterArea);
   });
 
+  // Safe marker cap for fluid individual marker rendering when showing all district
+  const displayedMarkers = localityName === "Todo el Partido" || localityName === "Tres de Febrero"
+    ? filteredPeople.slice(0, 2500)
+    : filteredPeople;
+
   const areas = Array.from(
     new Set(
       people
@@ -188,7 +193,7 @@ export function MapView({
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
 
-          {filteredPeople.map((person) => (
+          {displayedMarkers.map((person) => (
             <Marker
               key={person.id}
               position={[person.latitude, person.longitude]}

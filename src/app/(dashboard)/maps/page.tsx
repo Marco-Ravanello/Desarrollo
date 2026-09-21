@@ -2,7 +2,7 @@ export const dynamic = "force-dynamic";
 
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
-import { getPeople, getPeopleStats } from "@/services/people";
+import { getPeopleForMap, getPeopleStats } from "@/services/people";
 import { SocialMapDashboard } from "@/components/maps/social-map-dashboard";
 
 export default async function MapsPage() {
@@ -10,7 +10,7 @@ export default async function MapsPage() {
   if (!session?.user?.id) redirect("/login");
 
   const [people, stats] = await Promise.all([
-    getPeople(undefined, 1000),
+    getPeopleForMap(10000),
     getPeopleStats()
   ]);
 
