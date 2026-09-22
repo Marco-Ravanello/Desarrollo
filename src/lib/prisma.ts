@@ -1,3 +1,8 @@
+// Permitir serialización transparente de BigInt a JSON en Next.js
+(BigInt.prototype as any).toJSON = function () {
+  return Number(this);
+};
+
 import { PrismaClient } from '@prisma/client';
 
 const prismaClientSingleton = () => {
