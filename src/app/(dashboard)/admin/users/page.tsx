@@ -29,14 +29,24 @@ export default async function UsersPage({
   const { new: isNew, create } = await searchParams;
   const autoOpenNew = Boolean(isNew === "true" || isNew === "1" || create === "true" || create === "1");
 
-  const [users, areas] = await Promise.all([
+  const [usersRaw, areas] = await Promise.all([
     getUsers(),
-    getAreas()
+    getAreas(),
   ]);
+
+  const sanitizedUsers = (usersRaw || []).map((u: any) => ({
+    id: u.id,
+    name: u.name,
+    email: u.email,
+    role: u.role,
+    areaId: u.areaId,
+    area: u.area ? { id: u.area.id, name: u.area.name } : null,
+    isActive: u.isActive !== undefined && u.isActive !== null ? Boolean(u.isActive) : true,
+  }));
 
   return (
     <UsersManagementView
-      users={users as any}
+      users={sanitizedUsers}
       areas={areas as any}
       currentUserId={session.user.id}
       autoOpenNew={autoOpenNew}

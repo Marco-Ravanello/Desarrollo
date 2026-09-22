@@ -40,7 +40,7 @@ interface UserItem {
 }
 
 interface UsersManagementViewProps {
-  users: UserItem[];
+  users: (UserItem & { isActive: boolean })[];
   areas: AreaItem[];
   currentUserId: string;
   autoOpenNew?: boolean;
@@ -62,7 +62,7 @@ export function UsersManagementView({
 
   const [isPending, startTransition] = useTransition();
 
-  const handleToggleStatus = (userId: string, currentDeactivated: boolean) => {
+  const handleToggleStatus = (userId: string, currentActive: boolean) => {
     if (userId === currentUserId) {
       toast.error("No puede desactivar su propio usuario administrador en sesión");
       return;
@@ -72,7 +72,7 @@ export function UsersManagementView({
       const res = await toggleUserStatusAction(userId);
       if (res.success) {
         toast.success(
-          res.isDeactivated ? "Cuenta de agente suspendida" : "Cuenta de agente reactivada"
+          res.isActive ? "Cuenta de agente activada" : "Cuenta de agente suspendida"
         );
       } else {
         toast.error(res.error || "Error al cambiar estado del agente");
@@ -82,7 +82,7 @@ export function UsersManagementView({
 
   const usersWithStatus = users.map((u) => ({
     ...u,
-    isActive: u.isActive !== false
+    isActive: u.isActive !== undefined ? Boolean(u.isActive) : true
   }));
 
   const filteredUsers = usersWithStatus.filter((u) => {
@@ -350,7 +350,7 @@ export function UsersManagementView({
                         <button
                           type="button"
                           disabled={isSelf || isPending}
-                          onClick={() => handleToggleStatus(u.id, !u.isActive)}
+                          onClick={() => handleToggleStatus(u.id, u.isActive)}
                           title={isSelf ? "No puede desactivarse a sí mismo" : "Haga clic para cambiar estado"}
                           className={`px-2.5 py-1 rounded-xl text-[10px] font-bold border transition-all ${
                             u.isActive

@@ -135,7 +135,7 @@ export async function updateUserAction(input: UpdateUserInput): Promise<ActionRe
   }
 }
 
-export async function toggleUserStatusAction(userId: string): Promise<ActionResult<{ isDeactivated: boolean }>> {
+export async function toggleUserStatusAction(userId: string) {
   const session = await auth();
   if (!session?.user || !canManageUsers(session.user.role)) {
     return { success: false, error: "No autorizado" };
@@ -146,34 +146,36 @@ export async function toggleUserStatusAction(userId: string): Promise<ActionResu
   }
 
   try {
-    const targetUser = await prisma.user.findUnique({
-      where: { id: userId }
+    const existingUser = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, isActive: true, email: true }
     });
 
-    if (!targetUser) {
+    if (!existingUser) {
       return { success: false, error: "Usuario no encontrado" };
     }
 
-    const newActiveState = !targetUser.isActive;
+    const newStatus = existingUser.isActive === false ? true : false;
 
-    await prisma.user.update({
+    const updated = await prisma.user.update({
       where: { id: userId },
-      data: { isActive: newActiveState }
+      data: { isActive: newStatus }
     });
 
     await prisma.auditLog.create({
       data: {
         userId: session.user.id,
-        action: newActiveState ? 'ACTIVATE_USER' : 'DEACTIVATE_USER',
+        action: newStatus ? 'ACTIVATE_USER' : 'DEACTIVATE_USER',
         entity: 'User',
         entityId: userId,
-        details: `Cambio de estado de cuenta (${newActiveState ? 'Activado' : 'Suspendido/Inactivo'})`
+        details: `Cambio de estado de cuenta para ${existingUser.email} (${newStatus ? 'Activo' : 'Suspendido'})`
       }
     });
 
     revalidatePath("/admin/users");
-    return { success: true, data: { isDeactivated: !newActiveState } };
+    return { success: true, isActive: updated.isActive, isDeactivated: !updated.isActive };
   } catch (error: any) {
-    return { success: false, error: error.message || "Error al alternar estado del usuario" };
+    console.error("Error en toggleUserStatusAction:", error);
+    return { success: false, error: error.message || "Error al cambiar el estado del usuario" };
   }
 }
