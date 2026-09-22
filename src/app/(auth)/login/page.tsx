@@ -84,7 +84,7 @@ export default function LoginPage() {
                   <Input
                     id="email"
                     type="email"
-                    placeholder="admin@tresdefebrero.gov.ar"
+                    placeholder="admin@municipio.gob.ar"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="pl-10 h-11 rounded-xl text-xs bg-muted/40 border-border/60 focus:bg-background"

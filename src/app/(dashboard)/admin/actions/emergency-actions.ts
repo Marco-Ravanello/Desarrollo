@@ -80,22 +80,6 @@ export async function createEmergencyIncidentAction(formData: FormData) {
   }
 
   try {
-    // Buscar o crear persona genérica para reportes COE
-    let reportPerson = await prisma.person.findFirst({
-      where: { dni: "00000000" }
-    });
-
-    if (!reportPerson) {
-      reportPerson = await prisma.person.create({
-        data: {
-          firstName: "Alerta COE",
-          lastName: "Territorial",
-          dni: "00000000",
-          address: "Centro de Operaciones de Emergencia"
-        }
-      });
-    }
-
     // Buscar área de Hábitat o Protección Social
     const area = await prisma.area.findFirst({
       where: {
@@ -117,7 +101,7 @@ export async function createEmergencyIncidentAction(formData: FormData) {
         description: `Incidente registrado en COE: ${type} en ${address}, ${neighborhood}.`,
         status: "ABIERTO",
         priority: priority as any,
-        personId: reportPerson.id,
+        personId: null,
         areaId: area.id,
         assignedToId: session.user.id
       }

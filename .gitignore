@@ -4,3 +4,11 @@ node_modules
 *.log
 dist
 build
+*.tsbuildinfo
+
+# Test & scratch scripts
+test-ocr.js
+create_sample_po.ts
+generate_nb.py
+*.ipynb
+/scratch

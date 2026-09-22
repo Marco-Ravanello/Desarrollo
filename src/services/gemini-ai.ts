@@ -1,5 +1,9 @@
 import { sanitizeText } from "@/lib/pii-sanitizer";
 
+let cachedModelName: string | null = "models/gemini-2.0-flash";
+let lastModelCheck = 0;
+const MODEL_CACHE_TTL = 1000 * 60 * 60; // 1 hora
+
 export async function callGeminiAnonymized(
   userQuery: string,
   dbContextText: string,
@@ -16,38 +20,45 @@ export async function callGeminiAnonymized(
   const { sanitizedText, rehydrate } = sanitizeText(fullRawText, knownEntities);
   console.log("🔒 [PII Sanitizer] Prompt anonimizado exitosamente antes de enviar a Gemini.");
 
-  // 2. Lista de modelos candidato priorizando modelos de texto reales (excluyendo robótica y previews viejos)
-  const candidateModels = [
-    "models/gemini-3.6-flash",
-    "models/gemini-2.0-flash",
-    "models/gemini-1.5-flash",
-    "models/gemini-3.6-pro"
-  ];
+  const now = Date.now();
+  const isCacheValid = cachedModelName && (now - lastModelCheck < MODEL_CACHE_TTL);
 
-  // Auto-descubrir modelos disponibles en la API key evitando modelos de robótica o discontinuados
-  try {
-    const listResp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
-    if (listResp.ok) {
-      const listData = await listResp.json();
-      const validModels = (listData.models || []).filter((m: any) =>
-        m.supportedGenerationMethods &&
-        m.supportedGenerationMethods.includes("generateContent") &&
-        !m.name.includes("robotics") && // Excluir modelos de robótica
-        !m.name.includes("preview") &&  // Excluir previews de desarrollo
-        !m.name.includes("2.5-flash")  // Excluir modelo discontinuado
-      );
-      if (validModels.length > 0) {
-        const bestTextModel = validModels.find((m: any) => m.name.includes("3.6-flash")) ||
-                              validModels.find((m: any) => m.name.includes("2.0-flash")) ||
-                              validModels.find((m: any) => m.name.includes("1.5-flash")) ||
-                              validModels[0];
-        if (bestTextModel && !candidateModels.includes(bestTextModel.name)) {
-          candidateModels.unshift(bestTextModel.name);
+  const candidateModels: string[] = [];
+
+  if (isCacheValid && cachedModelName) {
+    candidateModels.push(cachedModelName);
+  }
+
+  // Si la caché expiró o es la primera llamada, auto-descubrir
+  if (!isCacheValid) {
+    candidateModels.push(
+      "models/gemini-2.0-flash",
+      "models/gemini-1.5-flash",
+      "models/gemini-3.6-flash"
+    );
+
+    try {
+      const listResp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
+      if (listResp.ok) {
+        const listData = await listResp.json();
+        const validModels = (listData.models || []).filter((m: any) =>
+          m.supportedGenerationMethods &&
+          m.supportedGenerationMethods.includes("generateContent") &&
+          !m.name.includes("robotics") &&
+          !m.name.includes("preview")
+        );
+        if (validModels.length > 0) {
+          const bestTextModel = validModels.find((m: any) => m.name.includes("2.0-flash")) ||
+                                validModels.find((m: any) => m.name.includes("1.5-flash")) ||
+                                validModels[0];
+          if (bestTextModel && !candidateModels.includes(bestTextModel.name)) {
+            candidateModels.unshift(bestTextModel.name);
+          }
         }
       }
+    } catch (listErr) {
+      console.warn("⚠️ ListModels fallback:", listErr);
     }
-  } catch (listErr) {
-    console.warn("⚠️ ListModels fallback:", listErr);
   }
 
   // 3. Reconstruir historial conversacional continuo para Gemini
@@ -105,11 +116,14 @@ REGLAS ABSOLUTAS DE VERACIDAD:
         rawGeminiAnswer = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
         if (rawGeminiAnswer) {
           successfulModel = modelPath;
+          cachedModelName = modelPath;
+          lastModelCheck = Date.now();
           console.log(`🌐 [Gemini API] Respuesta exitosa recibida usando '${successfulModel}'.`);
           lastError = null;
           break;
         }
       } else {
+        cachedModelName = null; // invalidar caché si falla
         const errorText = await response.text();
         lastError = new Error(`Error en Gemini API (${modelPath} - Status ${response.status}): ${errorText}`);
       }

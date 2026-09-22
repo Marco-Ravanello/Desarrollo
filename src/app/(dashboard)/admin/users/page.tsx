@@ -2,7 +2,6 @@ export const dynamic = "force-dynamic";
 
 import { getUsers } from "@/services/system";
 import { getAreas } from "@/services/cases";
-import { getDeactivatedUserIds } from "@/app/(dashboard)/admin/actions/user-actions";
 import { UsersManagementView } from "./users-management-view";
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
@@ -30,17 +29,15 @@ export default async function UsersPage({
   const { new: isNew, create } = await searchParams;
   const autoOpenNew = Boolean(isNew === "true" || isNew === "1" || create === "true" || create === "1");
 
-  const [users, areas, deactivatedIds] = await Promise.all([
+  const [users, areas] = await Promise.all([
     getUsers(),
-    getAreas(),
-    getDeactivatedUserIds()
+    getAreas()
   ]);
 
   return (
     <UsersManagementView
       users={users as any}
       areas={areas as any}
-      deactivatedIds={deactivatedIds}
       currentUserId={session.user.id}
       autoOpenNew={autoOpenNew}
     />

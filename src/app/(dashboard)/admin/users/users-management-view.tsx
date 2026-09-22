@@ -1,14 +1,14 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { UniversalExportMenu } from "@/components/ui/universal-export-menu";
 import {
   Users, UserCheck, UserX, Shield, Search, Plus, Edit2,
-  Building2, Mail, CheckCircle2, AlertCircle, RefreshCw, KeyRound
+  Building2
 } from "lucide-react";
 import {
   Sheet,
@@ -35,13 +35,13 @@ interface UserItem {
   email: string | null;
   role: Role;
   areaId: string | null;
+  isActive?: boolean;
   area?: AreaItem | null;
 }
 
 interface UsersManagementViewProps {
   users: UserItem[];
   areas: AreaItem[];
-  deactivatedIds: string[];
   currentUserId: string;
   autoOpenNew?: boolean;
 }
@@ -49,7 +49,6 @@ interface UsersManagementViewProps {
 export function UsersManagementView({
   users,
   areas,
-  deactivatedIds,
   currentUserId,
   autoOpenNew = false
 }: UsersManagementViewProps) {
@@ -83,7 +82,7 @@ export function UsersManagementView({
 
   const usersWithStatus = users.map((u) => ({
     ...u,
-    isActive: !deactivatedIds.includes(u.id)
+    isActive: u.isActive !== false
   }));
 
   const filteredUsers = usersWithStatus.filter((u) => {

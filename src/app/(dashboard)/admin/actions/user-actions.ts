@@ -4,10 +4,9 @@ import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
 import bcrypt from "bcryptjs";
-import { Role } from "@prisma/client";
+import { Role, User } from "@prisma/client";
 import { hasPermission, PERMISSIONS } from "@/lib/permissions";
-
-const DEACTIVATED_KEY = "muni-deactivated-users";
+import { ActionResult } from "@/types/actions";
 
 function canManageUsers(role?: string | null): boolean {
   if (!role) return false;
@@ -19,25 +18,10 @@ function canManageUsers(role?: string | null): boolean {
   );
 }
 
-export async function getDeactivatedUserIds(): Promise<string[]> {
-  try {
-    const record = await prisma.systemSetting.findUnique({
-      where: { key: DEACTIVATED_KEY }
-    });
-    if (record?.value) {
-      return JSON.parse(record.value) as string[];
-    }
-    return [];
-  } catch (error) {
-    console.error("Error al obtener usuarios desactivados:", error);
-    return [];
-  }
-}
-
-export async function createUserAction(formData: FormData) {
+export async function createUserAction(formData: FormData): Promise<ActionResult<User>> {
   const session = await auth();
   if (!session?.user || !canManageUsers(session.user.role)) {
-    return { error: "Solo los administradores autorizados pueden crear usuarios" };
+    return { success: false, error: "Solo los administradores autorizados pueden crear usuarios" };
   }
 
   const name = formData.get("name") as string;
@@ -56,6 +40,7 @@ export async function createUserAction(formData: FormData) {
         password: hashedPassword,
         role,
         areaId: areaId || null,
+        isActive: true,
       }
     });
 
@@ -70,11 +55,11 @@ export async function createUserAction(formData: FormData) {
     });
 
     revalidatePath("/admin/users");
-    return { success: true };
+    return { success: true, data: user, message: "Agente municipal registrado con éxito" };
   } catch (error) {
     console.error(error);
-    if ((error as any).code === 'P2002') return { error: "Ya existe un usuario con ese email" };
-    return { error: "Error al crear el usuario" };
+    if ((error as any).code === 'P2002') return { success: false, error: "Ya existe un usuario con ese email" };
+    return { success: false, error: "Error al crear el usuario" };
   }
 }
 
@@ -88,7 +73,7 @@ export interface UpdateUserInput {
   isActive?: boolean;
 }
 
-export async function updateUserAction(input: UpdateUserInput) {
+export async function updateUserAction(input: UpdateUserInput): Promise<ActionResult<User>> {
   const session = await auth();
   if (!session?.user || !canManageUsers(session.user.role)) {
     return { success: false, error: "No tiene permisos para modificar usuarios" };
@@ -119,6 +104,10 @@ export async function updateUserAction(input: UpdateUserInput) {
       areaId: input.areaId || null,
     };
 
+    if (typeof input.isActive === "boolean") {
+      dataToUpdate.isActive = input.isActive;
+    }
+
     if (input.password && input.password.trim().length >= 6) {
       dataToUpdate.password = await bcrypt.hash(input.password.trim(), 10);
     }
@@ -127,24 +116,6 @@ export async function updateUserAction(input: UpdateUserInput) {
       where: { id: input.id },
       data: dataToUpdate
     });
-
-    if (typeof input.isActive === "boolean") {
-      let deactivated = await getDeactivatedUserIds();
-
-      if (!input.isActive) {
-        if (!deactivated.includes(input.id)) {
-          deactivated.push(input.id);
-        }
-      } else {
-        deactivated = deactivated.filter((id) => id !== input.id);
-      }
-
-      await prisma.systemSetting.upsert({
-        where: { key: DEACTIVATED_KEY },
-        update: { value: JSON.stringify(deactivated) },
-        create: { key: DEACTIVATED_KEY, value: JSON.stringify(deactivated) }
-      });
-    }
 
     await prisma.auditLog.create({
       data: {
@@ -157,14 +128,14 @@ export async function updateUserAction(input: UpdateUserInput) {
     });
 
     revalidatePath("/admin/users");
-    return { success: true, user: updatedUser };
+    return { success: true, data: updatedUser, message: "Usuario actualizado con éxito" };
   } catch (error: any) {
     console.error("Error al actualizar usuario:", error);
     return { success: false, error: error.message || "Error al actualizar el usuario" };
   }
 }
 
-export async function toggleUserStatusAction(userId: string) {
+export async function toggleUserStatusAction(userId: string): Promise<ActionResult<{ isDeactivated: boolean }>> {
   const session = await auth();
   if (!session?.user || !canManageUsers(session.user.role)) {
     return { success: false, error: "No autorizado" };
@@ -175,33 +146,33 @@ export async function toggleUserStatusAction(userId: string) {
   }
 
   try {
-    let deactivated = await getDeactivatedUserIds();
-    const isCurrentlyDeactivated = deactivated.includes(userId);
+    const targetUser = await prisma.user.findUnique({
+      where: { id: userId }
+    });
 
-    if (isCurrentlyDeactivated) {
-      deactivated = deactivated.filter((id) => id !== userId);
-    } else {
-      deactivated.push(userId);
+    if (!targetUser) {
+      return { success: false, error: "Usuario no encontrado" };
     }
 
-    await prisma.systemSetting.upsert({
-      where: { key: DEACTIVATED_KEY },
-      update: { value: JSON.stringify(deactivated) },
-      create: { key: DEACTIVATED_KEY, value: JSON.stringify(deactivated) }
+    const newActiveState = !targetUser.isActive;
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: { isActive: newActiveState }
     });
 
     await prisma.auditLog.create({
       data: {
         userId: session.user.id,
-        action: isCurrentlyDeactivated ? 'ACTIVATE_USER' : 'DEACTIVATE_USER',
+        action: newActiveState ? 'ACTIVATE_USER' : 'DEACTIVATE_USER',
         entity: 'User',
         entityId: userId,
-        details: `Cambio de estado de cuenta (${isCurrentlyDeactivated ? 'Activado' : 'Suspendido/Inactivo'})`
+        details: `Cambio de estado de cuenta (${newActiveState ? 'Activado' : 'Suspendido/Inactivo'})`
       }
     });
 
     revalidatePath("/admin/users");
-    return { success: true, isDeactivated: !isCurrentlyDeactivated };
+    return { success: true, data: { isDeactivated: !newActiveState } };
   } catch (error: any) {
     return { success: false, error: error.message || "Error al alternar estado del usuario" };
   }

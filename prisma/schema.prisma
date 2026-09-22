@@ -15,6 +15,7 @@ model User {
   role          Role      @default(OPERATIVO)
   areaId        String?
   area          Area?     @relation(fields: [areaId], references: [id])
+  isActive      Boolean   @default(true)
   accounts      Account[]
   sessions      Session[]
   auditLogs     AuditLog[]
@@ -84,8 +85,8 @@ model Family {
 
 model Case {
   id            String         @id @default(cuid())
-  personId      String
-  person        Person         @relation(fields: [personId], references: [id])
+  personId      String?
+  person        Person?        @relation(fields: [personId], references: [id])
   areaId        String
   area          Area           @relation(fields: [areaId], references: [id])
   title         String
@@ -521,7 +522,7 @@ model PadronUnificado {
 }
 
 model ParticipacionPrograma {
-  id                 BigInt   @id @default(autoincrement())
+  id                 Int      @id @default(autoincrement())
   dni                String
   nombre_completo    String?
   programa           String

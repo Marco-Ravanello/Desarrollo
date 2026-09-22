@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -26,13 +26,6 @@ const svgMarkerHtml = `
   </svg>
 `;
 
-const DefaultMunicipalIcon = L.divIcon({
-  html: svgMarkerHtml,
-  className: "custom-municipal-marker",
-  iconSize: [30, 42],
-  iconAnchor: [15, 42],
-  popupAnchor: [0, -38]
-});
 
 interface MapViewProps {
   people: any[];
@@ -99,10 +92,17 @@ export function MapView({
     return p.cases?.some((c: any) => c.areaId === filterArea);
   });
 
+  const defaultMunicipalIcon = useMemo(() => L.divIcon({
+    html: svgMarkerHtml,
+    className: "custom-municipal-marker",
+    iconSize: [30, 42],
+    iconAnchor: [15, 42],
+    popupAnchor: [0, -38]
+  }), []);
+
   // Safe marker cap for fluid individual marker rendering when showing all district
-  const displayedMarkers = localityName === "Todo el Partido" || localityName === "Tres de Febrero"
-    ? filteredPeople.slice(0, 2500)
-    : filteredPeople;
+  const maxMarkers = localityName === "Todo el Partido" || localityName === "Tres de Febrero" ? 250 : 1500;
+  const displayedMarkers = filteredPeople.slice(0, maxMarkers);
 
   const areas = Array.from(
     new Set(
@@ -197,7 +197,7 @@ export function MapView({
             <Marker
               key={person.id}
               position={[person.latitude, person.longitude]}
-              icon={DefaultMunicipalIcon}
+              icon={defaultMunicipalIcon}
             >
               <Popup className="custom-popup">
                 <div className="p-1 max-w-[240px] font-sans space-y-2">

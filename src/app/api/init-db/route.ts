@@ -1,11 +1,27 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import bcrypt from "bcryptjs";
+import { auth } from "@/auth";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
   try {
+    const initSecretHeader = request.headers.get("x-init-secret");
+    const session = await auth();
+
+    const isSecretValid = Boolean(
+      process.env.INIT_DB_SECRET &&
+      initSecretHeader &&
+      initSecretHeader === process.env.INIT_DB_SECRET
+    );
+
+    const isSuperAdmin = session?.user?.role === "SUPERADMIN";
+
+    if (!isSecretValid && !isSuperAdmin) {
+      return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+    }
+
     const existingAdmin = await prisma.user.findUnique({
       where: { email: 'admin@municipio.gob.ar' },
     });
@@ -68,7 +84,6 @@ export async function GET(request: Request) {
       success: true,
       message: "¡Base de datos inicializada con éxito!",
       adminUser: adminUser.email,
-      defaultPassword: "admin123",
       areasCount: areas.length,
     });
   } catch (error: any) {

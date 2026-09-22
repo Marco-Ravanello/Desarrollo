@@ -16,7 +16,23 @@ const formatCurrency = (amount: number) => {
   }).format(amount);
 };
 
+import { auth } from "@/auth";
+import { redirect } from "next/navigation";
+
 export default async function BudgetPage() {
+  const session = await auth();
+  if (!session?.user?.id) redirect("/login");
+
+  const userRole = session.user.role;
+  const canAccess =
+    userRole === "SUPERADMIN" ||
+    userRole === "ADMIN_GENERAL" ||
+    userRole === "DIRECCION_GENERAL";
+
+  if (!canAccess) {
+    redirect("/dashboard");
+  }
+
   const summary = await getBudgetSummary();
   const totalBudget = summary.reduce((sum, s) => sum + s.budget, 0);
   const totalSpent = summary.reduce((sum, s) => sum + s.spent, 0);

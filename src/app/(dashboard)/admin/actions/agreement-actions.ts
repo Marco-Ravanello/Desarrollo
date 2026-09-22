@@ -8,6 +8,15 @@ import { revalidatePath } from "next/cache";
 export async function createAgreementAction(formData: FormData) {
   const session = await auth();
 
+  if (!session?.user?.id) {
+    return { success: false, error: "No autorizado" };
+  }
+
+  const role = session.user.role;
+  if (role !== "SUPERADMIN" && role !== "ADMIN_GENERAL" && role !== "DIRECCION_GENERAL") {
+    return { success: false, error: "No tiene permisos para registrar convenios" };
+  }
+
   const title = formData.get("title") as string;
   const number = formData.get("number") as string;
   const parties = formData.get("parties") as string;
@@ -36,9 +45,7 @@ export async function createAgreementAction(formData: FormData) {
       status
     });
 
-    if (session?.user?.id) {
-      await createAuditLog(session.user.id, "CREATE", "Agreement", agreement.id, { title: agreement.title });
-    }
+    await createAuditLog(session.user.id, "CREATE", "Agreement", agreement.id, { title: agreement.title });
 
     revalidatePath("/admin/agreements");
     return { success: true, id: agreement.id };
