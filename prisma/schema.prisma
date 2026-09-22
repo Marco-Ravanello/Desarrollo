@@ -522,7 +522,7 @@ model PadronUnificado {
 }
 
 model ParticipacionPrograma {
-  id                 Int      @id @default(autoincrement())
+  id                 BigInt   @id @default(autoincrement())
   dni                String
   nombre_completo    String?
   programa           String
