@@ -335,23 +335,27 @@ export async function getPeopleFilterOptions() {
   }
 }
 
-function extractDateFromDetalle(text?: string | null): Date {
-  if (!text) return new Date();
-  // 1. Buscar patrones de fecha tipo DD/MM/YYYY o DD-MM-YYYY (ej: 08/05/2026)
-  const dateMatch = text.match(/\b(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})\b/);
-  if (dateMatch) {
-    const day = parseInt(dateMatch[1], 10);
-    const month = parseInt(dateMatch[2], 10) - 1;
-    const year = parseInt(dateMatch[3], 10);
-    const parsed = new Date(year, month, day);
-    if (!isNaN(parsed.getTime())) return parsed;
+function extractDateFromDetalle(detalle?: string | null): Date {
+  if (!detalle) return new Date("2024-01-01T00:00:00.000Z");
+  const matchDmy = detalle.match(/\b(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})\b/);
+  if (matchDmy) {
+    const day = parseInt(matchDmy[1], 10);
+    const month = parseInt(matchDmy[2], 10) - 1;
+    const year = parseInt(matchDmy[3], 10);
+    return new Date(Date.UTC(year, month, day, 12, 0, 0));
   }
-  // 2. Si menciona un año particular (ej: 2025, 2024, 2026)
-  const yearMatch = text.match(/\b(202[0-9])\b/);
-  if (yearMatch) {
-    return new Date(parseInt(yearMatch[1], 10), 0, 1);
+  const matchYmd = detalle.match(/\b(\d{4})[\/-](\d{1,2})[\/-](\d{1,2})\b/);
+  if (matchYmd) {
+    const year = parseInt(matchYmd[1], 10);
+    const month = parseInt(matchYmd[2], 10) - 1;
+    const day = parseInt(matchYmd[3], 10);
+    return new Date(Date.UTC(year, month, day, 12, 0, 0));
   }
-  return new Date();
+  const matchYear = detalle.match(/\b(202[0-6]|201[8-9])\b/);
+  if (matchYear) {
+    return new Date(Date.UTC(parseInt(matchYear[1], 10), 2, 1, 12, 0, 0));
+  }
+  return new Date("2024-01-01T00:00:00.000Z");
 }
 
 export async function getPersonById(id: string) {
@@ -407,13 +411,22 @@ export async function getPersonById(id: string) {
 
       const progs = (p.programas_activos || "").split("|").map((prog: string) => prog.trim()).filter(Boolean);
 
-      const syntheticInterventions = partRows.map((part: any, idx: number) => ({
-        id: `part-${idx}`,
-        title: part.programa || "Programa Municipal",
-        description: part.detalle_destacado || `Prestación registrada con rol: ${part.roles || 'Beneficiario'}`,
-        date: extractDateFromDetalle(part.detalle_destacado),
-        area: { name: part.programa || "Desarrollo Social" }
-      }));
+      const syntheticInterventions = partRows.map((part: any, idx: number) => {
+        let areaName: string | undefined = undefined;
+        if (part.detalle_destacado) {
+          const areaMatch = part.detalle_destacado.match(/Área Municipal:\s*([^|]+)/i);
+          if (areaMatch) {
+            areaName = areaMatch[1].trim();
+          }
+        }
+        return {
+          id: `part-${idx}`,
+          title: part.programa,
+          description: part.detalle_destacado || `Prestación registrada con rol: ${part.roles}`,
+          date: extractDateFromDetalle(part.detalle_destacado),
+          area: areaName ? { name: areaName } : undefined
+        };
+      });
 
       // Fetch real Prisma cases, interventions, and documents
       const realCases = await prisma.case.findMany({
