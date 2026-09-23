@@ -335,6 +335,25 @@ export async function getPeopleFilterOptions() {
   }
 }
 
+function extractDateFromDetalle(text?: string | null): Date {
+  if (!text) return new Date();
+  // 1. Buscar patrones de fecha tipo DD/MM/YYYY o DD-MM-YYYY (ej: 08/05/2026)
+  const dateMatch = text.match(/\b(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})\b/);
+  if (dateMatch) {
+    const day = parseInt(dateMatch[1], 10);
+    const month = parseInt(dateMatch[2], 10) - 1;
+    const year = parseInt(dateMatch[3], 10);
+    const parsed = new Date(year, month, day);
+    if (!isNaN(parsed.getTime())) return parsed;
+  }
+  // 2. Si menciona un año particular (ej: 2025, 2024, 2026)
+  const yearMatch = text.match(/\b(202[0-9])\b/);
+  if (yearMatch) {
+    return new Date(parseInt(yearMatch[1], 10), 0, 1);
+  }
+  return new Date();
+}
+
 export async function getPersonById(id: string) {
   try {
     const padronRows: any[] = await prisma.$queryRawUnsafe(
@@ -390,10 +409,10 @@ export async function getPersonById(id: string) {
 
       const syntheticInterventions = partRows.map((part: any, idx: number) => ({
         id: `part-${idx}`,
-        title: part.programa,
-        description: part.detalle_destacado || `Prestación registrada con rol: ${part.roles}`,
-        date: new Date(),
-        area: { name: part.programa }
+        title: part.programa || "Programa Municipal",
+        description: part.detalle_destacado || `Prestación registrada con rol: ${part.roles || 'Beneficiario'}`,
+        date: extractDateFromDetalle(part.detalle_destacado),
+        area: { name: part.programa || "Desarrollo Social" }
       }));
 
       // Fetch real Prisma cases, interventions, and documents
