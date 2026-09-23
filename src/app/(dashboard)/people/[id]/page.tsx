@@ -67,11 +67,11 @@ export default async function PersonDetailPage({ params }: { params: Promise<{ i
         title: `Cierre de Caso: ${c.title}`,
         area: c.area.name
     })),
-    ...filteredInterventions.map(i => ({
+    ...filteredInterventions.map((i: any) => ({
       id: i.id,
       type: 'INTERVENTION',
-      date: typeof i.date === "string" ? i.date : (i.date?.toISOString ? i.date.toISOString() : new Date(i.date).toISOString()),
-      title: i.title ? `Prestación: ${i.title}` : `Intervención Social`,
+      date: typeof i.date === "string" ? i.date : (i.date instanceof Date ? i.date.toISOString() : String(i.date)),
+      title: i.title || "Intervención Social",
       area: i.area?.name,
       description: i.description
     })),
