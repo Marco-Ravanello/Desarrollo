@@ -1,18 +1,25 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { CloudRain, AlertTriangle, ShieldAlert, X, ChevronRight, Phone } from "lucide-react";
+import { CloudRain, AlertTriangle, ShieldAlert, X, ChevronRight } from "lucide-react";
 import Link from "next/link";
+import { getEmergencyStatusAction, toggleEmergencyStatusAction } from "@/app/(dashboard)/admin/actions/emergency-actions";
+import { toast } from "sonner";
 
 export function EmergencyHeaderWidget() {
   const [isEmergencyActive, setIsEmergencyActive] = useState(false);
   const [dismissBanner, setDismissBanner] = useState(false);
 
   useEffect(() => {
-    const saved = localStorage.getItem("muni-emergency-mode") || localStorage.getItem("emergency-mode-active");
-    if (saved) setIsEmergencyActive(JSON.parse(saved));
+    // 1. Consumir estado persistido desde el servidor
+    getEmergencyStatusAction().then((res) => {
+      if (res.success) {
+        setIsEmergencyActive(res.active);
+        localStorage.setItem("muni-emergency-mode", JSON.stringify(res.active));
+        localStorage.setItem("emergency-mode-active", JSON.stringify(res.active));
+      }
+    });
 
     const handleStorageChange = () => {
       const updated = localStorage.getItem("muni-emergency-mode") || localStorage.getItem("emergency-mode-active");
@@ -30,13 +37,22 @@ export function EmergencyHeaderWidget() {
     };
   }, []);
 
-  const toggleEmergency = () => {
+  const toggleEmergency = async () => {
     const nextState = !isEmergencyActive;
     setIsEmergencyActive(nextState);
     localStorage.setItem("muni-emergency-mode", JSON.stringify(nextState));
     localStorage.setItem("emergency-mode-active", JSON.stringify(nextState));
     window.dispatchEvent(new Event("muni-emergency-toggle"));
     window.dispatchEvent(new Event("emergency-toggle"));
+
+    const res = await toggleEmergencyStatusAction(nextState);
+    if (res.success) {
+      toast.success(
+        nextState ? "Protocolo de emergencia climática activado" : "Protocolo de emergencia climática desactivado"
+      );
+    } else {
+      toast.error(res.error || "Error al actualizar estado de emergencia");
+    }
   };
 
   return (

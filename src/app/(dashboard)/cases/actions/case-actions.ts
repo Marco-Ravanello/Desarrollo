@@ -25,11 +25,19 @@ export async function addCaseInterventionAction(caseId: string, description: str
     if (!caseItem) {
       return { success: false, error: "Expediente no encontrado" };
     }
+    if (!caseItem.personId) {
+      return { success: false, error: "El expediente debe tener un ciudadano asignado para registrar una intervención." };
+    }
+
+    const validPerson = await ensurePersonInPrisma(caseItem.personId);
+    if (!validPerson) {
+      return { success: false, error: "No se encontró el registro del ciudadano en la base de datos." };
+    }
 
     const intervention = await prisma.intervention.create({
       data: {
         caseId,
-        personId: caseItem.personId,
+        personId: validPerson.id,
         description: cleanDesc,
         userId: session.user.id,
         date: new Date()

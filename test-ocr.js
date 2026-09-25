@@ -3,7 +3,7 @@ const path = require('path');
 
 async function test() {
   const worker = await createWorker('spa');
-  const imagePath = '/tmp/file_attachments/Captura de pantalla 2026-07-02 121247.png';
+  const imagePath = path.join(process.cwd(), 'public', 'test.png');
   console.log('Recognizing', imagePath);
   const { data: { text } } = await worker.recognize(imagePath);
   console.log('--- OCR EXTRACTED TEXT ---');

@@ -46,7 +46,7 @@ export async function uploadDocumentAction(formData: FormData) {
     const document = await prisma.document.create({
       data: {
         name: file.name,
-        url: `/uploads/${safeFilename}`,
+        url: `/api/uploads/${safeFilename}`,
         fileType: file.type,
         personId: validPersonId,
         caseId: caseId || null,

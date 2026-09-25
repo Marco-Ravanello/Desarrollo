@@ -14,14 +14,14 @@ async function main() {
 
   const order = await prisma.purchaseOrder.create({
     data: {
-      orderNumber: 'OC-2026-001',
+      number: 'OC-2026-001',
       expediente: 'EXP-123/2026',
       providerId: provider.id,
       providerName: provider.name,
       providerCuit: provider.cuit,
       areaId: area.id,
       amount: 1500.50,
-      status: 'PENDIENTE',
+      status: 'BORRADOR',
       items: {
         create: [
           {

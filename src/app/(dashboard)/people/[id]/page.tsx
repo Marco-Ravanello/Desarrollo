@@ -286,22 +286,25 @@ export default async function PersonDetailPage({ params }: { params: Promise<{ i
               </div>
               {filteredDocuments.length === 0 ? <p className="text-muted-foreground text-center text-sm py-4 border rounded-2xl border-dashed border-border/60 font-medium font-medium">No hay documentos adjuntos.</p> : (
                 <div className="grid grid-cols-1 gap-2">
-                  {filteredDocuments.map(d => (
-                    <div key={d.id} className="p-3 border border-border/60 rounded-2xl flex justify-between items-center bg-muted/20 hover:bg-muted/40 transition-colors">
-                      <div className="flex items-center gap-3">
-                        <FileIcon className="h-4 w-4 text-muted-foreground" />
-                        <div>
-                          <p className="font-medium text-sm text-foreground">{d.name}</p>
-                          <p className="text-[10px] text-muted-foreground">{new Date(d.createdAt).toLocaleDateString()}</p>
+                  {filteredDocuments.map(d => {
+                    const href = d.url.startsWith("/api") ? d.url : `/api${d.url}`;
+                    return (
+                      <div key={d.id} className="p-3 border border-border/60 rounded-2xl flex justify-between items-center bg-muted/20 hover:bg-muted/40 transition-colors">
+                        <div className="flex items-center gap-3">
+                          <FileIcon className="h-4 w-4 text-muted-foreground" />
+                          <div>
+                            <p className="font-medium text-sm text-foreground">{d.name}</p>
+                            <p className="text-[10px] text-muted-foreground">{new Date(d.createdAt).toLocaleDateString()}</p>
+                          </div>
                         </div>
+                        <Button variant="ghost" size="sm" asChild className="text-primary font-bold">
+                          <a href={href} target="_blank" rel="noopener noreferrer">
+                            <ExternalLink className="h-4 w-4 mr-1" /> Abrir
+                          </a>
+                        </Button>
                       </div>
-                      <Button variant="ghost" size="sm" asChild className="text-primary font-bold">
-                        <a href={`/api${d.url}`} target="_blank" rel="noopener noreferrer">
-                          <ExternalLink className="h-4 w-4 mr-1" /> Abrir
-                        </a>
-                      </Button>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
               <UploadDocumentForm personId={person.id} />
