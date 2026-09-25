@@ -153,6 +153,7 @@ export interface GetCasesFilters {
   priority?: string;
   page?: number;
   limit?: number;
+  canViewSensitive?: boolean;
 }
 
 export async function getAllCases(filters: GetCasesFilters = {}) {
@@ -160,6 +161,17 @@ export async function getAllCases(filters: GetCasesFilters = {}) {
   const limit = Math.max(1, Math.min(100, filters.limit || 20));
   const skip = (page - 1) * limit;
   const where: any = {};
+
+  if (!filters.canViewSensitive) {
+    where.area = {
+      name: {
+        not: {
+          contains: "violencia",
+          mode: "insensitive"
+        }
+      }
+    };
+  }
 
   if (filters.areaId && filters.areaId !== "all") {
     where.areaId = filters.areaId;
@@ -200,9 +212,9 @@ export async function getAllCases(filters: GetCasesFilters = {}) {
       take: limit,
     }),
     prisma.case.count({ where }),
-    prisma.case.count({ where: { status: { in: ["ABIERTO", "EN_PROCESO"] } } }),
-    prisma.case.count({ where: { priority: "URGENTE", status: { in: ["ABIERTO", "EN_PROCESO"] } } }),
-    prisma.case.count({ where: { status: "CERRADO" } }),
+    prisma.case.count({ where: { ...where, status: { in: ["ABIERTO", "EN_PROCESO"] } } }),
+    prisma.case.count({ where: { ...where, priority: "URGENTE", status: { in: ["ABIERTO", "EN_PROCESO"] } } }),
+    prisma.case.count({ where: { ...where, status: "CERRADO" } }),
   ]);
 
   return {

@@ -841,20 +841,60 @@ async function geocodeAddress(address: string) {
 export async function createPerson(rawData: z.infer<typeof CreatePersonSchema>) {
   const data = CreatePersonSchema.parse(rawData);
   const coords = await geocodeAddress(data.address);
+  const nombreCompleto = `${data.lastName}, ${data.firstName}`;
 
-  return await prisma.person.create({
-    data: {
+  // 1. Crear o actualizar en tabla Person (usando DNI como ID para compatibilidad de rutas)
+  const person = await prisma.person.upsert({
+    where: { dni: data.dni },
+    update: {
+      firstName: data.firstName,
+      lastName: data.lastName,
+      birthDate: data.birthDate ? new Date(data.birthDate) : null,
+      address: data.address,
+      phone: data.phone || null,
+      email: data.email || null,
+      latitude: coords.lat,
+      longitude: coords.lng,
+    },
+    create: {
+      id: data.dni,
       dni: data.dni,
       firstName: data.firstName,
       lastName: data.lastName,
       birthDate: data.birthDate ? new Date(data.birthDate) : null,
       address: data.address,
-      phone: data.phone,
+      phone: data.phone || null,
       email: data.email || null,
       latitude: coords.lat,
       longitude: coords.lng,
     }
   });
+
+  // 2. Sincronizar en padron_unificado para que aparezca inmediatamente en el listado general
+  try {
+    await prisma.$executeRawUnsafe(
+      `INSERT INTO padron_unificado (dni, nombre_completo, direccion, telefono, email, latitude, longitude, cantidad_programas)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, 0)
+       ON CONFLICT (dni) DO UPDATE SET
+         nombre_completo = EXCLUDED.nombre_completo,
+         direccion = EXCLUDED.direccion,
+         telefono = EXCLUDED.telefono,
+         email = EXCLUDED.email,
+         latitude = EXCLUDED.latitude,
+         longitude = EXCLUDED.longitude;`,
+      data.dni,
+      nombreCompleto,
+      data.address,
+      data.phone || null,
+      data.email || null,
+      coords.lat,
+      coords.lng
+    );
+  } catch (err) {
+    console.error("Error sincronizando nuevo ciudadano en padron_unificado:", err);
+  }
+
+  return person;
 }
 
 export async function updatePerson(id: string, rawData: z.infer<typeof UpdatePersonSchema>) {
