@@ -6,36 +6,55 @@ import { createAuditLog } from "@/services/system";
 import { auth } from "@/auth";
 import { ensurePersonInPrisma } from "@/services/people";
 
-export async function addFamilyMember(personId: string, memberDni: string) {
+export async function addFamilyMember(
+  personId: string,
+  memberDni: string,
+  relationship: string = "Familiar a cargo"
+) {
   const session = await auth();
-  if (!session?.user?.id) throw new Error("No autorizado");
+  if (!session?.user?.id) {
+    return { success: false, error: "No autorizado" };
+  }
 
-  // Ensure both persons exist in relational Person table
-  const member = await ensurePersonInPrisma(memberDni);
+  const cleanDni = memberDni.trim().replace(/[^0-9]/g, "");
+  if (!cleanDni) {
+    return { success: false, error: "Debe ingresar un DNI válido" };
+  }
+
+  // 1. Asegurar que ambos ciudadanos existan en la tabla Person
+  const member = await ensurePersonInPrisma(cleanDni);
   if (!member) {
-    throw new Error("No se encontró ninguna persona con ese DNI. Debe registrarla primero.");
+    return {
+      success: false,
+      error: `No se encontró ningún ciudadano con DNI ${cleanDni} en el padrón.`
+    };
   }
 
   const person = await ensurePersonInPrisma(personId);
-  if (!person) throw new Error("Persona no encontrada");
+  if (!person) {
+    return { success: false, error: "Persona principal no encontrada" };
+  }
+
+  if (person.id === member.id) {
+    return { success: false, error: "No puede vincular a la persona consigo misma" };
+  }
 
   let familyId = person.familyId;
 
-  // Si la persona actual no tiene familia, crear una
+  // Si la persona no tiene grupo familiar creado, crearlo
   if (!familyId) {
     const newFamily = await prisma.family.create({
-      data: { name: `Familia ${person.lastName}` }
+      data: { name: `Grupo Familiar de ${person.lastName}` }
     });
     familyId = newFamily.id;
 
-    // Actualizar a la persona actual con el nuevo familyId
     await prisma.person.update({
       where: { id: person.id },
-      data: { familyId }
+      data: { familyId, isFamilyHead: true }
     });
   }
 
-  // Vincular al nuevo miembro a esa familia
+  // Vincular al nuevo integrante
   await prisma.person.update({
     where: { id: member.id },
     data: { familyId }
@@ -45,8 +64,13 @@ export async function addFamilyMember(personId: string, memberDni: string) {
     session.user.id,
     "ADD_FAMILY_MEMBER",
     "Family",
-    familyId!,
-    { personId: person.id, memberDni, memberName: `${member.firstName} ${member.lastName}` }
+    familyId,
+    {
+      personId: person.id,
+      memberId: member.id,
+      memberDni: cleanDni,
+      relationship
+    }
   );
 
   revalidatePath(`/people/${personId}`);
@@ -56,15 +80,22 @@ export async function addFamilyMember(personId: string, memberDni: string) {
 
 export async function removeFromFamily(personId: string) {
   const session = await auth();
-  if (!session?.user?.id) throw new Error("No autorizado");
-  const person = await ensurePersonInPrisma(personId);
-  if (person) {
-    await prisma.person.update({
-      where: { id: person.id },
-      data: { familyId: null, isFamilyHead: false }
-    });
-    revalidatePath(`/people/${person.id}`);
+  if (!session?.user?.id) {
+    return { success: false, error: "No autorizado" };
   }
-  revalidatePath(`/people/${personId}`);
-  return { success: true };
+
+  try {
+    const person = await ensurePersonInPrisma(personId);
+    if (person) {
+      await prisma.person.update({
+        where: { id: person.id },
+        data: { familyId: null, isFamilyHead: false }
+      });
+      revalidatePath(`/people/${person.id}`);
+    }
+    revalidatePath(`/people/${personId}`);
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err.message || "Error al desvincular familiar" };
+  }
 }
