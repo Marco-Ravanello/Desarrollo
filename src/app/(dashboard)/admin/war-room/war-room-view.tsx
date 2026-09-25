@@ -14,7 +14,7 @@ import { MunicipalCrest } from "@/components/ui/municipal-crest";
 
 interface WarRoomViewProps {
   initialData: {
-    totalFamilies: number;
+    totalCitizens: number;
     activeCriticalCases: number;
     resolvedToday: number;
     activeVehicles: number;
@@ -181,7 +181,7 @@ export function WarRoomView({ initialData }: WarRoomViewProps) {
             </div>
           </div>
           <div className="text-3xl sm:text-4xl font-black font-mono tracking-tight text-white">
-            {initialData.totalFamilies.toLocaleString("es-AR")}
+            {initialData.totalCitizens.toLocaleString("es-AR")}
           </div>
           <div className="flex items-center gap-1.5 text-[11px] text-emerald-400 mt-2 font-bold">
             <TrendingUp className="h-3 w-3" /> Datos reales en sistema

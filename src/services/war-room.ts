@@ -14,12 +14,12 @@ function formatRelativeTime(date: Date) {
 
 export async function getWarRoomData() {
   try {
-    let totalFamilies = 0;
+    let totalCitizens = 0;
     try {
       const padronCountRes: any[] = await prisma.$queryRawUnsafe(`SELECT COUNT(*)::int as total FROM padron_unificado;`);
-      totalFamilies = padronCountRes[0]?.total || 0;
+      totalCitizens = padronCountRes[0]?.total || 0;
     } catch (e) {
-      totalFamilies = await prisma.person.count().catch(() => 0);
+      totalCitizens = await prisma.person.count().catch(() => 0);
     }
 
     const [
@@ -102,7 +102,7 @@ export async function getWarRoomData() {
     });
 
     return {
-      totalFamilies,
+      totalCitizens,
       activeCriticalCases,
       resolvedToday,
       activeVehicles,
@@ -115,7 +115,7 @@ export async function getWarRoomData() {
   } catch (error) {
     console.error("Error fetching War Room data:", error);
     return {
-      totalFamilies: 0,
+      totalCitizens: 0,
       activeCriticalCases: 0,
       resolvedToday: 0,
       activeVehicles: 0,
