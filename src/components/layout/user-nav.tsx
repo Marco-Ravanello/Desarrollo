@@ -119,12 +119,14 @@ export function UserNav({ variant = "header", isCollapsed = false }: UserNavProp
           </>
         )}
 
-        <DropdownMenuItem asChild className="rounded-xl text-xs font-semibold cursor-pointer py-2 focus:bg-primary/10 focus:text-primary">
-          <Link href="/admin/settings" className="flex items-center gap-2.5 w-full">
-            <Settings className="h-4 w-4 text-muted-foreground" />
-            <span>Configuración del Sistema</span>
-          </Link>
-        </DropdownMenuItem>
+        {(userRole === "SUPERADMIN" || userRole === "ADMIN_GENERAL" || userRole === "DIRECCION_GENERAL") && (
+          <DropdownMenuItem asChild className="rounded-xl text-xs font-semibold cursor-pointer py-2 focus:bg-primary/10 focus:text-primary">
+            <Link href="/admin/settings" className="flex items-center gap-2.5 w-full">
+              <Settings className="h-4 w-4 text-muted-foreground" />
+              <span>Configuración del Sistema</span>
+            </Link>
+          </DropdownMenuItem>
+        )}
 
         <DropdownMenuSeparator className="my-1 bg-border/60" />
 

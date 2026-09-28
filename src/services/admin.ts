@@ -60,12 +60,51 @@ export const CreateAgreementSchema = z.object({
   fileUrl: z.string().optional().nullable(),
 });
 
-export async function getPurchaseOrders(status?: string) {
-  return await prisma.purchaseOrder.findMany({
-    where: status ? { status: status as OrderStatus } : {},
-    include: { provider: true, area: true },
-    orderBy: { createdAt: 'desc' }
-  });
+export interface GetPurchaseOrdersOptions {
+  status?: string;
+  query?: string;
+  page?: number;
+  limit?: number;
+}
+
+export async function getPurchaseOrders(options?: GetPurchaseOrdersOptions | string) {
+  const opts = typeof options === 'string' ? { status: options } : options || {};
+  const { status, query, page = 1, limit = 15 } = opts;
+
+  const where: any = {};
+  if (status) {
+    where.status = status as OrderStatus;
+  }
+  if (query && query.trim()) {
+    const q = query.trim();
+    where.OR = [
+      { number: { contains: q, mode: 'insensitive' } },
+      { expediente: { contains: q, mode: 'insensitive' } },
+      { providerName: { contains: q, mode: 'insensitive' } },
+      { providerCuit: { contains: q, mode: 'insensitive' } },
+      { description: { contains: q, mode: 'insensitive' } },
+      { provider: { name: { contains: q, mode: 'insensitive' } } },
+    ];
+  }
+
+  const [totalCount, orders] = await Promise.all([
+    prisma.purchaseOrder.count({ where }),
+    prisma.purchaseOrder.findMany({
+      where,
+      include: { provider: true, area: true },
+      orderBy: { createdAt: 'desc' },
+      skip: (page - 1) * limit,
+      take: limit,
+    })
+  ]);
+
+  return {
+    orders,
+    totalCount,
+    totalPages: Math.ceil(totalCount / limit) || 1,
+    currentPage: page,
+    limit,
+  };
 }
 
 export async function getAgreementById(id: string) {

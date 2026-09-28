@@ -80,7 +80,6 @@ export async function createEmergencyIncidentAction(formData: FormData) {
   }
 
   try {
-    // Buscar área de Hábitat o Protección Social
     const area = await prisma.area.findFirst({
       where: {
         OR: [
@@ -102,8 +101,7 @@ export async function createEmergencyIncidentAction(formData: FormData) {
         status: "ABIERTO",
         priority: priority as any,
         personId: null,
-        areaId: area.id,
-        assignedToId: session.user.id
+        areaId: area.id
       }
     });
 
@@ -146,9 +144,8 @@ export async function dispatchEmergencyStockAction(supplyId: string, quantity: n
     await prisma.supplyRequest.create({
       data: {
         supplyId,
-        areaId: item.areaId || (await prisma.area.findFirst())?.id || "",
         quantity,
-        reason: "Despacho de contingencia por Emergencia Climática (COE)",
+        userId: session.user.id,
         status: "ENTREGADO"
       }
     });
@@ -169,5 +166,41 @@ export async function dispatchEmergencyStockAction(supplyId: string, quantity: n
     return { success: true, newStock: updatedItem.stock };
   } catch (error: any) {
     return { success: false, error: error.message || "Error al despachar insumo" };
+  }
+}
+
+export async function getEmergencyStatusAction() {
+  try {
+    const setting = await prisma.systemSetting.findUnique({
+      where: { key: "muni-emergency-mode" }
+    });
+    return { success: true, active: setting?.value === "true" };
+  } catch (err) {
+    return { success: true, active: false };
+  }
+}
+
+export async function toggleEmergencyStatusAction(active: boolean) {
+  const session = await auth();
+  if (!session?.user?.id) return { success: false, error: "No autorizado" };
+  try {
+    await prisma.systemSetting.upsert({
+      where: { key: "muni-emergency-mode" },
+      update: { value: String(active) },
+      create: { key: "muni-emergency-mode", value: String(active) }
+    });
+    await prisma.auditLog.create({
+      data: {
+        userId: session.user.id,
+        action: active ? "EMERGENCY_MODE_ACTIVATED" : "EMERGENCY_MODE_DEACTIVATED",
+        entity: "SystemSetting",
+        entityId: "muni-emergency-mode",
+        details: `Protocolo de emergencia climática ${active ? "ACTIVADO" : "DESACTIVADO"} por ${session.user.name || session.user.email}`
+      }
+    });
+    revalidatePath("/", "layout");
+    return { success: true, active };
+  } catch (err: any) {
+    return { success: false, error: err.message || "Error al actualizar estado de emergencia" };
   }
 }

@@ -39,7 +39,14 @@ export async function getHRStats() {
   const now = new Date();
   const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
-  const [total, active, newThisMonth, areasWithStaff] = await Promise.all([
+  const [
+    total,
+    active,
+    newThisMonth,
+    areasWithStaff,
+    totalBudgetAgg,
+    budgetByAreaAgg
+  ] = await Promise.all([
     prisma.hRRecord.count(),
     prisma.hRRecord.count({ where: { status: 'ACTIVO' } }),
     prisma.hRRecord.count({ where: { createdAt: { gte: firstDayOfMonth } } }),
@@ -47,22 +54,23 @@ export async function getHRStats() {
       by: ['areaId'],
       _count: { _all: true },
       where: { NOT: { areaId: null } }
+    }),
+    prisma.hRRecord.aggregate({
+      _sum: { salary: true }
+    }),
+    prisma.hRRecord.groupBy({
+      by: ['areaId'],
+      _sum: { salary: true },
+      where: { NOT: { areaId: null } }
     })
   ]);
 
-  const rawRecords = await prisma.hRRecord.findMany({
-    select: {
-      salary: true,
-      areaId: true
-    }
-  });
-
-  const totalBudget = rawRecords.reduce((acc, curr) => acc + Number(curr.salary || 0), 0);
+  const totalBudget = Number(totalBudgetAgg._sum.salary || 0);
 
   const budgetByArea: Record<string, number> = {};
-  rawRecords.forEach(r => {
+  budgetByAreaAgg.forEach(r => {
     if (r.areaId) {
-        budgetByArea[r.areaId] = (budgetByArea[r.areaId] || 0) + Number(r.salary || 0);
+      budgetByArea[r.areaId] = Number(r._sum.salary || 0);
     }
   });
 

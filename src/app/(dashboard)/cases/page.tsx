@@ -35,6 +35,8 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
   const pageNum = Math.max(1, Number(page) || 1);
   const limitNum = Math.max(1, Math.min(100, Number(limit) || 20));
 
+  const canViewSensitive = hasPermission(session.user.role as any, PERMISSIONS.VIEW_SENSITIVE_CASES);
+
   const [data, areasList] = await Promise.all([
     getAllCases({
       query: q,
@@ -43,11 +45,10 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
       priority,
       page: pageNum,
       limit: limitNum,
+      canViewSensitive,
     }),
     getAreas(),
   ]);
-
-  const canViewSensitive = hasPermission(session.user.role as any, PERMISSIONS.VIEW_SENSITIVE_CASES);
 
   const getPriorityBadge = (p: string) => {
     switch (p) {
@@ -250,11 +251,17 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
                   return (
                     <TableRow key={c.id} className="border-border/60 hover:bg-muted/30 transition-colors">
                       <TableCell className="font-medium max-w-xs">
-                        <div className="truncate font-bold text-xs text-foreground">{c.title}</div>
-                        {c.description && (
-                          <div className="truncate text-[11px] text-muted-foreground mt-0.5 max-w-sm">
-                            {isRestricted ? "Información confidencial reservada" : c.description}
-                          </div>
+                        {isRestricted ? (
+                          <span className="italic text-muted-foreground text-xs font-semibold">Expediente Confidencial Reservado</span>
+                        ) : (
+                          <>
+                            <div className="truncate font-bold text-xs text-foreground">{c.title}</div>
+                            {c.description && (
+                              <div className="truncate text-[11px] text-muted-foreground mt-0.5 max-w-sm">
+                                {c.description}
+                              </div>
+                            )}
+                          </>
                         )}
                       </TableCell>
                       <TableCell className="text-xs">
@@ -289,11 +296,17 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
                         })}
                       </TableCell>
                       <TableCell className="text-center">
-                        <Button asChild variant="ghost" size="sm" className="h-8 rounded-lg text-xs font-bold">
-                          <Link href={`/cases/${c.id}`}>
-                            Ver <ArrowRight className="h-3.5 w-3.5 ml-1" />
-                          </Link>
-                        </Button>
+                        {isRestricted ? (
+                          <Button disabled variant="ghost" size="sm" className="h-8 rounded-lg text-xs font-bold text-muted-foreground opacity-50 cursor-not-allowed">
+                            Reservado
+                          </Button>
+                        ) : (
+                          <Button asChild variant="ghost" size="sm" className="h-8 rounded-lg text-xs font-bold">
+                            <Link href={`/cases/${c.id}`}>
+                              Ver <ArrowRight className="h-3.5 w-3.5 ml-1" />
+                            </Link>
+                          </Button>
+                        )}
                       </TableCell>
                     </TableRow>
                   );

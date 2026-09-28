@@ -11,24 +11,24 @@ export interface SanitizedPayload {
 export function sanitizeText(text: string, knownEntities?: { names?: string[]; addresses?: string[] }): SanitizedPayload {
   const tokenMap: Record<string, string> = {};
   let currentDniIndex = 1;
+  let currentCuitIndex = 1;
   let currentPersonIndex = 1;
   let currentAddressIndex = 1;
   let currentPhoneIndex = 1;
   let sanitized = text;
 
-  // 1. Anonimizar DNI (7 a 8 dígitos)
-  const dniRegex = /\b\d{7,8}\b/g;
+  // 1. Anonimizar DNI (7 a 8 dígitos) evitando enmascarar montos precedidos por signo $
+  const dniRegex = /(?<!$\s?|\bARS\s?|\bpesos\s?)\b\d{7,8}\b/gi;
   sanitized = sanitized.replace(dniRegex, (match) => {
-    // Evitar reemplazar números que parezcan códigos cortos
     const token = `[DNI_${currentDniIndex++}]`;
     tokenMap[token] = match;
     return token;
   });
 
-  // 2. Anonimizar CUIT / CUIL (xx-xxxxxxxx-x)
+  // 2. Anonimizar CUIT / CUIL (xx-xxxxxxxx-x) usando su propio contador
   const cuitRegex = /\b\d{2}-\d{7,8}-\d\b/g;
   sanitized = sanitized.replace(cuitRegex, (match) => {
-    const token = `[CUIT_${currentDniIndex++}]`;
+    const token = `[CUIT_${currentCuitIndex++}]`;
     tokenMap[token] = match;
     return token;
   });
