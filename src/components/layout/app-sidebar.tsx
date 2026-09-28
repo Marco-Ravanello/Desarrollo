@@ -1,20 +1,24 @@
 "use client";
 
 import * as React from "react";
-import { LayoutDashboard, Users, ShieldAlert, ClipboardList, LogOut, Briefcase, Car, UserCog, ChevronLeft, ChevronRight, CheckCircle2, MapPin, Wallet, Building2, FileSpreadsheet, Calendar, Sparkles, CloudRain, Settings, Tv, Network, HeartHandshake } from "lucide-react";
+import { LayoutDashboard, Users, ShieldAlert, ClipboardList, LogOut, Briefcase, Car, UserCog, ChevronLeft, ChevronRight, CheckCircle2, MapPin, Wallet, Building2, FileSpreadsheet, Calendar, Sparkles, CloudRain, Settings, Tv, Network } from "lucide-react";
 import { MunicipalCrest } from "@/components/ui/municipal-crest";
 import { UserNav } from "./user-nav";
 import { useSession, signOut } from "next-auth/react";
 import { getAreaNavColor, getAreaBgColor } from "@/lib/area-theme";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { GlobalSearch } from "@/components/search/global-search";
 import { ThemeToggle } from "./theme-toggle";
 import { hasPermission, PERMISSIONS } from "@/lib/permissions";
 
-export function AppSidebar() {
+interface AppSidebarProps {
+  isMobile?: boolean;
+  onNavigate?: () => void;
+}
+
+export function AppSidebar({ isMobile = false, onNavigate }: AppSidebarProps) {
   const { data: session } = useSession();
   const pathname = usePathname();
   const user = session?.user;
@@ -22,11 +26,16 @@ export function AppSidebar() {
   const [isCollapsed, setIsCollapsed] = React.useState(false);
 
   React.useEffect(() => {
+    if (isMobile) {
+      setIsCollapsed(false);
+      return;
+    }
     const saved = localStorage.getItem("sidebar-collapsed");
     if (saved) setIsCollapsed(JSON.parse(saved));
-  }, []);
+  }, [isMobile]);
 
   const toggleSidebar = () => {
+    if (isMobile) return;
     const newState = !isCollapsed;
     setIsCollapsed(newState);
     localStorage.setItem("sidebar-collapsed", JSON.stringify(newState));
@@ -79,14 +88,16 @@ export function AppSidebar() {
 
   return (
     <div className={`${isCollapsed ? "w-20" : "w-72"} h-screen max-h-screen bg-card text-card-foreground flex flex-col shrink-0 overflow-hidden transition-all duration-300 relative border-r border-border/60 shadow-sm`}>
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={toggleSidebar}
-        className={`absolute -right-3 top-20 h-6 w-6 rounded-full ${sidebarColor} hover:brightness-110 text-white border-none shadow-md z-50 print:hidden`}
-      >
-        {isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
-      </Button>
+      {!isMobile && (
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={toggleSidebar}
+          className={`absolute -right-3 top-20 h-6 w-6 rounded-full ${sidebarColor} hover:brightness-110 text-white border-none shadow-md z-50 print:hidden`}
+        >
+          {isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+        </Button>
+      )}
 
       <div className={`p-5 space-y-4 shrink-0 ${isCollapsed ? "px-3" : ""}`}>
         <div className={`text-2xl font-bold flex items-center gap-2.5 ${isCollapsed ? "justify-center" : ""}`}>
@@ -116,6 +127,7 @@ export function AppSidebar() {
               <Link
                 key={item.title}
                 href={item.url}
+                onClick={() => onNavigate?.()}
                 title={isCollapsed ? item.title : ""}
                 className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all group mb-1 ${
                   isCollapsed ? "justify-center" : ""
@@ -138,6 +150,7 @@ export function AppSidebar() {
               <Link
                 key={item.title}
                 href={item.url}
+                onClick={() => onNavigate?.()}
                 title={isCollapsed ? item.title : ""}
                 className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all group mb-1 ${
                   isCollapsed ? "justify-center" : ""
@@ -158,6 +171,7 @@ export function AppSidebar() {
             <Link
               key={item.title}
               href={item.url}
+              onClick={() => onNavigate?.()}
               title={isCollapsed ? item.title : ""}
               className={`flex items-center gap-3 px-3.5 py-2.5 text-muted-foreground hover:text-foreground hover:bg-muted/60 rounded-xl transition-all group mb-1 font-medium ${
                 isCollapsed ? "justify-center" : ""

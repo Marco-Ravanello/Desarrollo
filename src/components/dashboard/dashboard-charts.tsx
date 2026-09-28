@@ -23,8 +23,6 @@ import {
   Building,
   TrendingUp,
   CheckCircle2,
-  FileSpreadsheet,
-  ArrowRight,
   BarChart3,
   ListOrdered,
   Car,
@@ -38,7 +36,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import Link from "next/link";
 
-const COLORS = ['#004a80', '#10b981', '#f5a623', '#ef4444', '#8b5cf6', '#06b6d4', '#ec4899', '#f97316'];
+const COLORS = ['#0284c7', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#ec4899', '#f97316'];
 
 interface DashboardChartsProps {
   casesByAreaData: any[];
@@ -122,8 +120,8 @@ export function DashboardCharts({
   return (
     <div className="space-y-6">
       {/* Area Filter Tabs */}
-      <div className="flex flex-wrap items-center gap-2 p-1.5 rounded-2xl bg-card/60 backdrop-blur-md border border-white/[0.06] shadow-sm">
-        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-3">
+      <div className="flex flex-wrap items-center gap-2 p-1.5 rounded-2xl bg-card border border-border/60 shadow-sm">
+        <span className="text-[10px] font-black text-foreground uppercase tracking-widest px-3">
           Filtrar por Área:
         </span>
         {areaTabs.map((tab) => {
@@ -135,10 +133,10 @@ export function DashboardCharts({
               variant={isActive ? "default" : "ghost"}
               size="sm"
               onClick={() => setSelectedArea(tab.id)}
-              className={`h-8 text-xs font-semibold rounded-xl transition-all duration-200 gap-1.5 ${
+              className={`h-8 text-xs font-bold rounded-xl transition-all duration-200 gap-1.5 ${
                 isActive
                   ? "bg-primary text-primary-foreground shadow-md"
-                  : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
               }`}
             >
               <Icon className="h-3.5 w-3.5" />
@@ -151,14 +149,14 @@ export function DashboardCharts({
       {/* Main Grid Layout */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {/* 1. Semestral AreaChart with SVG Gradient */}
-        <div className="bg-card/60 backdrop-blur-md p-6 rounded-3xl border border-white/[0.06] shadow-xl col-span-full lg:col-span-2 space-y-6">
+        <div className="bg-card p-6 rounded-3xl border border-border/60 shadow-sm col-span-full lg:col-span-2 space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <div className="flex items-center gap-2">
                 <div className="p-2 rounded-xl bg-primary/10 text-primary">
                   <TrendingUp className="h-4 w-4" />
                 </div>
-                <h3 className="text-xs font-black text-muted-foreground uppercase tracking-widest">
+                <h3 className="text-xs font-black text-foreground uppercase tracking-widest">
                   Evolución Semestral de Casos
                 </h3>
               </div>
@@ -167,16 +165,16 @@ export function DashboardCharts({
               </p>
             </div>
 
-            <div className="flex items-center gap-4 bg-muted/30 p-2 rounded-2xl border border-border/40">
+            <div className="flex items-center gap-4 bg-muted/40 p-2 rounded-2xl border border-border/60">
               <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-primary" />
+                <span className="w-2.5 h-2.5 rounded-full bg-sky-600" />
                 <span className="text-[11px] font-bold text-foreground">
                   {totalIngresadosSemestre} Ingresados
                 </span>
               </div>
-              <div className="flex items-center gap-2 border-l border-border/40 pl-4">
+              <div className="flex items-center gap-2 border-l border-border/60 pl-4">
                 <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-                <span className="text-[11px] font-bold text-emerald-400">
+                <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
                   {totalResueltosSemestre} Resueltos
                 </span>
               </div>
@@ -188,8 +186,8 @@ export function DashboardCharts({
               <AreaChart data={trendData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <defs>
                   <linearGradient id="gradientIngresados" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#004a80" stopOpacity={0.6} />
-                    <stop offset="95%" stopColor="#004a80" stopOpacity={0.0} />
+                    <stop offset="5%" stopColor="#0284c7" stopOpacity={0.6} />
+                    <stop offset="95%" stopColor="#0284c7" stopOpacity={0.0} />
                   </linearGradient>
                   <linearGradient id="gradientResueltos" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#10b981" stopOpacity={0.5} />
@@ -201,29 +199,30 @@ export function DashboardCharts({
                   fontSize={10}
                   tickLine={false}
                   axisLine={false}
-                  tick={{ fill: isDark ? '#94a3b8' : '#64748b' }}
+                  tick={{ fill: isDark ? '#cbd5e1' : '#475569', fontWeight: 700 }}
                   dy={10}
                 />
                 <YAxis
                   fontSize={10}
                   tickLine={false}
                   axisLine={false}
-                  tick={{ fill: isDark ? '#94a3b8' : '#64748b' }}
+                  tick={{ fill: isDark ? '#cbd5e1' : '#475569', fontWeight: 700 }}
                 />
                 <Tooltip
                   contentStyle={{
                     backgroundColor: isDark ? '#0f172a' : '#ffffff',
                     borderRadius: '16px',
-                    border: isDark ? '1px solid #1e293b' : '1px solid #e2e8f0',
+                    border: isDark ? '1px solid #334155' : '1px solid #cbd5e1',
                     boxShadow: '0 10px 25px rgba(0,0,0,0.15)',
-                    color: isDark ? '#f8fafc' : '#0f172a'
+                    color: isDark ? '#f8fafc' : '#0f172a',
+                    fontWeight: 'bold'
                   }}
                 />
                 <Area
                   type="monotone"
                   dataKey="ingresados"
                   name="Ingresados"
-                  stroke="#004a80"
+                  stroke="#0284c7"
                   strokeWidth={3}
                   fillOpacity={1}
                   fill="url(#gradientIngresados)"
@@ -243,13 +242,13 @@ export function DashboardCharts({
         </div>
 
         {/* 2. Lateral Widget: Operational Efficiency */}
-        <div className="bg-card/60 backdrop-blur-md p-6 rounded-3xl border border-white/[0.06] shadow-xl space-y-5 flex flex-col justify-between">
+        <div className="bg-card p-6 rounded-3xl border border-border/60 shadow-sm space-y-5 flex flex-col justify-between">
           <div>
             <div className="flex items-center gap-2 mb-1">
               <div className="p-2 rounded-xl bg-amber-500/10 text-amber-500">
                 <Zap className="h-4 w-4" />
               </div>
-              <h3 className="text-xs font-black text-muted-foreground uppercase tracking-widest">
+              <h3 className="text-xs font-black text-foreground uppercase tracking-widest">
                 Eficiencia Operativa
               </h3>
             </div>
@@ -259,25 +258,25 @@ export function DashboardCharts({
           </div>
 
           <div className="space-y-4">
-            <div className="p-4 rounded-2xl bg-muted/20 border border-border/40 space-y-2">
+            <div className="p-4 rounded-2xl bg-muted/40 border border-border/60 space-y-2">
               <div className="flex justify-between items-center text-xs font-bold">
                 <span className="text-foreground flex items-center gap-1.5">
                   <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" /> Tasa de Resolución
                 </span>
-                <span className="text-emerald-400 font-mono text-sm font-black">{resolutionRatePercent}%</span>
+                <span className="text-emerald-600 dark:text-emerald-400 font-mono text-sm font-black">{resolutionRatePercent}%</span>
               </div>
               <Progress value={resolutionRatePercent} className="h-2.5 rounded-full bg-muted" />
-              <p className="text-[10px] text-muted-foreground">
+              <p className="text-[10px] text-muted-foreground font-semibold">
                 {resolvedCasesCount} casos cerrados de {totalCasesCombined} tramitados.
               </p>
             </div>
 
-            <div className="p-4 rounded-2xl bg-muted/20 border border-border/40 space-y-2">
+            <div className="p-4 rounded-2xl bg-muted/40 border border-border/60 space-y-2">
               <div className="flex justify-between items-center text-xs font-bold">
                 <span className="text-foreground flex items-center gap-1.5">
-                  <Car className="h-3.5 w-3.5 text-blue-500" /> Disponibilidad de Flota
+                  <Car className="h-3.5 w-3.5 text-sky-500" /> Disponibilidad de Flota
                 </span>
-                <span className="text-blue-400 font-mono text-sm font-black">
+                <span className="text-sky-600 dark:text-sky-400 font-mono text-sm font-black">
                   {fleetPercent}%
                 </span>
               </div>
@@ -285,20 +284,20 @@ export function DashboardCharts({
                 value={fleetPercent}
                 className="h-2.5 rounded-full bg-muted"
               />
-              <p className="text-[10px] text-muted-foreground">
+              <p className="text-[10px] text-muted-foreground font-semibold">
                 {vehicleStats.available} de {vehicleStats.total} vehículos listos para patrullaje/logística.
               </p>
             </div>
 
             <div className="p-3.5 rounded-2xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Activity className="h-4 w-4 text-sky-400" />
+                <Activity className="h-4 w-4 text-sky-600 dark:text-sky-400" />
                 <div>
                   <p className="text-xs font-bold text-foreground">Derivaciones Interáreas</p>
                   <p className="text-[10px] text-muted-foreground">Pendientes de respuesta</p>
                 </div>
               </div>
-              <Badge className="bg-sky-500/20 text-sky-400 border-none font-black text-xs font-mono">
+              <Badge className="bg-sky-500/20 text-sky-700 dark:text-sky-300 border-none font-black text-xs font-mono">
                 {pendingDerivations}
               </Badge>
             </div>
@@ -306,10 +305,10 @@ export function DashboardCharts({
         </div>
 
         {/* 3. Horizontal Cases by Area ranking with progress bars & toggle */}
-        <div className="bg-card/60 backdrop-blur-md p-6 rounded-3xl border border-white/[0.06] shadow-xl col-span-full lg:col-span-2 space-y-6">
+        <div className="bg-card p-6 rounded-3xl border border-border/60 shadow-sm col-span-full lg:col-span-2 space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <h3 className="text-xs font-black text-muted-foreground uppercase tracking-widest">
+              <h3 className="text-xs font-black text-foreground uppercase tracking-widest">
                 Distribución de Casos por Área Operativa
               </h3>
               <p className="text-xs text-muted-foreground mt-0.5">
@@ -317,7 +316,7 @@ export function DashboardCharts({
               </p>
             </div>
 
-            <div className="flex items-center bg-muted/40 p-1 rounded-2xl border border-border/40">
+            <div className="flex items-center bg-muted/40 p-1 rounded-2xl border border-border/60">
               <Button
                 variant={viewMode === "ranking" ? "secondary" : "ghost"}
                 size="sm"
@@ -345,18 +344,18 @@ export function DashboardCharts({
                 const barColor = COLORS[idx % COLORS.length];
 
                 return (
-                  <div key={item.name} className="p-3.5 rounded-2xl bg-muted/20 border border-border/30 space-y-2">
+                  <div key={item.name} className="p-3.5 rounded-2xl bg-muted/30 border border-border/40 space-y-2">
                     <div className="flex items-center justify-between gap-3">
                       <div className="flex items-center gap-2.5">
                         <span className="text-xs font-black font-mono text-muted-foreground w-4">
                           #{idx + 1}
                         </span>
-                        <div className="p-2 rounded-xl bg-muted text-primary border border-border/40">
+                        <div className="p-2 rounded-xl bg-muted text-primary border border-border/60">
                           <AreaIcon className="h-4 w-4" />
                         </div>
                         <div>
                           <p className="text-xs font-bold text-foreground">{item.name}</p>
-                          <p className="text-[10px] text-muted-foreground font-mono">{percentage}% de la demanda global</p>
+                          <p className="text-[10px] text-muted-foreground font-mono font-semibold">{percentage}% de la demanda global</p>
                         </div>
                       </div>
 
@@ -380,16 +379,17 @@ export function DashboardCharts({
             <div className="h-[280px] w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={filteredCasesData.length > 0 ? filteredCasesData : casesByAreaData}>
-                  <XAxis dataKey="name" fontSize={10} tickLine={false} axisLine={false} tick={{ fill: isDark ? '#94a3b8' : '#64748b' }} />
-                  <YAxis fontSize={10} tickLine={false} axisLine={false} tick={{ fill: isDark ? '#94a3b8' : '#64748b' }} />
+                  <XAxis dataKey="name" fontSize={10} tickLine={false} axisLine={false} tick={{ fill: isDark ? '#cbd5e1' : '#475569', fontWeight: 700 }} />
+                  <YAxis fontSize={10} tickLine={false} axisLine={false} tick={{ fill: isDark ? '#cbd5e1' : '#475569', fontWeight: 700 }} />
                   <Tooltip
                     cursor={{ fill: isDark ? '#1e293b' : '#f8fafc' }}
                     contentStyle={{
                       backgroundColor: isDark ? '#0f172a' : '#ffffff',
                       borderRadius: '12px',
-                      border: isDark ? '1px solid #1e293b' : 'none',
+                      border: isDark ? '1px solid #334155' : '1px solid #cbd5e1',
                       boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-                      color: isDark ? '#f8fafc' : '#0f172a'
+                      color: isDark ? '#f8fafc' : '#0f172a',
+                      fontWeight: 'bold'
                     }}
                   />
                   <Bar dataKey="value" radius={[8, 8, 0, 0]} barSize={36}>
@@ -404,14 +404,14 @@ export function DashboardCharts({
         </div>
 
         {/* 4. Redesigned Purchase Orders Donut with central metric and link */}
-        <div className="bg-card/60 backdrop-blur-md p-6 rounded-3xl border border-white/[0.06] shadow-xl space-y-6 flex flex-col justify-between">
+        <div className="bg-card p-6 rounded-3xl border border-border/60 shadow-sm space-y-6 flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2">
                 <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-500">
                   <ShoppingBag className="h-4 w-4" />
                 </div>
-                <h3 className="text-xs font-black text-muted-foreground uppercase tracking-widest">
+                <h3 className="text-xs font-black text-foreground uppercase tracking-widest">
                   Órdenes de Compra
                 </h3>
               </div>
@@ -447,9 +447,10 @@ export function DashboardCharts({
                   contentStyle={{
                     backgroundColor: isDark ? '#0f172a' : '#ffffff',
                     borderRadius: '12px',
-                    border: isDark ? '1px solid #1e293b' : 'none',
+                    border: isDark ? '1px solid #334155' : '1px solid #cbd5e1',
                     boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-                    color: isDark ? '#f8fafc' : '#0f172a'
+                    color: isDark ? '#f8fafc' : '#0f172a',
+                    fontWeight: 'bold'
                   }}
                 />
               </PieChart>
@@ -460,26 +461,26 @@ export function DashboardCharts({
               <span className="text-xl font-black font-mono text-foreground tracking-tight">
                 ${formattedExecutedAmount}M
               </span>
-              <span className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">
+              <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">
                 {totalOrdersCount} Órdenes
               </span>
             </div>
           </div>
 
-          <div className="space-y-2 pt-2 border-t border-border/30">
+          <div className="space-y-2 pt-2 border-t border-border/40">
             {poStatusData.map((status, idx) => (
-              <div key={status.name || idx} className="flex items-center justify-between text-xs p-1.5 rounded-xl hover:bg-muted/20">
+              <div key={status.name || idx} className="flex items-center justify-between text-xs p-1.5 rounded-xl hover:bg-muted/30">
                 <div className="flex items-center gap-2">
                   <span
                     className="w-2.5 h-2.5 rounded-full shrink-0"
                     style={{ backgroundColor: status.fill || COLORS[idx % COLORS.length] }}
                   />
-                  <span className="font-semibold text-foreground text-[11px] truncate">{status.name}</span>
+                  <span className="font-bold text-foreground text-[11px] truncate">{status.name}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="font-mono text-xs font-bold text-foreground">{status.value}</span>
+                  <span className="font-mono text-xs font-black text-foreground">{status.value}</span>
                   {status.amount ? (
-                    <span className="font-mono text-[10px] text-muted-foreground">
+                    <span className="font-mono text-[10px] text-muted-foreground font-semibold">
                       (${ (status.amount / 1000).toFixed(0) }k)
                     </span>
                   ) : null}

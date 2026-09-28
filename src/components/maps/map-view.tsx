@@ -5,11 +5,11 @@ import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, User, Phone, Layers, Flame, Download, Filter, Map as MapIcon, ExternalLink, Network } from "lucide-react";
+import { MapPin, User, Phone, Layers, Flame, Download, Filter, Map as MapIcon, ExternalLink, Network, Info } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import dynamic from "next/dynamic";
-import domtoimage from "dom-to-image";
+import html2canvas from "html2canvas";
 import Link from "next/link";
 import { TRES_DE_FEBRERO_CENTER, TRES_DE_FEBRERO_DEFAULT_ZOOM } from "@/lib/constants/localities";
 
@@ -25,7 +25,6 @@ const svgMarkerHtml = `
     <circle cx="12" cy="11" r="3" fill="#2563EB"/>
   </svg>
 `;
-
 
 interface MapViewProps {
   people: any[];
@@ -71,16 +70,22 @@ export function MapView({
 
     setIsExporting(true);
     try {
-      const dataUrl = await domtoimage.toPng(mapElement, {
-        quality: 0.95,
-        bgcolor: "#f8fafc",
+      const canvas = await html2canvas(mapElement, {
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: "#f8fafc",
+        scale: 2,
+        ignoreElements: (element) => element.classList.contains("leaflet-control-container")
       });
+
       const link = document.createElement("a");
       link.download = `mapa-social-3f-${localityName.toLowerCase().replace(/\s+/g, "_")}-${new Date().toISOString().split("T")[0]}.png`;
-      link.href = dataUrl;
+      link.href = canvas.toDataURL("image/png");
       link.click();
     } catch (error) {
-      console.error("Error exporting map:", error);
+      console.error("Error exporting map via html2canvas:", error);
+      // Fallback using native canvas/dom-to-image or user alert
+      alert("No se pudo completar la captura PNG del mapa debido a restricciones CORS de los mosaicos. Se sugiere usar la función de captura de pantalla del navegador.");
     } finally {
       setIsExporting(false);
     }
@@ -103,6 +108,7 @@ export function MapView({
   // Safe marker cap for fluid individual marker rendering when showing all district
   const maxMarkers = localityName === "Todo el Partido" || localityName === "Tres de Febrero" ? 250 : 1500;
   const displayedMarkers = filteredPeople.slice(0, maxMarkers);
+  const isCapped = filteredPeople.length > maxMarkers;
 
   const areas = Array.from(
     new Set(
@@ -115,7 +121,7 @@ export function MapView({
 
   return (
     <div className="relative group/map" id="social-map-container">
-      <div className="absolute top-6 left-6 z-[1000] flex items-center gap-2 pointer-events-none">
+      <div className="absolute top-6 left-6 z-[1000] flex flex-col gap-2 pointer-events-none">
         <div className="bg-background/90 backdrop-blur-md p-2.5 rounded-2xl shadow-2xl border border-border/60 pointer-events-auto flex items-center gap-3">
           <div className="bg-primary text-primary-foreground p-2 rounded-xl">
             <MapIcon className="h-4 w-4" />
@@ -129,6 +135,15 @@ export function MapView({
             </p>
           </div>
         </div>
+
+        {isCapped && internalViewMode === "markers" && (
+          <div className="bg-amber-500/10 dark:bg-amber-500/20 backdrop-blur-md px-3 py-1.5 rounded-xl border border-amber-500/30 text-amber-700 dark:text-amber-300 pointer-events-auto flex items-center gap-1.5 text-[11px] font-bold shadow-md">
+            <Info className="h-3.5 w-3.5 shrink-0" />
+            <span>
+              Mostrando {displayedMarkers.length} de {filteredPeople.length} ciudadanos. Use el modo <strong>Calor</strong> para densidad global.
+            </span>
+          </div>
+        )}
       </div>
 
       <div className="absolute top-6 right-6 z-[1000] flex flex-col gap-3">
@@ -191,6 +206,7 @@ export function MapView({
           <TileLayer
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            crossOrigin="anonymous"
           />
 
           {displayedMarkers.map((person) => (
