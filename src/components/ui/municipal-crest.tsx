@@ -21,9 +21,7 @@ export function MunicipalCrest({
           if (
             parsed.customLogoUrl &&
             typeof parsed.customLogoUrl === "string" &&
-            parsed.customLogoUrl.trim() !== "" &&
-            parsed.customLogoUrl !== "/logo-3f.jpg" &&
-            parsed.customLogoUrl !== "/logo-3f.png"
+            parsed.customLogoUrl.trim() !== ""
           ) {
             setCustomLogo(parsed.customLogoUrl);
             return;
@@ -54,12 +52,24 @@ export function MunicipalCrest({
     );
   }
 
-  // Logo Oficial 3F fijo
   return (
-    <img
-      src="/logo-3f.png"
-      alt="Logo Oficial 3F - Municipalidad de Tres de Febrero"
-      className={`${className} object-contain rounded-xl select-none`}
-    />
+    <svg
+      viewBox="0 0 500 500"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={`${className} rounded-xl overflow-hidden select-none shrink-0`}
+      aria-label="Logo Oficial 3F - Municipalidad de Tres de Febrero"
+      role="img"
+    >
+      <rect width="500" height="500" fill="#2B5283" />
+      <g transform="translate(0, 5)">
+        {/* Letra 'F' Naranja */}
+        <path d="M230 145 H420 C436.569 145 450 158.431 450 175 V205 C450 221.569 436.569 235 420 235 H305 V275 H400 C416.569 275 430 288.431 430 305 V335 C430 351.569 416.569 365 400 365 H305 V395 C305 411.569 291.569 425 275 425 H240 C223.431 425 210 411.569 210 395 V165 C210 153.954 218.954 145 230 145 Z" fill="#DF821D" />
+        {/* Borde azul de separación */}
+        <path d="M205 145 C275 145 320 180 320 240 C320 275 300 300 270 315 C310 330 330 360 330 405 C330 460 275 495 190 495 C130 495 85 465 65 425 C55 405 70 380 95 380 C110 380 125 390 135 405 C145 420 165 435 190 435 C220 435 250 420 250 395 C250 370 220 355 180 355 H155 C140 355 130 340 130 325 C130 310 140 295 155 295 H180 C215 295 240 280 240 255 C240 230 215 215 185 215 C160 215 140 225 130 240 C120 255 105 260 90 250 C75 240 75 220 85 200 C110 165 145 145 205 145 Z" fill="#2B5283" />
+        {/* Número '3' Blanco */}
+        <path d="M195 155 C260 155 300 188 300 240 C300 272 282 295 252 308 C290 322 310 352 310 395 C310 448 260 480 180 480 C125 480 82 452 62 415 C54 398 67 375 90 375 C104 375 118 384 127 398 C136 412 154 425 180 425 C208 425 235 412 235 390 C235 367 206 352 168 352 H148 C135 352 125 340 125 326 C125 312 135 300 148 300 H168 C200 300 222 287 222 263 C222 240 198 227 170 227 C147 227 129 236 120 250 C111 263 96 268 83 259 C70 250 69 232 79 214 C102 180 136 155 195 155 Z" fill="#FFFFFF" />
+      </g>
+    </svg>
   );
 }
