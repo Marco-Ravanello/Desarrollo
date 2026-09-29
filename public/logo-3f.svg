@@ -1,23 +1,15 @@
-<svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <defs>
-    <linearGradient id="crestNavyGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#1B4679" />
-      <stop offset="50%" stop-color="#163C68" />
-      <stop offset="100%" stop-color="#0E2A49" />
-    </linearGradient>
-    <linearGradient id="crestOrangeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#FFA834" />
-      <stop offset="100%" stop-color="#F69321" />
-    </linearGradient>
-  </defs>
-  <rect x="4" y="4" width="92" height="92" rx="22" fill="url(#crestNavyGrad)" stroke="url(#crestOrangeGrad)" stroke-width="3.5" />
-  <rect x="7.5" y="7.5" width="85" height="85" rx="18.5" fill="none" stroke="#FFFFFF" stroke-opacity="0.22" stroke-width="0.8" />
-  <circle cx="50" cy="21" r="5" fill="url(#crestOrangeGrad)" />
-  <path d="M50 12 L50 14.5 M42.5 13.5 L44 15.5 M57.5 13.5 L56 15.5 M36.5 16.5 L38.5 18 M63.5 16.5 L61.5 18 M33 21 L35.5 21.5 M67 21 L64.5 21.5" stroke="#FFB834" stroke-width="1.5" stroke-linecap="round" />
-  <text x="37" y="58" text-anchor="middle" dominant-baseline="central" fill="#FFFFFF" font-family="system-ui, -apple-system, sans-serif" font-size="36" font-weight="900" letter-spacing="-1.5">3</text>
-  <text x="63" y="58" text-anchor="middle" dominant-baseline="central" fill="url(#crestOrangeGrad)" font-family="system-ui, -apple-system, sans-serif" font-size="36" font-weight="900" letter-spacing="-1.5">F</text>
-  <path d="M24 72 L76 72" stroke="url(#crestOrangeGrad)" stroke-width="1.4" stroke-linecap="round" />
-  <circle cx="50" cy="72" r="1.8" fill="#FFFFFF" />
-  <text x="50" y="80" text-anchor="middle" fill="#FFFFFF" font-family="system-ui, -apple-system, sans-serif" font-size="5.6" font-weight="800" letter-spacing="0.6">TRES DE FEBRERO</text>
-  <text x="50" y="87" text-anchor="middle" fill="#B8D0EB" font-family="system-ui, -apple-system, sans-serif" font-size="4.2" font-weight="700" letter-spacing="0.8">MUNICIPALIDAD</text>
+<svg viewBox="0 0 500 500" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Fondo azul municipal -->
+  <rect width="500" height="500" fill="#2B5283"/>
+
+  <g transform="translate(0, 5)">
+    <!-- Letra 'F' Naranja Institucional detrás/derecha -->
+    <path d="M230 145 H420 C436.569 145 450 158.431 450 175 V205 C450 221.569 436.569 235 420 235 H305 V275 H400 C416.569 275 430 288.431 430 305 V335 C430 351.569 416.569 365 400 365 H305 V395 C305 411.569 291.569 425 275 425 H240 C223.431 425 210 411.569 210 395 V165 C210 153.954 218.954 145 230 145 Z" fill="#DF821D"/>
+
+    <!-- Borde azul de separación para el '3' blanco -->
+    <path d="M205 145 C275 145 320 180 320 240 C320 275 300 300 270 315 C310 330 330 360 330 405 C330 460 275 495 190 495 C130 495 85 465 65 425 C55 405 70 380 95 380 C110 380 125 390 135 405 C145 420 165 435 190 435 C220 435 250 420 250 395 C250 370 220 355 180 355 H155 C140 355 130 340 130 325 C130 310 140 295 155 295 H180 C215 295 240 280 240 255 C240 230 215 215 185 215 C160 215 140 225 130 240 C120 255 105 260 90 250 C75 240 75 220 85 200 C110 165 145 145 205 145 Z" fill="#2B5283"/>
+
+    <!-- Número '3' Blanco en frente/izquierda con forma suavizada -->
+    <path d="M195 155 C260 155 300 188 300 240 C300 272 282 295 252 308 C290 322 310 352 310 395 C310 448 260 480 180 480 C125 480 82 452 62 415 C54 398 67 375 90 375 C104 375 118 384 127 398 C136 412 154 425 180 425 C208 425 235 412 235 390 C235 367 206 352 168 352 H148 C135 352 125 340 125 326 C125 312 135 300 148 300 H168 C200 300 222 287 222 263 C222 240 198 227 170 227 C147 227 129 236 120 250 C111 263 96 268 83 259 C70 250 69 232 79 214 C102 180 136 155 195 155 Z" fill="#FFFFFF"/>
+  </g>
 </svg>
