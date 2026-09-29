@@ -1,5 +1,5 @@
 import prisma from "@/lib/prisma";
-import { EmergencyRadarData } from "@/types/emergency";
+import { EmergencyRadarData, VulnerableGroupStats } from "@/types/emergency";
 
 function formatRelativeTime(date: Date) {
   const now = new Date();
@@ -13,7 +13,68 @@ function formatRelativeTime(date: Date) {
   return new Date(date).toLocaleDateString("es-AR", { day: "numeric", month: "short" });
 }
 
-export function getEmergencyRadarData(): EmergencyRadarData {
+export async function getEmergencyVulnerableStats(): Promise<VulnerableGroupStats> {
+  let totalInFloodRiskAreas = 0;
+  let electrodependientesCount = 0;
+  let disabilityCudCount = 0;
+  let minorsUnder5Count = 0;
+  let elderlyOver75Count = 0;
+  try {
+    const [floodRes, minorsRes, elderlyRes, specialNeedsRes]: any[] = await Promise.all([
+      prisma.$queryRawUnsafe(
+        `SELECT COUNT(*)::int as count FROM padron_unificado
+         WHERE LOWER(COALESCE(barrio, localidad, direccion, '')) SIMILAR TO '%(puerta 8|libertador|churruca|11 de septiembre|derqui|ciudadela sur|loma hermosa|andes|apache)%';`
+      ).catch(() => [{ count: 0 }]),
+      prisma.$queryRawUnsafe(
+        `SELECT COUNT(*)::int as count FROM padron_unificado
+         WHERE (edad_aprox ~ '^[0-9]+$' AND edad_aprox::int <= 5)
+            OR (fecha_nacimiento ~ '[0-9]{4}' AND (EXTRACT(YEAR FROM CURRENT_DATE) - substring(fecha_nacimiento from '([0-9]{4})')::int) <= 5);`
+      ).catch(() => [{ count: 0 }]),
+      prisma.$queryRawUnsafe(
+        `SELECT COUNT(*)::int as count FROM padron_unificado
+         WHERE (edad_aprox ~ '^[0-9]+$' AND edad_aprox::int >= 75)
+            OR (fecha_nacimiento ~ '[0-9]{4}' AND (EXTRACT(YEAR FROM CURRENT_DATE) - substring(fecha_nacimiento from '([0-9]{4})')::int) >= 75);`
+      ).catch(() => [{ count: 0 }]),
+      prisma.$queryRawUnsafe(
+        `SELECT
+          COUNT(CASE WHEN LOWER(COALESCE(roles, '')) LIKE '%electro%' THEN 1 END)::int as electro,
+          COUNT(CASE WHEN LOWER(COALESCE(roles, '')) LIKE '%cud%' OR LOWER(COALESCE(roles, '')) LIKE '%discapacidad%' THEN 1 END)::int as cud
+         FROM padron_unificado;`
+      ).catch(() => [{ electro: 0, cud: 0 }])
+    ]);
+    totalInFloodRiskAreas = floodRes[0]?.count || 0;
+    minorsUnder5Count = minorsRes[0]?.count || 0;
+    elderlyOver75Count = elderlyRes[0]?.count || 0;
+    electrodependientesCount = specialNeedsRes[0]?.electro || 0;
+    disabilityCudCount = specialNeedsRes[0]?.cud || 0;
+  } catch (e) {
+    console.error("Error computing dynamic vulnerable stats:", e);
+  }
+  if (totalInFloodRiskAreas === 0 && minorsUnder5Count === 0 && elderlyOver75Count === 0) {
+    try {
+      const [personMinors, personElderly] = await Promise.all([
+        prisma.$queryRawUnsafe(
+          `SELECT COUNT(*)::int as count FROM "Person" WHERE "birthDate" >= CURRENT_DATE - INTERVAL '5 years';`
+        ).catch(() => [{ count: 0 }]),
+        prisma.$queryRawUnsafe(
+          `SELECT COUNT(*)::int as count FROM "Person" WHERE "birthDate" <= CURRENT_DATE - INTERVAL '75 years';`
+        ).catch(() => [{ count: 0 }])
+      ]);
+      minorsUnder5Count = (personMinors as any)[0]?.count || 0;
+      elderlyOver75Count = (personElderly as any)[0]?.count || 0;
+      totalInFloodRiskAreas = minorsUnder5Count + elderlyOver75Count;
+    } catch (e) {}
+  }
+  return {
+    totalInFloodRiskAreas,
+    electrodependientesCount,
+    disabilityCudCount,
+    minorsUnder5Count,
+    elderlyOver75Count
+  };
+}
+
+export function getEmergencyRadarData(overrideStats?: VulnerableGroupStats): EmergencyRadarData {
   return {
     alert: {
       level: "AMARILLO",
@@ -137,12 +198,12 @@ export function getEmergencyRadarData(): EmergencyRadarData {
         coordinates: [-34.6080, -58.5630]
       }
     ],
-    vulnerableStats: {
-      totalInFloodRiskAreas: 5410,
-      electrodependientesCount: 42,
-      disabilityCudCount: 380,
-      minorsUnder5Count: 1280,
-      elderlyOver75Count: 840
+    vulnerableStats: overrideStats || {
+      totalInFloodRiskAreas: 0,
+      electrodependientesCount: 0,
+      disabilityCudCount: 0,
+      minorsUnder5Count: 0,
+      elderlyOver75Count: 0
     },
     metrics: {
       surfaceTempC: 22.4,
@@ -158,7 +219,7 @@ export function getEmergencyRadarData(): EmergencyRadarData {
 
 export async function getEmergencyData() {
   try {
-    const [realCases, supplies, vehicles, shelters] = await Promise.all([
+    const [realCases, supplies, vehicles, shelters, dynamicVulnerableStats] = await Promise.all([
       prisma.case.findMany({
         take: 20,
         orderBy: { createdAt: 'desc' },
@@ -174,7 +235,14 @@ export async function getEmergencyData() {
         where: { status: 'DISPONIBLE' }
       }).catch(() => []),
       // @ts-ignore
-      prisma.shelter ? prisma.shelter.findMany({ orderBy: { createdAt: 'desc' } }).catch(() => []) : Promise.resolve([])
+      prisma.shelter ? prisma.shelter.findMany({ orderBy: { createdAt: 'desc' } }).catch(() => []) : Promise.resolve([]),
+      getEmergencyVulnerableStats().catch(() => ({
+        totalInFloodRiskAreas: 0,
+        electrodependientesCount: 0,
+        disabilityCudCount: 0,
+        minorsUnder5Count: 0,
+        elderlyOver75Count: 0
+      }))
     ]);
 
     const incidents = realCases.map((c) => ({
@@ -212,7 +280,7 @@ export async function getEmergencyData() {
       status: sh.status
     }));
 
-    const radarData = getEmergencyRadarData();
+    const radarData = getEmergencyRadarData(dynamicVulnerableStats);
 
     return {
       incidents,

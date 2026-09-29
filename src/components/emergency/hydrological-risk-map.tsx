@@ -7,10 +7,14 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import {
   Droplets, Waves, AlertTriangle, ShieldAlert,
-  Activity, Users, Zap, Heart, CheckCircle2, Navigation, Send
+  Activity, Users, Zap, Heart, CheckCircle2, Navigation, Send, Loader2
 } from "lucide-react";
 import { HydrologicalZone, VulnerableGroupStats } from "@/types/emergency";
 import { toast } from "sonner";
+import {
+  activateDrainagePumpAction,
+  dispatchPreventiveEvacuationAction
+} from "@/app/(dashboard)/admin/actions/emergency-actions";
 
 interface HydrologicalRiskMapProps {
   zones: HydrologicalZone[];
@@ -23,6 +27,7 @@ export function HydrologicalRiskMap({
 }: HydrologicalRiskMapProps) {
   const [zones, setZones] = useState<HydrologicalZone[]>(initialZones);
   const [selectedZone, setSelectedZone] = useState<HydrologicalZone | null>(initialZones[0] || null);
+  const [loadingAction, setLoadingAction] = useState<string | null>(null);
 
   const statusConfigs: Record<HydrologicalZone["status"], { label: string; bg: string; text: string; border: string }> = {
     NORMAL: { label: "Nivel Normal", bg: "bg-emerald-500/15", text: "text-emerald-500", border: "border-emerald-500/30" },
@@ -31,20 +36,49 @@ export function HydrologicalRiskMap({
     DESBORDADO: { label: "Cuenca Desbordada", bg: "bg-rose-500/20", text: "text-rose-500", border: "border-rose-500/40" }
   };
 
-  const handleActivatePump = (zoneId: string) => {
-    setZones((prev) =>
-      prev.map((z) => {
-        if (z.id === zoneId && z.activePumps < z.totalPumps) {
-          return { ...z, activePumps: z.activePumps + 1 };
-        }
-        return z;
-      })
-    );
-    toast.success("Bomba de desagüe adicional activada remotamente");
+  const handleActivatePump = async (zone: HydrologicalZone) => {
+    setLoadingAction(`pump-${zone.id}`);
+    try {
+      const res = await activateDrainagePumpAction(zone.id, zone.name);
+      if (res.success) {
+        setZones((prev) =>
+          prev.map((z) => {
+            if (z.id === zone.id && z.activePumps < z.totalPumps) {
+              return { ...z, activePumps: z.activePumps + 1 };
+            }
+            return z;
+          })
+        );
+        setSelectedZone((prev) =>
+          prev && prev.id === zone.id && prev.activePumps < prev.totalPumps
+            ? { ...prev, activePumps: prev.activePumps + 1 }
+            : prev
+        );
+        toast.success(`Bomba suplementaria de desagüe activada para ${zone.name}`);
+      } else {
+        toast.error(res.error || "No se pudo activar la bomba de desagüe");
+      }
+    } catch (e: any) {
+      toast.error("Error al procesar activación de bomba");
+    } finally {
+      setLoadingAction(null);
+    }
   };
 
-  const handleDispatchPreventive = (zoneName: string) => {
-    toast.success(`Alerta de evacuación preventiva despachada a Defensa Civil y SAME para ${zoneName}`);
+  const handleDispatchPreventive = async (zone: HydrologicalZone) => {
+    setLoadingAction(`evac-${zone.id}`);
+    try {
+      const res = await dispatchPreventiveEvacuationAction(zone.id, zone.name);
+      if (res.success) {
+        toast.success(`Alerta de evacuación preventiva despachada a Defensa Civil y SAME para ${zone.name}`);
+      } else {
+        toast.error(res.error || "No se pudo despachar la alerta de evacuación");
+      }
+    } catch (e: any) {
+      toast.error("Error al despachar alerta preventiva");
+    } finally {
+      setLoadingAction(null);
+    }
   };
 
   return (
@@ -215,20 +249,31 @@ export function HydrologicalRiskMap({
                 <div className="flex flex-col sm:flex-row gap-3 pt-2">
                   <Button
                     type="button"
-                    onClick={() => handleActivatePump(selectedZone.id)}
-                    disabled={selectedZone.activePumps >= selectedZone.totalPumps}
+                    onClick={() => handleActivatePump(selectedZone)}
+                    disabled={selectedZone.activePumps >= selectedZone.totalPumps || loadingAction === `pump-${selectedZone.id}`}
                     className="flex-1 rounded-2xl h-11 text-xs font-bold uppercase tracking-wider bg-emerald-600 hover:bg-emerald-700 text-white gap-2"
                   >
-                    <Zap className="h-4 w-4" /> Encender Bomba Adicional
+                    {loadingAction === `pump-${selectedZone.id}` ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Zap className="h-4 w-4" />
+                    )}
+                    <span>Encender Bomba Adicional</span>
                   </Button>
 
                   <Button
                     type="button"
                     variant="outline"
-                    onClick={() => handleDispatchPreventive(selectedZone.name)}
+                    onClick={() => handleDispatchPreventive(selectedZone)}
+                    disabled={loadingAction === `evac-${selectedZone.id}`}
                     className="flex-1 rounded-2xl h-11 text-xs font-bold uppercase tracking-wider border-rose-500/30 text-rose-500 hover:bg-rose-500/10 gap-2"
                   >
-                    <Send className="h-4 w-4" /> Enviar Cuadrilla Preventiva
+                    {loadingAction === `evac-${selectedZone.id}` ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Send className="h-4 w-4" />
+                    )}
+                    <span>Enviar Cuadrilla Preventiva</span>
                   </Button>
                 </div>
               </Card>

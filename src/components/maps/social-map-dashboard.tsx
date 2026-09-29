@@ -349,7 +349,7 @@ export function SocialMapDashboard({ initialPeople, stats }: SocialMapDashboardP
             <h3 className="text-2xl font-black text-foreground mt-1 font-mono">
               {(
                 selectedLocalityId === "all"
-                  ? (stats?.total || 82469)
+                  ? (stats?.total ?? 0)
                   : (stats?.localityTotals?.[selectedLocalityId] || filteredPeople.length)
               ).toLocaleString("es-AR")}
             </h3>
