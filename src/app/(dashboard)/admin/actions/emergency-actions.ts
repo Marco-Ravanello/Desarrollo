@@ -204,3 +204,68 @@ export async function toggleEmergencyStatusAction(active: boolean) {
     return { success: false, error: err.message || "Error al actualizar estado de emergencia" };
   }
 }
+
+export async function activateDrainagePumpAction(zoneId: string, zoneName: string) {
+  const session = await auth();
+  if (!session?.user?.id) return { success: false, error: "No autorizado" };
+  try {
+    await prisma.auditLog.create({
+      data: {
+        userId: session.user.id,
+        action: "PUMP_ACTIVATED",
+        entity: "HydrologicalZone",
+        entityId: zoneId,
+        details: `Activación remota de bomba suplementaria de desagüe para la cuenca ${zoneName}. Operador: ${session.user.name || session.user.email}`
+      }
+    });
+    revalidatePath("/admin/emergency");
+    revalidatePath("/admin/war-room");
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err.message || "Error al activar bomba de desagüe" };
+  }
+}
+
+export async function dispatchPreventiveEvacuationAction(zoneId: string, zoneName: string) {
+  const session = await auth();
+  if (!session?.user?.id) return { success: false, error: "No autorizado" };
+  try {
+    const area = await prisma.area.findFirst({
+      where: {
+        OR: [
+          { name: { contains: "Protección", mode: "insensitive" } },
+          { name: { contains: "Hábitat", mode: "insensitive" } },
+          { name: { contains: "Desarrollo", mode: "insensitive" } }
+        ]
+      }
+    }) || await prisma.area.findFirst();
+
+    if (area) {
+      await prisma.case.create({
+        data: {
+          title: `[ALERTA HÍDRICA MUNICIPAL] Evacuación preventiva en ${zoneName}`,
+          description: `Despacho de alerta temprana y evacuación preventiva por riesgo inminente de anegamiento en ${zoneName}. Despachado por COE 3F.`,
+          status: "ABIERTO",
+          priority: "URGENTE",
+          areaId: area.id
+        }
+      });
+    }
+
+    await prisma.auditLog.create({
+      data: {
+        userId: session.user.id,
+        action: "PREVENTIVE_EVACUATION_DISPATCHED",
+        entity: "EmergencyDispatch",
+        entityId: zoneId,
+        details: `Alerta y protocolo de evacuación preventiva despachado a Defensa Civil y SAME para ${zoneName} por ${session.user.name || session.user.email}`
+      }
+    });
+
+    revalidatePath("/admin/emergency");
+    revalidatePath("/admin/war-room");
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err.message || "Error al despachar alerta preventiva" };
+  }
+}

@@ -740,17 +740,27 @@ export async function handleSocialQuery(query: string): Promise<AIResponse> {
   const cleanQuery = query.toLowerCase().trim();
 
   const [padronCountRes, partCountRes, topBarrioRes, cases, families, areas] = await Promise.all([
-    prisma.$queryRawUnsafe(`SELECT COUNT(*)::int as total FROM padron_unificado;`).catch(() => [{ total: 82433 }]),
-    prisma.$queryRawUnsafe(`SELECT COUNT(*)::int as total FROM participaciones_programas;`).catch(() => [{ total: 115458 }]),
-    prisma.$queryRawUnsafe(`SELECT COALESCE(NULLIF(barrio, ''), 'Caseros') as barrio, COUNT(*)::int as cant FROM padron_unificado GROUP BY barrio ORDER BY cant DESC LIMIT 1;`).catch(() => [{ barrio: 'Caseros', cant: 0 }]),
+    prisma.$queryRawUnsafe(`SELECT COUNT(*)::int as total FROM padron_unificado;`).catch(() => [{ total: 0 }]),
+    prisma.$queryRawUnsafe(`SELECT COUNT(*)::int as total FROM participaciones_programas;`).catch(() => [{ total: 0 }]),
+    prisma.$queryRawUnsafe(`SELECT COALESCE(NULLIF(barrio, ''), NULLIF(localidad, '')) as barrio, COUNT(*)::int as cant FROM padron_unificado WHERE (barrio IS NOT NULL AND TRIM(barrio) != '') OR (localidad IS NOT NULL AND TRIM(localidad) != '') GROUP BY barrio ORDER BY cant DESC LIMIT 1;`).catch(() => []),
     prisma.case.findMany({ include: { area: true, person: true } }).catch(() => []),
     prisma.family.findMany().catch(() => []),
     prisma.area.findMany().catch(() => [])
   ]);
 
-  const totalPeople = (padronCountRes as any)[0]?.total || 82433;
-  const totalPrestaciones = (partCountRes as any)[0]?.total || 115458;
-  const topBarrio = (topBarrioRes as any)[0]?.barrio || "Caseros";
+  let totalPeople = (padronCountRes as any)[0]?.total || 0;
+  if (totalPeople === 0) {
+    totalPeople = await prisma.person.count().catch(() => 0);
+  }
+  let totalPrestaciones = (partCountRes as any)[0]?.total || 0;
+  if (totalPrestaciones === 0) {
+    totalPrestaciones = await prisma.intervention.count().catch(() => 0);
+  }
+  let topBarrio = (topBarrioRes as any)[0]?.barrio || "";
+  if (!topBarrio) {
+    const personWithAddr = await prisma.person.findFirst({ where: { address: { not: null } }, select: { address: true } }).catch(() => null);
+    topBarrio = personWithAddr?.address?.split(",")[0] || "Tres de Febrero";
+  }
 
   const isCountQuery = cleanQuery.includes("cuant") || cleanQuery.includes("total") || cleanQuery.includes("cantidad");
   if (isCountQuery && (cleanQuery.includes("persona") || cleanQuery.includes("ciudadano") || cleanQuery.includes("vecino") || cleanQuery.includes("habitante") || cleanQuery.includes("hay") || cleanQuery.includes("padron") || cleanQuery.includes("padrón"))) {
@@ -894,9 +904,12 @@ export async function handleSocialQuery(query: string): Promise<AIResponse> {
     if (totalCount > 0) {
       let answer = "";
       if (isCountQuery) {
+        const totalRef = totalPeople > 0 ? totalPeople : totalCount;
+        const pct = totalPeople > 0 ? ((totalCount / totalPeople) * 100).toFixed(1) : "100";
+
         answer += `### Cantidad de Ciudadanos con Apellido que Inicia con "${targetLetter}"\n\n`;
         answer += `En el Padrón Social Unificado de Tres de Febrero, hay un total de **${totalCount.toLocaleString("es-AR")} personas (ciudadanos)** cuyos apellidos comienzan con la letra **"${targetLetter}"**.\n\n`;
-        answer += `*   **Representación en el Padrón:** Equivale aproximadamente al **${((totalCount / 82433) * 100).toFixed(1)}%** de la población social registrada (82.433 ciudadanos en total).\n`;
+        answer += `*   **Representación en el Padrón:** Equivale aproximadamente al **${pct}%** de la población social registrada (${totalRef.toLocaleString("es-AR")} ciudadanos en total).\n`;
         answer += `*   **Distribución Territorial:** Registrados en barrios como Caseros, Ciudadela, Loma Hermosa, El Libertador, Churruca, entre otros.\n\n`;
         answer += `#### Ejemplos de Ciudadanos Registrados con Inicial "${targetLetter}":\n`;
       } else {
