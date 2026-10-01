@@ -103,11 +103,12 @@ export function WarRoomView({ initialData }: WarRoomViewProps) {
   };
 
   return (
-    <div className={`space-y-6 transition-all duration-500 ${isFullscreen ? "p-8 fixed inset-0 z-50 bg-slate-950 text-white overflow-y-auto" : ""}`}>
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 p-5 rounded-3xl bg-slate-900 border border-slate-800 text-white shadow-2xl backdrop-blur-xl">
+    <div className={`space-y-6 transition-all duration-500 ${isFullscreen ? "p-6 sm:p-8 fixed inset-0 z-50 bg-background text-foreground overflow-y-auto" : ""}`}>
+      {/* Header Institucional */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 p-5 sm:p-6 rounded-3xl bg-card border border-border/70 text-card-foreground shadow-sm backdrop-blur-xl">
         <div className="flex items-center gap-4">
-          <div className="p-3 bg-blue-600/20 border border-blue-500/30 rounded-2xl shrink-0">
-            <MunicipalCrest className="h-10 w-10 text-blue-400" />
+          <div className="p-3 bg-primary/10 border border-primary/20 rounded-2xl shrink-0">
+            <MunicipalCrest className="h-10 w-10 text-primary" />
           </div>
           <div>
             <div className="flex items-center gap-2">
@@ -115,55 +116,52 @@ export function WarRoomView({ initialData }: WarRoomViewProps) {
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
               </span>
-              <span className="text-[10px] font-black uppercase tracking-[0.25em] text-blue-400">
+              <span className="text-[10px] font-black uppercase tracking-[0.25em] text-primary">
                 SALA DE SITUACIÓN • GOBIERNO MUNICIPAL
               </span>
             </div>
-            <h1 className="text-xl sm:text-2xl font-black tracking-tight text-white mt-0.5">
+            <h1 className="text-xl sm:text-2xl font-black tracking-tight text-foreground mt-0.5">
               Tablero de Control Estratégico y Monitoreo en Vivo
             </h1>
           </div>
         </div>
-
-        <div className="flex flex-wrap items-center gap-4">
-          <div className="flex items-center gap-3 bg-slate-950/80 border border-slate-800 px-4 py-2 rounded-2xl">
-            <Clock className="h-5 w-5 text-amber-400 shrink-0" />
+        <div className="flex flex-wrap items-center gap-3 sm:gap-4">
+          <div className="flex items-center gap-3 bg-muted/60 border border-border/60 px-4 py-2 rounded-2xl">
+            <Clock className="h-5 w-5 text-amber-500 shrink-0" />
             <div className="text-right">
-              <div className="text-lg font-black font-mono tracking-widest text-white leading-none">
+              <div className="text-lg font-black font-mono tracking-widest text-foreground leading-none">
                 {currentTime || "12:00:00"}
               </div>
-              <div className="text-[10px] text-slate-400 font-semibold capitalize mt-0.5">
+              <div className="text-[10px] text-muted-foreground font-semibold capitalize mt-0.5">
                 {currentDate || "Cargando fecha..."}
               </div>
             </div>
           </div>
-
           <div className="flex items-center gap-2">
-            <Badge variant="outline" className="border-slate-700 bg-slate-800/80 text-[10px] font-mono text-slate-300 px-3 py-1.5 rounded-xl">
-              <RefreshCw className="mr-1.5 h-3 w-3 animate-spin text-blue-400" /> Refresco en {countdown}s
+            <Badge variant="outline" className="border-border/60 bg-muted/40 text-[10px] font-mono text-muted-foreground px-3 py-1.5 rounded-xl">
+              <RefreshCw className="mr-1.5 h-3 w-3 animate-spin text-primary" /> Refresco en {countdown}s
             </Badge>
-
             <Button
               onClick={toggleFullscreen}
               variant="outline"
-              className="rounded-xl h-10 px-4 text-xs font-bold border-slate-700 bg-slate-800 hover:bg-slate-700 text-white"
+              className="rounded-xl h-10 px-4 text-xs font-bold border-border/60 hover:bg-accent text-foreground transition-colors cursor-pointer"
             >
-              {isFullscreen ? <Minimize2 className="mr-2 h-4 w-4" /> : <Maximize2 className="mr-2 h-4 w-4 text-blue-400" />}
+              {isFullscreen ? <Minimize2 className="mr-2 h-4 w-4" /> : <Maximize2 className="mr-2 h-4 w-4 text-primary" />}
               {isFullscreen ? "Salir" : "Proyector"}
             </Button>
           </div>
         </div>
       </div>
-
+      {/* Alerta COE si está activa */}
       {isEmergencyActive && (
-        <div className="p-4 rounded-2xl bg-amber-500/15 border-2 border-amber-500 text-amber-300 flex items-center justify-between animate-pulse">
+        <div className="p-4 rounded-2xl bg-amber-500/10 border-2 border-amber-500/40 text-amber-800 dark:text-amber-300 flex items-center justify-between animate-pulse">
           <div className="flex items-center gap-3">
-            <ShieldAlert className="h-6 w-6 text-amber-400 shrink-0" />
+            <ShieldAlert className="h-6 w-6 text-amber-500 shrink-0" />
             <div>
-              <p className="font-black text-sm uppercase tracking-wider">
+              <p className="font-black text-sm uppercase tracking-wider text-amber-900 dark:text-amber-200">
                 CENTRO DE OPERACIONES DE EMERGENCIA CLIMÁTICA (COE) ACTIVADO
               </p>
-              <p className="text-xs opacity-80">
+              <p className="text-xs opacity-90 text-amber-800 dark:text-amber-300">
                 Protocolo de contingencia vigente para cuadrillas de guardia y centros de evacuación.
               </p>
             </div>
@@ -171,151 +169,144 @@ export function WarRoomView({ initialData }: WarRoomViewProps) {
           <Badge className="bg-amber-500 text-black font-black uppercase text-xs">Alerta Máxima</Badge>
         </div>
       )}
-
+      {/* 5 Tarjetas KPI Principales */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-        <Card className="rounded-3xl border-slate-800 bg-slate-900/90 text-white shadow-xl p-5 relative overflow-hidden">
+        <Card className="rounded-3xl border-border/60 bg-card text-card-foreground shadow-sm hover:shadow-md transition-all p-5 relative overflow-hidden">
           <div className="flex justify-between items-start mb-2">
-            <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Vecinos Registrados</span>
-            <div className="p-2 bg-blue-500/15 text-blue-400 rounded-xl">
+            <span className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">Vecinos Registrados</span>
+            <div className="p-2 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-xl">
               <Users className="h-4 w-4" />
             </div>
           </div>
-          <div className="text-3xl sm:text-4xl font-black font-mono tracking-tight text-white">
+          <div className="text-3xl sm:text-4xl font-black font-mono tracking-tight text-foreground">
             {initialData.totalCitizens.toLocaleString("es-AR")}
           </div>
-          <div className="flex items-center gap-1.5 text-[11px] text-emerald-400 mt-2 font-bold">
+          <div className="flex items-center gap-1.5 text-[11px] text-emerald-600 dark:text-emerald-400 mt-2 font-bold">
             <TrendingUp className="h-3 w-3" /> Datos reales en sistema
           </div>
         </Card>
-
-        <Card className="rounded-3xl border-slate-800 bg-slate-900/90 text-white shadow-xl p-5 relative overflow-hidden">
+        <Card className="rounded-3xl border-border/60 bg-card text-card-foreground shadow-sm hover:shadow-md transition-all p-5 relative overflow-hidden">
           <div className="flex justify-between items-start mb-2">
-            <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Casos Críticos</span>
-            <div className="p-2 bg-rose-500/15 text-rose-400 rounded-xl">
+            <span className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">Casos Críticos</span>
+            <div className="p-2 bg-rose-500/10 text-rose-600 dark:text-rose-400 rounded-xl">
               <ShieldAlert className="h-4 w-4" />
             </div>
           </div>
-          <div className="text-3xl sm:text-4xl font-black font-mono tracking-tight text-rose-400">
+          <div className="text-3xl sm:text-4xl font-black font-mono tracking-tight text-rose-600 dark:text-rose-400">
             {initialData.activeCriticalCases}
           </div>
-          <div className="flex items-center gap-1.5 text-[11px] text-slate-400 mt-2 font-semibold">
+          <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground mt-2 font-semibold">
             {initialData.resolvedToday} casilleros cerrados
           </div>
         </Card>
-
-        <Card className="rounded-3xl border-slate-800 bg-slate-900/90 text-white shadow-xl p-5 relative overflow-hidden">
+        <Card className="rounded-3xl border-border/60 bg-card text-card-foreground shadow-sm hover:shadow-md transition-all p-5 relative overflow-hidden">
           <div className="flex justify-between items-start mb-2">
-            <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Flota Disponible</span>
-            <div className="p-2 bg-amber-500/15 text-amber-400 rounded-xl">
+            <span className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">Flota Disponible</span>
+            <div className="p-2 bg-amber-500/10 text-amber-600 dark:text-amber-400 rounded-xl">
               <Car className="h-4 w-4" />
             </div>
           </div>
-          <div className="text-3xl sm:text-4xl font-black font-mono tracking-tight text-white">
-            {initialData.activeVehicles} <span className="text-lg text-slate-400">/ {initialData.totalVehicles}</span>
+          <div className="text-3xl sm:text-4xl font-black font-mono tracking-tight text-foreground">
+            {initialData.activeVehicles} <span className="text-lg text-muted-foreground font-medium">/ {initialData.totalVehicles}</span>
           </div>
-          <div className="flex items-center gap-1.5 text-[11px] text-emerald-400 mt-2 font-bold">
+          <div className="flex items-center gap-1.5 text-[11px] text-emerald-600 dark:text-emerald-400 mt-2 font-bold">
             {initialData.totalVehicles > 0 ? `${Math.round((initialData.activeVehicles / initialData.totalVehicles) * 100)}% Operatividad` : "Sin Flota"}
           </div>
         </Card>
-
-        <Card className="rounded-3xl border-slate-800 bg-slate-900/90 text-white shadow-xl p-5 relative overflow-hidden">
+        <Card className="rounded-3xl border-border/60 bg-card text-card-foreground shadow-sm hover:shadow-md transition-all p-5 relative overflow-hidden">
           <div className="flex justify-between items-start mb-2">
-            <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Nivel de Stock</span>
-            <div className="p-2 bg-purple-500/15 text-purple-400 rounded-xl">
+            <span className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">Nivel de Stock</span>
+            <div className="p-2 bg-purple-500/10 text-purple-600 dark:text-purple-400 rounded-xl">
               <Package className="h-4 w-4" />
             </div>
           </div>
-          <div className="text-3xl sm:text-4xl font-black font-mono tracking-tight text-purple-400">
+          <div className="text-3xl sm:text-4xl font-black font-mono tracking-tight text-purple-600 dark:text-purple-400">
             {initialData.emergencyStockPercent}%
           </div>
-          <div className="flex items-center gap-1.5 text-[11px] text-slate-400 mt-2 font-semibold">
+          <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground mt-2 font-semibold">
             Insumos en depósitos
           </div>
         </Card>
-
-        <Card className="rounded-3xl border-slate-800 bg-slate-900/90 text-white shadow-xl p-5 relative overflow-hidden">
+        <Card className="rounded-3xl border-border/60 bg-card text-card-foreground shadow-sm hover:shadow-md transition-all p-5 relative overflow-hidden">
           <div className="flex justify-between items-start mb-2">
-            <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Presupuesto Adjudicado</span>
-            <div className="p-2 bg-emerald-500/15 text-emerald-400 rounded-xl">
+            <span className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">Presupuesto Adjudicado</span>
+            <div className="p-2 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-xl">
               <DollarSign className="h-4 w-4" />
             </div>
           </div>
-          <div className="text-2xl sm:text-3xl font-black font-mono tracking-tight text-emerald-400 truncate">
+          <div className="text-2xl sm:text-3xl font-black font-mono tracking-tight text-emerald-600 dark:text-emerald-400 truncate">
             {initialData.committedBudgetFormatted}
           </div>
-          <div className="flex items-center gap-1.5 text-[11px] text-slate-400 mt-2 font-semibold">
+          <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground mt-2 font-semibold">
             Órdenes aprobadas
           </div>
         </Card>
       </div>
-
+      {/* 2 Paneles Inferiores */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Card className="lg:col-span-2 rounded-3xl border-slate-800 bg-slate-900 text-white p-6 shadow-xl space-y-4">
-          <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+        <Card className="lg:col-span-2 rounded-3xl border-border/60 bg-card text-card-foreground p-6 shadow-sm space-y-4">
+          <div className="flex items-center justify-between border-b border-border/40 pb-4">
             <div className="flex items-center gap-2.5">
               <Radio className="h-5 w-5 text-rose-500 animate-pulse" />
-              <h2 className="text-lg font-black tracking-tight text-white">
+              <h2 className="text-lg font-black tracking-tight text-foreground">
                 Casos y Alertas Reales en Vivo
               </h2>
             </div>
-            <Badge variant="outline" className="border-slate-700 text-slate-300 text-xs">
+            <Badge variant="outline" className="border-border/60 text-muted-foreground text-xs font-bold">
               Base de Datos Oficial
             </Badge>
           </div>
-
           <div className="space-y-3">
             {initialData.territorialAlerts.length > 0 ? (
               initialData.territorialAlerts.map((alert) => (
                 <div
                   key={alert.id}
-                  className="flex items-center justify-between p-4 rounded-2xl bg-slate-950/70 border border-slate-800 hover:border-slate-700 transition-colors"
+                  className="flex items-center justify-between p-4 rounded-2xl bg-muted/30 border border-border/40 hover:border-border/80 hover:bg-muted/50 transition-colors"
                 >
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
                       <Badge className={`text-[10px] font-black uppercase border-none ${
                         alert.priority === 'URGENTE' || alert.priority === 'CRITICA' ? 'bg-rose-500 text-white' :
-                        alert.priority === 'ALTA' ? 'bg-amber-500 text-black' : 'bg-blue-600 text-white'
+                        alert.priority === 'ALTA' ? 'bg-amber-500 text-black' : 'bg-primary text-primary-foreground'
                       }`}>
                         {alert.priority}
                       </Badge>
-                      <span className="text-xs font-bold text-slate-400">{alert.area}</span>
+                      <span className="text-xs font-bold text-muted-foreground">{alert.area}</span>
                     </div>
-                    <p className="text-sm font-bold text-white">{alert.title}</p>
+                    <p className="text-sm font-bold text-foreground">{alert.title}</p>
                   </div>
-                  <span className="text-xs font-mono font-semibold text-slate-500 shrink-0">{alert.time}</span>
+                  <span className="text-xs font-mono font-semibold text-muted-foreground shrink-0">{alert.time}</span>
                 </div>
               ))
             ) : (
-              <div className="p-8 text-center text-slate-400 font-medium">
+              <div className="p-8 text-center text-muted-foreground font-medium">
                 No hay expedientes o casos registrados en la base de datos actualmente.
               </div>
             )}
           </div>
         </Card>
-
-        <Card className="rounded-3xl border-slate-800 bg-slate-900 text-white p-6 shadow-xl space-y-4">
-          <div className="border-b border-slate-800 pb-4">
-            <h2 className="text-lg font-black tracking-tight text-white flex items-center gap-2">
-              <Building2 className="h-5 w-5 text-blue-400" />
+        <Card className="rounded-3xl border-border/60 bg-card text-card-foreground p-6 shadow-sm space-y-4">
+          <div className="border-b border-border/40 pb-4">
+            <h2 className="text-lg font-black tracking-tight text-foreground flex items-center gap-2">
+              <Building2 className="h-5 w-5 text-primary" />
               Carga de Trabajo por Área
             </h2>
           </div>
-
           <div className="space-y-4 text-xs">
             {initialData.areaStatus.length > 0 ? (
               initialData.areaStatus.map((area) => (
-                <div key={area.id} className="p-3.5 rounded-2xl bg-slate-950/70 border border-slate-800 space-y-2">
+                <div key={area.id} className="p-3.5 rounded-2xl bg-muted/30 border border-border/40 space-y-2">
                   <div className="flex justify-between items-center">
-                    <span className="font-bold text-slate-200 truncate max-w-[160px]">{area.name}</span>
-                    <Badge className="bg-emerald-500/15 text-emerald-400 border-none">{area.badgeText}</Badge>
+                    <span className="font-bold text-foreground truncate max-w-[160px]">{area.name}</span>
+                    <Badge className="bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-none font-bold text-[10px]">{area.badgeText}</Badge>
                   </div>
-                  <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
-                    <div className="bg-blue-500 h-full transition-all duration-500" style={{ width: `${area.percentage}%` }} />
+                  <div className="w-full bg-muted h-2 rounded-full overflow-hidden">
+                    <div className="bg-primary h-full transition-all duration-500" style={{ width: `${area.percentage}%` }} />
                   </div>
                 </div>
               ))
             ) : (
-              <p className="text-slate-400">No hay áreas configuradas en el sistema.</p>
+              <p className="text-muted-foreground">No hay áreas configuradas en el sistema.</p>
             )}
           </div>
         </Card>
