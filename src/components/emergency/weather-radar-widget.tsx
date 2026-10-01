@@ -15,6 +15,7 @@ import {
   RadarAtmosphericMetrics
 } from "@/types/emergency";
 import { toast } from "sonner";
+import { dispatchPreventiveEvacuationAction } from "@/app/(dashboard)/admin/actions/emergency-actions";
 
 interface WeatherRadarWidgetProps {
   alert: SMNAlertInfo;
@@ -33,6 +34,7 @@ export function WeatherRadarWidget({
   const [radarMode, setViewMode] = useState<"reflectivity" | "doppler" | "accumulated">("reflectivity");
   const [selectedCell, setSelectedCell] = useState<RadarEchoCell | null>(initialCells[0] || null);
   const [isSweeping, setIsSweeping] = useState(true);
+  const [isDispatching, setIsDispatching] = useState(false);
 
   const alertLevelConfigs: Record<SMNAlertLevel, { label: string; bg: string; text: string; border: string }> = {
     VERDE: { label: "Nivel Verde - Sin Riesgo", bg: "bg-emerald-500/15", text: "text-emerald-500", border: "border-emerald-500/30" },
@@ -43,7 +45,7 @@ export function WeatherRadarWidget({
 
   const handleSimulateAlert = (lvl: SMNAlertLevel) => {
     setActiveAlertLevel(lvl);
-    toast.info(`Nivel de Alerta SMN simular activado: ${lvl}`);
+    toast.info(`Nivel de Alerta SMN activado: ${lvl}`);
   };
 
   return (
@@ -206,10 +208,29 @@ export function WeatherRadarWidget({
             {selectedCell && (
               <Button
                 variant="outline"
-                onClick={() => toast.success(`Despacho preventivo emitido para ${selectedCell.affectedNeighborhoods.join(", ")}`)}
-                className="w-full rounded-2xl h-10 text-xs font-bold border-rose-500/30 text-rose-500 hover:bg-rose-500/10 gap-2"
+                disabled={isDispatching}
+                onClick={async () => {
+                  try {
+                    setIsDispatching(true);
+                    const res = await dispatchPreventiveEvacuationAction(
+                      selectedCell.id,
+                      `Eco ${selectedCell.cellType} - ${selectedCell.affectedNeighborhoods.join(", ")}`
+                    );
+                    if (res?.success) {
+                      toast.success(`Despacho preventivo COE emitido para ${selectedCell.affectedNeighborhoods.join(", ")}`);
+                    } else {
+                      toast.error(res?.error || "Error al despachar cuadrillas");
+                    }
+                  } catch (e: any) {
+                    toast.error(e?.message || "Error al conectar con COE");
+                  } finally {
+                    setIsDispatching(false);
+                  }
+                }}
+                className="w-full rounded-2xl h-10 text-xs font-bold border-rose-500/30 text-rose-500 hover:bg-rose-500/10 gap-2 transition-all cursor-pointer"
               >
-                <AlertTriangle className="h-4 w-4" /> Despachar Cuadrillas a Zona de Eco
+                <AlertTriangle className={`h-4 w-4 ${isDispatching ? "animate-spin" : ""}`} />
+                {isDispatching ? "Despachando Cuadrillas..." : "Despachar Cuadrillas a Zona de Eco"}
               </Button>
             )}
           </div>

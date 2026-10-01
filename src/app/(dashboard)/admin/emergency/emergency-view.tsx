@@ -59,6 +59,7 @@ interface EmergencyViewProps {
       status: string;
     }>;
     availableVehiclesCount: number;
+    totalVehiclesCount?: number;
     radarData: EmergencyRadarData;
   };
 }
@@ -310,7 +311,10 @@ export function EmergencyView({ initialData }: EmergencyViewProps) {
               <p className="text-2xl font-black text-foreground">{emergencyStock.length} Rubros Registrados</p>
               <p className="text-xs text-amber-500 font-bold mt-0.5">{emergencyStock.filter(s => s.status === 'CRITICO').length} en nivel de reposición</p>
             </div>
-            <Progress value={emergencyStock.length > 0 ? 85 : 0} className="h-2 bg-emerald-500/10 [&>div]:bg-emerald-500" />
+            <Progress
+              value={emergencyStock.length > 0 ? Math.round((emergencyStock.filter(s => s.status === 'OPTIMO').length / emergencyStock.length) * 100) : 0}
+              className="h-2 bg-emerald-500/10 [&>div]:bg-emerald-500"
+            />
           </CardContent>
         </Card>
 
@@ -324,7 +328,14 @@ export function EmergencyView({ initialData }: EmergencyViewProps) {
               <p className="text-2xl font-black text-foreground">{initialData.availableVehiclesCount} Equipos en Calle</p>
               <p className="text-xs text-muted-foreground font-semibold mt-0.5">Móviles disponibles en base</p>
             </div>
-            <Progress value={initialData.availableVehiclesCount > 0 ? 90 : 0} className="h-2 bg-purple-500/10 [&>div]:bg-purple-600" />
+            <Progress
+              value={
+                (initialData.totalVehiclesCount || initialData.availableVehiclesCount || 0) > 0
+                  ? Math.round((initialData.availableVehiclesCount / (initialData.totalVehiclesCount || initialData.availableVehiclesCount)) * 100)
+                  : 0
+              }
+              className="h-2 bg-purple-500/10 [&>div]:bg-purple-600"
+            />
           </CardContent>
         </Card>
       </div>

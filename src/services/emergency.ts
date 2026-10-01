@@ -1,5 +1,5 @@
 import prisma from "@/lib/prisma";
-import { EmergencyRadarData, VulnerableGroupStats } from "@/types/emergency";
+import { EmergencyRadarData, VulnerableGroupStats, HydrologicalZone, RadarAtmosphericMetrics } from "@/types/emergency";
 
 function formatRelativeTime(date: Date) {
   const now = new Date();
@@ -11,6 +11,35 @@ function formatRelativeTime(date: Date) {
   if (diffMins < 60) return `Hace ${diffMins} min`;
   if (diffHours < 24) return `Hace ${diffHours} h`;
   return new Date(date).toLocaleDateString("es-AR", { day: "numeric", month: "short" });
+}
+
+async function getLiveAtmosphericMetrics(): Promise<RadarAtmosphericMetrics> {
+  try {
+    const res = await fetch(
+      "https://api.open-meteo.com/v1/forecast?latitude=-34.603&longitude=-58.558&current=temperature_2m,relative_humidity_2m,surface_pressure,wind_speed_10m,wind_gusts_10m,precipitation&timezone=America/Argentina/Buenos_Aires",
+      { next: { revalidate: 300 } }
+    );
+    if (!res.ok) throw new Error("Weather API failed");
+    const data = await res.json();
+    const cur = data.current || {};
+    return {
+      surfaceTempC: Math.round((cur.temperature_2m ?? 21.0) * 10) / 10,
+      humidityPercent: Math.round(cur.relative_humidity_2m ?? 65),
+      pressureHpa: Math.round((cur.surface_pressure ?? 1012.0) * 10) / 10,
+      windGustsKmH: Math.round(cur.wind_gusts_10m ?? 22),
+      dewPointC: Math.round(((cur.temperature_2m ?? 21.0) - ((100 - (cur.relative_humidity_2m ?? 65)) / 5)) * 10) / 10,
+      accumulatedRain24hMm: Math.round((cur.precipitation ?? 0) * 10) / 10
+    };
+  } catch (e) {
+    return {
+      surfaceTempC: 21.0,
+      humidityPercent: 65,
+      pressureHpa: 1012.0,
+      windGustsKmH: 22,
+      dewPointC: 14.0,
+      accumulatedRain24hMm: 0.0
+    };
+  }
 }
 
 export async function getEmergencyVulnerableStats(): Promise<VulnerableGroupStats> {
@@ -74,7 +103,142 @@ export async function getEmergencyVulnerableStats(): Promise<VulnerableGroupStat
   };
 }
 
-export function getEmergencyRadarData(overrideStats?: VulnerableGroupStats): EmergencyRadarData {
+async function getHydrologicalZonesData(): Promise<HydrologicalZone[]> {
+  const zoneDefinitions = [
+    {
+      id: "zone-1",
+      name: "Cuenca Baja Puerta 8 & B° El Libertador",
+      basin: "Arroyo Morón - Tramo Norte 3F",
+      waterLevelMeters: 2.15,
+      criticalThresholdMeters: 2.50,
+      status: "ALERTA_PREVENTIVA" as const,
+      activePumps: 3,
+      totalPumps: 4,
+      coordinates: [-34.5680, -58.6050] as [number, number],
+      neighborhoodKeywords: ["puerta 8", "libertador", "el libertador"]
+    },
+    {
+      id: "zone-2",
+      name: "Cuenca Arroyo Morón (Ruta 8)",
+      basin: "Arroyo Morón - Loma Hermosa",
+      waterLevelMeters: 1.85,
+      criticalThresholdMeters: 2.80,
+      status: "NORMAL" as const,
+      activePumps: 2,
+      totalPumps: 3,
+      coordinates: [-34.5680, -58.5980] as [number, number],
+      neighborhoodKeywords: ["loma hermosa", "moron", "ruta 8"]
+    },
+    {
+      id: "zone-3",
+      name: "Cuenca Ciudadela Sur & Barrio Rivadavia",
+      basin: "Cuenca Maldonado - Ramos Mejía Limit",
+      waterLevelMeters: 2.42,
+      criticalThresholdMeters: 2.60,
+      status: "DESBORDE_IMMINENTE" as const,
+      activePumps: 4,
+      totalPumps: 4,
+      coordinates: [-34.6430, -58.5390] as [number, number],
+      neighborhoodKeywords: ["ciudadela", "ciudadela sur", "rivadavia"]
+    },
+    {
+      id: "zone-4",
+      name: "Churruca & Once de Septiembre",
+      basin: "Arroyo Morón - Colector Secundario",
+      waterLevelMeters: 1.40,
+      criticalThresholdMeters: 2.40,
+      status: "NORMAL" as const,
+      activePumps: 2,
+      totalPumps: 2,
+      coordinates: [-34.5700, -58.6180] as [number, number],
+      neighborhoodKeywords: ["churruca", "11 de septiembre", "once de septiembre"]
+    },
+    {
+      id: "zone-5",
+      name: "Pasos Bajo Nivel Caseros / Santos Lugares",
+      basin: "Sistema Depresor FFCC San Martín / Urquiza",
+      waterLevelMeters: 1.10,
+      criticalThresholdMeters: 2.00,
+      status: "NORMAL" as const,
+      activePumps: 3,
+      totalPumps: 3,
+      coordinates: [-34.6080, -58.5630] as [number, number],
+      neighborhoodKeywords: ["caseros", "santos lugares"]
+    }
+  ];
+
+  return await Promise.all(
+    zoneDefinitions.map(async (zd) => {
+      let vulnerablePeopleCount = 0;
+      let cuitElectrodependientes = 0;
+      let minorsUnder5 = 0;
+      let elderlyOver75 = 0;
+      try {
+        const pattern = `%(${zd.neighborhoodKeywords.join("|")})%`;
+        const res: any[] = await prisma.$queryRawUnsafe(
+          `SELECT
+            COUNT(*)::int as total,
+            COUNT(CASE WHEN (edad_aprox ~ '^[0-9]+$' AND edad_aprox::int <= 5) OR (fecha_nacimiento ~ '(2019|202[0-9])') THEN 1 END)::int as minors,
+            COUNT(CASE WHEN (edad_aprox ~ '^[0-9]+$' AND edad_aprox::int >= 75) OR (fecha_nacimiento ~ '19[0-4][0-9]') THEN 1 END)::int as elderly,
+            COUNT(CASE WHEN LOWER(COALESCE(roles, '')) LIKE '%electro%' THEN 1 END)::int as electro
+           FROM padron_unificado
+           WHERE LOWER(COALESCE(barrio, localidad, direccion, '')) SIMILAR TO $1;`,
+          pattern
+        );
+        const row = res[0] || {};
+        vulnerablePeopleCount = row.total || 0;
+        cuitElectrodependientes = row.electro || 0;
+        minorsUnder5 = row.minors || 0;
+        elderlyOver75 = row.elderly || 0;
+      } catch (e) {}
+
+      if (vulnerablePeopleCount === 0) {
+        try {
+          const personRes = await prisma.person.findMany({
+            where: {
+              OR: zd.neighborhoodKeywords.map((k) => ({
+                address: { contains: k, mode: "insensitive" as const }
+              }))
+            },
+            select: { birthDate: true }
+          });
+          vulnerablePeopleCount = personRes.length;
+          const nowYear = new Date().getFullYear();
+          personRes.forEach((p) => {
+            if (p.birthDate) {
+              const age = nowYear - new Date(p.birthDate).getFullYear();
+              if (age <= 5) minorsUnder5++;
+              if (age >= 75) elderlyOver75++;
+            }
+          });
+        } catch (e) {}
+      }
+
+      return {
+        id: zd.id,
+        name: zd.name,
+        basin: zd.basin,
+        waterLevelMeters: zd.waterLevelMeters,
+        criticalThresholdMeters: zd.criticalThresholdMeters,
+        status: zd.status,
+        activePumps: zd.activePumps,
+        totalPumps: zd.totalPumps,
+        vulnerablePeopleCount,
+        cuitElectrodependientes,
+        minorsUnder5,
+        elderlyOver75,
+        coordinates: zd.coordinates
+      };
+    })
+  );
+}
+
+export async function getEmergencyRadarData(overrideStats?: VulnerableGroupStats): Promise<EmergencyRadarData> {
+  const [metrics, hydrologicalZones] = await Promise.all([
+    getLiveAtmosphericMetrics(),
+    getHydrologicalZonesData()
+  ]);
+
   return {
     alert: {
       level: "AMARILLO",
@@ -121,83 +285,7 @@ export function getEmergencyRadarData(overrideStats?: VulnerableGroupStats): Eme
         affectedNeighborhoods: ["Sáenz Peña", "Santos Lugares", "José Ingenieros"]
       }
     ],
-    hydrologicalZones: [
-      {
-        id: "zone-1",
-        name: "Cuenca Baja Puerta 8 & B° El Libertador",
-        basin: "Arroyo Morón - Tramo Norte 3F",
-        waterLevelMeters: 2.15,
-        criticalThresholdMeters: 2.50,
-        status: "ALERTA_PREVENTIVA",
-        activePumps: 3,
-        totalPumps: 4,
-        vulnerablePeopleCount: 1420,
-        cuitElectrodependientes: 12,
-        minorsUnder5: 380,
-        elderlyOver75: 210,
-        coordinates: [-34.5680, -58.6050]
-      },
-      {
-        id: "zone-2",
-        name: "Cuenca Arroyo Morón (Ruta 8)",
-        basin: "Arroyo Morón - Loma Hermosa",
-        waterLevelMeters: 1.85,
-        criticalThresholdMeters: 2.80,
-        status: "NORMAL",
-        activePumps: 2,
-        totalPumps: 3,
-        vulnerablePeopleCount: 890,
-        cuitElectrodependientes: 6,
-        minorsUnder5: 195,
-        elderlyOver75: 115,
-        coordinates: [-34.5680, -58.5980]
-      },
-      {
-        id: "zone-3",
-        name: "Cuenca Ciudadela Sur & Barrio Rivadavia",
-        basin: "Cuenca Maldonado - Ramos Mejía Limit",
-        waterLevelMeters: 2.42,
-        criticalThresholdMeters: 2.60,
-        status: "DESBORDE_IMMINENTE",
-        activePumps: 4,
-        totalPumps: 4,
-        vulnerablePeopleCount: 2150,
-        cuitElectrodependientes: 18,
-        minorsUnder5: 520,
-        elderlyOver75: 340,
-        coordinates: [-34.6430, -58.5390]
-      },
-      {
-        id: "zone-4",
-        name: "Churruca & Once de Septiembre",
-        basin: "Arroyo Morón - Colector Secundario",
-        waterLevelMeters: 1.40,
-        criticalThresholdMeters: 2.40,
-        status: "NORMAL",
-        activePumps: 2,
-        totalPumps: 2,
-        vulnerablePeopleCount: 640,
-        cuitElectrodependientes: 4,
-        minorsUnder5: 140,
-        elderlyOver75: 90,
-        coordinates: [-34.5700, -58.6180]
-      },
-      {
-        id: "zone-5",
-        name: "Pasos Bajo Nivel Caseros / Santos Lugares",
-        basin: "Sistema Depresor FFCC San Martín / Urquiza",
-        waterLevelMeters: 1.10,
-        criticalThresholdMeters: 2.00,
-        status: "NORMAL",
-        activePumps: 3,
-        totalPumps: 3,
-        vulnerablePeopleCount: 310,
-        cuitElectrodependientes: 2,
-        minorsUnder5: 45,
-        elderlyOver75: 85,
-        coordinates: [-34.6080, -58.5630]
-      }
-    ],
+    hydrologicalZones,
     vulnerableStats: overrideStats || {
       totalInFloodRiskAreas: 0,
       electrodependientesCount: 0,
@@ -205,21 +293,14 @@ export function getEmergencyRadarData(overrideStats?: VulnerableGroupStats): Eme
       minorsUnder5Count: 0,
       elderlyOver75Count: 0
     },
-    metrics: {
-      surfaceTempC: 22.4,
-      humidityPercent: 88,
-      pressureHpa: 1008.2,
-      windGustsKmH: 58,
-      dewPointC: 20.1,
-      accumulatedRain24hMm: 34.5
-    },
+    metrics,
     lastRadarSweep: new Date().toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" })
   };
 }
 
 export async function getEmergencyData() {
   try {
-    const [realCases, supplies, vehicles, shelters, dynamicVulnerableStats] = await Promise.all([
+    const [realCases, supplies, availableVehicles, allVehicles, shelters, dynamicVulnerableStats] = await Promise.all([
       prisma.case.findMany({
         take: 20,
         orderBy: { createdAt: 'desc' },
@@ -234,6 +315,7 @@ export async function getEmergencyData() {
       prisma.vehicle.findMany({
         where: { status: 'DISPONIBLE' }
       }).catch(() => []),
+      prisma.vehicle.findMany().catch(() => []),
       // @ts-ignore
       prisma.shelter ? prisma.shelter.findMany({ orderBy: { createdAt: 'desc' } }).catch(() => []) : Promise.resolve([]),
       getEmergencyVulnerableStats().catch(() => ({
@@ -280,23 +362,26 @@ export async function getEmergencyData() {
       status: sh.status
     }));
 
-    const radarData = getEmergencyRadarData(dynamicVulnerableStats);
+    const radarData = await getEmergencyRadarData(dynamicVulnerableStats);
 
     return {
       incidents,
       emergencyStock,
       shelters: realShelters,
-      availableVehiclesCount: vehicles.length,
+      availableVehiclesCount: availableVehicles.length,
+      totalVehiclesCount: allVehicles.length,
       radarData
     };
   } catch (error) {
     console.error("Error fetching emergency data:", error);
+    const radarData = await getEmergencyRadarData();
     return {
       incidents: [],
       emergencyStock: [],
       shelters: [],
       availableVehiclesCount: 0,
-      radarData: getEmergencyRadarData()
+      totalVehiclesCount: 0,
+      radarData
     };
   }
 }

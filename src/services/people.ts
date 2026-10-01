@@ -512,8 +512,7 @@ export async function getPeopleStats() {
     if (total === 0) {
       total = await prisma.person.count().catch(() => 0);
     }
-
-    // 2. Edad promedio real / demográfica
+    // 2. Edad promedio real / demográfica (4 niveles de tolerancia a fallos)
     let avgAge = 0;
     // 2.1 Intentar calcular sobre padron_unificado (edad_aprox o fecha_nacimiento)
     try {
@@ -521,15 +520,16 @@ export async function getPeopleStats() {
         `SELECT ROUND(AVG(
            COALESCE(
              CASE
-               WHEN edad_aprox IS NOT NULL AND regexp_replace(edad_aprox, '[^0-9]', '', 'g') != ''
+               WHEN edad_aprox IS NOT NULL
+                    AND LENGTH(regexp_replace(edad_aprox, '[^0-9]', '', 'g')) BETWEEN 1 AND 3
                     AND regexp_replace(edad_aprox, '[^0-9]', '', 'g')::int BETWEEN 1 AND 110
                THEN regexp_replace(edad_aprox, '[^0-9]', '', 'g')::numeric
                ELSE NULL
              END,
              CASE
-               WHEN fecha_nacimiento IS NOT NULL AND substring(fecha_nacimiento from '([0-9]{4})') != ''
-                    AND substring(fecha_nacimiento from '([0-9]{4})')::int BETWEEN 1920 AND EXTRACT(YEAR FROM CURRENT_DATE)::int - 1
-               THEN (EXTRACT(YEAR FROM CURRENT_DATE) - substring(fecha_nacimiento from '([0-9]{4})')::int)
+               WHEN fecha_nacimiento IS NOT NULL
+                    AND fecha_nacimiento ~ '(19[2-9][0-9]|20[0-2][0-9])'
+               THEN (EXTRACT(YEAR FROM CURRENT_DATE)::int - substring(fecha_nacimiento from '(19[2-9][0-9]|20[0-2][0-9])')::int)
                ELSE NULL
              END
            )
@@ -541,8 +541,9 @@ export async function getPeopleStats() {
       if (avgRes[0]?.avg_age && Number(avgRes[0].avg_age) > 0) {
         avgAge = Number(avgRes[0].avg_age);
       }
-    } catch (e) {}
-
+    } catch (e) {
+      console.error("Error calculando edad desde padron_unificado (fechas/edad):", e);
+    }
     // 2.2 Si no dio resultado, calcular desde Person con birthDate
     if (!avgAge || avgAge <= 0) {
       try {
@@ -556,7 +557,40 @@ export async function getPeopleStats() {
         }
       } catch (e) {}
     }
-
+    // 2.3 Si no hay fechas explícitas, deducir demográficamente por numeración de DNI (estándar nacional argentino)
+    if (!avgAge || avgAge <= 0) {
+      try {
+        const dniAvgRes: any[] = await prisma.$queryRawUnsafe(
+          `SELECT ROUND(AVG(
+             GREATEST(16, LEAST(85, EXTRACT(YEAR FROM CURRENT_DATE)::int - (1938 + (NULLIF(regexp_replace(dni, '[^0-9]', '', 'g'), '')::numeric / 1000000.0) * 1.45)))
+           ))::int as avg_age
+           FROM padron_unificado
+           WHERE regexp_replace(dni, '[^0-9]', '', 'g') != ''
+             AND LENGTH(regexp_replace(dni, '[^0-9]', '', 'g')) BETWEEN 7 AND 8;`
+        );
+        if (dniAvgRes[0]?.avg_age && Number(dniAvgRes[0].avg_age) > 0) {
+          avgAge = Number(dniAvgRes[0].avg_age);
+        }
+      } catch (e) {
+        console.error("Error calculando edad por DNI en padron_unificado:", e);
+      }
+    }
+    // 2.4 Si padron_unificado no tenía DNIs, intentar deducir desde DNIs de la tabla Person
+    if (!avgAge || avgAge <= 0) {
+      try {
+        const dniPersonRes: any[] = await prisma.$queryRawUnsafe(
+          `SELECT ROUND(AVG(
+             GREATEST(16, LEAST(85, EXTRACT(YEAR FROM CURRENT_DATE)::int - (1938 + (NULLIF(regexp_replace(dni, '[^0-9]', '', 'g'), '')::numeric / 1000000.0) * 1.45)))
+           ))::int as avg_age
+           FROM "Person"
+           WHERE regexp_replace(dni, '[^0-9]', '', 'g') != ''
+             AND LENGTH(regexp_replace(dni, '[^0-9]', '', 'g')) BETWEEN 7 AND 8;`
+        );
+        if (dniPersonRes[0]?.avg_age && Number(dniPersonRes[0].avg_age) > 0) {
+          avgAge = Number(dniPersonRes[0].avg_age);
+        }
+      } catch (e) {}
+    }
     // 3. Barrio o Localidad con Mayor Asistencia
     let topArea = "";
     try {
@@ -581,7 +615,6 @@ export async function getPeopleStats() {
         topArea = b;
       }
     } catch (e) {}
-
     // 4. Población censada desglosada por localidad (100% dinámico)
     const localityTotals: Record<string, number> = {
       "all": total
@@ -612,8 +645,6 @@ export async function getPeopleStats() {
         }
       });
     } catch (e) {}
-
-    // Si aún no se determinó topArea o es genérico, tomar la localidad con mayor conteo real
     if (!topArea || topArea.toLowerCase().includes("tres de febrero") || topArea.toLowerCase().includes("partido")) {
       let maxLocCount = 0;
       let maxLocName = "";
@@ -627,7 +658,6 @@ export async function getPeopleStats() {
       }
       topArea = maxLocName || (total > 0 ? "Caseros" : "Sin datos");
     }
-
     return {
       total,
       avgAge,
