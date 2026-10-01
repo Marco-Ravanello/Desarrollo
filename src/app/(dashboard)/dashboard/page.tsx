@@ -3,11 +3,10 @@ export const dynamic = "force-dynamic";
 import { getDashboardStats } from "@/services/dashboard";
 import { Card } from "@/components/ui/card";
 import {
-  Users, FileText, CheckCircle2, ShieldAlert, ShieldCheck,
+  Users, FileText, CheckCircle2, ShieldCheck,
   Plus, UserPlus, DollarSign, ChevronRight, AlertTriangle,
-  Package, Car, ArrowRight, Calendar, Building2, ExternalLink
+  Package, Car, Calendar, ArrowUpRight
 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ExecutiveReportButton } from "../admin/reports/executive-report-button";
 import { TerritorialActivityWidget } from "@/components/dashboard/territorial-activity-widget";
@@ -27,28 +26,28 @@ export default async function DashboardPage() {
   const executionPercentage = stats.totalBudget > 0 ? Math.round((Number(stats.executedAmount || 0) / Number(stats.totalBudget)) * 100) : 0;
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500 max-w-7xl mx-auto">
-      {/* 1. Header Operativo Municipal */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="space-y-6 animate-in fade-in duration-300 max-w-7xl mx-auto">
+      {/* 1. Header Minimalista */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-border/30">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-foreground">
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">
             Panel de Control
           </h1>
-          <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 font-medium">
-            Resumen operativo de la gestión municipal.
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Centro de monitoreo operativo y gestión municipal
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2.5">
+        <div className="flex flex-wrap items-center gap-2">
           <Link href="/cases/new">
-            <Button className="h-10 rounded-xl px-4 font-bold text-xs bg-[#163C68] hover:bg-[#123155] text-white shadow-xs gap-1.5 cursor-pointer">
-              <Plus className="h-4 w-4" /> Nuevo Caso
+            <Button size="sm" className="h-9 rounded-xl px-3.5 font-medium text-xs bg-primary hover:bg-primary/90 text-primary-foreground shadow-none gap-1.5 cursor-pointer">
+              <Plus className="h-3.5 w-3.5" /> Nuevo Caso
             </Button>
           </Link>
 
           <Link href="/people/new">
-            <Button variant="outline" className="h-10 rounded-xl px-4 font-bold text-xs border-border/80 text-foreground hover:bg-muted/50 shadow-xs gap-1.5 cursor-pointer">
-              <UserPlus className="h-4 w-4" /> Cargar Persona
+            <Button variant="outline" size="sm" className="h-9 rounded-xl px-3.5 font-medium text-xs border-border/60 hover:bg-muted/40 shadow-none gap-1.5 cursor-pointer">
+              <UserPlus className="h-3.5 w-3.5 text-muted-foreground" /> Cargar Persona
             </Button>
           </Link>
 
@@ -56,174 +55,156 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      {/* 2. Top 4 KPI Cards con franja lateral institucional */}
+      {/* 2. Top 4 KPI Cards Minimalistas */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Card 1: Familias Registradas */}
         <Link href="/people" className="block group">
-          <Card className="rounded-2xl border border-border/70 border-l-4 border-l-blue-600 bg-card p-4 shadow-xs hover:shadow-md transition-all">
+          <Card className="rounded-2xl border border-border/50 bg-card p-4 hover:border-border/80 transition-all duration-200 shadow-none hover:shadow-xs">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-11 h-11 rounded-2xl bg-blue-500/10 text-blue-600 flex items-center justify-center shrink-0">
-                  <Users className="h-5 w-5" />
-                </div>
-                <div>
-                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">
-                    Familias Registradas
-                  </span>
-                  <span className="text-2xl font-black text-foreground font-mono tracking-tight block mt-0.5">
-                    {familiesCount}
-                  </span>
-                </div>
+              <span className="text-xs font-medium text-muted-foreground">Familias Registradas</span>
+              <div className="w-7 h-7 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+                <Users className="h-3.5 w-3.5" />
               </div>
-              <ChevronRight className="h-4 w-4 text-muted-foreground/60 group-hover:text-foreground group-hover:translate-x-0.5 transition-all" />
             </div>
-            <div className="flex items-center gap-1.5 text-[11px] font-bold text-emerald-600 mt-3 pt-2.5 border-t border-border/40">
-              <span className="px-1.5 py-0.2 rounded-md bg-emerald-500/15 text-emerald-600 font-black text-[10px]">
-                ↑ 4,2%
+
+            <div className="mt-2.5">
+              <span className="text-2xl font-bold tracking-tight text-foreground">
+                {familiesCount}
               </span>
-              <span className="text-muted-foreground font-semibold">vs. mes anterior</span>
+            </div>
+
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-3 pt-2.5 border-t border-border/30">
+              <span className="text-emerald-600 dark:text-emerald-400 font-medium">↑ 4,2%</span>
+              <span className="text-[11px]">vs. mes anterior</span>
             </div>
           </Card>
         </Link>
 
         {/* Card 2: Casos Activos */}
         <Link href="/cases" className="block group">
-          <Card className="rounded-2xl border border-border/70 border-l-4 border-l-rose-500 bg-card p-4 shadow-xs hover:shadow-md transition-all">
+          <Card className="rounded-2xl border border-border/50 bg-card p-4 hover:border-border/80 transition-all duration-200 shadow-none hover:shadow-xs">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-11 h-11 rounded-2xl bg-rose-500/10 text-rose-500 flex items-center justify-center shrink-0">
-                  <FileText className="h-5 w-5" />
-                </div>
-                <div>
-                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">
-                    Casos Activos
-                  </span>
-                  <span className="text-2xl font-black text-foreground font-mono tracking-tight block mt-0.5">
-                    {activeCasesCount}
-                  </span>
-                </div>
+              <span className="text-xs font-medium text-muted-foreground">Casos Activos</span>
+              <div className="w-7 h-7 rounded-lg bg-rose-500/10 text-rose-600 dark:text-rose-400 flex items-center justify-center">
+                <FileText className="h-3.5 w-3.5" />
               </div>
-              <ChevronRight className="h-4 w-4 text-muted-foreground/60 group-hover:text-foreground group-hover:translate-x-0.5 transition-all" />
             </div>
-            <div className="flex items-center gap-1.5 text-[11px] font-bold text-rose-500 mt-3 pt-2.5 border-t border-border/40">
-              <span className="h-2 w-2 rounded-full bg-rose-500"></span>
-              <span>12 requieren atención</span>
+
+            <div className="mt-2.5">
+              <span className="text-2xl font-bold tracking-tight text-foreground">
+                {activeCasesCount}
+              </span>
+            </div>
+
+            <div className="flex items-center gap-1.5 text-xs mt-3 pt-2.5 border-t border-border/30">
+              <span className="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
+              <span className="text-[11px] text-rose-600 dark:text-rose-400 font-medium">12 requieren atención</span>
             </div>
           </Card>
         </Link>
 
         {/* Card 3: Tareas Pendientes */}
         <Link href="/tasks" className="block group">
-          <Card className="rounded-2xl border border-border/70 border-l-4 border-l-amber-500 bg-card p-4 shadow-xs hover:shadow-md transition-all">
+          <Card className="rounded-2xl border border-border/50 bg-card p-4 hover:border-border/80 transition-all duration-200 shadow-none hover:shadow-xs">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-11 h-11 rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center shrink-0">
-                  <CheckCircle2 className="h-5 w-5" />
-                </div>
-                <div>
-                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">
-                    Tareas Pendientes
-                  </span>
-                  <span className="text-2xl font-black text-foreground font-mono tracking-tight block mt-0.5">
-                    {todayTasksCount}
-                  </span>
-                </div>
+              <span className="text-xs font-medium text-muted-foreground">Tareas Pendientes</span>
+              <div className="w-7 h-7 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+                <CheckCircle2 className="h-3.5 w-3.5" />
               </div>
-              <ChevronRight className="h-4 w-4 text-muted-foreground/60 group-hover:text-foreground group-hover:translate-x-0.5 transition-all" />
             </div>
-            <div className="flex items-center gap-1.5 text-[11px] font-bold text-amber-600 dark:text-amber-400 mt-3 pt-2.5 border-t border-border/40">
-              <span className="h-2 w-2 rounded-full bg-amber-500"></span>
-              <span>2 de alta prioridad</span>
+
+            <div className="mt-2.5">
+              <span className="text-2xl font-bold tracking-tight text-foreground">
+                {todayTasksCount}
+              </span>
+            </div>
+
+            <div className="flex items-center gap-1.5 text-xs mt-3 pt-2.5 border-t border-border/30">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+              <span className="text-[11px] text-amber-600 dark:text-amber-400 font-medium">2 de alta prioridad</span>
             </div>
           </Card>
         </Link>
 
         {/* Card 4: Alertas Críticas */}
         <Link href="/cases?priority=URGENTE" className="block group">
-          <Card className="rounded-2xl border border-border/70 border-l-4 border-l-emerald-500 bg-card p-4 shadow-xs hover:shadow-md transition-all">
+          <Card className="rounded-2xl border border-border/50 bg-card p-4 hover:border-border/80 transition-all duration-200 shadow-none hover:shadow-xs">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-11 h-11 rounded-2xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center shrink-0">
-                  <ShieldCheck className="h-5 w-5" />
-                </div>
-                <div>
-                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">
-                    Alertas Críticas
-                  </span>
-                  <span className="text-2xl font-black text-foreground font-mono tracking-tight block mt-0.5">
-                    {criticalCasesCount}
-                  </span>
-                </div>
+              <span className="text-xs font-medium text-muted-foreground">Alertas Críticas</span>
+              <div className="w-7 h-7 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                <ShieldCheck className="h-3.5 w-3.5" />
               </div>
-              <ChevronRight className="h-4 w-4 text-muted-foreground/60 group-hover:text-foreground group-hover:translate-x-0.5 transition-all" />
             </div>
-            <div className="flex items-center gap-1.5 text-[11px] font-bold text-emerald-600 mt-3 pt-2.5 border-t border-border/40">
-              <span className="h-2 w-2 rounded-full bg-emerald-500"></span>
-              <span>{criticalCasesCount > 0 ? `${criticalCasesCount} requieren atención` : "Todo en orden"}</span>
+
+            <div className="mt-2.5">
+              <span className="text-2xl font-bold tracking-tight text-foreground">
+                {criticalCasesCount}
+              </span>
+            </div>
+
+            <div className="flex items-center gap-1.5 text-xs mt-3 pt-2.5 border-t border-border/30">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+              <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">
+                {criticalCasesCount > 0 ? `${criticalCasesCount} pendientes` : "Todo en orden"}
+              </span>
             </div>
           </Card>
         </Link>
       </div>
 
-      {/* 3. Middle Row: Presupuesto Municipal | Requiere atención | Actividad territorial */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
-        {/* Col 1: Presupuesto Municipal (4 cols) */}
+      {/* 3. Middle Row: Presupuesto | Requiere atención | Actividad territorial */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
+        {/* Col 1: Presupuesto Municipal */}
         <div className="lg:col-span-4 flex flex-col">
-          <Card className="rounded-3xl border border-border/60 bg-card p-5 shadow-xs flex flex-col justify-between h-full">
+          <Card className="rounded-2xl border border-border/50 bg-card p-5 shadow-none flex flex-col justify-between h-full">
             <div>
-              <div className="flex items-center justify-between pb-3">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-xl bg-blue-500/10 text-blue-600 flex items-center justify-center shrink-0">
-                    <DollarSign className="h-4 w-4" />
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-bold text-foreground">Presupuesto Municipal</h3>
-                    <p className="text-[11px] text-muted-foreground">Ejecución acumulada 2026</p>
-                  </div>
+              <div className="flex items-center justify-between pb-3 border-b border-border/30">
+                <div className="flex items-center gap-2">
+                  <DollarSign className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                  <h3 className="text-sm font-semibold text-foreground">Presupuesto Municipal</h3>
                 </div>
-                <Link href="/admin/agreements" className="flex items-center gap-1 text-muted-foreground hover:text-foreground">
-                  <Badge variant="outline" className="text-[10px] font-bold uppercase rounded-full px-2.5 py-0.5 bg-emerald-500/10 text-emerald-600 border-emerald-500/30">
-                    {executionPercentage}% EJECUTADO
-                  </Badge>
-                  <ChevronRight className="h-3.5 w-3.5" />
+                <Link href="/admin/agreements" className="flex items-center gap-1">
+                  <span className="text-[10px] font-medium rounded-full px-2 py-0.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                    {executionPercentage}% ejecutado
+                  </span>
+                  <ChevronRight className="h-3 w-3 text-muted-foreground" />
                 </Link>
               </div>
 
-              {/* 3 Columnas Financieras */}
-              <div className="grid grid-cols-3 gap-2 py-3 border-y border-border/40 text-left">
+              {/* 3 Métricas Financieras */}
+              <div className="grid grid-cols-3 gap-2 py-3.5 text-left border-b border-border/30">
                 <div>
-                  <p className="text-xs sm:text-sm font-black font-mono text-foreground leading-tight">
+                  <p className="text-xs font-semibold text-foreground leading-tight">
                     {executedAmountFormatted}
                   </p>
-                  <p className="text-[10px] font-bold text-muted-foreground mt-0.5">Ejecutado</p>
-                  <p className="text-[10px] text-emerald-600 font-semibold mt-0.5">0% del presupuesto</p>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">Ejecutado</p>
                 </div>
                 <div>
-                  <p className="text-xs sm:text-sm font-black font-mono text-foreground leading-tight">
-                    $ 0
+                  <p className="text-xs font-semibold text-foreground leading-tight">
+                    {remainingBudgetFormatted}
                   </p>
-                  <p className="text-[10px] font-bold text-muted-foreground mt-0.5">Restante</p>
-                  <p className="text-[10px] text-muted-foreground font-semibold mt-0.5">100% pendiente</p>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">Restante</p>
                 </div>
                 <div>
-                  <p className="text-xs sm:text-sm font-black font-mono text-foreground leading-tight">
+                  <p className="text-xs font-semibold text-foreground leading-tight">
                     {totalBudgetFormatted}
                   </p>
-                  <p className="text-[10px] font-bold text-muted-foreground mt-0.5">Presupuesto total</p>
-                  <p className="text-[10px] text-muted-foreground font-semibold mt-0.5">Aprobado</p>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">Total</p>
                 </div>
               </div>
 
-              {/* Barras de Ejecución por área */}
-              <div className="mt-4 space-y-2.5">
-                <span className="text-[11px] font-bold text-foreground block">Ejecución por área</span>
+              {/* Barras de Ejecución ultra-delgadas */}
+              <div className="mt-4 space-y-3">
+                <span className="text-[11px] font-medium text-muted-foreground block">
+                  Distribución por área
+                </span>
                 {stats.areaBudgetProgress && stats.areaBudgetProgress.map((area: any) => (
                   <div key={area.name} className="space-y-1">
-                    <div className="flex justify-between items-center text-[11px]">
-                      <span className="text-muted-foreground">{area.name}</span>
-                      <span className="font-bold text-foreground font-mono">{area.percentage}%</span>
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="text-muted-foreground text-[11px]">{area.name}</span>
+                      <span className="font-medium text-foreground text-[11px]">{area.percentage}%</span>
                     </div>
-                    <div className="w-full h-2 rounded-full bg-muted/60 overflow-hidden">
+                    <div className="w-full h-1.5 rounded-full bg-muted/40 overflow-hidden">
                       <div
                         className={`h-full rounded-full ${area.color}`}
                         style={{ width: `${Math.min(100, Math.max(0, area.percentage))}%` }}
@@ -236,65 +217,57 @@ export default async function DashboardPage() {
           </Card>
         </div>
 
-        {/* Col 2: Requiere atención (4 cols) */}
+        {/* Col 2: Requiere atención */}
         <div className="lg:col-span-4 flex flex-col">
-          <Card className="rounded-3xl border border-border/60 bg-card p-5 shadow-xs flex flex-col justify-between h-full">
+          <Card className="rounded-2xl border border-border/50 bg-card p-5 shadow-none flex flex-col justify-between h-full">
             <div>
-              <div className="flex items-center justify-between pb-3 border-b border-border/40">
+              <div className="flex items-center justify-between pb-3 border-b border-border/30">
                 <div className="flex items-center gap-2">
-                  <AlertTriangle className="h-4 w-4 text-rose-500" />
-                  <h3 className="text-sm font-bold text-foreground">Requiere atención</h3>
+                  <AlertTriangle className="h-4 w-4 text-amber-500" />
+                  <h3 className="text-sm font-semibold text-foreground">Requiere atención</h3>
                 </div>
                 <Link
                   href="/cases?priority=URGENTE"
-                  className="text-xs font-semibold text-muted-foreground hover:text-primary transition-colors flex items-center gap-1"
+                  className="text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-0.5"
                 >
-                  Ver todas <span className="text-sm">→</span>
+                  Ver todas <ArrowUpRight className="h-3 w-3" />
                 </Link>
               </div>
 
-              {/* Lista de alertas prioritarias */}
-              <div className="space-y-3 mt-4">
+              {/* Lista Minimalista */}
+              <div className="divide-y divide-border/30 mt-1">
                 {stats.attentionItems && stats.attentionItems.map((item: any) => (
-                  <div
+                  <Link
                     key={item.id}
-                    className="flex items-center justify-between p-3 rounded-2xl bg-muted/30 border border-border/40 hover:bg-muted/50 transition-colors"
+                    href={item.href}
+                    className="flex items-center justify-between py-3 hover:bg-muted/20 px-1 rounded-lg transition-colors group"
                   >
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 ${
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <span className={`w-2 h-2 rounded-full shrink-0 ${
                         item.type === "case"
-                          ? "bg-rose-500/10 text-rose-500"
+                          ? "bg-rose-500"
                           : item.type === "po"
-                          ? "bg-amber-500/10 text-amber-500"
-                          : "bg-emerald-500/10 text-emerald-600"
-                      }`}>
-                        {item.type === "case" ? (
-                          <AlertTriangle className="h-4 w-4" />
-                        ) : item.type === "po" ? (
-                          <Package className="h-4 w-4" />
-                        ) : (
-                          <Car className="h-4 w-4" />
-                        )}
-                      </div>
+                          ? "bg-amber-500"
+                          : "bg-blue-500"
+                      }`} />
                       <div className="min-w-0">
-                        <p className="text-xs font-bold text-foreground truncate">{item.title}</p>
-                        <p className="text-[11px] text-muted-foreground truncate">{item.subtitle}</p>
+                        <p className="text-xs font-medium text-foreground truncate group-hover:text-primary transition-colors">
+                          {item.title}
+                        </p>
+                        <p className="text-[11px] text-muted-foreground truncate">
+                          {item.subtitle}
+                        </p>
                       </div>
                     </div>
-                    <Link
-                      href={item.href}
-                      className="text-xs font-bold text-muted-foreground hover:text-foreground shrink-0 ml-2"
-                    >
-                      {item.actionText}
-                    </Link>
-                  </div>
+                    <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/50 group-hover:text-foreground group-hover:translate-x-0.5 transition-all shrink-0 ml-2" />
+                  </Link>
                 ))}
               </div>
             </div>
           </Card>
         </div>
 
-        {/* Col 3: Actividad territorial (4 cols) */}
+        {/* Col 3: Actividad territorial */}
         <div className="lg:col-span-4 flex flex-col">
           <TerritorialActivityWidget
             topArea={stats.topArea || "Caseros"}
@@ -303,46 +276,47 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      {/* 4. Bottom Row: 3 Tablas Operativas Municipales */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
+      {/* 4. Bottom Row: 3 Tablas Operativas Limpias */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 items-stretch">
         {/* Tabla 1: Casos recientes */}
-        <Card className="rounded-3xl border border-border/60 bg-card p-5 shadow-xs flex flex-col justify-between">
+        <Card className="rounded-2xl border border-border/50 bg-card p-5 shadow-none flex flex-col justify-between">
           <div>
-            <div className="flex items-center justify-between pb-3 border-b border-border/40">
+            <div className="flex items-center justify-between pb-3 border-b border-border/30">
               <div className="flex items-center gap-2">
-                <Users className="h-4 w-4 text-primary" />
-                <h3 className="text-sm font-bold text-foreground">Casos recientes</h3>
+                <Users className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                <h3 className="text-sm font-semibold text-foreground">Casos recientes</h3>
               </div>
               <Link
                 href="/cases"
-                className="text-xs font-semibold text-muted-foreground hover:text-primary transition-colors flex items-center gap-1"
+                className="text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-0.5"
               >
-                Ver todos <span className="text-sm">→</span>
+                Ver todos <ArrowUpRight className="h-3 w-3" />
               </Link>
             </div>
-            <div className="overflow-x-auto mt-2">
+
+            <div className="overflow-x-auto mt-1">
               <table className="w-full text-left text-xs">
                 <thead>
-                  <tr className="border-b border-border/30 text-[10px] font-bold uppercase text-muted-foreground">
-                    <th className="py-2 px-1">N°</th>
-                    <th className="py-2 px-1">Familia / Ciudadano</th>
-                    <th className="py-2 px-1">Tipo</th>
-                    <th className="py-2 px-1 text-right">Estado</th>
+                  <tr className="border-b border-border/30 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                    <th className="py-2.5 px-1.5 font-medium">N°</th>
+                    <th className="py-2.5 px-1.5 font-medium">Ciudadano</th>
+                    <th className="py-2.5 px-1.5 font-medium">Área</th>
+                    <th className="py-2.5 px-1.5 text-right font-medium">Estado</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border/20">
                   {stats.recentCases && stats.recentCases.map((c: any) => (
-                    <tr key={c.id} className="hover:bg-muted/30 transition-colors">
-                      <td className="py-2.5 px-1 font-mono font-bold text-muted-foreground">{c.id}</td>
-                      <td className="py-2.5 px-1 font-medium text-foreground truncate max-w-[120px]">{c.citizenName}</td>
-                      <td className="py-2.5 px-1 text-muted-foreground">{c.type}</td>
-                      <td className="py-2.5 px-1 text-right">
-                        <span className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-semibold border ${
+                    <tr key={c.id} className="hover:bg-muted/20 transition-colors">
+                      <td className="py-2.5 px-1.5 text-muted-foreground font-mono text-[11px]">{c.id}</td>
+                      <td className="py-2.5 px-1.5 font-medium text-foreground truncate max-w-[110px]">{c.citizenName}</td>
+                      <td className="py-2.5 px-1.5 text-muted-foreground text-[11px]">{c.type}</td>
+                      <td className="py-2.5 px-1.5 text-right">
+                        <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-medium ${
                           c.statusVariant === "pending"
-                            ? "bg-amber-50 text-amber-600 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-900/60"
+                            ? "bg-amber-500/10 text-amber-600 dark:text-amber-400"
                             : c.statusVariant === "in_progress"
-                            ? "bg-blue-50 text-blue-600 border-blue-200 dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-900/60"
-                            : "bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-900/60"
+                            ? "bg-blue-500/10 text-blue-600 dark:text-blue-400"
+                            : "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
                         }`}>
                           {c.status}
                         </span>
@@ -356,45 +330,46 @@ export default async function DashboardPage() {
         </Card>
 
         {/* Tabla 2: Próximos vencimientos */}
-        <Card className="rounded-3xl border border-border/60 bg-card p-5 shadow-xs flex flex-col justify-between">
+        <Card className="rounded-2xl border border-border/50 bg-card p-5 shadow-none flex flex-col justify-between">
           <div>
-            <div className="flex items-center justify-between pb-3 border-b border-border/40">
+            <div className="flex items-center justify-between pb-3 border-b border-border/30">
               <div className="flex items-center gap-2">
-                <Calendar className="h-4 w-4 text-primary" />
-                <h3 className="text-sm font-bold text-foreground">Próximos vencimientos</h3>
+                <Calendar className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                <h3 className="text-sm font-semibold text-foreground">Próximos vencimientos</h3>
               </div>
               <Link
                 href="/tasks"
-                className="text-xs font-semibold text-muted-foreground hover:text-primary transition-colors flex items-center gap-1"
+                className="text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-0.5"
               >
-                Ver todas <span className="text-sm">→</span>
+                Ver todas <ArrowUpRight className="h-3 w-3" />
               </Link>
             </div>
-            <div className="overflow-x-auto mt-2">
+
+            <div className="overflow-x-auto mt-1">
               <table className="w-full text-left text-xs">
                 <thead>
-                  <tr className="border-b border-border/30 text-[10px] font-bold uppercase text-muted-foreground">
-                    <th className="py-2 px-1">Descripción</th>
-                    <th className="py-2 px-1">Prioridad</th>
-                    <th className="py-2 px-1 text-right">Vencimiento</th>
+                  <tr className="border-b border-border/30 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                    <th className="py-2.5 px-1.5 font-medium">Tarea</th>
+                    <th className="py-2.5 px-1.5 font-medium">Prioridad</th>
+                    <th className="py-2.5 px-1.5 text-right font-medium">Plazo</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border/20">
                   {stats.upcomingTasks && stats.upcomingTasks.map((t: any) => (
-                    <tr key={t.id} className="hover:bg-muted/30 transition-colors">
-                      <td className="py-2.5 px-1 font-medium text-foreground truncate max-w-[140px]">{t.description}</td>
-                      <td className="py-2.5 px-1">
-                        <span className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-semibold border ${
+                    <tr key={t.id} className="hover:bg-muted/20 transition-colors">
+                      <td className="py-2.5 px-1.5 font-medium text-foreground truncate max-w-[130px]">{t.description}</td>
+                      <td className="py-2.5 px-1.5">
+                        <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-medium ${
                           t.priorityVariant === "high"
-                            ? "bg-rose-50 text-rose-600 border-rose-200 dark:bg-rose-950/40 dark:text-rose-400 dark:border-rose-900/60"
+                            ? "bg-rose-500/10 text-rose-600 dark:text-rose-400"
                             : t.priorityVariant === "medium"
-                            ? "bg-amber-50 text-amber-600 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-900/60"
-                            : "bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-900/60"
+                            ? "bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                            : "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
                         }`}>
                           {t.priority}
                         </span>
                       </td>
-                      <td className="py-2.5 px-1 text-right text-muted-foreground font-mono text-[11px]">{t.dueDate}</td>
+                      <td className="py-2.5 px-1.5 text-right text-muted-foreground font-mono text-[11px]">{t.dueDate}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -404,45 +379,46 @@ export default async function DashboardPage() {
         </Card>
 
         {/* Tabla 3: Vehículos y logística */}
-        <Card className="rounded-3xl border border-border/60 bg-card p-5 shadow-xs flex flex-col justify-between">
+        <Card className="rounded-2xl border border-border/50 bg-card p-5 shadow-none flex flex-col justify-between">
           <div>
-            <div className="flex items-center justify-between pb-3 border-b border-border/40">
+            <div className="flex items-center justify-between pb-3 border-b border-border/30">
               <div className="flex items-center gap-2">
-                <Car className="h-4 w-4 text-primary" />
-                <h3 className="text-sm font-bold text-foreground">Vehículos y logística</h3>
+                <Car className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                <h3 className="text-sm font-semibold text-foreground">Vehículos y logística</h3>
               </div>
               <Link
                 href="/admin/vehicles"
-                className="text-xs font-semibold text-muted-foreground hover:text-primary transition-colors flex items-center gap-1"
+                className="text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-0.5"
               >
-                Ver todos <span className="text-sm">→</span>
+                Ver flota <ArrowUpRight className="h-3 w-3" />
               </Link>
             </div>
-            <div className="overflow-x-auto mt-2">
+
+            <div className="overflow-x-auto mt-1">
               <table className="w-full text-left text-xs">
                 <thead>
-                  <tr className="border-b border-border/30 text-[10px] font-bold uppercase text-muted-foreground">
-                    <th className="py-2 px-1">Vehículo</th>
-                    <th className="py-2 px-1">Estado</th>
-                    <th className="py-2 px-1 text-right">Próx. Vencimiento</th>
+                  <tr className="border-b border-border/30 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                    <th className="py-2.5 px-1.5 font-medium">Unidad</th>
+                    <th className="py-2.5 px-1.5 font-medium">Estado</th>
+                    <th className="py-2.5 px-1.5 text-right font-medium">Vencimiento</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border/20">
                   {stats.vehiclesList && stats.vehiclesList.map((v: any) => (
-                    <tr key={v.id} className="hover:bg-muted/30 transition-colors">
-                      <td className="py-2.5 px-1 font-medium text-foreground truncate max-w-[120px]">{v.name}</td>
-                      <td className="py-2.5 px-1">
-                        <span className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-semibold border ${
+                    <tr key={v.id} className="hover:bg-muted/20 transition-colors">
+                      <td className="py-2.5 px-1.5 font-medium text-foreground truncate max-w-[110px]">{v.name}</td>
+                      <td className="py-2.5 px-1.5">
+                        <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-medium ${
                           v.statusVariant === "active"
-                            ? "bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-900/60"
+                            ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
                             : v.statusVariant === "maintenance"
-                            ? "bg-sky-50 text-sky-600 border-sky-200 dark:bg-sky-950/40 dark:text-sky-400 dark:border-sky-900/60"
-                            : "bg-slate-50 text-slate-600 border-slate-200 dark:bg-slate-900 dark:text-slate-400 dark:border-slate-800"
+                            ? "bg-sky-500/10 text-sky-600 dark:text-sky-400"
+                            : "bg-slate-500/10 text-slate-600 dark:text-slate-400"
                         }`}>
                           {v.status}
                         </span>
                       </td>
-                      <td className="py-2.5 px-1 text-right text-muted-foreground font-mono text-[11px] truncate max-w-[110px]">{v.nextExpiry}</td>
+                      <td className="py-2.5 px-1.5 text-right text-muted-foreground font-mono text-[11px] truncate max-w-[100px]">{v.nextExpiry}</td>
                     </tr>
                   ))}
                 </tbody>
