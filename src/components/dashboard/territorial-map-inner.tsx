@@ -18,7 +18,6 @@ interface TerritorialMapInnerProps {
   topArea?: string;
 }
 
-// Coordenadas oficiales de referencia de las localidades de Tres de Febrero
 const T3F_OFFICIAL_POINTS = [
   { lat: -34.6083, lng: -58.5642, type: "case", label: "Caseros · Caso Activo" },
   { lat: -34.6050, lng: -58.5600, type: "family", label: "Caseros · Familia Registrada" },
@@ -42,7 +41,6 @@ export function TerritorialMapInner({ locations = [], topArea = "Caseros" }: Ter
   const { theme } = useTheme();
   const isDark = theme === "dark";
 
-  // Centro geográfico oficial de Tres de Febrero
   const TRES_DE_FEBRERO_CENTER: [number, number] = [-34.6030, -58.5580];
 
   const tileUrl = isDark
@@ -58,25 +56,23 @@ export function TerritorialMapInner({ locations = [], topArea = "Caseros" }: Ter
       scrollWheelZoom={false}
       doubleClickZoom={false}
       style={{ height: "220px", width: "100%", background: isDark ? "#0f172a" : "#f1f5f9" }}
-      className="z-10 rounded-2xl overflow-hidden"
+      className="z-10 rounded-xl overflow-hidden"
     >
       <TileLayer
         attribution='&copy; <a href="https://carto.com/">CARTO</a>'
         url={tileUrl}
       />
-      {/* Círculo focal en la zona con mayor actividad (Caseros) */}
       <Circle
         center={[-34.6083, -58.5642]}
         radius={750}
         pathOptions={{
           color: "#3B82F6",
           fillColor: "#3B82F6",
-          fillOpacity: 0.18,
-          weight: 2,
+          fillOpacity: 0.16,
+          weight: 1.5,
           dashArray: "4, 4"
         }}
       />
-      {/* Puntos georreferenciados del padrón unificado */}
       {locations.length > 0 ? (
         locations.map((loc, idx) => {
           const isCase = idx % 4 === 0;
@@ -86,7 +82,7 @@ export function TerritorialMapInner({ locations = [], topArea = "Caseros" }: Ter
             <CircleMarker
               key={loc.id || idx}
               center={[loc.latitude, loc.longitude]}
-              radius={isCase ? 6 : 5}
+              radius={isCase ? 5.5 : 4.5}
               pathOptions={{
                 color: "#FFFFFF",
                 fillColor: color,
@@ -107,7 +103,7 @@ export function TerritorialMapInner({ locations = [], topArea = "Caseros" }: Ter
             <CircleMarker
               key={idx}
               center={[pt.lat, pt.lng]}
-              radius={pt.type === "case" ? 6 : 5}
+              radius={pt.type === "case" ? 5.5 : 4.5}
               pathOptions={{
                 color: "#FFFFFF",
                 fillColor: color,

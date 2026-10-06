@@ -17,7 +17,6 @@ export function ExecutiveReportButton() {
       const data = await getWeeklyExecutiveData();
       const doc = new jsPDF();
 
-      // Header prolijo institucional
       doc.setFillColor(0, 74, 128);
       doc.rect(0, 0, 210, 40, 'F');
 
@@ -29,13 +28,11 @@ export function ExecutiveReportButton() {
       doc.setFontSize(10);
       doc.text("Municipalidad de Tres de Febrero - Gestión de Desarrollo Humano", 14, 32);
 
-      // Info Section
       doc.setTextColor(60, 60, 60);
       doc.setFontSize(12);
       doc.text(`Periodo: ${data.period}`, 14, 55);
       doc.text(`Fecha de Emisión: ${data.timestamp}`, 14, 62);
 
-      // Content Table
       (doc as any).autoTable({
         startY: 75,
         head: [['Métrica de Gestión', 'Valor']],
@@ -51,7 +48,6 @@ export function ExecutiveReportButton() {
         styles: { fontSize: 11, cellPadding: 6 }
       });
 
-      // Footer
       doc.setFontSize(9);
       doc.setTextColor(150, 150, 150);
       doc.text("Documento generado automáticamente por MuniGestión para uso interno.", 14, 280);
@@ -69,14 +65,15 @@ export function ExecutiveReportButton() {
   return (
     <Button
       variant="outline"
+      size="sm"
       onClick={generatePDF}
       disabled={loading}
-      className="rounded-xl h-10 px-4 gap-1.5 border-border/80 text-foreground hover:bg-muted/50 text-xs font-bold shadow-xs cursor-pointer transition-colors"
+      className="rounded-xl h-9 px-3.5 gap-1.5 border-border/60 text-foreground hover:bg-muted/40 text-xs font-medium shadow-none cursor-pointer transition-colors"
     >
       {loading ? (
-        <Loader2 className="h-4 w-4 animate-spin text-primary" />
+        <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
       ) : (
-        <FileText className="h-4 w-4 text-muted-foreground" />
+        <FileText className="h-3.5 w-3.5 text-muted-foreground" />
       )}
       Reporte Semanal
     </Button>
