@@ -69,6 +69,7 @@ model Person {
   cases           Case[]
   interventions   Intervention[]
   documents       Document[]
+  stormVictims    StormVictimRecord[]
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 
@@ -96,6 +97,7 @@ model Case {
   interventions Intervention[]
   derivations   Derivation[]
   documents     Document[]
+  stormVictims  StormVictimRecord[]
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
 
@@ -536,4 +538,55 @@ model ParticipacionPrograma {
   barrio             String?
 
   @@map("participaciones_programas")
+}
+
+model StormEmergencySheet {
+  id           String              @id @default(cuid())
+  date         DateTime            @default(now())
+  operatorId   String?
+  operatorName String
+  areaId       String?
+  areaName     String
+  observations String?
+  records      StormVictimRecord[]
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+}
+
+model StormVictimRecord {
+  id                      String               @id @default(cuid())
+  sheetId                 String?
+  sheet                   StormEmergencySheet? @relation(fields: [sheetId], references: [id], onDelete: Cascade)
+  itemNumber              Int                  @default(1)
+  personId                String?
+  person                  Person?              @relation(fields: [personId], references: [id])
+  nombreApellido          String
+  dni                     String?
+  edad                    String?
+  grupoFamiliar           Boolean              @default(false)
+  ninos                   String?
+  domicilio               String
+  referencia              String?
+  barrio                  String?
+  requiereColchon         Boolean              @default(false)
+  cantidadColchon         Int                  @default(0)
+  requiereCama            Boolean              @default(false)
+  cantidadCama            Int                  @default(0)
+  requiereCucheta         Boolean              @default(false)
+  cantidadCucheta         Int                  @default(0)
+  requiereFrazada         Boolean              @default(false)
+  cantidadFrazada         Int                  @default(0)
+  observaciones           String?
+  contacto                String?
+  agentes                 String?
+  prioridad               String               @default("MEDIA")
+  descripcionIntervencion String?              @db.Text
+  estado                  String               @default("REGISTRADO")
+  caseId                  String?
+  case                    Case?                @relation(fields: [caseId], references: [id])
+  createdAt               DateTime             @default(now())
+  updatedAt               DateTime             @updatedAt
+
+  @@index([dni])
+  @@index([sheetId])
 }

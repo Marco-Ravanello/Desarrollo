@@ -3,147 +3,320 @@
 import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
+import {
+  searchPeopleForEmergency,
+  syncPersonInDatabase,
+  getEmergencyOperator,
+  getStormVictimRecords
+} from "@/services/emergency";
+import { StormVictimItem } from "@/types/emergency";
 
-export async function createShelterAction(formData: FormData) {
-  const session = await auth();
-  if (!session?.user?.id) return { success: false, error: "No autorizado" };
-
-  const name = formData.get("name") as string;
-  const address = formData.get("address") as string;
-  const coordinator = (formData.get("coordinator") as string) || "Guardia Municipal";
-  const capacity = Number(formData.get("capacity")) || 50;
-
-  if (!name || !address) {
-    return { success: false, error: "Complete el nombre y dirección del centro" };
-  }
-
-  try {
-    const shelter = await prisma.shelter.create({
-      data: {
-        name,
-        address,
-        coordinator,
-        capacity,
-        occupied: 0,
-        rationsDelivered: 0,
-        status: "HABILITADO"
-      }
-    });
-
-    await prisma.auditLog.create({
-      data: {
-        userId: session.user.id,
-        action: "CREATE_SHELTER",
-        entity: "Shelter",
-        entityId: shelter.id,
-        details: `Alta de Centro de Evacuados: ${shelter.name} (${capacity} plazas)`
-      }
-    });
-
-    revalidatePath("/admin/emergency");
-    revalidatePath("/admin/war-room");
-    return { success: true, shelter };
-  } catch (error: any) {
-    return { success: false, error: error.message || "Error al registrar centro de evacuados" };
-  }
+export async function searchPeopleForEmergencyAction(query: string) {
+  return await searchPeopleForEmergency(query);
 }
 
-export async function updateShelterOccupancyAction(id: string, data: { occupied?: number; rationsDelivered?: number }) {
+export async function saveStormVictimAction(recordData: Partial<StormVictimItem>) {
   const session = await auth();
-  if (!session?.user?.id) return { success: false, error: "No autorizado" };
+  if (!session?.user?.id) {
+    return { success: false, error: "Sesión no válida o expirada" };
+  }
 
   try {
-    const shelter = await prisma.shelter.update({
-      where: { id },
-      data
+    const operator = await getEmergencyOperator(session.user);
+
+    const personId = await syncPersonInDatabase({
+      dni: recordData.dni || "",
+      nombreApellido: recordData.nombreApellido || "Vecino Registrado",
+      domicilio: recordData.domicilio,
+      contacto: recordData.contacto || undefined,
     });
 
-    revalidatePath("/admin/emergency");
-    revalidatePath("/admin/war-room");
-    return { success: true, shelter };
-  } catch (error: any) {
-    return { success: false, error: error.message || "Error al actualizar ocupación" };
-  }
-}
-
-export async function createEmergencyIncidentAction(formData: FormData) {
-  const session = await auth();
-  if (!session?.user?.id) return { success: false, error: "No autorizado" };
-
-  const neighborhood = formData.get("neighborhood") as string;
-  const address = formData.get("address") as string;
-  const type = (formData.get("type") as string) || "Alerta de Emergencia Climática";
-  const priority = (formData.get("priority") as string) || "URGENTE";
-
-  if (!neighborhood || !address) {
-    return { success: false, error: "Barrio y dirección son obligatorios" };
-  }
-
-  try {
-    const area = await prisma.area.findFirst({
+    let defaultArea = await prisma.area.findFirst({
       where: {
         OR: [
+          { id: operator.areaId },
+          { name: { contains: "Desarrollo", mode: "insensitive" } },
           { name: { contains: "Hábitat", mode: "insensitive" } },
-          { name: { contains: "Protección", mode: "insensitive" } },
-          { name: { contains: "Desarrollo", mode: "insensitive" } }
-        ]
-      }
+          { name: { contains: "Social", mode: "insensitive" } },
+        ],
+      },
     }) || await prisma.area.findFirst();
 
-    if (!area) {
-      return { success: false, error: "No hay áreas municipales configuradas en el sistema" };
+    if (!defaultArea) {
+      return { success: false, error: "No se encontró un área administrativa para imputar la asistencia." };
     }
 
-    const newCase = await prisma.case.create({
-      data: {
-        title: `[COE ${priority}] ${type} - ${neighborhood}`,
-        description: `Incidente registrado en COE: ${type} en ${address}, ${neighborhood}.`,
-        status: "ABIERTO",
-        priority: priority as any,
-        personId: null,
-        areaId: area.id
+    const itemElements: string[] = [];
+    if (recordData.requiereColchon && recordData.cantidadColchon) itemElements.push(`${recordData.cantidadColchon} Colchón(es)`);
+    if (recordData.requiereCama && recordData.cantidadCama) itemElements.push(`${recordData.cantidadCama} Cama(s)`);
+    if (recordData.requiereCucheta && recordData.cantidadCucheta) itemElements.push(`${recordData.cantidadCucheta} Cucheta(s)`);
+    if (recordData.requiereFrazada && recordData.cantidadFrazada) itemElements.push(`${recordData.cantidadFrazada} Frazada(s)`);
+
+    const elementsSummary = itemElements.length > 0 ? itemElements.join(", ") : "Sin solicitud inmediata de mobiliario";
+
+    const caseTitle = `[CONTINGENCIA TORMENTA] Asistencia a ${recordData.nombreApellido} - ${recordData.barrio || recordData.domicilio}`;
+    const caseDescription = `Relevamiento territorial de contingencia registrado por ${operator.name} (${operator.areaName}). Domicilio: ${recordData.domicilio} (Ref: ${recordData.referencia || "N/A"}). Afectados: Grupo Familiar: ${recordData.grupoFamiliar ? "Sí" : "No"}, Niños: ${recordData.ninos || "0"}. Elementos solicitados: ${elementsSummary}. Intervención: ${recordData.descripcionIntervencion || "Asistencia social en territorio"}.`;
+
+    let priorityEnum: "ALTA" | "MEDIA" | "BAJA" = "MEDIA";
+    if (recordData.prioridad === "ALTA") priorityEnum = "ALTA";
+    if (recordData.prioridad === "BAJA") priorityEnum = "BAJA";
+
+    let activeCaseId = recordData.caseId;
+
+    if (recordData.id) {
+      // UPDATE EXISTING RECORD
+      const existingRecord = await prisma.stormVictimRecord.findUnique({
+        where: { id: recordData.id },
+      });
+
+      if (existingRecord?.caseId) {
+        activeCaseId = existingRecord.caseId;
+        await prisma.case.update({
+          where: { id: existingRecord.caseId },
+          data: {
+            title: caseTitle,
+            description: caseDescription,
+            priority: priorityEnum,
+            personId: personId,
+          },
+        });
       }
+
+      const updatedRecord = await prisma.stormVictimRecord.update({
+        where: { id: recordData.id },
+        data: {
+          personId: personId,
+          nombreApellido: recordData.nombreApellido || "Vecino Afectado",
+          dni: recordData.dni || null,
+          edad: recordData.edad || null,
+          grupoFamiliar: recordData.grupoFamiliar || false,
+          ninos: recordData.ninos || "0",
+          domicilio: recordData.domicilio || "Sin especificación",
+          referencia: recordData.referencia || null,
+          barrio: recordData.barrio || null,
+          requiereColchon: recordData.requiereColchon || false,
+          cantidadColchon: Number(recordData.cantidadColchon) || 0,
+          requiereCama: recordData.requiereCama || false,
+          cantidadCama: Number(recordData.cantidadCama) || 0,
+          requiereCucheta: recordData.requiereCucheta || false,
+          cantidadCucheta: Number(recordData.cantidadCucheta) || 0,
+          requiereFrazada: recordData.requiereFrazada || false,
+          cantidadFrazada: Number(recordData.cantidadFrazada) || 0,
+          observaciones: recordData.observaciones || null,
+          contacto: recordData.contacto || null,
+          agentes: recordData.agentes || operator.name,
+          prioridad: recordData.prioridad || "MEDIA",
+          descripcionIntervencion: recordData.descripcionIntervencion || null,
+        },
+      });
+
+      if (activeCaseId) {
+        await prisma.intervention.create({
+          data: {
+            caseId: activeCaseId,
+            personId: personId,
+            userId: session.user.id,
+            description: `Actualización de Ficha Tormenta por ${operator.name}. Requerimientos: ${elementsSummary}.`,
+          },
+        });
+      }
+
+      const allRecords = await getStormVictimRecords();
+      const updatedList = allRecords.map((r) => (r.id === updatedRecord.id ? updatedRecord : r));
+
+      await prisma.systemSetting.upsert({
+        where: { key: "muni-storm-records-backup" },
+        update: { value: JSON.stringify(updatedList) },
+        create: { key: "muni-storm-records-backup", value: JSON.stringify(updatedList) },
+      });
+
+      await prisma.auditLog.create({
+        data: {
+          userId: session.user.id,
+          action: "STORM_VICTIM_UPDATED",
+          entity: "StormVictimRecord",
+          entityId: updatedRecord.id,
+          details: `Edición de registro damnificado: ${recordData.nombreApellido} (DNI ${recordData.dni || 'S/D'}).`,
+        },
+      });
+
+      revalidatePath("/admin/emergency");
+      revalidatePath("/cases");
+      revalidatePath("/dashboard");
+
+      return {
+        success: true,
+        record: updatedRecord,
+        caseId: activeCaseId,
+      };
+    } else {
+      // CREATE NEW RECORD
+      const createdCase = await prisma.case.create({
+        data: {
+          title: caseTitle,
+          description: caseDescription,
+          status: "ABIERTO",
+          priority: priorityEnum,
+          personId: personId,
+          areaId: defaultArea.id,
+        },
+      });
+
+      await prisma.intervention.create({
+        data: {
+          caseId: createdCase.id,
+          personId: personId,
+          userId: session.user.id,
+          description: `Entrevista e inspección técnica de contingencia climática por ${operator.name}. Requerimientos: ${elementsSummary}. Detalle: ${recordData.descripcionIntervencion || "Sin observaciones adicionales"}`,
+        },
+      });
+
+      const existingRecords = await getStormVictimRecords();
+
+      const createdRecord = await prisma.stormVictimRecord.create({
+        data: {
+          itemNumber: recordData.itemNumber || existingRecords.length + 1,
+          personId: personId,
+          nombreApellido: recordData.nombreApellido || "Vecino Afectado",
+          dni: recordData.dni || null,
+          edad: recordData.edad || null,
+          grupoFamiliar: recordData.grupoFamiliar || false,
+          ninos: recordData.ninos || "0",
+          domicilio: recordData.domicilio || "Sin especificación",
+          referencia: recordData.referencia || null,
+          barrio: recordData.barrio || null,
+          requiereColchon: recordData.requiereColchon || false,
+          cantidadColchon: Number(recordData.cantidadColchon) || 0,
+          requiereCama: recordData.requiereCama || false,
+          cantidadCama: Number(recordData.cantidadCama) || 0,
+          requiereCucheta: recordData.requiereCucheta || false,
+          cantidadCucheta: Number(recordData.cantidadCucheta) || 0,
+          requiereFrazada: recordData.requiereFrazada || false,
+          cantidadFrazada: Number(recordData.cantidadFrazada) || 0,
+          observaciones: recordData.observaciones || null,
+          contacto: recordData.contacto || null,
+          agentes: recordData.agentes || operator.name,
+          prioridad: recordData.prioridad || "MEDIA",
+          descripcionIntervencion: recordData.descripcionIntervencion || null,
+          estado: "REGISTRADO",
+          caseId: createdCase.id,
+        },
+      });
+
+      const updatedRecords = [createdRecord, ...existingRecords];
+      await prisma.systemSetting.upsert({
+        where: { key: "muni-storm-records-backup" },
+        update: { value: JSON.stringify(updatedRecords) },
+        create: { key: "muni-storm-records-backup", value: JSON.stringify(updatedRecords) },
+      });
+
+      await prisma.auditLog.create({
+        data: {
+          userId: session.user.id,
+          action: "STORM_VICTIM_REGISTERED",
+          entity: "StormVictimRecord",
+          entityId: createdRecord.id,
+          details: `Carga de damnificado por tormenta: ${recordData.nombreApellido} (DNI ${recordData.dni || 'S/D'}). Caso N° ${createdCase.id} generado en ${defaultArea.name}.`,
+        },
+      });
+
+      revalidatePath("/admin/emergency");
+      revalidatePath("/cases");
+      revalidatePath("/dashboard");
+
+      return {
+        success: true,
+        record: createdRecord,
+        caseId: createdCase.id,
+      };
+    }
+  } catch (err: any) {
+    console.error("Error saving storm victim action:", err);
+    return { success: false, error: err.message || "Error al registrar la ficha de tormenta" };
+  }
+}
+
+export async function deleteStormVictimAction(recordId: string) {
+  const session = await auth();
+  if (!session?.user?.id) return { success: false, error: "No autorizado" };
+
+  try {
+    const record = await prisma.stormVictimRecord.findUnique({
+      where: { id: recordId }
+    });
+
+    if (record) {
+      await prisma.stormVictimRecord.delete({ where: { id: recordId } });
+    }
+
+    const existing = await getStormVictimRecords();
+    const filtered = existing.filter(r => r.id !== recordId);
+
+    await prisma.systemSetting.upsert({
+      where: { key: "muni-storm-records-backup" },
+      update: { value: JSON.stringify(filtered) },
+      create: { key: "muni-storm-records-backup", value: JSON.stringify(filtered) },
     });
 
     await prisma.auditLog.create({
       data: {
         userId: session.user.id,
-        action: "EMERGENCY_INCIDENT_REPORTED",
-        entity: "Case",
-        entityId: newCase.id,
-        details: `Incidente de crisis en ${neighborhood}: ${type}`
-      }
+        action: "STORM_VICTIM_DELETED",
+        entity: "StormVictimRecord",
+        entityId: recordId,
+        details: `Eliminación de registro de planilla de tormenta (ID ${recordId}) por ${session.user.name || session.user.email}`,
+      },
     });
 
     revalidatePath("/admin/emergency");
-    revalidatePath("/admin/war-room");
-    revalidatePath("/dashboard");
-    return { success: true, case: newCase };
-  } catch (error: any) {
-    return { success: false, error: error.message || "Error al registrar alerta de emergencia" };
+    return { success: true };
+  } catch (err: any) {
+    console.error("Error deleting storm victim action:", err);
+    return { success: false, error: err.message || "Error al eliminar registro" };
   }
 }
 
-export async function dispatchEmergencyStockAction(supplyId: string, quantity: number = 10) {
+export async function dispatchEmergencyStockAction(
+  supplyId: string,
+  quantity: number = 10,
+  victimInfo?: string
+) {
   const session = await auth();
   if (!session?.user?.id) return { success: false, error: "No autorizado" };
 
   try {
-    const item = await prisma.supplyItem.findUnique({ where: { id: supplyId } });
-    if (!item) return { success: false, error: "Artículo no encontrado" };
+    let item = await prisma.supplyItem.findUnique({ where: { id: supplyId } });
+
+    if (!item) {
+      let itemName = "Insumo de Contingencia";
+      if (supplyId.includes("colchon")) itemName = "Colchones de Contingencia (1 plaza)";
+      else if (supplyId.includes("cama")) itemName = "Camas / Elásticos de Emergencia";
+      else if (supplyId.includes("cucheta")) itemName = "Cuchetas Superpuestas Reforzadas";
+      else if (supplyId.includes("frazada")) itemName = "Frazadas Térmicas Antialérgicas";
+
+      item = await prisma.supplyItem.create({
+        data: {
+          id: supplyId,
+          name: itemName,
+          description: "Mobiliario e insumos de emergencia climática",
+          stock: 100,
+          minStock: 20,
+        },
+      });
+    }
 
     if (item.stock < quantity) {
-      return { success: false, error: `Stock insuficiente (${item.stock} disponibles)` };
+      return { success: false, error: `Stock insuficiente en depósito (${item.stock} disponibles)` };
     }
 
     const updatedItem = await prisma.supplyItem.update({
-      where: { id: supplyId },
+      where: { id: item.id },
       data: { stock: Math.max(0, item.stock - quantity) }
     });
 
     await prisma.supplyRequest.create({
       data: {
-        supplyId,
+        supplyId: item.id,
         quantity,
         userId: session.user.id,
         status: "ENTREGADO"
@@ -155,16 +328,16 @@ export async function dispatchEmergencyStockAction(supplyId: string, quantity: n
         userId: session.user.id,
         action: "EMERGENCY_STOCK_DISPATCH",
         entity: "SupplyItem",
-        entityId: supplyId,
-        details: `Despacho COE: ${quantity} unidades de ${item.name}`
+        entityId: item.id,
+        details: `Despacho directo COE a territorio: ${quantity} unidades de ${item.name}. ${victimInfo ? `Destino: ${victimInfo}` : ""}`,
       }
     });
 
     revalidatePath("/admin/emergency");
     revalidatePath("/admin/stock");
-    revalidatePath("/admin/war-room");
     return { success: true, newStock: updatedItem.stock };
   } catch (error: any) {
+    console.error("Error dispatching emergency stock:", error);
     return { success: false, error: error.message || "Error al despachar insumo" };
   }
 }
@@ -189,6 +362,7 @@ export async function toggleEmergencyStatusAction(active: boolean) {
       update: { value: String(active) },
       create: { key: "muni-emergency-mode", value: String(active) }
     });
+
     await prisma.auditLog.create({
       data: {
         userId: session.user.id,
@@ -198,74 +372,10 @@ export async function toggleEmergencyStatusAction(active: boolean) {
         details: `Protocolo de emergencia climática ${active ? "ACTIVADO" : "DESACTIVADO"} por ${session.user.name || session.user.email}`
       }
     });
+
     revalidatePath("/", "layout");
     return { success: true, active };
   } catch (err: any) {
     return { success: false, error: err.message || "Error al actualizar estado de emergencia" };
-  }
-}
-
-export async function activateDrainagePumpAction(zoneId: string, zoneName: string) {
-  const session = await auth();
-  if (!session?.user?.id) return { success: false, error: "No autorizado" };
-  try {
-    await prisma.auditLog.create({
-      data: {
-        userId: session.user.id,
-        action: "PUMP_ACTIVATED",
-        entity: "HydrologicalZone",
-        entityId: zoneId,
-        details: `Activación remota de bomba suplementaria de desagüe para la cuenca ${zoneName}. Operador: ${session.user.name || session.user.email}`
-      }
-    });
-    revalidatePath("/admin/emergency");
-    revalidatePath("/admin/war-room");
-    return { success: true };
-  } catch (err: any) {
-    return { success: false, error: err.message || "Error al activar bomba de desagüe" };
-  }
-}
-
-export async function dispatchPreventiveEvacuationAction(zoneId: string, zoneName: string) {
-  const session = await auth();
-  if (!session?.user?.id) return { success: false, error: "No autorizado" };
-  try {
-    const area = await prisma.area.findFirst({
-      where: {
-        OR: [
-          { name: { contains: "Protección", mode: "insensitive" } },
-          { name: { contains: "Hábitat", mode: "insensitive" } },
-          { name: { contains: "Desarrollo", mode: "insensitive" } }
-        ]
-      }
-    }) || await prisma.area.findFirst();
-
-    if (area) {
-      await prisma.case.create({
-        data: {
-          title: `[ALERTA HÍDRICA MUNICIPAL] Evacuación preventiva en ${zoneName}`,
-          description: `Despacho de alerta temprana y evacuación preventiva por riesgo inminente de anegamiento en ${zoneName}. Despachado por COE 3F.`,
-          status: "ABIERTO",
-          priority: "URGENTE",
-          areaId: area.id
-        }
-      });
-    }
-
-    await prisma.auditLog.create({
-      data: {
-        userId: session.user.id,
-        action: "PREVENTIVE_EVACUATION_DISPATCHED",
-        entity: "EmergencyDispatch",
-        entityId: zoneId,
-        details: `Alerta y protocolo de evacuación preventiva despachado a Defensa Civil y SAME para ${zoneName} por ${session.user.name || session.user.email}`
-      }
-    });
-
-    revalidatePath("/admin/emergency");
-    revalidatePath("/admin/war-room");
-    return { success: true };
-  } catch (err: any) {
-    return { success: false, error: err.message || "Error al despachar alerta preventiva" };
   }
 }

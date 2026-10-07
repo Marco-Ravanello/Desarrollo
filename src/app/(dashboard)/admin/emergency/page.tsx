@@ -1,9 +1,12 @@
 export const dynamic = "force-dynamic";
 
-import { getEmergencyData } from "@/services/emergency";
+import { auth } from "@/auth";
+import { getEmergencyOperationsData } from "@/services/emergency";
 import { EmergencyView } from "./emergency-view";
 
 export default async function EmergencyOperationsPage() {
-  const data = await getEmergencyData();
+  const session = await auth();
+  const data = await getEmergencyOperationsData(session?.user);
+
   return <EmergencyView initialData={data} />;
 }

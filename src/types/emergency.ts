@@ -1,66 +1,81 @@
-export type SMNAlertLevel = "VERDE" | "AMARILLO" | "NARANJA" | "ROJO";
+export type EmergencyPriority = "ALTA" | "MEDIA" | "BAJA";
 
-export interface SMNAlertInfo {
-  level: SMNAlertLevel;
-  title: string;
-  description: string;
-  issuedAt: string;
-  validUntil: string;
-  windSpeedMaxKmH: number;
-  expectedRainfallMm: number;
-  hailRisk: boolean;
+export interface StormVictimItem {
+  id: string;
+  itemNumber: number;
+  personId?: string | null;
+  nombreApellido: string;
+  dni?: string | null;
+  edad?: string | null;
+  grupoFamiliar: boolean;
+  ninos?: string | null;
+  domicilio: string;
+  referencia?: string | null;
+  barrio?: string | null;
+  requiereColchon: boolean;
+  cantidadColchon: number;
+  requiereCama: boolean;
+  cantidadCama: number;
+  requiereCucheta: boolean;
+  cantidadCucheta: number;
+  requiereFrazada: boolean;
+  cantidadFrazada: number;
+  observaciones?: string | null;
+  contacto?: string | null;
+  agentes?: string | null;
+  prioridad: EmergencyPriority;
+  descripcionIntervencion?: string | null;
+  estado?: string;
+  caseId?: string | null;
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
 }
 
-export interface RadarEchoCell {
+export interface EmergencyStockItem {
   id: string;
   name: string;
-  reflectivityDbz: number; // 15 to 65+ dBZ
-  distanceKm: number;
-  bearingDeg: number;
-  direction: string;
-  estimatedArrivalMinutes: number;
-  cellType: "MODERADA" | "SEVERA" | "SUPERCELEBRA";
-  affectedNeighborhoods: string[];
+  description?: string | null;
+  category: "COLCHON" | "CAMA" | "CUCHETA" | "FRAZADA" | "GENERAL";
+  availableStock: number;
+  minStock: number;
+  demandedQuantity: number;
+  unit: string;
+  status: "CRITICO" | "CORRECTO" | "EXCESO";
+  areaName?: string;
 }
 
-export interface HydrologicalZone {
-  id: string;
+export interface EmergencyOperatorInfo {
+  userId: string;
   name: string;
-  basin: string;
-  waterLevelMeters: number;
-  criticalThresholdMeters: number;
-  status: "NORMAL" | "ALERTA_PREVENTIVA" | "DESBORDE_IMMINENTE" | "DESBORDADO";
-  activePumps: number;
-  totalPumps: number;
-  vulnerablePeopleCount: number;
-  cuitElectrodependientes: number;
-  minorsUnder5: number;
-  elderlyOver75: number;
-  coordinates: [number, number];
+  email: string;
+  areaId: string;
+  areaName: string;
 }
 
-export interface VulnerableGroupStats {
-  totalInFloodRiskAreas: number;
-  electrodependientesCount: number;
-  disabilityCudCount: number;
-  minorsUnder5Count: number;
-  elderlyOver75Count: number;
+export interface EmergencyOperationsData {
+  operator: EmergencyOperatorInfo;
+  stock: EmergencyStockItem[];
+  records: StormVictimItem[];
+  metrics: {
+    totalVictims: number;
+    totalChildren: number;
+    totalColchones: number;
+    totalCamas: number;
+    totalCuchetas: number;
+    totalFrazadas: number;
+    highPriorityCount: number;
+  };
 }
 
-export interface RadarAtmosphericMetrics {
-  surfaceTempC: number;
-  humidityPercent: number;
-  pressureHpa: number;
-  windGustsKmH: number;
-  dewPointC: number;
-  accumulatedRain24hMm: number;
-}
-
-export interface EmergencyRadarData {
-  alert: SMNAlertInfo;
-  radarCells: RadarEchoCell[];
-  hydrologicalZones: HydrologicalZone[];
-  vulnerableStats: VulnerableGroupStats;
-  metrics: RadarAtmosphericMetrics;
-  lastRadarSweep: string;
+export interface SearchPersonSuggestion {
+  personId?: string;
+  nombreApellido: string;
+  dni: string;
+  domicilio?: string;
+  barrio?: string;
+  edad?: string;
+  contacto?: string;
+  grupoFamiliar: boolean;
+  ninos?: string;
+  source: "person" | "padron";
 }
