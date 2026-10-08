@@ -97,7 +97,7 @@ export function EmergencyView({ initialData }: EmergencyViewProps) {
               onClick={handleOpenNewFicha}
               className="bg-amber-500 hover:bg-amber-600 text-black font-black rounded-2xl h-11 px-5 text-xs shadow-lg"
             >
-              <Plus className="mr-2 h-4 w-4" /> + Nueva Ficha Tormenta
+              <Plus className="mr-2 h-4 w-4" /> Nueva Ficha Tormenta
             </Button>
           </div>
         </div>
