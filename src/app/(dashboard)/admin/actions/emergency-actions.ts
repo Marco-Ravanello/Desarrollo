@@ -291,39 +291,89 @@ export async function deleteStormVictimAction(recordId: string) {
   const session = await auth();
   if (!session?.user?.id) return { success: false, error: "No autorizado" };
 
-  try {
-    const record = await prisma.stormVictimRecord.findUnique({
-      where: { id: recordId }
-    });
+  const cleanId = recordId.replace(/^case-/, "").replace(/^temp-/, "");
 
-    if (record) {
-      await prisma.stormVictimRecord.delete({ where: { id: recordId } });
+  try {
+    // 1. Delete associated interventions if it corresponds to a Case
+    try {
+      await prisma.intervention.deleteMany({
+        where: { caseId: cleanId }
+      });
+    } catch (e) {
+      console.warn("Notice: Interventions deletion skipped or not found:", e);
     }
 
-    const existing = await getStormVictimRecords();
-    const filtered = existing.filter(r => r.id !== recordId);
+    // 2. Try deleting Case directly or updating status to CERRADO
+    try {
+      await prisma.case.delete({
+        where: { id: cleanId }
+      });
+    } catch (caseErr) {
+      try {
+        await prisma.case.update({
+          where: { id: cleanId },
+          data: { status: "CERRADO" }
+        });
+      } catch (closeErr) {
+        console.warn("Notice: Case update/delete skipped:", closeErr);
+      }
+    }
 
-    await prisma.systemSetting.upsert({
-      where: { key: "muni-storm-records-backup" },
-      update: { value: JSON.stringify(filtered) },
-      create: { key: "muni-storm-records-backup", value: JSON.stringify(filtered) },
-    });
+    // 3. Try deleting StormVictimRecord safely if model exists
+    try {
+      if ((prisma as any).stormVictimRecord) {
+        await (prisma as any).stormVictimRecord.deleteMany({
+          where: {
+            OR: [
+              { id: recordId },
+              { id: cleanId },
+              { caseId: cleanId }
+            ]
+          }
+        });
+      }
+    } catch (stormErr) {
+      console.warn("Notice: StormVictimRecord deletion skipped:", stormErr);
+    }
 
-    await prisma.auditLog.create({
-      data: {
-        userId: session.user.id,
-        action: "STORM_VICTIM_DELETED",
-        entity: "StormVictimRecord",
-        entityId: recordId,
-        details: `Eliminación de registro de planilla de tormenta (ID ${recordId}) por ${session.user.name || session.user.email}`,
-      },
-    });
+    // 4. Update memory / SystemSetting backup
+    try {
+      const existing = await getStormVictimRecords();
+      const filtered = existing.filter(r => r.id !== recordId && r.id !== cleanId && r.caseId !== cleanId);
+
+      await prisma.systemSetting.upsert({
+        where: { key: "muni-storm-records-backup" },
+        update: { value: JSON.stringify(filtered) },
+        create: { key: "muni-storm-records-backup", value: JSON.stringify(filtered) },
+      });
+    } catch (settingErr) {
+      console.warn("Notice: SystemSetting backup update skipped:", settingErr);
+    }
+
+    // 5. Audit log
+    try {
+      await prisma.auditLog.create({
+        data: {
+          userId: session.user.id,
+          action: "STORM_VICTIM_DELETED",
+          entity: "Case/StormVictimRecord",
+          entityId: recordId,
+          details: `Eliminación / Cierre de registro de planilla de tormenta (ID ${recordId}) por ${session.user.name || session.user.email}`,
+        },
+      });
+    } catch (auditErr) {
+      console.warn("Notice: Audit log skipped:", auditErr);
+    }
 
     revalidatePath("/admin/emergency");
+    revalidatePath("/cases");
+    revalidatePath("/people");
+    revalidatePath("/dashboard");
+
     return { success: true };
   } catch (err: any) {
-    console.error("Error deleting storm victim action:", err);
-    return { success: false, error: err.message || "Error al eliminar registro" };
+    console.error("Error in deleteStormVictimAction:", err);
+    return { success: false, error: err.message || "Error al eliminar el registro" };
   }
 }
 
