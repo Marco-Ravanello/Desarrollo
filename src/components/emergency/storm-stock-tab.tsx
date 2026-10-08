@@ -142,15 +142,9 @@ export function StormStockTab({ stock, onRefresh }: StormStockTabProps) {
           >
             <Plus className="mr-1.5 h-3.5 w-3.5" /> Agregar Insumo
           </Button>
-          <Button
-            onClick={handleOpenBulkConfig}
-            className="rounded-xl font-black text-xs bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm"
-          >
-            <Settings className="mr-1.5 h-3.5 w-3.5" /> Configurar Stock Depósito
-          </Button>
           <Button asChild variant="outline" className="rounded-xl font-bold text-xs">
             <Link href="/admin/stock">
-              Ver Depósito <ArrowUpRight className="ml-1 h-3.5 w-3.5" />
+              Ver Depósito Completo <ArrowUpRight className="ml-1 h-3.5 w-3.5" />
             </Link>
           </Button>
         </div>
