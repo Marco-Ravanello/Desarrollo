@@ -466,6 +466,94 @@ export async function updateEmergencyStockAction(
   }
 }
 
+export async function createEmergencyStockItemAction(data: {
+  name: string;
+  availableStock: number;
+  unit?: string;
+  minStock?: number;
+  description?: string;
+}) {
+  const session = await auth();
+  if (!session?.user?.id) return { success: false, error: "No autorizado" };
+
+  if (!data.name || data.name.trim().length === 0) {
+    return { success: false, error: "El nombre del insumo es obligatorio" };
+  }
+
+  try {
+    const newItemId = `custom-supply-${Date.now()}`;
+    const stockVal = Math.max(0, Math.floor(data.availableStock || 0));
+    const minStockVal = Math.max(1, Math.floor(data.minStock || 5));
+    const unitVal = data.unit?.trim() || "Unidades";
+
+    let dbItem = null;
+    try {
+      dbItem = await prisma.supplyItem.create({
+        data: {
+          id: newItemId,
+          name: data.name.trim(),
+          description: data.description?.trim() || "Insumo registrado en contingencia climática",
+          stock: stockVal,
+          minStock: minStockVal,
+        },
+      });
+    } catch (dbErr) {
+      console.warn("SupplyItem create skipped/failed, persisting via SystemSetting:", dbErr);
+    }
+
+    // Persist in custom items backup in SystemSetting
+    try {
+      let customList: any[] = [];
+      const customSetting = await prisma.systemSetting.findUnique({
+        where: { key: "custom-emergency-stock-items" },
+      });
+      if (customSetting?.value) {
+        customList = JSON.parse(customSetting.value);
+      }
+
+      const newItemObj = {
+        id: dbItem?.id || newItemId,
+        name: data.name.trim(),
+        description: data.description?.trim() || "Insumo de contingencia climática",
+        availableStock: stockVal,
+        minStock: minStockVal,
+        unit: unitVal,
+      };
+
+      customList.push(newItemObj);
+
+      await prisma.systemSetting.upsert({
+        where: { key: "custom-emergency-stock-items" },
+        update: { value: JSON.stringify(customList) },
+        create: { key: "custom-emergency-stock-items", value: JSON.stringify(customList) },
+      });
+    } catch (sErr) {
+      console.warn("SystemSetting custom supply backup failed:", sErr);
+    }
+
+    try {
+      await prisma.auditLog.create({
+        data: {
+          userId: session.user.id,
+          action: "EMERGENCY_STOCK_ITEM_CREATED",
+          entity: "SupplyItem",
+          entityId: dbItem?.id || newItemId,
+          details: `Nuevo insumo registrado para emergencia climática: ${data.name.trim()} (${stockVal} ${unitVal}) por ${session.user.name || session.user.email}`,
+        },
+      });
+    } catch (auditErr) {
+      console.warn("AuditLog skipped:", auditErr);
+    }
+
+    revalidatePath("/admin/emergency");
+    revalidatePath("/admin/stock");
+    return { success: true };
+  } catch (error: any) {
+    console.error("Error creating emergency stock item:", error);
+    return { success: false, error: error.message || "Error al registrar el insumo" };
+  }
+}
+
 export async function dispatchEmergencyStockAction(
   supplyId: string,
   quantity: number = 10,

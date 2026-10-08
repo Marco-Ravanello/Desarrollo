@@ -137,6 +137,39 @@ export async function getEmergencyStock(): Promise<EmergencyStockItem[]> {
       });
     }
 
+    // Load custom registered emergency stock items from SystemSetting if any
+    try {
+      const customSetting = await prisma.systemSetting.findUnique({
+        where: { key: "custom-emergency-stock-items" },
+      });
+      if (customSetting?.value) {
+        const customItems = JSON.parse(customSetting.value);
+        if (Array.isArray(customItems)) {
+          for (const ci of customItems) {
+            if (!categorizedItems.some(i => i.id === ci.id)) {
+              let status: "CRITICO" | "CORRECTO" | "EXCESO" = "CORRECTO";
+              if (ci.availableStock <= (ci.minStock || 5)) status = "CRITICO";
+
+              categorizedItems.push({
+                id: ci.id,
+                name: ci.name,
+                description: ci.description || "Insumo de contingencia",
+                category: "GENERAL",
+                availableStock: ci.availableStock,
+                minStock: ci.minStock || 5,
+                demandedQuantity: 0,
+                unit: ci.unit || "Unidades",
+                status,
+                areaName: "Depósito Desarrollo Humano",
+              });
+            }
+          }
+        }
+      }
+    } catch (e) {
+      console.warn("Could not read custom emergency stock items setting:", e);
+    }
+
     return categorizedItems;
   } catch (err) {
     console.error("Error loading emergency stock:", err);
