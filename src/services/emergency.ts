@@ -123,14 +123,27 @@ export async function getEmergencyStock(): Promise<EmergencyStockItem[]> {
   }
 }
 
+function parseQuantityFromText(text: string, kw: string): { required: boolean; qty: number } {
+  const regex = new RegExp(`(\\d+)\\s+${kw}`, "i");
+  const match = text.match(regex);
+  if (match && match[1]) {
+    const qty = parseInt(match[1], 10);
+    return { required: qty > 0, qty };
+  }
+  return { required: false, qty: 0 };
+}
+
 export async function getStormVictimRecords(): Promise<StormVictimItem[]> {
+  const mergedMap = new Map<string, StormVictimItem>();
+
+  // 1. Cargar desde StormVictimRecord si existe la tabla
   try {
     const records = await prisma.stormVictimRecord.findMany({
       orderBy: { createdAt: "desc" },
     });
 
-    if (records.length > 0) {
-      return records.map((r) => ({
+    for (const r of records) {
+      const item: StormVictimItem = {
         id: r.id,
         itemNumber: r.itemNumber,
         personId: r.personId,
@@ -159,24 +172,120 @@ export async function getStormVictimRecords(): Promise<StormVictimItem[]> {
         caseId: r.caseId,
         createdAt: r.createdAt,
         updatedAt: r.updatedAt,
-      }));
-    }
+      };
 
+      const key = r.caseId || r.id;
+      mergedMap.set(key, item);
+    }
+  } catch (err) {
+    console.warn("Notice: StormVictimRecord table not directly readable, proceeding to Cases query:", err);
+  }
+
+  // 2. Cargar desde Backup en SystemSetting
+  try {
     const fallbackSetting = await prisma.systemSetting.findUnique({
       where: { key: "muni-storm-records-backup" },
     });
 
     if (fallbackSetting?.value) {
-      const parsed = JSON.parse(fallbackSetting.value);
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        return parsed;
+      const parsed: StormVictimItem[] = JSON.parse(fallbackSetting.value);
+      if (Array.isArray(parsed)) {
+        for (const item of parsed) {
+          const key = item.caseId || item.id;
+          if (!mergedMap.has(key)) {
+            mergedMap.set(key, item);
+          }
+        }
       }
     }
   } catch (err) {
-    console.error("Error getting storm victim records:", err);
+    console.warn("Notice: Could not read backup setting:", err);
   }
 
-  return [];
+  // 3. Cargar desde prisma.case (Cruzar casos de contingencia/tormenta)
+  try {
+    const stormCases = await prisma.case.findMany({
+      where: {
+        OR: [
+          { title: { contains: "TORMENTA", mode: "insensitive" } },
+          { title: { contains: "EMERGENCIA", mode: "insensitive" } },
+          { title: { contains: "CLIMÁTICA", mode: "insensitive" } },
+          { title: { contains: "CONTINGENCIA", mode: "insensitive" } },
+          { description: { contains: "TORMENTA", mode: "insensitive" } },
+          { description: { contains: "CONTINGENCIA", mode: "insensitive" } },
+        ],
+      },
+      include: {
+        person: true,
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    for (const c of stormCases) {
+      if (mergedMap.has(c.id)) {
+        continue;
+      }
+
+      const desc = c.description || "";
+      const colchon = parseQuantityFromText(desc, "colch");
+      const cama = parseQuantityFromText(desc, "cama");
+      const cucheta = parseQuantityFromText(desc, "cucheta");
+      const frazada = parseQuantityFromText(desc, "frazada|manta");
+
+      const hasGrupoFam = /Grupo Familiar:\s*S[íi]/i.test(desc);
+      const ninosMatch = desc.match(/Niños:\s*(\d+)/i);
+      const ninosStr = ninosMatch ? ninosMatch[1] : "0";
+
+      const domMatch = desc.match(/Domicilio:\s*([^.(]+)/i);
+      const refMatch = desc.match(/\(Ref:\s*([^)]+)\)/i);
+
+      let nombre = c.person ? `${c.person.lastName}, ${c.firstName || c.person.firstName}` : "";
+      if (!nombre && c.person) {
+        nombre = `${c.person.lastName}, ${c.person.firstName}`;
+      }
+      if (!nombre) {
+        const titleNameMatch = c.title.match(/Asistencia a\s+([^-]+)/i);
+        nombre = titleNameMatch ? titleNameMatch[1].trim() : "Vecino Afectado";
+      }
+
+      const item: StormVictimItem = {
+        id: `case-${c.id}`,
+        itemNumber: mergedMap.size + 1,
+        personId: c.personId,
+        nombreApellido: nombre.toUpperCase(),
+        dni: c.person?.dni || null,
+        edad: null,
+        grupoFamiliar: hasGrupoFam,
+        ninos: ninosStr,
+        domicilio: domMatch ? domMatch[1].trim() : (c.person?.address || "Tres de Febrero"),
+        referencia: refMatch ? refMatch[1].trim() : null,
+        barrio: null,
+        requiereColchon: colchon.required,
+        cantidadColchon: colchon.qty,
+        requiereCama: cama.required,
+        cantidadCama: cama.qty,
+        requiereCucheta: cucheta.required,
+        cantidadCucheta: cucheta.qty,
+        requiereFrazada: frazada.required,
+        cantidadFrazada: frazada.qty,
+        observaciones: c.title,
+        contacto: c.person?.phone || null,
+        agentes: "Operador Guardia COE",
+        prioridad: (c.priority as any) || "MEDIA",
+        descripcionIntervencion: c.description || "",
+        estado: c.status || "REGISTRADO",
+        caseId: c.id,
+        createdAt: c.createdAt,
+        updatedAt: c.updatedAt,
+      };
+
+      mergedMap.set(c.id, item);
+    }
+  } catch (err) {
+    console.error("Error querying storm cases from prisma.case:", err);
+  }
+
+  return Array.from(mergedMap.values());
 }
 
 export async function getEmergencyOperationsData(sessionUser: any): Promise<EmergencyOperationsData> {
