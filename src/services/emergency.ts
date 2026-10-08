@@ -59,23 +59,44 @@ export async function getEmergencyStock(): Promise<EmergencyStockItem[]> {
 
     const categorizedItems: EmergencyStockItem[] = [];
 
-    const keyCategories: Array<{ key: "COLCHON" | "CAMA" | "CUCHETA" | "FRAZADA"; searchNames: string[]; defaultName: string; unit: string; minStock: number; defaultAvailable: number }> = [
-      { key: "COLCHON", searchNames: ["colchon", "colchón"], defaultName: "Colchones de Contingencia (1 plaza)", unit: "Unidades", minStock: 50, defaultAvailable: 120 },
-      { key: "CAMA", searchNames: ["cama"], defaultName: "Camas / Elasticos de Emergencia", unit: "Unidades", minStock: 20, defaultAvailable: 45 },
-      { key: "CUCHETA", searchNames: ["cucheta"], defaultName: "Cuchetas Superpuestas Reforzadas", unit: "Unidades", minStock: 15, defaultAvailable: 30 },
-      { key: "FRAZADA", searchNames: ["frazada", "manta"], defaultName: "Frazadas Térmicas Antialérgicas", unit: "Unidades", minStock: 100, defaultAvailable: 250 },
+    let overrides: Record<string, number> = {};
+    try {
+      const overrideSetting = await prisma.systemSetting.findUnique({
+        where: { key: "muni-emergency-stock-overrides" },
+      });
+      if (overrideSetting?.value) {
+        overrides = JSON.parse(overrideSetting.value);
+      }
+    } catch (e) {
+      console.warn("Could not read stock overrides setting:", e);
+    }
+
+    const keyCategories: Array<{ key: "COLCHON" | "CAMA" | "CUCHETA" | "FRAZADA"; searchNames: string[]; defaultName: string; unit: string; minStock: number }> = [
+      { key: "COLCHON", searchNames: ["colchon", "colchón"], defaultName: "Colchones de Contingencia (1 plaza)", unit: "Unidades", minStock: 20 },
+      { key: "CAMA", searchNames: ["cama"], defaultName: "Camas / Elasticos de Emergencia", unit: "Unidades", minStock: 10 },
+      { key: "CUCHETA", searchNames: ["cucheta"], defaultName: "Cuchetas Superpuestas Reforzadas", unit: "Unidades", minStock: 10 },
+      { key: "FRAZADA", searchNames: ["frazada", "manta"], defaultName: "Frazadas Térmicas Antialérgicas", unit: "Unidades", minStock: 30 },
     ];
 
     for (const cat of keyCategories) {
       const match = supplies.find(s => cat.searchNames.some(sn => s.name.toLowerCase().includes(sn)));
-      const available = match ? match.stock : cat.defaultAvailable;
+
+      let available = 0;
+      if (overrides[cat.key] !== undefined) {
+        available = Number(overrides[cat.key]) || 0;
+      } else if (match) {
+        available = match.stock;
+      }
+
       const minStock = match ? match.minStock : cat.minStock;
       const demanded = demandMap[cat.key] || 0;
 
       let status: "CRITICO" | "CORRECTO" | "EXCESO" = "CORRECTO";
-      if (available < demanded || available < minStock) {
+      if (available < demanded || (available < minStock && available > 0)) {
         status = "CRITICO";
-      } else if (available > minStock * 3) {
+      } else if (available === 0 && demanded > 0) {
+        status = "CRITICO";
+      } else if (available > minStock * 3 && available > 0) {
         status = "EXCESO";
       }
 
