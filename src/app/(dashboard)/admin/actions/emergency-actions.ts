@@ -377,6 +377,95 @@ export async function deleteStormVictimAction(recordId: string) {
   }
 }
 
+export async function updateEmergencyStockAction(
+  supplyId: string,
+  newStock: number,
+  itemName?: string
+) {
+  const session = await auth();
+  if (!session?.user?.id) return { success: false, error: "No autorizado" };
+
+  try {
+    const validStock = Math.max(0, Math.floor(newStock));
+
+    let catKey = supplyId.toUpperCase();
+    if (supplyId.includes("colchon")) catKey = "COLCHON";
+    else if (supplyId.includes("cama")) catKey = "CAMA";
+    else if (supplyId.includes("cucheta")) catKey = "CUCHETA";
+    else if (supplyId.includes("frazada")) catKey = "FRAZADA";
+
+    let overrides: Record<string, number> = {};
+    try {
+      const overrideSetting = await prisma.systemSetting.findUnique({
+        where: { key: "muni-emergency-stock-overrides" },
+      });
+      if (overrideSetting?.value) {
+        overrides = JSON.parse(overrideSetting.value);
+      }
+    } catch (e) {
+      console.warn("Could not read overrides setting:", e);
+    }
+
+    if (["COLCHON", "CAMA", "CUCHETA", "FRAZADA"].includes(catKey)) {
+      overrides[catKey] = validStock;
+      await prisma.systemSetting.upsert({
+        where: { key: "muni-emergency-stock-overrides" },
+        update: { value: JSON.stringify(overrides) },
+        create: { key: "muni-emergency-stock-overrides", value: JSON.stringify(overrides) },
+      });
+    }
+
+    try {
+      const existingItem = await prisma.supplyItem.findUnique({ where: { id: supplyId } });
+      if (existingItem) {
+        await prisma.supplyItem.update({
+          where: { id: supplyId },
+          data: { stock: validStock },
+        });
+      } else {
+        let nameToUse = itemName || "Insumo de Contingencia";
+        if (catKey === "COLCHON") nameToUse = "Colchones de Contingencia (1 plaza)";
+        else if (catKey === "CAMA") nameToUse = "Camas / Elásticos de Emergencia";
+        else if (catKey === "CUCHETA") nameToUse = "Cuchetas Superpuestas Reforzadas";
+        else if (catKey === "FRAZADA") nameToUse = "Frazadas Térmicas Antialérgicas";
+
+        await prisma.supplyItem.create({
+          data: {
+            id: supplyId.startsWith("stock-cat-") ? undefined : supplyId,
+            name: nameToUse,
+            description: "Stock de contingencia configurado manualmente",
+            stock: validStock,
+            minStock: 10,
+          },
+        });
+      }
+    } catch (dbErr) {
+      console.warn("Notice: SupplyItem update skipped or handled via SystemSetting:", dbErr);
+    }
+
+    try {
+      await prisma.auditLog.create({
+        data: {
+          userId: session.user.id,
+          action: "EMERGENCY_STOCK_UPDATE",
+          entity: "SupplyItem/SystemSetting",
+          entityId: supplyId,
+          details: `Ajuste manual de stock de depósito: ${itemName || supplyId} fijado en ${validStock} unidades por ${session.user.name || session.user.email}`,
+        },
+      });
+    } catch (auditErr) {
+      console.warn("Notice: AuditLog skipped:", auditErr);
+    }
+
+    revalidatePath("/admin/emergency");
+    revalidatePath("/admin/stock");
+    return { success: true, newStock: validStock };
+  } catch (error: any) {
+    console.error("Error updating emergency stock:", error);
+    return { success: false, error: error.message || "Error al actualizar stock" };
+  }
+}
+
 export async function dispatchEmergencyStockAction(
   supplyId: string,
   quantity: number = 10,
