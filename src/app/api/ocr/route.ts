@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
+import { getGeminiModelCandidates } from "@/services/gemini-ai";
 
 export const dynamic = "force-dynamic";
 
@@ -53,36 +54,43 @@ Analiza el documento adjunto y extrae EXCLUSIVAMENTE un objeto JSON válido con 
 }
 Responde únicamente con el JSON sin bloques markdown ni texto introductorio.`;
 
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [
-            {
-              role: "user",
-              parts: [
-                { text: promptText },
-                {
-                  inlineData: {
-                    mimeType,
-                    data: base64Data
-                  }
+    const requestInit: RequestInit = {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [
+          {
+            role: "user",
+            parts: [
+              { text: promptText },
+              {
+                inlineData: {
+                  mimeType,
+                  data: base64Data
                 }
-              ]
-            }
-          ],
-          generationConfig: {
-            temperature: 0.1,
-            responseMimeType: "application/json"
+              }
+            ]
           }
-        })
-      }
-    );
+        ],
+        generationConfig: {
+          temperature: 0.1,
+          responseMimeType: "application/json"
+        }
+      })
+    };
 
-    if (!response.ok) {
-      const errText = await response.text();
+    // Prueba los modelos vigentes en orden hasta que uno responda.
+    let response: Response | null = null;
+    for (const model of getGeminiModelCandidates()) {
+      response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+        requestInit
+      );
+      if (response.ok) break;
+    }
+
+    if (!response || !response.ok) {
+      const errText = response ? await response.text() : "sin respuesta";
       return NextResponse.json({ error: `Error en servicio de IA: ${errText}` }, { status: 500 });
     }
 

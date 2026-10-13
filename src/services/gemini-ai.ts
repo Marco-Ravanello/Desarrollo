@@ -1,8 +1,15 @@
 import { sanitizeText } from "@/lib/pii-sanitizer";
 
-let cachedModelName: string | null = "models/gemini-2.0-flash";
-let lastModelCheck = 0;
-const MODEL_CACHE_TTL = 1000 * 60 * 60; // 1 hora
+// Modelos vigentes de la API de Gemini (gemini-2.0-flash y 1.5-flash fueron dados de baja).
+// GEMINI_MODEL permite elegir otro modelo sin tocar el código.
+export function getGeminiModelCandidates(): string[] {
+  const preferred = process.env.GEMINI_MODEL?.trim();
+  const defaults = ["gemini-3.8-flash", "gemini-flash-latest", "gemini-3.5-flash-lite"];
+  return Array.from(new Set([preferred, cachedModelName, ...defaults].filter(Boolean) as string[]));
+}
+
+// Último modelo que respondió bien; se prueba primero en la siguiente consulta.
+let cachedModelName: string | null = null;
 
 export async function callGeminiAnonymized(
   userQuery: string,
@@ -20,45 +27,7 @@ export async function callGeminiAnonymized(
   const { sanitizedText, rehydrate } = sanitizeText(fullRawText, knownEntities);
   console.log("🔒 [PII Sanitizer] Prompt anonimizado exitosamente antes de enviar a Gemini.");
 
-  const now = Date.now();
-  const isCacheValid = cachedModelName && (now - lastModelCheck < MODEL_CACHE_TTL);
-
-  const candidateModels: string[] = [];
-
-  if (isCacheValid && cachedModelName) {
-    candidateModels.push(cachedModelName);
-  }
-
-  // Si la caché expiró o es la primera llamada, auto-descubrir
-  if (!isCacheValid) {
-    candidateModels.push(
-      "models/gemini-2.0-flash",
-      "models/gemini-1.5-flash"
-    );
-
-    try {
-      const listResp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
-      if (listResp.ok) {
-        const listData = await listResp.json();
-        const validModels = (listData.models || []).filter((m: any) =>
-          m.supportedGenerationMethods &&
-          m.supportedGenerationMethods.includes("generateContent") &&
-          !m.name.includes("robotics") &&
-          !m.name.includes("preview")
-        );
-        if (validModels.length > 0) {
-          const bestTextModel = validModels.find((m: any) => m.name.includes("2.0-flash")) ||
-                                validModels.find((m: any) => m.name.includes("1.5-flash")) ||
-                                validModels[0];
-          if (bestTextModel && !candidateModels.includes(bestTextModel.name)) {
-            candidateModels.unshift(bestTextModel.name);
-          }
-        }
-      }
-    } catch (listErr) {
-      console.warn("⚠️ ListModels fallback:", listErr);
-    }
-  }
+  const candidateModels = getGeminiModelCandidates();
 
   // 3. Reconstruir historial conversacional continuo para Gemini
   const contentsPayload: any[] = [];
@@ -115,14 +84,13 @@ REGLAS ABSOLUTAS DE VERACIDAD:
         rawGeminiAnswer = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
         if (rawGeminiAnswer) {
           successfulModel = modelPath;
-          cachedModelName = modelPath;
-          lastModelCheck = Date.now();
+          cachedModelName = modelResource;
           console.log(`🌐 [Gemini API] Respuesta exitosa recibida usando '${successfulModel}'.`);
           lastError = null;
           break;
         }
       } else {
-        cachedModelName = null; // invalidar caché si falla
+        if (cachedModelName === modelResource) cachedModelName = null; // invalidar caché si falla
         const errorText = await response.text();
         lastError = new Error(`Error en Gemini API (${modelPath} - Status ${response.status}): ${errorText}`);
       }
