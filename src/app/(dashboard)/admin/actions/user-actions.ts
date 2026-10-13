@@ -18,6 +18,18 @@ function canManageUsers(role?: string | null): boolean {
   );
 }
 
+// Solo un SUPERADMIN puede otorgar el rol SUPERADMIN o modificar a otro SUPERADMIN.
+function canAssignRole(actorRole: string | null | undefined, targetRole: Role): boolean {
+  if (!Object.values(Role).includes(targetRole)) return false;
+  if (targetRole === Role.SUPERADMIN) return actorRole === Role.SUPERADMIN;
+  return true;
+}
+
+function canModifyUser(actorRole: string | null | undefined, targetUserRole: Role): boolean {
+  if (targetUserRole === Role.SUPERADMIN) return actorRole === Role.SUPERADMIN;
+  return true;
+}
+
 export async function createUserAction(formData: FormData): Promise<ActionResult<User>> {
   const session = await auth();
   if (!session?.user || !canManageUsers(session.user.role)) {
@@ -29,6 +41,10 @@ export async function createUserAction(formData: FormData): Promise<ActionResult
   const password = formData.get("password") as string;
   const role = formData.get("role") as Role;
   const areaId = formData.get("areaId") as string;
+
+  if (!canAssignRole(session.user.role, role)) {
+    return { success: false, error: "No tiene permisos para asignar ese rol" };
+  }
 
   try {
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -86,6 +102,10 @@ export async function updateUserAction(input: UpdateUserInput): Promise<ActionRe
 
     if (!existing) {
       return { success: false, error: "Usuario no encontrado" };
+    }
+
+    if (!canModifyUser(session.user.role, existing.role) || !canAssignRole(session.user.role, input.role)) {
+      return { success: false, error: "No tiene permisos para asignar ese rol o modificar este usuario" };
     }
 
     if (input.email !== existing.email) {
@@ -148,11 +168,15 @@ export async function toggleUserStatusAction(userId: string) {
   try {
     const existingUser = await prisma.user.findUnique({
       where: { id: userId },
-      select: { id: true, isActive: true, email: true }
+      select: { id: true, isActive: true, email: true, role: true }
     });
 
     if (!existingUser) {
       return { success: false, error: "Usuario no encontrado" };
+    }
+
+    if (!canModifyUser(session.user.role, existingUser.role)) {
+      return { success: false, error: "No tiene permisos para modificar este usuario" };
     }
 
     const newStatus = existingUser.isActive === false ? true : false;
