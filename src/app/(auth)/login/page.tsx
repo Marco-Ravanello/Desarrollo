@@ -23,7 +23,11 @@ export default function LoginPage() {
 
     try {
       const result = await signIn("credentials", { email, password, redirect: false });
-      if (result?.error) {
+      if (result?.code === "bloqueada") {
+        toast.error("Cuenta bloqueada temporalmente", {
+          description: "Hubo demasiados intentos fallidos. Espere 15 minutos e intente de nuevo."
+        });
+      } else if (result?.error) {
         toast.error("Credenciales incorrectas", {
           description: "Por favor, verifique su email y contraseña oficial."
         });

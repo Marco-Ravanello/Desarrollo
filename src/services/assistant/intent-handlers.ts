@@ -7,14 +7,22 @@ import { getFichaSocialByDniFromDb } from "@/services/ficha-social-db";
 import { AIResponse } from "./types";
 import { callOllama } from "./ollama-client";
 
-export async function handleChartRequest(query: string): Promise<AIResponse> {
-  const cleanQuery = query.toLowerCase();
+// Pasa a minúsculas y saca los acentos (conserva la ñ) para que "cuántas" o "padrón"
+// se reconozcan igual que "cuantas" o "padron".
+export function normalizeQueryText(query: string): string {
+  return query
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u0302\u0304-\u036f]/g, "")
+    .normalize("NFC")
+    .trim();
+}
 
-  const isMetaChartQuery = cleanQuery.includes("podes hacer") || cleanQuery.includes("podés hacer") ||
-                           cleanQuery.includes("cualquier") || cleanQuery.includes("qué gráficos") ||
-                           cleanQuery.includes("que graficos") || cleanQuery.includes("tipos de gráfico") ||
-                           cleanQuery.includes("tipos de grafico") || cleanQuery.includes("qué tipo") ||
-                           cleanQuery.includes("que tipo");
+export async function handleChartRequest(query: string): Promise<AIResponse> {
+  const cleanQuery = normalizeQueryText(query);
+
+  const isMetaChartQuery = cleanQuery.includes("podes hacer") ||
+                           cleanQuery.includes("cualquier") || cleanQuery.includes("que graficos") || cleanQuery.includes("tipos de grafico") || cleanQuery.includes("que tipo");
 
   if (isMetaChartQuery) {
     const casesByArea = await prisma.case.groupBy({
@@ -178,7 +186,7 @@ export async function handleChartRequest(query: string): Promise<AIResponse> {
     };
   }
 
-  if (cleanQuery.includes("género") || cleanQuery.includes("genero") || cleanQuery.includes("sexo")) {
+  if (cleanQuery.includes("genero") || cleanQuery.includes("sexo")) {
     const casesWithPeople = await prisma.case.findMany({
       include: { person: true }
     });
@@ -311,7 +319,7 @@ export async function handleChartRequest(query: string): Promise<AIResponse> {
     };
   }
 
-  if (cleanQuery.includes("vehiculo") || cleanQuery.includes("vehículo") || cleanQuery.includes("flota")) {
+  if (cleanQuery.includes("vehiculo") || cleanQuery.includes("flota")) {
     const vehicles = await prisma.vehicle.findMany();
     const states = [
       { name: "Disponibles", value: vehicles.filter(v => v.status === "DISPONIBLE").length },
@@ -570,7 +578,7 @@ export async function handleVehicleQuery(query: string): Promise<AIResponse> {
     prisma.fuelRecord.findMany()
   ]);
 
-  const cleanQuery = query.toLowerCase().trim();
+  const cleanQuery = normalizeQueryText(query);
 
   const plateMatch = cleanQuery.replace(/[^a-z0-9]/g, "").match(/[a-z]{3}\d{3}|[a-z]{2}\d{3}[a-z]{2}/);
   if (plateMatch) {
@@ -738,12 +746,12 @@ ${areas.map(a => {
 }
 
 export async function handleSocialQuery(query: string): Promise<AIResponse> {
-  const cleanQuery = query.toLowerCase().trim();
+  const cleanQuery = normalizeQueryText(query);
 
   const [padronCountRes, partCountRes, topBarrioRes, cases, families, areas] = await Promise.all([
     prisma.$queryRawUnsafe(`SELECT COUNT(*)::int as total FROM padron_unificado;`).catch(() => [{ total: 0 }]),
     prisma.$queryRawUnsafe(`SELECT COUNT(*)::int as total FROM participaciones_programas;`).catch(() => [{ total: 0 }]),
-    prisma.$queryRawUnsafe(`SELECT COALESCE(NULLIF(barrio, ''), NULLIF(localidad, '')) as barrio, COUNT(*)::int as cant FROM padron_unificado WHERE (barrio IS NOT NULL AND TRIM(barrio) != '') OR (localidad IS NOT NULL AND TRIM(localidad) != '') GROUP BY barrio ORDER BY cant DESC LIMIT 1;`).catch(() => []),
+    prisma.$queryRawUnsafe(`SELECT COALESCE(NULLIF(barrio, ''), NULLIF(localidad, '')) as barrio, COUNT(*)::int as cant FROM padron_unificado WHERE (barrio IS NOT NULL AND TRIM(barrio) != '') OR (localidad IS NOT NULL AND TRIM(localidad) != '') GROUP BY 1 ORDER BY cant DESC LIMIT 1;`).catch(() => []),
     prisma.case.findMany({ include: { area: true, person: true } }).catch(() => []),
     prisma.family.findMany().catch(() => []),
     prisma.area.findMany().catch(() => [])
@@ -764,7 +772,7 @@ export async function handleSocialQuery(query: string): Promise<AIResponse> {
   }
 
   const isCountQuery = cleanQuery.includes("cuant") || cleanQuery.includes("total") || cleanQuery.includes("cantidad");
-  if (isCountQuery && (cleanQuery.includes("persona") || cleanQuery.includes("ciudadano") || cleanQuery.includes("vecino") || cleanQuery.includes("habitante") || cleanQuery.includes("hay") || cleanQuery.includes("padron") || cleanQuery.includes("padrón"))) {
+  if (isCountQuery && (cleanQuery.includes("persona") || cleanQuery.includes("ciudadano") || cleanQuery.includes("vecino") || cleanQuery.includes("habitante") || cleanQuery.includes("hay") || cleanQuery.includes("padron"))) {
     return {
       intent: "social_count_query",
       answer: `Según la base de datos municipal y el Padrón Social Unificado de Tres de Febrero, hay un total de **${totalPeople.toLocaleString("es-AR")} personas (ciudadanos)** registradas, con **${totalPrestaciones.toLocaleString("es-AR")} prestaciones y programas sociales** vinculados.`,
@@ -1292,7 +1300,7 @@ REGLAS ESTRICTAS DE RESPUESTA:
 }
 
 export async function handleAgentCommandQuery(query: string, userId?: string): Promise<AIResponse> {
-  const cleanQuery = query.toLowerCase().trim();
+  const cleanQuery = normalizeQueryText(query);
 
   if (!userId) {
     return {
@@ -1301,7 +1309,7 @@ export async function handleAgentCommandQuery(query: string, userId?: string): P
     };
   }
 
-  const isTaskCommand = cleanQuery.includes("tarea") || cleanQuery.includes("recordatorio") || cleanQuery.includes("reunion") || cleanQuery.includes("reunión") || cleanQuery.includes("pendiente") || cleanQuery.includes("evento") || cleanQuery.includes("cita") || cleanQuery.includes("turno") || cleanQuery.includes("agendar");
+  const isTaskCommand = cleanQuery.includes("tarea") || cleanQuery.includes("recordatorio") || cleanQuery.includes("reunion") || cleanQuery.includes("pendiente") || cleanQuery.includes("evento") || cleanQuery.includes("cita") || cleanQuery.includes("turno") || cleanQuery.includes("agendar");
   if (isTaskCommand) {
     const details = await extractSchedulingDetails(query);
 
@@ -1336,7 +1344,7 @@ Indique si requiere agendar compromisos o tareas adicionales en el calendario un
     };
   }
 
-  const isReservationCommand = cleanQuery.includes("reserva") || cleanQuery.includes("reservar") || cleanQuery.includes("vehiculo") || cleanQuery.includes("vehículo") || cleanQuery.includes("auto") || cleanQuery.includes("camioneta");
+  const isReservationCommand = cleanQuery.includes("reserva") || cleanQuery.includes("reservar") || cleanQuery.includes("vehiculo") || cleanQuery.includes("auto") || cleanQuery.includes("camioneta");
   if (isReservationCommand) {
     const vehicles = await prisma.vehicle.findMany();
     let matchedVehicle = vehicles.find(v => v.status === "DISPONIBLE");
@@ -1392,7 +1400,7 @@ La unidad automotriz ha quedado reservada y bloqueada para su uso exclusivo dura
 }
 
 export async function handleFichaSocialAIQuery(query: string): Promise<AIResponse> {
-  const cleanQuery = query.toLowerCase();
+  const cleanQuery = normalizeQueryText(query);
   const dniMatch = cleanQuery.replace(/[^0-9]/g, "").match(/\b\d{7,8}\b/);
   if (dniMatch) {
     const targetDni = dniMatch[0];
@@ -1442,7 +1450,7 @@ export async function handleFichaSocialAIQuery(query: string): Promise<AIRespons
 }
 
 export async function handleSpatialProximityQuery(query: string): Promise<AIResponse> {
-  const cleanQuery = query.toLowerCase();
+  const cleanQuery = normalizeQueryText(query);
 
   let radiusMeters = 500;
   const kmMatch = cleanQuery.match(/(\d+(?:\.\d+)?)\s*(?:km|kilómetro|kilometro|kilómetros|kilometros)/i);
