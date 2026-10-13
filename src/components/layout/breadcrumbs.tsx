@@ -34,6 +34,9 @@ const PATH_DICTIONARY: Record<string, string> = {
   tasks: "Mis Tareas & Pendientes"
 };
 
+// Segmentos que agrupan secciones pero no tienen una página propia: se muestran sin link.
+const PATHS_WITHOUT_PAGE = new Set(["/admin", "/areas"]);
+
 export { getAreaDashboardUrl, getAreaShortName } from "@/lib/area-theme";
 
 export function DashboardBreadcrumbs() {
@@ -70,7 +73,7 @@ export function DashboardBreadcrumbs() {
 
       return {
         label,
-        href: isLast ? undefined : currentHref,
+        href: isLast || PATHS_WITHOUT_PAGE.has(currentHref) ? undefined : currentHref,
         active: isLast
       };
     });

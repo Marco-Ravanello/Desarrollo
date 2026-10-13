@@ -240,7 +240,7 @@ export async function getDashboardStats(filters?: { from: Date; to: Date }) {
     try {
       const vehiclesDb = await prisma.vehicle.findMany({
         take: 5,
-        orderBy: { createdAt: 'desc' }
+        orderBy: { plate: 'asc' }
       });
       vehiclesList = vehiclesDb.map((v) => ({
         id: v.id,
@@ -256,12 +256,14 @@ export async function getDashboardStats(filters?: { from: Date; to: Date }) {
     try {
       const urgentCases = await prisma.case.findMany({
         where: { priority: 'URGENTE', status: { in: ['ABIERTO', 'EN_PROCESO'] } },
-        take: 2,
+        orderBy: { createdAt: 'desc' },
+        take: 3,
         include: { area: true }
       });
       const pendingOrders = await prisma.purchaseOrder.findMany({
         where: { status: 'PENDIENTE_APROBACION' },
-        take: 1
+        orderBy: { createdAt: 'desc' },
+        take: 2
       });
 
       urgentCases.forEach((c) => {
@@ -315,8 +317,8 @@ export async function getDashboardStats(filters?: { from: Date; to: Date }) {
       todayTasks,
       criticalCases,
       peopleLocations,
-      executedAmount: executedAmount > 0 ? executedAmount : 6950000,
-      totalBudget: totalBudget > 0 ? totalBudget : 6950000,
+      executedAmount,
+      totalBudget,
       areas,
       vehicleStats: {
         total: vehicleCount,
@@ -356,8 +358,8 @@ export async function getDashboardStats(filters?: { from: Date; to: Date }) {
       todayTasks: 0,
       criticalCases: 0,
       peopleLocations: [],
-      executedAmount: 6950000,
-      totalBudget: 6950000,
+      executedAmount: 0,
+      totalBudget: 0,
       areas: [],
       vehicleStats: { total: 0, occupied: 0, available: 0 },
       trends: getFallbackTrendData(),

@@ -29,6 +29,15 @@ export async function getBudgetSummary() {
   });
 }
 
+// Órdenes aprobadas o cumplidas que no tienen área asignada: cuentan en el total ejecutado.
+export async function getUnassignedSpent() {
+  const result = await prisma.purchaseOrder.aggregate({
+    where: { status: { in: ['APROBADA', 'CUMPLIDA'] }, areaId: null },
+    _sum: { amount: true }
+  });
+  return Number(result._sum.amount || 0);
+}
+
 export async function updateAreaBudget(areaId: string, amount: number) {
   const session = await auth();
 

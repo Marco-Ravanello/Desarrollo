@@ -2,7 +2,8 @@ import prisma from "@/lib/prisma";
 import fs from "fs/promises";
 import path from "path";
 import { findPeopleNearPoint } from "@/services/spatial";
-import { searchFichaSocialByDni, getFichaSocialByDniFromDb, calculateCrossPrograms, getProgramCatalog } from "@/services/ficha-social";
+import { searchFichaSocialByDni, calculateCrossPrograms, getProgramCatalog } from "@/services/ficha-social";
+import { getFichaSocialByDniFromDb } from "@/services/ficha-social-db";
 import { AIResponse } from "./types";
 import { callOllama } from "./ollama-client";
 

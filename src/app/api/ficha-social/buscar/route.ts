@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { getFichaSocialByDniFromDb } from "@/services/ficha-social";
+import { getFichaSocialByDniFromDb } from "@/services/ficha-social-db";
 
 export const dynamic = "force-dynamic";
 
