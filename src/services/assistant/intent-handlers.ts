@@ -6,6 +6,8 @@ import { searchFichaSocialByDni, calculateCrossPrograms, getProgramCatalog } fro
 import { getFichaSocialByDniFromDb } from "@/services/ficha-social-db";
 import { AIResponse } from "./types";
 import { callOllama } from "./ollama-client";
+import { readUploadedFile, storedNameFromUrl } from "@/lib/file-storage";
+import { extractTextFromPDFBuffer } from "@/services/pdf-rag";
 
 // Pasa a minúsculas y saca los acentos (conserva la ñ) para que "cuántas" o "padrón"
 // se reconozcan igual que "cuantas" o "padron".
@@ -826,7 +828,7 @@ export async function handleSocialQuery(query: string): Promise<AIResponse> {
       if (pdfDocs.length > 0) {
         let extractedText = "";
         for (const doc of pdfDocs) {
-          const filePath = path.join(process.cwd(), "public", doc.url);
+          const filePath = doc.url;
           const text = await extractTextFromPDFFile(filePath);
           if (text.trim().length > 0) {
             extractedText += `\n--- CONTENIDO DEL DOCUMENTO/PDF ADJUNTO: ${doc.name} ---\n${text.substring(0, 4000)}\n`;
@@ -1042,19 +1044,12 @@ ${items.map(i => {
 
 export async function extractTextFromPDFFile(filePath: string): Promise<string> {
   try {
-    const pdfjs = await import("pdfjs-dist");
-    const fileBuffer = await fs.readFile(filePath);
-    const arrayBuffer = fileBuffer.buffer.slice(fileBuffer.byteOffset, fileBuffer.byteOffset + fileBuffer.byteLength);
-    const pdf = await pdfjs.getDocument({ data: arrayBuffer }).promise;
-    let fullText = "";
-    for (let i = 1; i <= pdf.numPages; i++) {
-      const page = await pdf.getPage(i);
-      const textContent = await page.getTextContent();
-      const textItems = textContent.items as any[];
-      const pageText = textItems.map(item => item.str || "").join(" ");
-      fullText += pageText + "\n";
-    }
-    return fullText;
+    // Los documentos subidos se guardan como "/api/uploads/<nombre>" y pueden estar en Vercel Blob.
+    const fileBuffer = filePath.startsWith("/api/uploads/")
+      ? await readUploadedFile(storedNameFromUrl(filePath))
+      : await fs.readFile(filePath);
+    if (!fileBuffer) return "";
+    return await extractTextFromPDFBuffer(fileBuffer);
   } catch (error) {
     console.error(`Error extracting text from PDF ${filePath}:`, error);
     return "";
@@ -1109,7 +1104,7 @@ export async function handleDocumentRAGQuery(query: string): Promise<AIResponse>
   if (pdfDocs.length > 0) {
     let extractedContext = "";
     for (const doc of pdfDocs) {
-      const filePath = path.join(process.cwd(), "public", doc.url);
+      const filePath = doc.url;
       const text = await extractTextFromPDFFile(filePath);
       if (text.trim().length > 0) {
         extractedContext += `\n--- CONTENIDO DEL ARCHIVO: ${doc.name} ---\n${text.substring(0, 4000)}\n`;
