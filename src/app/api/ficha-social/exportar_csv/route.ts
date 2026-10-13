@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
+import { hasPermission, PERMISSIONS } from "@/lib/permissions";
 
 export const dynamic = "force-dynamic";
 
@@ -28,6 +29,9 @@ export async function GET(request: Request) {
   const session = await auth();
   if (!session?.user) {
     return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+  }
+  if (!hasPermission(session.user.role as any, PERMISSIONS.EXPORT_PERSONAL_DATA)) {
+    return NextResponse.json({ error: "Su rol no tiene permiso para exportar datos personales" }, { status: 403 });
   }
 
   try {
@@ -77,6 +81,16 @@ export async function GET(request: Request) {
         `"${(r.email || "").replace(/"/g, '""')}"`
       ];
       csvRows.push(line.join(";"));
+    });
+
+    await prisma.auditLog.create({
+      data: {
+        userId: session.user.id!,
+        action: "EXPORT_CSV",
+        entity: "PadronUnificado",
+        entityId: "cruce_programas",
+        details: `Exportación CSV de ${rows.length} registros (modo ${modo}; programas: ${requestedProgs.join(", ") || "todos"})`,
+      },
     });
 
     const bom = "\uFEFF";

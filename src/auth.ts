@@ -5,10 +5,39 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { authConfig } from "./auth.config";
 
+// Cada cuánto se vuelve a consultar la base para confirmar que la cuenta sigue activa.
+const ACCOUNT_RECHECK_MS = 5 * 60 * 1000;
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
   adapter: PrismaAdapter(prisma) as any,
   session: { strategy: "jwt" },
+  callbacks: {
+    ...authConfig.callbacks,
+    async jwt(params: any) {
+      const token = await authConfig.callbacks.jwt(params);
+      if (params.user) {
+        token.checkedAt = Date.now();
+        return token;
+      }
+      if (!token?.sub) return token;
+
+      const checkedAt = typeof token.checkedAt === "number" ? token.checkedAt : 0;
+      if (Date.now() - checkedAt < ACCOUNT_RECHECK_MS) return token;
+
+      // Cierra la sesión de cuentas suspendidas o eliminadas y toma cambios de rol o área.
+      const dbUser = await prisma.user.findUnique({
+        where: { id: token.sub },
+        select: { isActive: true, role: true, areaId: true },
+      });
+      if (!dbUser || dbUser.isActive === false) return null;
+
+      token.role = dbUser.role;
+      token.areaId = dbUser.areaId;
+      token.checkedAt = Date.now();
+      return token;
+    },
+  },
   providers: [
     CredentialsProvider({
       name: "credentials",
@@ -20,19 +49,18 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         try {
           if (!credentials?.email || !credentials?.password) return null;
 
-          console.log(`🔐 Intento de login para: ${credentials.email}`);
-
+          
           const user = await prisma.user.findUnique({
             where: { email: credentials.email as string },
           });
 
           if (!user) {
-            console.warn(`⚠️ Usuario no encontrado: ${credentials.email}`);
+            console.warn("⚠️ Login rechazado: usuario no encontrado");
             return null;
           }
 
           if (!user.password) {
-            console.warn(`⚠️ Usuario sin contraseña configurada: ${credentials.email}`);
+            console.warn("⚠️ Login rechazado: usuario sin contraseña configurada");
             return null;
           }
 
@@ -42,16 +70,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           );
 
           if (!isPasswordValid) {
-            console.warn(`❌ Contraseña inválida para: ${credentials.email}`);
+            console.warn("❌ Login rechazado: contraseña inválida");
             return null;
           }
 
           if (user.isActive === false) {
-            console.warn(`⛔ Acceso rechazado: La cuenta ${user.email} se encuentra suspendida.`);
+            console.warn(`⛔ Login rechazado: cuenta suspendida (id ${user.id})`);
             return null;
           }
 
-          console.log(`✅ Login exitoso: ${user.email} (${user.role})`);
+          console.log(`✅ Login exitoso (id ${user.id}, rol ${user.role})`);
 
           return {
             id: user.id,
