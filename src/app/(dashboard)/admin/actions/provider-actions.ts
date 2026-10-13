@@ -72,3 +72,46 @@ export async function saveProviderAction(input: ProviderInput) {
     return { success: false, error: "No se pudo guardar el proveedor" };
   }
 }
+
+// Solo se puede eliminar un proveedor sin órdenes ni facturas asociadas, para no perder historial.
+export async function deleteProviderAction(id: string) {
+  const session = await auth();
+  if (!session?.user || !ROLES_THAT_EDIT.includes(session.user.role as string)) {
+    return { success: false, error: "No tiene permisos para eliminar proveedores" };
+  }
+
+  const provider = await prisma.provider.findUnique({
+    where: { id },
+    include: { _count: { select: { orders: true, invoices: true } } },
+  });
+  if (!provider) return { success: false, error: "El proveedor no existe" };
+
+  const cuit = normalizeCuit(provider.cuit);
+  const ordersByCuit = await prisma.purchaseOrder.findMany({
+    where: { providerId: null, providerCuit: { not: null } },
+    select: { providerCuit: true },
+  });
+  const linkedByCuit = ordersByCuit.filter((o) => normalizeCuit(o.providerCuit) === cuit).length;
+
+  if (provider._count.orders + provider._count.invoices + linkedByCuit > 0) {
+    return { success: false, error: "No se puede eliminar: el proveedor tiene órdenes o facturas asociadas" };
+  }
+
+  try {
+    await prisma.provider.delete({ where: { id } });
+    await prisma.auditLog.create({
+      data: {
+        userId: session.user.id!,
+        action: "DELETE_PROVIDER",
+        entity: "Provider",
+        entityId: id,
+        details: `Baja de proveedor ${provider.name} (CUIT ${provider.cuit})`,
+      },
+    });
+    revalidatePath("/admin/providers");
+    return { success: true };
+  } catch (error) {
+    console.error("Error al eliminar proveedor:", error);
+    return { success: false, error: "No se pudo eliminar el proveedor" };
+  }
+}

@@ -10,6 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Pencil } from "lucide-react";
 import { ProviderFormDialog } from "../provider-form-dialog";
+import { DeleteProviderButton } from "../delete-provider-button";
 
 const money = (n: number) => `$ ${n.toLocaleString("es-AR", { maximumFractionDigits: 0 })}`;
 
@@ -48,13 +49,16 @@ export default async function ProviderDetailPage({ params }: { params: Promise<{
           </div>
         </div>
         {canEdit && (
-          <ProviderFormDialog
-            initial={{
-              id: provider.id, name: provider.name, cuit: provider.cuit, address: provider.address || "",
-              phone: provider.phone || "", email: provider.email || "", bank: provider.bank || "", cbu: provider.cbu || "",
-            }}
-            trigger={<Button variant="outline" className="gap-2"><Pencil className="h-4 w-4" /> Editar</Button>}
-          />
+          <div className="flex gap-2">
+            {orders.length === 0 && <DeleteProviderButton id={provider.id} name={provider.name} />}
+            <ProviderFormDialog
+              initial={{
+                id: provider.id, name: provider.name, cuit: provider.cuit, address: provider.address || "",
+                phone: provider.phone || "", email: provider.email || "", bank: provider.bank || "", cbu: provider.cbu || "",
+              }}
+              trigger={<Button variant="outline" className="gap-2"><Pencil className="h-4 w-4" /> Editar</Button>}
+            />
+          </div>
         )}
       </div>
 
