@@ -14,6 +14,8 @@ const PATH_DICTIONARY: Record<string, string> = {
   users: "Gestión de Usuarios",
   settings: "Configuración",
   budget: "Resumen Presupuestario",
+  providers: "Proveedores",
+  "purchase-orders": "Órdenes de Compra",
   hr: "Recursos Humanos",
   vehicles: "Flota Vehicular",
   calendar: "Agenda Unificada",

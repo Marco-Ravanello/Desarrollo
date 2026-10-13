@@ -55,6 +55,7 @@ export function AppSidebar({ isMobile = false, onNavigate }: AppSidebarProps) {
     { title: "Agenda Unificada", url: "/admin/calendar", icon: Calendar, color: "text-slate-400" },
     { title: "Asistente de IA", url: "/admin/assistant", icon: Sparkles, color: "text-blue-500 animate-pulse" },
     { title: "Órdenes de compras", url: "/admin/purchase-orders", icon: Briefcase, color: "text-slate-400" },
+    { title: "Proveedores", url: "/admin/providers", icon: Building2, color: "text-slate-400" },
     { title: "Vehículos y Logística", url: "/admin/vehicles", icon: Car, color: "text-slate-400" },
     { title: "Stock de Insumos", url: "/admin/stock", icon: ClipboardList, color: "text-slate-400" },
     { title: "Convenios y Presupuesto", url: "/admin/budget", icon: Wallet, color: "text-slate-400" },
