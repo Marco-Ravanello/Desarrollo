@@ -23,6 +23,7 @@ export default async function AuditPage() {
       case 'UPDATE': return <Badge className="bg-blue-500/10 text-blue-600 border-blue-500/30">ACTUALIZACIÓN</Badge>;
       case 'DELETE': return <Badge variant="destructive">ELIMINACIÓN</Badge>;
       case 'LOGIN': return <Badge variant="outline">INGRESO</Badge>;
+      case 'LOGIN_FAILED': return <Badge className="bg-amber-500/10 text-amber-700 border-amber-500/30">INGRESO FALLIDO</Badge>;
       default: return <Badge variant="secondary">{action}</Badge>;
     }
   };

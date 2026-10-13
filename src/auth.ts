@@ -1,4 +1,4 @@
-import NextAuth from "next-auth";
+import NextAuth, { CredentialsSignin } from "next-auth";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import prisma from "@/lib/prisma";
 import CredentialsProvider from "next-auth/providers/credentials";
@@ -7,6 +7,34 @@ import { authConfig } from "./auth.config";
 
 // Cada cuánto se vuelve a consultar la base para confirmar que la cuenta sigue activa.
 const ACCOUNT_RECHECK_MS = 5 * 60 * 1000;
+
+// Después de MAX_FAILED_LOGINS contraseñas incorrectas en LOGIN_LOCK_MS, la cuenta queda bloqueada
+// hasta que esos intentos salgan de la ventana. Los intentos se guardan en la auditoría.
+const MAX_FAILED_LOGINS = 5;
+const LOGIN_LOCK_MS = 15 * 60 * 1000;
+
+class AccountLockedError extends CredentialsSignin {
+  code = "bloqueada";
+}
+
+async function isAccountLocked(userId: string) {
+  const windowStart = new Date(Date.now() - LOGIN_LOCK_MS);
+  const lastLogin = await prisma.auditLog.findFirst({
+    where: { userId, action: "LOGIN", createdAt: { gt: windowStart } },
+    orderBy: { createdAt: "desc" },
+    select: { createdAt: true },
+  });
+  const failed = await prisma.auditLog.count({
+    where: { userId, action: "LOGIN_FAILED", createdAt: { gt: lastLogin?.createdAt ?? windowStart } },
+  });
+  return failed >= MAX_FAILED_LOGINS;
+}
+
+function logLogin(userId: string, action: "LOGIN" | "LOGIN_FAILED", details: string) {
+  return prisma.auditLog
+    .create({ data: { userId, action, entity: "User", entityId: userId, details } })
+    .catch((error) => console.error("No se pudo registrar el intento de ingreso:", error));
+}
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
@@ -64,6 +92,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             return null;
           }
 
+          if (await isAccountLocked(user.id)) {
+            console.warn(`🔒 Login rechazado: cuenta bloqueada por intentos fallidos (id ${user.id})`);
+            throw new AccountLockedError();
+          }
+
           const isPasswordValid = await bcrypt.compare(
             credentials.password as string,
             user.password
@@ -71,6 +104,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
           if (!isPasswordValid) {
             console.warn("❌ Login rechazado: contraseña inválida");
+            await logLogin(user.id, "LOGIN_FAILED", "Contraseña incorrecta");
             return null;
           }
 
@@ -80,6 +114,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           }
 
           console.log(`✅ Login exitoso (id ${user.id}, rol ${user.role})`);
+          await logLogin(user.id, "LOGIN", "Ingreso al sistema");
 
           return {
             id: user.id,
@@ -89,6 +124,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             areaId: user.areaId,
           };
         } catch (error) {
+          if (error instanceof AccountLockedError) throw error;
           console.error("🔥 Error crítico en authorize:", error);
           return null;
         }
