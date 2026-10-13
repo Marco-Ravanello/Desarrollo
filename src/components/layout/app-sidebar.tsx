@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { LayoutDashboard, Users, ShieldAlert, ClipboardList, LogOut, Briefcase, Car, UserCog, ChevronLeft, ChevronRight, CheckCircle2, MapPin, Wallet, Building2, FileSpreadsheet, Calendar, Sparkles, CloudRain, Settings, Tv, Network } from "lucide-react";
+import { LayoutDashboard, Users, ShieldAlert, ClipboardList, LogOut, Briefcase, Car, UserCog, ChevronLeft, ChevronRight, CheckCircle2, MapPin, Wallet, Building2, FileSpreadsheet, Calendar, Sparkles, CloudRain, Settings, Tv, Network, BarChart3 } from "lucide-react";
 import { MunicipalCrest } from "@/components/ui/municipal-crest";
 import { UserNav } from "./user-nav";
 import { useSession, signOut } from "next-auth/react";
@@ -70,6 +70,9 @@ export function AppSidebar({ isMobile = false, onNavigate }: AppSidebarProps) {
     ) ? [
       { title: "Importar Datos", url: "/admin/interventions", icon: FileSpreadsheet, color: "text-slate-400" },
       { title: "Usuarios", url: "/admin/users", icon: UserCog, color: "text-slate-400 font-bold" },
+    ] : []),
+    ...(user?.role && hasPermission(user.role as any, PERMISSIONS.VIEW_REPORTS) ? [
+      { title: "Reportes", url: "/admin/reports", icon: BarChart3, color: "text-slate-400" }
     ] : []),
     ...(user?.role && hasPermission(user.role as any, PERMISSIONS.VIEW_AUDIT_LOGS) ? [
       { title: "Auditoría", url: "/admin/audit", icon: ClipboardList, color: "text-slate-400" }
