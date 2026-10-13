@@ -21,6 +21,7 @@ import {
   handleFichaSocialAIQuery,
   handleSpatialProximityQuery
 } from "./assistant/intent-handlers";
+import { lookupPersonByName } from "./assistant/person-name-lookup";
 
 export type { Message, AIResponse, UniversalSearchResult };
 export { handleFichaSocialAIQuery };
@@ -261,13 +262,21 @@ export async function queryAIAssistantStream(
   try {
     let dbResponse: AIResponse;
 
-    const isCommand = query.includes("tarea") || query.includes("recordatorio") || query.includes("agendar") || query.includes("reservar") || query.includes("reserva") || query.includes("evento") || query.includes("reunion") || query.includes("reunión") || query.includes("cita") || query.includes("turno");
-    const isCreationCommand = isCommand && (query.includes("crear") || query.includes("agend") || query.includes("program") || query.includes("añadir") || query.includes("agregar") || query.includes("hacer") || query.includes("reserv") || query.includes("pon"));
-    const wantsChart = query.includes("gráfico") || query.includes("grafico") || query.includes("chart") || query.includes("dibujar") || query.includes("mostrar gráfico");
-    const isDocRagQuery = query.includes("pdf") || query.includes("documento") || query.includes("archivo") || query.includes("leé") || query.includes("lee") || query.includes("informe") || query.includes("adjunto") || query.includes("ordenanza") || query.includes("decreto") || query.includes("pliego") || query.includes("resolución") || query.includes("resolucion");
+    // Texto para detectar la intención: incluye una versión sin tildes ("órdenes" también activa "orden").
+    const routing = `${query} ${query.normalize("NFD").replace(/[\u0300-\u036f]/g, "")}`;
+
+    const isCommand = routing.includes("tarea") || routing.includes("recordatorio") || routing.includes("agendar") || routing.includes("reservar") || routing.includes("reserva") || routing.includes("evento") || routing.includes("reunion") || routing.includes("reunión") || routing.includes("cita") || routing.includes("turno");
+    const isCreationCommand = isCommand && (routing.includes("crear") || routing.includes("agend") || routing.includes("program") || routing.includes("añadir") || routing.includes("agregar") || routing.includes("hacer") || routing.includes("reserv") || routing.includes("pon"));
+    const wantsChart = routing.includes("gráfico") || routing.includes("grafico") || routing.includes("chart") || routing.includes("dibujar") || routing.includes("mostrar gráfico");
+    const isDocRagQuery = routing.includes("pdf") || routing.includes("documento") || routing.includes("archivo") || routing.includes("leé") || routing.includes("lee") || routing.includes("informe") || routing.includes("adjunto") || routing.includes("ordenanza") || routing.includes("decreto") || routing.includes("pliego") || routing.includes("resolución") || routing.includes("resolucion");
 
     let sources: any[] = [];
     let actions: any[] = [];
+
+    // Si la consulta nombra a una persona del padrón, se responde con su ficha antes que con la búsqueda social genérica.
+    const personByName = (!wantsChart && !isCreationCommand && !isDocRagQuery)
+      ? await lookupPersonByName(queryText)
+      : null;
 
     if (wantsChart) {
       dbResponse = await handleChartRequest(query);
@@ -276,48 +285,50 @@ export async function queryAIAssistantStream(
     } else if (isDocRagQuery) {
       dbResponse = await handleDocumentRAGQuery(queryText);
     } else if (
-      query.includes("sueldo") || query.includes("salario") || query.includes("rrhh") || query.includes("recursos humanos") ||
-      query.includes("personal") || query.includes("empleado") || query.includes("agente") || query.includes("contrato") ||
-      query.includes("nómina") || query.includes("nomina")
+      routing.includes("sueldo") || routing.includes("salario") || routing.includes("rrhh") || routing.includes("recursos humanos") ||
+      routing.includes("personal") || routing.includes("empleado") || routing.includes("agente") || routing.includes("contrato") ||
+      routing.includes("nómina") || routing.includes("nomina")
     ) {
       dbResponse = await handleHRQuery(query);
     } else if (
-      query.includes("orden") || query.includes("compras") || query.includes("gasto") || query.includes("presupuesto") ||
-      query.includes("comprar") || query.includes("monto") || query.includes("factura")
+      routing.includes("orden") || routing.includes("compras") || routing.includes("gasto") || routing.includes("presupuesto") ||
+      routing.includes("comprar") || routing.includes("monto") || routing.includes("factura")
     ) {
       dbResponse = await handleBudgetQuery(query);
     } else if (
-      query.includes("vehiculo") || query.includes("vehículo") || query.includes("auto") || query.includes("camioneta") ||
-      query.includes("flota") || query.includes("taller") || query.includes("reserva") || query.includes("combustible") ||
-      query.includes("nafta") || query.includes("litro")
+      routing.includes("vehiculo") || routing.includes("vehículo") || routing.includes("auto") || routing.includes("camioneta") ||
+      routing.includes("flota") || routing.includes("taller") || routing.includes("reserva") || routing.includes("combustible") ||
+      routing.includes("nafta") || routing.includes("litro")
     ) {
       dbResponse = await handleVehicleQuery(query);
     } else if (
-      query.includes("convenio") || query.includes("acuerdo") || query.includes("parties") || query.includes("institucional")
+      routing.includes("convenio") || routing.includes("acuerdo") || routing.includes("parties") || routing.includes("institucional")
     ) {
       dbResponse = await handleAgreementQuery(query);
+    } else if (personByName) {
+      dbResponse = personByName;
     } else if (
-      query.includes("caso") || query.includes("urgente") || query.includes("critico") || query.includes("crítico") ||
-      query.includes("social") || query.includes("familia") || query.includes("persona") || query.includes("ciudadano") ||
-      query.includes("deriva") || query.includes("abierto") || query.includes("registro") || query.includes("apellido") ||
-      query.includes("nombre") || query.includes("letra") || query.includes("buscar") || query.includes("consultar") ||
-      query.includes("acevedo") || query.includes("aylen") || query.includes("victoria")
+      routing.includes("caso") || routing.includes("urgente") || routing.includes("critico") || routing.includes("crítico") ||
+      routing.includes("social") || routing.includes("familia") || routing.includes("persona") || routing.includes("ciudadano") ||
+      routing.includes("deriva") || routing.includes("abierto") || routing.includes("registro") || routing.includes("apellido") ||
+      routing.includes("nombre") || routing.includes("letra") || routing.includes("buscar") || routing.includes("consultar") ||
+      routing.includes("acevedo") || routing.includes("aylen") || routing.includes("victoria")
     ) {
       dbResponse = await handleSocialQuery(query);
     } else if (
-      query.includes("ficha social") || query.includes("ficha 360") || query.includes("cruce de datos") ||
-      query.includes("cruce de programas") || query.includes("programas sociales") || query.includes("matriz de cruce")
+      routing.includes("ficha social") || routing.includes("ficha 360") || routing.includes("cruce de datos") ||
+      routing.includes("cruce de programas") || routing.includes("programas sociales") || routing.includes("matriz de cruce")
     ) {
       dbResponse = await handleFichaSocialAIQuery(queryText);
     } else if (
-      query.includes("insumo") || query.includes("stock") || query.includes("inventario") ||
-      query.includes("deposito") || query.includes("depósito")
+      routing.includes("insumo") || routing.includes("stock") || routing.includes("inventario") ||
+      routing.includes("deposito") || routing.includes("depósito")
     ) {
       dbResponse = await handleSupplyQuery(query);
     } else if (
-      query.includes("metro") || query.includes("metros") || query.includes("cerca") ||
-      query.includes("radio") || query.includes("proximidad") || query.includes("cuadra") ||
-      query.includes("cuadras") || query.includes("distancia")
+      routing.includes("metro") || routing.includes("metros") || routing.includes("cerca") ||
+      routing.includes("radio") || routing.includes("proximidad") || routing.includes("cuadra") ||
+      routing.includes("cuadras") || routing.includes("distancia")
     ) {
       dbResponse = await handleSpatialProximityQuery(query);
     } else {
