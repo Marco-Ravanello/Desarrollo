@@ -1,6 +1,6 @@
 export const dynamic = "force-dynamic";
 
-import { getBudgetSummary } from "@/app/(dashboard)/admin/actions/budget-actions";
+import { getBudgetSummary, getUnassignedSpent } from "@/app/(dashboard)/admin/actions/budget-actions";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Wallet, TrendingUp, Coins, ExternalLink, Activity, FileCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -33,9 +33,9 @@ export default async function BudgetPage() {
     redirect("/dashboard");
   }
 
-  const summary = await getBudgetSummary();
+  const [summary, unassignedSpent] = await Promise.all([getBudgetSummary(), getUnassignedSpent()]);
   const totalBudget = summary.reduce((sum, s) => sum + s.budget, 0);
-  const totalSpent = summary.reduce((sum, s) => sum + s.spent, 0);
+  const totalSpent = summary.reduce((sum, s) => sum + s.spent, 0) + unassignedSpent;
   const remainingBudget = totalBudget - totalSpent;
   const globalPercentage = totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0;
 
@@ -98,7 +98,10 @@ export default async function BudgetPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-black text-foreground">{formatCurrency(totalSpent)}</div>
-            <p className="text-xs text-muted-foreground mt-1">Órdenes aprobadas y cumplidas</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Órdenes aprobadas y cumplidas
+              {unassignedSpent > 0 && ` (incluye ${formatCurrency(unassignedSpent)} sin área asignada)`}
+            </p>
           </CardContent>
         </Card>
 

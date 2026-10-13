@@ -56,9 +56,8 @@ export function MiniHeatmapInner({ locations }: { locations: LocationPoint[] }) 
     ? [heatPoints[0][0], heatPoints[0][1]]
     : TRES_DE_FEBRERO_CENTER;
 
-  const tileUrl = isDark
-    ? "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-    : "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png";
+  // Mismo proveedor que el Mapa Social: CARTO ahora exige clave y muestra una marca de agua.
+  const tileUrl = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
 
   return (
     <MapContainer
@@ -72,7 +71,7 @@ export function MiniHeatmapInner({ locations }: { locations: LocationPoint[] }) 
       className="z-10 rounded-xl overflow-hidden"
     >
       <TileLayer
-        attribution='&copy; <a href="https://carto.com/">CARTO</a>'
+        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
         url={tileUrl}
       />
       <HeatmapLayer points={heatPoints} />

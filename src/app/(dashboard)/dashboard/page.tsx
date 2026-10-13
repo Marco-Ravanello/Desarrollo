@@ -1,6 +1,8 @@
 export const dynamic = "force-dynamic";
 
 import { getDashboardStats } from "@/services/dashboard";
+import { getTasks } from "@/services/system";
+import { auth } from "@/auth";
 import { Card } from "@/components/ui/card";
 import {
   Users, FileText, CheckCircle2, ShieldCheck,
@@ -13,17 +15,34 @@ import { TerritorialActivityWidget } from "@/components/dashboard/territorial-ac
 import Link from "next/link";
 
 export default async function DashboardPage() {
-  const stats = await getDashboardStats();
+  const session = await auth();
+  const [stats, myTasks] = await Promise.all([
+    getDashboardStats(),
+    session?.user?.id ? getTasks(session.user.id).catch(() => []) : Promise.resolve([]),
+  ]);
 
-  const familiesCount = Number(stats.peopleCount || 82433).toLocaleString("es-AR");
-  const activeCasesCount = stats.activeCases || 169;
-  const todayTasksCount = stats.todayTasks || 2;
+  const familiesCount = Number(stats.peopleCount || 0).toLocaleString("es-AR");
+  const activeCasesCount = stats.activeCases || 0;
   const criticalCasesCount = stats.criticalCases || 0;
 
-  const executedAmountFormatted = `$ ${Number(stats.executedAmount || 6950000).toLocaleString("es-AR")}`;
-  const totalBudgetFormatted = `$ ${Number(stats.totalBudget || 6950000).toLocaleString("es-AR")}`;
-  const remainingBudgetFormatted = `$ ${Math.max(0, Number(stats.totalBudget || 6950000) - Number(stats.executedAmount || 0)).toLocaleString("es-AR")}`;
-  const executionPercentage = stats.totalBudget > 0 ? Math.round((Number(stats.executedAmount || 0) / Number(stats.totalBudget)) * 100) : 0;
+  // Mismas tareas que muestra "Mis Tareas": las del usuario que no están completadas.
+  const pendingTasks = myTasks.filter((t) => t.status !== "COMPLETADA");
+  const highPriorityTasksCount = pendingTasks.filter((t) => t.priority === "ALTA" || t.priority === "URGENTE").length;
+  const upcomingTasks = pendingTasks.slice(0, 5).map((t) => ({
+    id: t.id,
+    description: t.title,
+    priority: t.priority || "MEDIA",
+    priorityVariant: t.priority === "URGENTE" || t.priority === "ALTA" ? "high" : t.priority === "MEDIA" ? "medium" : "low",
+    dueDate: t.dueDate ? new Date(t.dueDate).toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit" }) : "S/D",
+  }));
+
+  const totalBudget = Number(stats.totalBudget || 0);
+  const executedAmount = Number(stats.executedAmount || 0);
+  const hasBudget = totalBudget > 0;
+  const executedAmountFormatted = `$ ${executedAmount.toLocaleString("es-AR")}`;
+  const totalBudgetFormatted = `$ ${totalBudget.toLocaleString("es-AR")}`;
+  const remainingBudgetFormatted = `$ ${Math.max(0, totalBudget - executedAmount).toLocaleString("es-AR")}`;
+  const executionPercentage = hasBudget ? Math.round((executedAmount / totalBudget) * 100) : 0;
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300 max-w-7xl mx-auto">
@@ -74,8 +93,7 @@ export default async function DashboardPage() {
             </div>
 
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-3 pt-2.5 border-t border-border/30">
-              <span className="text-emerald-600 dark:text-emerald-400 font-medium">↑ 4,2%</span>
-              <span className="text-[11px]">vs. mes anterior</span>
+              <span className="text-[11px]">Personas en el padrón unificado</span>
             </div>
           </Card>
         </Link>
@@ -97,8 +115,14 @@ export default async function DashboardPage() {
             </div>
 
             <div className="flex items-center gap-1.5 text-xs mt-3 pt-2.5 border-t border-border/30">
-              <span className="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
-              <span className="text-[11px] text-rose-600 dark:text-rose-400 font-medium">12 requieren atención</span>
+              {criticalCasesCount > 0 ? (
+                <>
+                  <span className="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
+                  <span className="text-[11px] text-rose-600 dark:text-rose-400 font-medium">{criticalCasesCount} con prioridad urgente</span>
+                </>
+              ) : (
+                <span className="text-[11px] text-muted-foreground">Ninguno con prioridad urgente</span>
+              )}
             </div>
           </Card>
         </Link>
@@ -115,13 +139,19 @@ export default async function DashboardPage() {
 
             <div className="mt-2.5">
               <span className="text-2xl font-bold tracking-tight text-foreground">
-                {todayTasksCount}
+                {pendingTasks.length}
               </span>
             </div>
 
             <div className="flex items-center gap-1.5 text-xs mt-3 pt-2.5 border-t border-border/30">
-              <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
-              <span className="text-[11px] text-amber-600 dark:text-amber-400 font-medium">2 de alta prioridad</span>
+              {highPriorityTasksCount > 0 ? (
+                <>
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                  <span className="text-[11px] text-amber-600 dark:text-amber-400 font-medium">{highPriorityTasksCount} de alta prioridad</span>
+                </>
+              ) : (
+                <span className="text-[11px] text-muted-foreground">Ninguna de alta prioridad</span>
+              )}
             </div>
           </Card>
         </Link>
@@ -163,9 +193,9 @@ export default async function DashboardPage() {
                   <DollarSign className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                   <h3 className="text-sm font-semibold text-foreground">Presupuesto Municipal</h3>
                 </div>
-                <Link href="/admin/agreements" className="flex items-center gap-1">
-                  <span className="text-[10px] font-medium rounded-full px-2 py-0.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-                    {executionPercentage}% ejecutado
+                <Link href="/admin/budget" className="flex items-center gap-1">
+                  <span className={`text-[10px] font-medium rounded-full px-2 py-0.5 ${hasBudget ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "bg-muted text-muted-foreground"}`}>
+                    {hasBudget ? `${executionPercentage}% ejecutado` : "Sin presupuesto cargado"}
                   </span>
                   <ChevronRight className="h-3 w-3 text-muted-foreground" />
                 </Link>
@@ -193,7 +223,15 @@ export default async function DashboardPage() {
                 </div>
               </div>
 
+              {!hasBudget && (
+                <p className="mt-4 text-[11px] text-muted-foreground">
+                  Todavía no se cargó el presupuesto anual de las áreas, por eso no se puede calcular el porcentaje ejecutado.{" "}
+                  <Link href="/admin/budget" className="font-medium text-primary hover:underline">Cargar presupuesto</Link>
+                </p>
+              )}
+
               {/* Barras de Ejecución ultra-delgadas */}
+              {hasBudget && (
               <div className="mt-4 space-y-3">
                 <span className="text-[11px] font-medium text-muted-foreground block">
                   Distribución por área
@@ -213,6 +251,7 @@ export default async function DashboardPage() {
                   </div>
                 ))}
               </div>
+              )}
             </div>
           </Card>
         </div>
@@ -236,6 +275,11 @@ export default async function DashboardPage() {
 
               {/* Lista Minimalista */}
               <div className="divide-y divide-border/30 mt-1">
+                {(!stats.attentionItems || stats.attentionItems.length === 0) && (
+                  <p className="py-6 text-center text-[11px] text-muted-foreground">
+                    No hay casos urgentes ni órdenes de compra esperando firma.
+                  </p>
+                )}
                 {stats.attentionItems && stats.attentionItems.map((item: any) => (
                   <Link
                     key={item.id}
@@ -305,6 +349,9 @@ export default async function DashboardPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border/20">
+                  {(!stats.recentCases || stats.recentCases.length === 0) && (
+                    <tr><td colSpan={4} className="py-6 text-center text-[11px] text-muted-foreground">Todavía no hay casos cargados.</td></tr>
+                  )}
                   {stats.recentCases && stats.recentCases.map((c: any) => (
                     <tr key={c.id} className="hover:bg-muted/20 transition-colors">
                       <td className="py-2.5 px-1.5 text-muted-foreground font-mono text-[11px]">{c.id}</td>
@@ -355,7 +402,10 @@ export default async function DashboardPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border/20">
-                  {stats.upcomingTasks && stats.upcomingTasks.map((t: any) => (
+                  {upcomingTasks.length === 0 && (
+                    <tr><td colSpan={3} className="py-6 text-center text-[11px] text-muted-foreground">No tenés tareas pendientes.</td></tr>
+                  )}
+                  {upcomingTasks.map((t: any) => (
                     <tr key={t.id} className="hover:bg-muted/20 transition-colors">
                       <td className="py-2.5 px-1.5 font-medium text-foreground truncate max-w-[130px]">{t.description}</td>
                       <td className="py-2.5 px-1.5">
@@ -404,6 +454,9 @@ export default async function DashboardPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border/20">
+                  {(!stats.vehiclesList || stats.vehiclesList.length === 0) && (
+                    <tr><td colSpan={3} className="py-6 text-center text-[11px] text-muted-foreground">No hay vehículos cargados en la flota.</td></tr>
+                  )}
                   {stats.vehiclesList && stats.vehiclesList.map((v: any) => (
                     <tr key={v.id} className="hover:bg-muted/20 transition-colors">
                       <td className="py-2.5 px-1.5 font-medium text-foreground truncate max-w-[110px]">{v.name}</td>

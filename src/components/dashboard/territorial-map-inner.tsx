@@ -43,9 +43,8 @@ export function TerritorialMapInner({ locations = [], topArea = "Caseros" }: Ter
 
   const TRES_DE_FEBRERO_CENTER: [number, number] = [-34.6030, -58.5580];
 
-  const tileUrl = isDark
-    ? "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-    : "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png";
+  // Mismo proveedor que el Mapa Social: CARTO ahora exige clave y muestra una marca de agua.
+  const tileUrl = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
 
   return (
     <MapContainer
@@ -59,7 +58,7 @@ export function TerritorialMapInner({ locations = [], topArea = "Caseros" }: Ter
       className="z-10 rounded-xl overflow-hidden"
     >
       <TileLayer
-        attribution='&copy; <a href="https://carto.com/">CARTO</a>'
+        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
         url={tileUrl}
       />
       <Circle
