@@ -1,10 +1,108 @@
-import AdminPlaceholder from "@/components/placeholders/admin-placeholder";
+export const dynamic = "force-dynamic";
 
-export default function ProvidersPage() {
+import Link from "next/link";
+import { auth } from "@/auth";
+import { getProvidersOverview, formatCuit } from "@/services/providers";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Building2, Plus, Search, AlertTriangle } from "lucide-react";
+import { ProviderFormDialog } from "./provider-form-dialog";
+
+const money = (n: number) => `$ ${n.toLocaleString("es-AR", { maximumFractionDigits: 0 })}`;
+
+export default async function ProvidersPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
+  const { q } = await searchParams;
+  const [session, { providers, total, unregistered }] = await Promise.all([auth(), getProvidersOverview(q)]);
+  const canEdit = ["SUPERADMIN", "ADMIN_GENERAL", "DIRECCION_GENERAL"].includes(session?.user?.role as string);
+
   return (
-    <AdminPlaceholder
-      title="Proveedores"
-      description="Base de datos de proveedores y control de documentación."
-    />
+    <div className="space-y-6 max-w-6xl mx-auto">
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-bold tracking-tight text-foreground">Proveedores</h2>
+          <p className="text-sm text-muted-foreground">Padrón de proveedores y su historial de órdenes de compra.</p>
+        </div>
+        {canEdit && (
+          <ProviderFormDialog trigger={<Button className="gap-2"><Plus className="h-4 w-4" /> Nuevo proveedor</Button>} />
+        )}
+      </div>
+
+      {canEdit && unregistered.length > 0 && (
+        <Card className="border-amber-500/30 bg-amber-500/5 shadow-none">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4 text-amber-500" />
+              {unregistered.length} proveedores aparecen en órdenes de compra pero no están dados de alta
+            </CardTitle>
+            <CardDescription>Al registrarlos se completan con los datos de la orden y se suman a su historial.</CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-wrap gap-2">
+            {unregistered.slice(0, 10).map((u) => (
+              <ProviderFormDialog
+                key={u.cuit}
+                initial={{ name: u.name, cuit: formatCuit(u.cuit) }}
+                trigger={
+                  <Button variant="outline" size="sm" className="gap-1.5">
+                    <Plus className="h-3.5 w-3.5" /> {u.name || formatCuit(u.cuit)} ({u.orderCount} OC)
+                  </Button>
+                }
+              />
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
+      <Card className="shadow-none">
+        <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <CardTitle className="text-base">Registrados ({total})</CardTitle>
+            <CardDescription>Ejecutado = órdenes aprobadas o cumplidas.</CardDescription>
+          </div>
+          <form className="relative w-full sm:w-72">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input name="q" defaultValue={q || ""} placeholder="Buscar por nombre o CUIT" className="pl-9" />
+          </form>
+        </CardHeader>
+        <CardContent>
+          {providers.length === 0 ? (
+            <div className="py-10 text-center text-sm text-muted-foreground">
+              <Building2 className="h-8 w-8 mx-auto mb-2 opacity-50" />
+              {q ? "Ningún proveedor coincide con la búsqueda." : "Todavía no hay proveedores registrados."}
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Razón social</TableHead>
+                    <TableHead>CUIT</TableHead>
+                    <TableHead className="hidden md:table-cell">Contacto</TableHead>
+                    <TableHead className="text-right">Órdenes</TableHead>
+                    <TableHead className="text-right">Ejecutado</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {providers.map((p) => (
+                    <TableRow key={p.id}>
+                      <TableCell className="font-medium">
+                        <Link href={`/admin/providers/${p.id}`} className="hover:underline text-primary">{p.name}</Link>
+                      </TableCell>
+                      <TableCell className="font-mono text-xs">{p.cuit}</TableCell>
+                      <TableCell className="hidden md:table-cell text-xs text-muted-foreground">
+                        {[p.phone, p.email].filter(Boolean).join(" · ") || "Sin datos"}
+                      </TableCell>
+                      <TableCell className="text-right">{p.orderCount}</TableCell>
+                      <TableCell className="text-right">{money(p.executed)}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
   );
 }
