@@ -1,4 +1,5 @@
 import prisma from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 
 export interface PDFDocumentContent {
   documentId: string;
@@ -47,7 +48,7 @@ export async function searchPDFDocumentsForRAG(
 
   const documents = await prisma.document.findMany({
     where: {
-      OR: [
+      OR: ([
         personId ? { personId } : {},
         caseId ? { caseId } : {},
         { fileType: { contains: "pdf", mode: "insensitive" } },
@@ -55,7 +56,7 @@ export async function searchPDFDocumentsForRAG(
         { name: { contains: "informe", mode: "insensitive" } },
         { name: { contains: "ordenanza", mode: "insensitive" } },
         { name: { contains: "decreto", mode: "insensitive" } },
-      ].filter(condition => Object.keys(condition).length > 0)
+      ] as Prisma.DocumentWhereInput[]).filter(condition => Object.keys(condition).length > 0)
     },
     include: {
       person: true,

@@ -242,7 +242,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                 </p>
                 <div className="flex items-center gap-2 mt-2">
                     <Badge variant="outline" className="text-[10px] font-bold border-border text-foreground">CUIT: {order.providerCuit || "---"}</Badge>
-                    <Badge className="bg-primary text-primary-foreground border-none text-[10px] font-bold">CAT: {order.provider?.orders?.length > 10 ? 'A' : 'B'}</Badge>
+                    <Badge className="bg-primary text-primary-foreground border-none text-[10px] font-bold">CAT: {(order.provider?.orders?.length ?? 0) > 10 ? 'A' : 'B'}</Badge>
                 </div>
               </div>
 

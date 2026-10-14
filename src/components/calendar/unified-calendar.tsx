@@ -150,7 +150,7 @@ export function UnifiedCalendar({ reservations = [], purchaseOrders = [], tasks 
   const diff = startOfWeek.getDate() - day + (day === 0 ? -6 : 1);
   startOfWeek.setDate(diff);
 
-  const weekDays = [];
+  const weekDays: Date[] = [];
   for (let i = 0; i < 7; i++) {
     const d = new Date(startOfWeek);
     d.setDate(startOfWeek.getDate() + i);
@@ -898,7 +898,7 @@ export function UnifiedCalendar({ reservations = [], purchaseOrders = [], tasks 
                   </div>
                   {selectedEvent.raw?.reason && (
                     <div className="pt-2 border-t border-border/20 text-xs text-muted-foreground italic font-medium">
-                      Motivo: "{selectedEvent.raw.reason}"
+                      Motivo: &ldquo;{selectedEvent.raw.reason}&rdquo;
                     </div>
                   )}
                 </>
@@ -935,7 +935,7 @@ export function UnifiedCalendar({ reservations = [], purchaseOrders = [], tasks 
                   </div>
                   {selectedEvent.raw?.description && (
                     <div className="pt-2 border-t border-border/20 text-xs text-muted-foreground italic font-medium">
-                      Detalle: "{selectedEvent.raw.description}"
+                      Detalle: &ldquo;{selectedEvent.raw.description}&rdquo;
                     </div>
                   )}
                   {selectedEvent.raw?.viewerIds && (

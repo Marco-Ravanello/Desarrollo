@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
 
-export const PROGRAMAS_CATALOGO = [
+const PROGRAMAS_CATALOGO = [
   { id: "prog_centro_de_familia", nombre: "Centro de Familia", area: "Desarrollo Humano", descripcion: "Acompañamiento integral, talleres familiares y apoyo psicosocial" },
   { id: "prog_tarjeta_alimentar", nombre: "Tarjeta Alimentar", area: "Desarrollo Social", descripcion: "Asignación universal por hijo y módulo alimentario de emergencia" },
   { id: "prog_jardines_municipales", nombre: "Jardines Municipales", area: "Educación y Primera Infancia", descripcion: "Inscripción en jardines de infantes y maternales municipales" },

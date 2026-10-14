@@ -29,7 +29,7 @@ const iconsMap = {
   default: Sparkles,
 };
 
-const defaultTexts = {
+const defaultTexts: Record<string, { title: string; description: string; actionLabel: string; actionHref?: string }> = {
   people: {
     title: "No hay ciudadanos o familias registradas",
     description: "Comience creando el primer legajo digital o importe datos masivos desde una planilla Excel.",

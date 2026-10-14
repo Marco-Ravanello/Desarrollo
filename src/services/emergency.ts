@@ -293,7 +293,7 @@ export async function getStormVictimRecords(): Promise<StormVictimItem[]> {
       const domMatch = desc.match(/Domicilio:\s*([^.(]+)/i);
       const refMatch = desc.match(/\(Ref:\s*([^)]+)\)/i);
 
-      let nombre = c.person ? `${c.person.lastName}, ${c.firstName || c.person.firstName}` : "";
+      let nombre = c.person ? `${c.person.lastName}, ${c.person.firstName}` : "";
       if (!nombre && c.person) {
         nombre = `${c.person.lastName}, ${c.person.firstName}`;
       }

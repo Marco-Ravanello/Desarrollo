@@ -28,7 +28,7 @@ interface RecordFulfillmentSheetProps {
   };
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSuccess: () => void;
+  onSuccess?: () => void;
 }
 
 export function RecordFulfillmentSheet({
@@ -63,7 +63,7 @@ export function RecordFulfillmentSheet({
       if (result.success) {
         toast.success("Entrega registrada correctamente");
         onOpenChange(false);
-        onSuccess();
+        onSuccess?.();
       } else {
         toast.error(result.error || "Error al registrar entrega");
       }

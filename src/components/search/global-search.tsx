@@ -109,7 +109,7 @@ export function GlobalSearch() {
                 <div className="p-3 bg-muted/50 rounded-full">
                   <Search className="h-6 w-6 text-muted-foreground opacity-30" />
                 </div>
-                <p className="font-semibold text-muted-foreground">No se encontraron resultados para "{query}"</p>
+                <p className="font-semibold text-muted-foreground">No se encontraron resultados para &ldquo;{query}&rdquo;</p>
                 <p className="text-xs text-muted-foreground/60">Intenta buscar por DNI, apellido, número de expediente o comando.</p>
               </Command.Empty>
 
