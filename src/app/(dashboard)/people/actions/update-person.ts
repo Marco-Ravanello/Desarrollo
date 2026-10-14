@@ -4,9 +4,13 @@ import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
 import { actionErrorMessage } from "@/lib/action-error";
+import { canEditSocialRecords } from "@/lib/permissions";
 
 export async function updatePersonAction(id: string, formData: FormData) {
   const session = await auth();
+  if (session?.user && !canEditSocialRecords(session.user.role)) {
+    return { success: false, error: "Tu rol (Auditoría) puede consultar pero no cargar ni modificar datos." };
+  }
   if (!session?.user?.id) {
     return { success: false, error: "No tenés permiso para hacer esto o tu sesión expiró. Si sigue pasando, volvé a iniciar sesión." };
   }

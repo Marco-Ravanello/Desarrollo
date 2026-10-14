@@ -2,9 +2,11 @@
 
 import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
+import { PERMISSIONS, hasPermission } from "@/lib/permissions";
 
 export async function getWeeklyExecutiveData() {
   const session = await auth();
+  if (session?.user && !hasPermission(session.user.role, PERMISSIONS.VIEW_REPORTS)) throw new Error("Tu rol no tiene acceso a los reportes.");
   if (!session?.user) throw new Error("No autorizado");
 
   const now = new Date();

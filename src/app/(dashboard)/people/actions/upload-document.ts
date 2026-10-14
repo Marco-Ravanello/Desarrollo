@@ -6,9 +6,13 @@ import { revalidatePath } from "next/cache";
 import { ensurePersonInPrisma } from "@/services/people";
 import { makeStoredName, saveUploadedFile, uploadUrl } from "@/lib/file-storage";
 import { actionErrorMessage } from "@/lib/action-error";
+import { canEditSocialRecords } from "@/lib/permissions";
 
 export async function uploadDocumentAction(formData: FormData) {
   const session = await auth();
+  if (session?.user && !canEditSocialRecords(session.user.role)) {
+    return { success: false, error: "Tu rol (Auditoría) puede consultar pero no cargar ni modificar datos." };
+  }
   if (!session?.user) return { error: "No tenés permiso para hacer esto o tu sesión expiró. Si sigue pasando, volvé a iniciar sesión." };
 
   const file = formData.get("file") as File;

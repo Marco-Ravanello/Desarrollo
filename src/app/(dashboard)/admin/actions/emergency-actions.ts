@@ -11,6 +11,7 @@ import {
 } from "@/services/emergency";
 import { StormVictimItem } from "@/types/emergency";
 import { actionErrorMessage } from "@/lib/action-error";
+import { MANAGEMENT_ROLES, canEditSocialRecords } from "@/lib/permissions";
 
 export async function searchPeopleForEmergencyAction(query: string) {
   return await searchPeopleForEmergency(query);
@@ -18,6 +19,9 @@ export async function searchPeopleForEmergencyAction(query: string) {
 
 export async function saveStormVictimAction(recordData: Partial<StormVictimItem>) {
   const session = await auth();
+  if (session?.user && !canEditSocialRecords(session.user.role)) {
+    return { success: false, error: "Tu rol (Auditoría) puede consultar pero no cargar ni modificar datos." };
+  }
   if (!session?.user?.id) {
     return { success: false, error: "Sesión no válida o expirada" };
   }
@@ -290,6 +294,9 @@ export async function saveStormVictimAction(recordData: Partial<StormVictimItem>
 
 export async function deleteStormVictimAction(recordId: string) {
   const session = await auth();
+  if (session?.user && !canEditSocialRecords(session.user.role)) {
+    return { success: false, error: "Tu rol (Auditoría) puede consultar pero no cargar ni modificar datos." };
+  }
   if (!session?.user?.id) return { success: false, error: "No tenés permiso para hacer esto o tu sesión expiró. Si sigue pasando, volvé a iniciar sesión." };
 
   const cleanId = recordId.replace(/^case-/, "").replace(/^temp-/, "");
@@ -634,6 +641,9 @@ export async function getEmergencyStatusAction() {
 
 export async function toggleEmergencyStatusAction(active: boolean) {
   const session = await auth();
+  if (session?.user && !MANAGEMENT_ROLES.includes(session.user.role)) {
+    return { success: false, error: "No se pudo cambiar el modo emergencia: solo la conducción puede activarlo o desactivarlo." };
+  }
   if (!session?.user?.id) return { success: false, error: "No tenés permiso para hacer esto o tu sesión expiró. Si sigue pasando, volvé a iniciar sesión." };
   try {
     await prisma.systemSetting.upsert({

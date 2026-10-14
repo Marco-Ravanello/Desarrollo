@@ -8,6 +8,7 @@ import {
 import { Command } from "cmdk";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
+import { canAccessPath } from "@/lib/permissions";
 import { useTheme } from "next-themes";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { searchGlobalAction } from "@/app/(dashboard)/actions/search-actions";
@@ -72,6 +73,7 @@ export function GlobalSearch() {
 
   const user = session?.user;
   const isAdmin = user?.role === "SUPERADMIN" || user?.role === "ADMIN_GENERAL" || user?.role === "DIRECCION_GENERAL";
+  const canOpen = (path: string) => canAccessPath(user?.role, path);
 
   return (
     <>
@@ -205,54 +207,62 @@ export function GlobalSearch() {
 
               {/* Quick Creation Actions */}
               <Command.Group heading="Acciones Rápidas (Creación)">
-                <Command.Item
-                  onSelect={() => navigate("/people/new")}
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-muted aria-selected:bg-muted transition-all"
-                >
-                  <div className="h-8 w-8 rounded-lg bg-blue-500/15 text-blue-500 flex items-center justify-center">
-                    <UserPlus className="h-4 w-4" />
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="font-semibold text-sm">Registrar Nuevo Ciudadano</span>
-                    <span className="text-[10px] text-muted-foreground">Crear legajo en el Registro Único Social</span>
-                  </div>
-                </Command.Item>
-                <Command.Item
-                  onSelect={() => navigate("/admin/purchase-orders/new")}
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-muted aria-selected:bg-muted transition-all"
-                >
-                  <div className="h-8 w-8 rounded-lg bg-indigo-500/15 text-indigo-500 flex items-center justify-center">
-                    <FilePlus className="h-4 w-4" />
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="font-semibold text-sm">Nueva Orden de Compra (con OCR)</span>
-                    <span className="text-[10px] text-muted-foreground">Crear solicitud o escanear comprobante con OCR</span>
-                  </div>
-                </Command.Item>
-                <Command.Item
-                  onSelect={() => navigate("/admin/vehicles/reserve")}
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-muted aria-selected:bg-muted transition-all"
-                >
-                  <div className="h-8 w-8 rounded-lg bg-teal-500/15 text-teal-500 flex items-center justify-center">
-                    <Car className="h-4 w-4" />
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="font-semibold text-sm">Reservar Vehículo Municipal</span>
-                    <span className="text-[10px] text-muted-foreground">Programar uso de unidad logística de la flota</span>
-                  </div>
-                </Command.Item>
-                <Command.Item
-                  onSelect={() => navigate("/admin/agreements/new")}
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-muted aria-selected:bg-muted transition-all"
-                >
-                  <div className="h-8 w-8 rounded-lg bg-amber-500/15 text-amber-500 flex items-center justify-center">
-                    <Plus className="h-4 w-4" />
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="font-semibold text-sm">Nuevo Convenio Institucional</span>
-                    <span className="text-[10px] text-muted-foreground">Registrar acuerdo marco con instituciones</span>
-                  </div>
-                </Command.Item>
+                {canOpen("/people/new") && (
+                  <Command.Item
+                    onSelect={() => navigate("/people/new")}
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-muted aria-selected:bg-muted transition-all"
+                  >
+                    <div className="h-8 w-8 rounded-lg bg-blue-500/15 text-blue-500 flex items-center justify-center">
+                      <UserPlus className="h-4 w-4" />
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="font-semibold text-sm">Registrar Nuevo Ciudadano</span>
+                      <span className="text-[10px] text-muted-foreground">Crear legajo en el Registro Único Social</span>
+                    </div>
+                  </Command.Item>
+                )}
+                {canOpen("/admin/purchase-orders/new") && (
+                  <Command.Item
+                    onSelect={() => navigate("/admin/purchase-orders/new")}
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-muted aria-selected:bg-muted transition-all"
+                  >
+                    <div className="h-8 w-8 rounded-lg bg-indigo-500/15 text-indigo-500 flex items-center justify-center">
+                      <FilePlus className="h-4 w-4" />
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="font-semibold text-sm">Nueva Orden de Compra (con OCR)</span>
+                      <span className="text-[10px] text-muted-foreground">Crear solicitud o escanear comprobante con OCR</span>
+                    </div>
+                  </Command.Item>
+                )}
+                {canOpen("/admin/vehicles/reserve") && (
+                  <Command.Item
+                    onSelect={() => navigate("/admin/vehicles/reserve")}
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-muted aria-selected:bg-muted transition-all"
+                  >
+                    <div className="h-8 w-8 rounded-lg bg-teal-500/15 text-teal-500 flex items-center justify-center">
+                      <Car className="h-4 w-4" />
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="font-semibold text-sm">Reservar Vehículo Municipal</span>
+                      <span className="text-[10px] text-muted-foreground">Programar uso de unidad logística de la flota</span>
+                    </div>
+                  </Command.Item>
+                )}
+                {canOpen("/admin/agreements/new") && (
+                  <Command.Item
+                    onSelect={() => navigate("/admin/agreements/new")}
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-muted aria-selected:bg-muted transition-all"
+                  >
+                    <div className="h-8 w-8 rounded-lg bg-amber-500/15 text-amber-500 flex items-center justify-center">
+                      <Plus className="h-4 w-4" />
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="font-semibold text-sm">Nuevo Convenio Institucional</span>
+                      <span className="text-[10px] text-muted-foreground">Registrar acuerdo marco con instituciones</span>
+                    </div>
+                  </Command.Item>
+                )}
               </Command.Group>
 
               <Command.Separator className="my-3 h-px bg-border/50" />
@@ -293,57 +303,71 @@ export function GlobalSearch() {
 
               {/* Admin Modules */}
               <Command.Group heading="Módulos Administrativos">
-                <Command.Item
-                  onSelect={() => navigate("/admin/purchase-orders")}
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-muted aria-selected:bg-muted transition-all"
-                >
-                  <Briefcase className="h-4 w-4 text-indigo-400" />
-                  <span>Gestión de Órdenes de Compra</span>
-                </Command.Item>
-                <Command.Item
-                  onSelect={() => navigate("/admin/vehicles")}
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-muted aria-selected:bg-muted transition-all"
-                >
-                  <Car className="h-4 w-4 text-teal-400" />
-                  <span>Flota Logística y Combustible</span>
-                </Command.Item>
-                <Command.Item
-                  onSelect={() => navigate("/admin/hr")}
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-muted aria-selected:bg-muted transition-all"
-                >
-                  <Building2 className="h-4 w-4 text-sky-400" />
-                  <span>Recursos Humanos y Nómina</span>
-                </Command.Item>
-                <Command.Item
-                  onSelect={() => navigate("/admin/stock")}
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-muted aria-selected:bg-muted transition-all"
-                >
-                  <Briefcase className="h-4 w-4 text-emerald-400" />
-                  <span>Inventario y Stock de Depósito</span>
-                </Command.Item>
+                {canOpen("/admin/purchase-orders") && (
+                  <Command.Item
+                    onSelect={() => navigate("/admin/purchase-orders")}
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-muted aria-selected:bg-muted transition-all"
+                  >
+                    <Briefcase className="h-4 w-4 text-indigo-400" />
+                    <span>Gestión de Órdenes de Compra</span>
+                  </Command.Item>
+                )}
+                {canOpen("/admin/vehicles") && (
+                  <Command.Item
+                    onSelect={() => navigate("/admin/vehicles")}
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-muted aria-selected:bg-muted transition-all"
+                  >
+                    <Car className="h-4 w-4 text-teal-400" />
+                    <span>Flota Logística y Combustible</span>
+                  </Command.Item>
+                )}
+                {canOpen("/admin/hr") && (
+                  <Command.Item
+                    onSelect={() => navigate("/admin/hr")}
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-muted aria-selected:bg-muted transition-all"
+                  >
+                    <Building2 className="h-4 w-4 text-sky-400" />
+                    <span>Recursos Humanos y Nómina</span>
+                  </Command.Item>
+                )}
+                {canOpen("/admin/stock") && (
+                  <Command.Item
+                    onSelect={() => navigate("/admin/stock")}
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-muted aria-selected:bg-muted transition-all"
+                  >
+                    <Briefcase className="h-4 w-4 text-emerald-400" />
+                    <span>Inventario y Stock de Depósito</span>
+                  </Command.Item>
+                )}
                 {isAdmin && (
                   <>
-                    <Command.Item
-                      onSelect={() => navigate("/admin/users")}
-                      className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-muted aria-selected:bg-muted transition-all"
-                    >
-                      <UserCog className="h-4 w-4 text-rose-400" />
-                      <span>Gestión de Usuarios y Roles</span>
-                    </Command.Item>
-                    <Command.Item
-                      onSelect={() => navigate("/admin/audit")}
-                      className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-muted aria-selected:bg-muted transition-all"
-                    >
-                      <History className="h-4 w-4 text-amber-400" />
-                      <span>Auditoría e Historial del Sistema</span>
-                    </Command.Item>
-                    <Command.Item
-                      onSelect={() => navigate("/admin/budget")}
-                      className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-muted aria-selected:bg-muted transition-all"
-                    >
-                      <DollarSign className="h-4 w-4 text-emerald-400" />
-                      <span>Control de Presupuesto Anual</span>
-                    </Command.Item>
+                    {canOpen("/admin/users") && (
+                      <Command.Item
+                        onSelect={() => navigate("/admin/users")}
+                        className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-muted aria-selected:bg-muted transition-all"
+                      >
+                        <UserCog className="h-4 w-4 text-rose-400" />
+                        <span>Gestión de Usuarios y Roles</span>
+                      </Command.Item>
+                    )}
+                    {canOpen("/admin/audit") && (
+                      <Command.Item
+                        onSelect={() => navigate("/admin/audit")}
+                        className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-muted aria-selected:bg-muted transition-all"
+                      >
+                        <History className="h-4 w-4 text-amber-400" />
+                        <span>Auditoría e Historial del Sistema</span>
+                      </Command.Item>
+                    )}
+                    {canOpen("/admin/budget") && (
+                      <Command.Item
+                        onSelect={() => navigate("/admin/budget")}
+                        className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-muted aria-selected:bg-muted transition-all"
+                      >
+                        <DollarSign className="h-4 w-4 text-emerald-400" />
+                        <span>Control de Presupuesto Anual</span>
+                      </Command.Item>
+                    )}
                   </>
                 )}
               </Command.Group>
@@ -363,13 +387,15 @@ export function GlobalSearch() {
                   )}
                   <span>Cambiar Tema ({theme === "dark" ? "Activar Modo Claro" : "Activar Modo Oscuro"})</span>
                 </Command.Item>
-                <Command.Item
-                  onSelect={() => navigate("/admin/assistant")}
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-muted aria-selected:bg-muted transition-all"
-                >
-                  <Sparkles className="h-4 w-4 text-violet-400" />
-                  <span>Abrir Asistente IA Municipal</span>
-                </Command.Item>
+                {canOpen("/admin/assistant") && (
+                  <Command.Item
+                    onSelect={() => navigate("/admin/assistant")}
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-muted aria-selected:bg-muted transition-all"
+                  >
+                    <Sparkles className="h-4 w-4 text-violet-400" />
+                    <span>Abrir Asistente IA Municipal</span>
+                  </Command.Item>
+                )}
               </Command.Group>
             </Command.List>
 

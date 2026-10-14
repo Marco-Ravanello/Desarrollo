@@ -47,3 +47,57 @@ const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
 export function hasPermission(role: Role, permission: Permission): boolean {
   return ROLE_PERMISSIONS[role]?.includes(permission) ?? false;
 }
+
+// ---------------------------------------------------------------------------
+// Acceso a pantallas por rol. Lo usan el middleware (bloquea la URL aunque se
+// escriba a mano) y el menú lateral (muestra solo lo que cada rol puede abrir).
+// Las acciones que guardan datos controlan además su propio permiso.
+// ---------------------------------------------------------------------------
+
+/** Conducción: ven y administran toda la gestión. */
+export const MANAGEMENT_ROLES: Role[] = ["SUPERADMIN", "ADMIN_GENERAL", "DIRECCION_GENERAL"];
+/** Pueden consultar compras, proveedores, convenios y stock. */
+export const PURCHASING_VIEW_ROLES: Role[] = [...MANAGEMENT_ROLES, "DIRECTOR_AREA", "AUDITOR"];
+/** Pueden cargar órdenes de compra y registrar entregas. */
+export const PURCHASING_EDIT_ROLES: Role[] = [...MANAGEMENT_ROLES, "DIRECTOR_AREA"];
+/** Administran la flota (altas de vehículos, aprobación de reservas). */
+export const FLEET_ADMIN_ROLES: Role[] = ["SUPERADMIN", "ADMIN_GENERAL"];
+
+/** Auditoría consulta pero no carga ni modifica datos sociales. */
+export function canEditSocialRecords(role?: Role | string | null): boolean {
+  return Boolean(role) && role !== "AUDITOR";
+}
+
+const ROUTE_ACCESS: { prefix: string; allowed: (role: Role) => boolean }[] = [
+  // Compras y presupuesto
+  { prefix: "/admin/purchase-orders/new", allowed: (r) => PURCHASING_EDIT_ROLES.includes(r) },
+  { prefix: "/admin/agreements/new", allowed: (r) => MANAGEMENT_ROLES.includes(r) },
+  { prefix: "/admin/purchase-orders", allowed: (r) => PURCHASING_VIEW_ROLES.includes(r) },
+  { prefix: "/admin/providers", allowed: (r) => PURCHASING_VIEW_ROLES.includes(r) },
+  { prefix: "/admin/agreements", allowed: (r) => PURCHASING_VIEW_ROLES.includes(r) },
+  { prefix: "/admin/budget", allowed: (r) => PURCHASING_VIEW_ROLES.includes(r) },
+  { prefix: "/admin/reports", allowed: (r) => hasPermission(r, PERMISSIONS.VIEW_REPORTS) },
+  // Recursos
+  { prefix: "/admin/stock", allowed: (r) => PURCHASING_VIEW_ROLES.includes(r) },
+  { prefix: "/admin/hr", allowed: (r) => MANAGEMENT_ROLES.includes(r) },
+  { prefix: "/admin/vehicles/new", allowed: (r) => FLEET_ADMIN_ROLES.includes(r) },
+  { prefix: "/admin/vehicles/requests", allowed: (r) => FLEET_ADMIN_ROLES.includes(r) },
+  { prefix: "/admin/vehicles/reports", allowed: (r) => [...MANAGEMENT_ROLES, "AUDITOR"].includes(r) },
+  // Sistema
+  { prefix: "/admin/settings", allowed: (r) => MANAGEMENT_ROLES.includes(r) },
+  { prefix: "/admin/users", allowed: (r) => MANAGEMENT_ROLES.includes(r) || hasPermission(r, PERMISSIONS.MANAGE_USERS) },
+  { prefix: "/admin/interventions", allowed: (r) => MANAGEMENT_ROLES.includes(r) },
+  { prefix: "/admin/audit", allowed: (r) => hasPermission(r, PERMISSIONS.VIEW_AUDIT_LOGS) },
+  // Áreas sensibles
+  { prefix: "/areas/violence", allowed: (r) => hasPermission(r, PERMISSIONS.VIEW_SENSITIVE_CASES) },
+  // Carga de datos sociales (Auditoría solo consulta)
+  { prefix: "/people/new", allowed: (r) => canEditSocialRecords(r) },
+  { prefix: "/cases/new", allowed: (r) => canEditSocialRecords(r) },
+];
+
+/** ¿Puede este rol abrir esta pantalla? Las rutas que no figuran arriba son de uso general. */
+export function canAccessPath(role: Role | string | null | undefined, pathname: string): boolean {
+  const rule = ROUTE_ACCESS.find((r) => pathname === r.prefix || pathname.startsWith(r.prefix + "/"));
+  if (!rule) return true;
+  return Boolean(role) && rule.allowed(role as Role);
+}

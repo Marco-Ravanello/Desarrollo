@@ -1,5 +1,6 @@
 import type { NextAuthConfig } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
+import { canAccessPath } from "@/lib/permissions";
 
 export const authConfig = {
   trustHost: true,
@@ -26,7 +27,16 @@ export const authConfig = {
         return true;
       }
 
-      return isLoggedIn;
+      if (!isLoggedIn) return false;
+
+      // Pantallas restringidas por rol: aunque se escriba la URL a mano, se vuelve al inicio.
+      if (!canAccessPath((auth?.user as any)?.role, nextUrl.pathname)) {
+        const url = new URL("/dashboard", nextUrl.origin);
+        url.searchParams.set("sin-permiso", "1");
+        return Response.redirect(url);
+      }
+
+      return true;
     },
     async jwt({ token, user }: any) {
       if (user) {

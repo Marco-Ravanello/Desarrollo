@@ -2,7 +2,7 @@
 
 import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
-import { hasPermission, PERMISSIONS } from "@/lib/permissions";
+import { canAccessPath, hasPermission, PERMISSIONS } from "@/lib/permissions";
 
 export async function searchGlobalAction(query: string) {
   const session = await auth();
@@ -67,8 +67,8 @@ export async function searchGlobalAction(query: string) {
         })
       : Promise.resolve([]),
 
-    // Buscar Convenios
-    prisma.agreement.findMany({
+    // Buscar Convenios (sólo roles que pueden abrir Convenios)
+    !canAccessPath(userRole, "/admin/agreements") ? Promise.resolve([]) : prisma.agreement.findMany({
       where: {
         OR: [
           { title: { contains: query, mode: 'insensitive' } },

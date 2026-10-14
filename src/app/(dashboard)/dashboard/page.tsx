@@ -66,7 +66,12 @@ const LAYOUT: Record<Profile, { kpis: KpiId[]; sections: SectionId[] }> = {
   },
 };
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ "sin-permiso"?: string }>;
+}) {
+  const deniedAccess = (await searchParams)["sin-permiso"] === "1";
   const session = await auth();
   const role = (session?.user?.role || "OPERATIVO") as Role;
   const profile = profileFor(role);
@@ -175,6 +180,12 @@ export default async function DashboardPage() {
           </>
         }
       />
+
+      {deniedAccess && (
+        <div role="status" className="rounded-2xl border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-800 dark:text-amber-200">
+          Tu rol no tiene acceso a esa sección, por eso volviste al inicio. Si la necesitás, pedíselo a quien administra los usuarios.
+        </div>
+      )}
 
       {/* Indicadores: cada uno abre el listado que cuenta */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">

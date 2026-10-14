@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Wallet, TrendingUp, Coins, ExternalLink, Activity, FileCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { PURCHASING_VIEW_ROLES } from "@/lib/permissions";
 import { BudgetEditDialog } from "@/app/(dashboard)/admin/budget/budget-edit-dialog";
 import Link from "next/link";
 import { PageHeader } from "@/components/layout/page-header";
@@ -26,10 +27,9 @@ export default async function BudgetPage() {
   if (!session?.user?.id) redirect("/login");
 
   const userRole = session.user.role;
-  const canAccess =
-    userRole === "SUPERADMIN" ||
-    userRole === "ADMIN_GENERAL" ||
-    userRole === "DIRECCION_GENERAL";
+  // Consulta: conducción, directores de área y auditoría. Editar montos: Superadmin y Administración General.
+  const canAccess = PURCHASING_VIEW_ROLES.includes(userRole);
+  const canEditBudget = userRole === "SUPERADMIN" || userRole === "ADMIN_GENERAL";
 
   if (!canAccess) {
     redirect("/dashboard");
@@ -136,7 +136,7 @@ export default async function BudgetPage() {
                 <CardTitle className="text-lg font-bold text-foreground">{area.name}</CardTitle>
                 <CardDescription>Presupuesto Anual de la Secretaría</CardDescription>
               </div>
-              <BudgetEditDialog areaId={area.id} areaName={area.name} currentBudget={area.budget} />
+              {canEditBudget && <BudgetEditDialog areaId={area.id} areaName={area.name} currentBudget={area.budget} />}
             </CardHeader>
             <CardContent className="space-y-4">
                <div className="flex justify-between text-xs font-bold text-foreground">
