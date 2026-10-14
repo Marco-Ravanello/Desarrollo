@@ -13,9 +13,9 @@ export async function extractTextFromPDFBuffer(buffer: Buffer): Promise<string> 
   try {
     const pdfjsLib = await import("pdfjs-dist/legacy/build/pdf.mjs");
 
-    if (pdfjsLib.GlobalWorkerOptions) {
-      pdfjsLib.GlobalWorkerOptions.workerSrc = "";
-    }
+    // En Node no hay Web Workers: al cargar el worker en el mismo proceso, pdfjs lo usa directamente.
+    // @ts-expect-error el módulo del worker no trae tipos
+    await import("pdfjs-dist/legacy/build/pdf.worker.mjs");
 
     const uint8Array = new Uint8Array(buffer);
     const loadingTask = pdfjsLib.getDocument({ data: uint8Array });

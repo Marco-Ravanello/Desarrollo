@@ -1,7 +1,7 @@
-import { readFile } from "fs/promises";
-import { join, basename, resolve } from "path";
+import { basename } from "path";
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
+import { readUploadedFile } from "@/lib/file-storage";
 
 export async function GET(
   request: Request,
@@ -16,16 +16,10 @@ export async function GET(
 
   // Prevent Path Traversal by extracting only the base name
   const safeFilename = basename(filename);
-  const uploadsDir = resolve(process.cwd(), "public", "uploads");
-  const path = join(uploadsDir, safeFilename);
-
-  // Additional check to verify the resulting path resides strictly within public/uploads
-  if (!path.startsWith(uploadsDir)) {
-    return new NextResponse("Forbidden", { status: 403 });
-  }
 
   try {
-    const file = await readFile(path);
+    const file = await readUploadedFile(safeFilename);
+    if (!file) return new NextResponse("File not found", { status: 404 });
 
     // Intentar determinar el tipo de contenido basándose en la extensión
     const ext = filename.split('.').pop()?.toLowerCase();
@@ -36,7 +30,7 @@ export async function GET(
     else if (ext === 'png') contentType = 'image/png';
     else if (ext === 'webp') contentType = 'image/webp';
 
-    return new NextResponse(file, {
+    return new NextResponse(new Uint8Array(file), {
       headers: {
         'Content-Type': contentType,
         'Content-Disposition': `inline; filename="${filename}"`,
