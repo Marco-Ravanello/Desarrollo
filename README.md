@@ -11,8 +11,13 @@ MVP de plataforma web interna para centralizar información social y administrat
 
 Antes de publicar, `npx tsc --noEmit` y `npm run lint` deben pasar sin errores: el build se frena si hay errores de tipos o de ESLint.
 
-## Migraciones en una base que ya existe
-La base publicada se creó con `prisma db push`, sin historial de migraciones. Antes de usar `prisma migrate deploy` contra ella hay que marcar como aplicadas las migraciones que ya están reflejadas en la base (una sola vez):
+## Cambios de base al publicar (automático)
+`npm run build` corre `scripts/migrate-on-deploy.mjs`, que en la publicación de producción de Vercel (`VERCEL_ENV=production`) aplica las migraciones pendientes de `prisma/migrations` antes de compilar. No corre en las vistas previas de los PR ni en un build local (para forzarlo: `MIGRATE_ON_BUILD=1`). Si la base no tiene historial de migraciones, primero marca como aplicadas las que ya están en la base. Usa la conexión directa (`DIRECT_URL`, `DATABASE_URL_UNPOOLED` o la de `DATABASE_URL` sin `-pooler` en Neon). Si una migración falla, el build se frena y queda publicada la versión anterior.
+
+Desde ahora, cada cambio de `schema.prisma` va con su migración (`npx prisma migrate dev --name descripcion`) y ya no hace falta correr SQL a mano en la base publicada.
+
+## Migraciones en una base que ya existe (manual)
+La base publicada se creó con `prisma db push`, sin historial de migraciones. El paso automático de arriba ya resuelve esto; si alguna vez hiciera falta hacerlo a mano, hay que marcar como aplicadas las migraciones que ya están reflejadas en la base (una sola vez):
 ```
 npx prisma migrate resolve --applied 20261001000000_init
 npx prisma migrate resolve --applied 20261007000000_add_storm_emergency_tables
