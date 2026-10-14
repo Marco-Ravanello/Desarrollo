@@ -170,7 +170,7 @@ export function AreaDashboardView({
             <div>
               <h1 className="text-2xl sm:text-3xl font-black text-foreground tracking-tight flex items-center gap-2">
                 {areaTitle}
-                <Badge className={`${colorStyles.badgeBg} text-[10px] font-bold uppercase py-0.5`}>
+                <Badge className={`hidden sm:inline-flex ${colorStyles.badgeBg} text-[10px] font-bold uppercase py-0.5`}>
                   Dashboard Operativo
                 </Badge>
               </h1>

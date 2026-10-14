@@ -258,7 +258,7 @@ export function SocialMapDashboard({ initialPeople, stats }: SocialMapDashboardP
           <div className="flex items-center gap-2">
             <h1 className="text-2xl sm:text-3xl font-black text-foreground tracking-tight flex items-center gap-2">
               Cartografía Social GIS 3F
-              <Badge className="bg-primary/20 text-primary border border-primary/30 text-[10px] font-bold uppercase py-0.5">
+              <Badge className="hidden sm:inline-flex bg-primary/20 text-primary border border-primary/30 text-[10px] font-bold uppercase py-0.5">
                 Georreferenciación Localidades
               </Badge>
             </h1>

@@ -66,7 +66,7 @@ export default async function NewCasePage({
               <h1 className="text-2xl sm:text-3xl font-black text-foreground tracking-tight">
                 Creación Centralizada de Expediente
               </h1>
-              <Badge className="bg-primary/20 text-primary border border-primary/30 text-[10px] font-bold uppercase py-0.5">
+              <Badge className="hidden sm:inline-flex bg-primary/20 text-primary border border-primary/30 text-[10px] font-bold uppercase py-0.5">
                 Nuevo Legajo 3F
               </Badge>
             </div>
