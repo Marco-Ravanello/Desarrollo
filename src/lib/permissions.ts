@@ -42,6 +42,7 @@ const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
   VIOLENCIA_GENERO: [
     PERMISSIONS.VIEW_SENSITIVE_CASES,
   ],
+  RELEVADOR_EMERGENCIA: [],
 };
 
 export function hasPermission(role: Role, permission: Permission): boolean {
@@ -62,6 +63,27 @@ export const PURCHASING_VIEW_ROLES: Role[] = [...MANAGEMENT_ROLES, "DIRECTOR_ARE
 export const PURCHASING_EDIT_ROLES: Role[] = [...MANAGEMENT_ROLES, "DIRECTOR_AREA"];
 /** Administran la flota (altas de vehículos, aprobación de reservas). */
 export const FLEET_ADMIN_ROLES: Role[] = ["SUPERADMIN", "ADMIN_GENERAL"];
+
+/**
+ * Relevamiento de emergencia climática: solo carga fichas de emergencia y ve
+ * las que cargó. No ve stock ni el resto de la gestión.
+ */
+export function isEmergencySurveyor(role?: Role | string | null): boolean {
+  return role === "RELEVADOR_EMERGENCIA";
+}
+
+/** Pantallas que puede abrir el relevador de emergencia. */
+const EMERGENCY_SURVEYOR_PATHS = ["/admin/emergency"];
+
+/** Pantalla de inicio de cada rol (el relevador entra directo a sus fichas). */
+export function homePathFor(role?: Role | string | null): string {
+  return isEmergencySurveyor(role) ? "/admin/emergency" : "/dashboard";
+}
+
+/** Ver y mover el stock de contingencia: no el relevador ni Auditoría. */
+export function canManageEmergencyStock(role?: Role | string | null): boolean {
+  return canEditSocialRecords(role) && !isEmergencySurveyor(role);
+}
 
 /** Auditoría consulta pero no carga ni modifica datos sociales. */
 export function canEditSocialRecords(role?: Role | string | null): boolean {
@@ -97,6 +119,9 @@ const ROUTE_ACCESS: { prefix: string; allowed: (role: Role) => boolean }[] = [
 
 /** ¿Puede este rol abrir esta pantalla? Las rutas que no figuran arriba son de uso general. */
 export function canAccessPath(role: Role | string | null | undefined, pathname: string): boolean {
+  if (isEmergencySurveyor(role)) {
+    return EMERGENCY_SURVEYOR_PATHS.some((p) => pathname === p || pathname.startsWith(p + "/"));
+  }
   const rule = ROUTE_ACCESS.find((r) => pathname === r.prefix || pathname.startsWith(r.prefix + "/"));
   if (!rule) return true;
   return Boolean(role) && rule.allowed(role as Role);

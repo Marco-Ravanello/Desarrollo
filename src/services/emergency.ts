@@ -1,5 +1,8 @@
 import { prisma } from "@/lib/prisma";
+import { canEditSocialRecords, canManageEmergencyStock, isEmergencySurveyor } from "@/lib/permissions";
+import { stormRecordOmit } from "@/services/emergency-db-status";
 import {
+  EmergencyPriority,
   EmergencyOperatorInfo,
   EmergencyStockItem,
   StormVictimItem,
@@ -194,6 +197,7 @@ export async function getStormVictimRecords(): Promise<StormVictimItem[]> {
   try {
     const records = await prisma.stormVictimRecord.findMany({
       orderBy: { createdAt: "desc" },
+      omit: await stormRecordOmit(),
     });
 
     for (const r of records) {
@@ -342,10 +346,26 @@ export async function getStormVictimRecords(): Promise<StormVictimItem[]> {
   return Array.from(mergedMap.values());
 }
 
+/** Fichas cargadas por un usuario (lo único que ve el relevador de emergencia). */
+export async function getStormVictimRecordsByUser(userId: string): Promise<StormVictimItem[]> {
+  const records = await prisma.stormVictimRecord.findMany({
+    where: { createdById: userId },
+    orderBy: { createdAt: "desc" },
+  });
+  return records.map((r) => ({
+    ...r,
+    prioridad: (r.prioridad as EmergencyPriority) || "MEDIA",
+  }));
+}
+
 export async function getEmergencyOperationsData(sessionUser: any): Promise<EmergencyOperationsData> {
   const operator = await getEmergencyOperator(sessionUser);
-  const stock = await getEmergencyStock();
-  const records = await getStormVictimRecords();
+  const surveyor = isEmergencySurveyor(sessionUser?.role);
+
+  // El relevador no ve el stock del depósito, solo lo que relevó.
+  const [stock, records] = surveyor
+    ? [[], sessionUser?.id ? await getStormVictimRecordsByUser(sessionUser.id) : []]
+    : await Promise.all([getEmergencyStock(), getStormVictimRecords()]);
 
   const totalVictims = records.length;
   const totalChildren = records.reduce((acc, r) => acc + (parseInt(r.ninos || "0") || 0), 0);
@@ -357,6 +377,11 @@ export async function getEmergencyOperationsData(sessionUser: any): Promise<Emer
 
   return {
     operator,
+    viewer: {
+      onlyOwnRecords: surveyor,
+      canViewStock: canManageEmergencyStock(sessionUser?.role),
+      canEdit: canEditSocialRecords(sessionUser?.role),
+    },
     stock,
     records,
     metrics: {

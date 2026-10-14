@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { EmergencyOperationsData, StormVictimItem } from "@/types/emergency";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -14,21 +14,51 @@ import { StatCard } from "@/components/ui/stat-card";
 import { StormSheetTable } from "@/components/emergency/storm-sheet-table";
 import { StormFichaDialog } from "@/components/emergency/storm-ficha-dialog";
 import { StormStockTab } from "@/components/emergency/storm-stock-tab";
+import { OfflineFichasPanel, useOfflineFichas } from "@/components/emergency/offline-fichas-panel";
 import { exportStormSheetToExcel } from "@/lib/export-storm-excel";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 interface EmergencyViewProps {
   initialData: EmergencyOperationsData;
+  /** Llegó redirigido desde una pantalla que su rol no puede abrir. */
+  deniedAccess?: boolean;
 }
 
-export function EmergencyView({ initialData }: EmergencyViewProps) {
+/** Le pasa al modo sin conexión (public/sw.js) los archivos que usa esta pantalla. */
+function useCacheForOffline() {
+  useEffect(() => {
+    if (!("serviceWorker" in navigator) || navigator.onLine === false) return;
+    const send = () => {
+      navigator.serviceWorker.ready
+        .then((reg) => {
+          const urls = performance
+            .getEntriesByType("resource")
+            .map((e) => e.name)
+            .filter((u) => u.startsWith(location.origin));
+          reg.active?.postMessage({ type: "cache-emergency-assets", urls });
+        })
+        .catch(() => {});
+    };
+    send();
+    const timer = setTimeout(send, 10000);
+    return () => clearTimeout(timer);
+  }, []);
+}
+
+export function EmergencyView({ initialData, deniedAccess }: EmergencyViewProps) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<"sheet" | "fichas" | "stock">("sheet");
   const [isFichaOpen, setIsFichaOpen] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<StormVictimItem | null>(null);
 
-  const { operator, stock, records, metrics } = initialData;
+  const { operator, viewer, stock, records, metrics } = initialData;
+  const surveyor = viewer.onlyOwnRecords;
+
+  useCacheForOffline();
+
+  const refreshFromServer = useCallback(() => router.refresh(), [router]);
+  const offline = useOfflineFichas(operator.userId, refreshFromServer);
 
   const handleOpenNewFicha = () => {
     setSelectedRecord(null);
@@ -50,6 +80,8 @@ export function EmergencyView({ initialData }: EmergencyViewProps) {
   };
 
   const handleRefresh = () => {
+    // Sin conexión no se puede pedir la planilla al servidor: se sigue con lo que hay.
+    if (navigator.onLine === false) return;
     router.refresh();
     toast.info("Datos actualizados");
   };
@@ -57,9 +89,19 @@ export function EmergencyView({ initialData }: EmergencyViewProps) {
   return (
     <div className="space-y-6 pb-20 animate-in fade-in duration-500">
       {/* Header Institucional de Contingencia con Responsable y Área Automáticos */}
+      {deniedAccess && (
+        <div className="rounded-2xl border border-sky-500/40 bg-sky-500/10 px-4 py-3 text-sm text-foreground">
+          Tu usuario es de relevamiento de emergencia: solo puede cargar y ver sus fichas de emergencia climática.
+        </div>
+      )}
+
       <PageHeader
-        title="Relevamiento Territorial y Ficha de Tormenta"
-        description="Planilla Oficial de Contingencia Climática • Municipalidad de Tres de Febrero"
+        title={surveyor ? "Mis fichas de emergencia climática" : "Relevamiento Territorial y Ficha de Tormenta"}
+        description={
+          surveyor
+            ? "Cargá las fichas del relevamiento. Acá ves solo las que cargaste vos y lo que pediste en cada una."
+            : "Planilla Oficial de Contingencia Climática • Municipalidad de Tres de Febrero"
+        }
         icon={CloudRain}
         actions={
           <>
@@ -70,12 +112,12 @@ export function EmergencyView({ initialData }: EmergencyViewProps) {
             >
               <Download className="mr-2 h-4 w-4" /> Exportar Excel Oficial
             </Button>
-            <Button
+            {viewer.canEdit && <Button
               onClick={handleOpenNewFicha}
               className="bg-amber-500 hover:bg-amber-600 text-black font-bold rounded-2xl h-11 px-5 text-xs shadow-lg"
             >
               <Plus className="mr-2 h-4 w-4" /> Nueva Ficha Tormenta
-            </Button>
+            </Button>}
           </>
         }
       />
@@ -92,37 +134,79 @@ export function EmergencyView({ initialData }: EmergencyViewProps) {
         </div>
       </div>
 
+      <OfflineFichasPanel
+        userId={operator.userId}
+        pending={offline.pending}
+        online={offline.online}
+        syncing={offline.syncing}
+        onSyncNow={() => offline.sync(true)}
+        onEdit={handleOpenEditFicha}
+      />
+
       {/* Tarjetas Resumen Métricas */}
-      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-        <StatCard
-          label="Damnificados"
-          value={metrics.totalVictims}
-          hint="Registrados en planilla"
-          icon={Users}
-          tone="blue"
-        />
-        <StatCard
-          label="Niños Afectados"
-          value={metrics.totalChildren}
-          hint="Menores contabilizados"
-          icon={Baby}
-          tone="purple"
-        />
-        <StatCard
-          label="Colchones / Frazadas"
-          value={`${metrics.totalColchones} / ${metrics.totalFrazadas}`}
-          hint="Unidades requeridas"
-          icon={Package}
-          tone="orange"
-        />
-        <StatCard
-          label="Prioridad Alta"
-          value={metrics.highPriorityCount}
-          hint="Urgencias territoriales"
-          icon={ShieldAlert}
-          tone="red"
-        />
-      </div>
+      {surveyor ? (
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+          <StatCard
+            label="Fichas cargadas"
+            value={metrics.totalVictims}
+            hint={offline.pending.length > 0 ? `${offline.pending.length} más sin enviar todavía` : "Relevadas por vos"}
+            icon={FileText}
+            tone="blue"
+          />
+          <StatCard
+            label="Niños relevados"
+            value={metrics.totalChildren}
+            hint="En tus fichas"
+            icon={Baby}
+            tone="purple"
+          />
+          <StatCard
+            label="Colchones / Frazadas"
+            value={`${metrics.totalColchones} / ${metrics.totalFrazadas}`}
+            hint="Pedidos en tus fichas"
+            icon={Package}
+            tone="orange"
+          />
+          <StatCard
+            label="Camas / Cuchetas"
+            value={`${metrics.totalCamas} / ${metrics.totalCuchetas}`}
+            hint="Pedidos en tus fichas"
+            icon={Package}
+            tone="red"
+          />
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+          <StatCard
+            label="Damnificados"
+            value={metrics.totalVictims}
+            hint="Registrados en planilla"
+            icon={Users}
+            tone="blue"
+          />
+          <StatCard
+            label="Niños Afectados"
+            value={metrics.totalChildren}
+            hint="Menores contabilizados"
+            icon={Baby}
+            tone="purple"
+          />
+          <StatCard
+            label="Colchones / Frazadas"
+            value={`${metrics.totalColchones} / ${metrics.totalFrazadas}`}
+            hint="Unidades requeridas"
+            icon={Package}
+            tone="orange"
+          />
+          <StatCard
+            label="Prioridad Alta"
+            value={metrics.highPriorityCount}
+            hint="Urgencias territoriales"
+            icon={ShieldAlert}
+            tone="red"
+          />
+        </div>
+      )}
 
       {/* Navegación por 3 Pestañas Principal */}
       <div className="flex items-center gap-2 p-1.5 bg-muted/40 rounded-2xl border border-border/50 max-w-2xl">
@@ -150,7 +234,7 @@ export function EmergencyView({ initialData }: EmergencyViewProps) {
           <span>Fichas Tormenta</span>
         </button>
 
-        <button
+        {viewer.canViewStock && <button
           onClick={() => setActiveTab("stock")}
           className={`flex items-center gap-2 py-2.5 px-4 rounded-xl text-xs font-bold transition-all shrink-0 ${
             activeTab === "stock"
@@ -160,7 +244,7 @@ export function EmergencyView({ initialData }: EmergencyViewProps) {
         >
           <Package className="h-4 w-4" />
           <span>Stock de Contingencia</span>
-        </button>
+        </button>}
       </div>
 
       {/* Pestaña 1: Planilla Relevamiento Territorial (Excel Exacto) */}
@@ -172,6 +256,8 @@ export function EmergencyView({ initialData }: EmergencyViewProps) {
             areaName={operator.areaName}
             onOpenFicha={handleOpenEditFicha}
             onRefresh={handleRefresh}
+            userId={operator.userId}
+            canEdit={viewer.canEdit}
           />
         </div>
       )}
@@ -183,12 +269,12 @@ export function EmergencyView({ initialData }: EmergencyViewProps) {
             <h3 className="text-sm font-bold text-foreground uppercase tracking-wider">
               Fichas Individuales Generadas ({records.length})
             </h3>
-            <Button
+            {viewer.canEdit && <Button
               onClick={handleOpenNewFicha}
               className="rounded-xl h-10 px-4 text-xs font-bold bg-primary text-primary-foreground"
             >
               <Plus className="mr-2 h-4 w-4" /> Cargar Nueva Ficha
-            </Button>
+            </Button>}
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -233,7 +319,7 @@ export function EmergencyView({ initialData }: EmergencyViewProps) {
       )}
 
       {/* Pestaña 3: Stock de Contingencia */}
-      {activeTab === "stock" && (
+      {activeTab === "stock" && viewer.canViewStock && (
         <div className="animate-in fade-in duration-300">
           <StormStockTab stock={stock} onRefresh={handleRefresh} />
         </div>
@@ -247,6 +333,8 @@ export function EmergencyView({ initialData }: EmergencyViewProps) {
         operatorName={operator.name}
         areaName={operator.areaName}
         onSaved={handleRefresh}
+        userId={operator.userId}
+        canEdit={viewer.canEdit}
       />
     </div>
   );

@@ -139,6 +139,8 @@ export function UsersManagementView({
         return <Badge className="bg-indigo-500/15 text-indigo-500 border border-indigo-500/30 font-bold text-[10px]">DIRECTOR ÁREA</Badge>;
       case "VIOLENCIA_GENERO":
         return <Badge className="bg-amber-500/15 text-amber-500 border border-amber-500/30 font-bold text-[10px]">VIOLENCIA GÉNERO</Badge>;
+      case "RELEVADOR_EMERGENCIA":
+        return <Badge className="bg-sky-500/15 text-sky-600 border border-sky-500/30 font-bold text-[10px]">RELEVAMIENTO EMERGENCIA</Badge>;
       case "AUDITOR":
         return <Badge className="bg-emerald-500/15 text-emerald-500 border border-emerald-500/30 font-bold text-[10px]">AUDITOR</Badge>;
       default:

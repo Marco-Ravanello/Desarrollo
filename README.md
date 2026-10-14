@@ -19,6 +19,16 @@ npx prisma migrate resolve --applied 20261007000000_add_storm_emergency_tables
 ```
 De ahí en adelante, cada cambio de `schema.prisma` se acompaña con su migración (`npx prisma migrate dev --name descripcion`).
 
+### Rol de relevamiento de emergencia (octubre 2026)
+El rol `RELEVADOR_EMERGENCIA` y las columnas nuevas de las fichas de tormenta están en `prisma/migrations/20261014000000_add_emergency_surveyor_role/migration.sql`. Ese archivo se puede correr más de una vez sin problemas. Para aplicarlo en la base publicada sin tocar el historial de migraciones:
+```
+npx prisma db execute --file prisma/migrations/20261014000000_add_emergency_surveyor_role/migration.sql
+```
+(con `DATABASE_URL` apuntando a esa base), o pegando el contenido del archivo en la consola SQL del proveedor de la base. Mientras no se aplique, la app sigue funcionando como antes, pero no deja asignar el rol nuevo.
+
+## Modo sin conexión (Emergencia Climática)
+`public/sw.js` guarda en el dispositivo la pantalla `/admin/emergency` y sus archivos (solo en producción). Las fichas cargadas sin internet quedan en el navegador (`src/lib/emergency-offline.ts`) y se envían a `/api/emergency/fichas` cuando vuelve la conexión; cada una lleva un `clientId`, así que reenviarla no la duplica. Al cerrar sesión se borra la pantalla guardada, pero no las fichas pendientes de envío.
+
 ## .env
 ```
 DATABASE_URL="postgresql://user:password@localhost:5432/munidb?schema=public"

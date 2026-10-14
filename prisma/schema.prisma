@@ -33,6 +33,7 @@ enum Role {
   OPERATIVO
   AUDITOR
   VIOLENCIA_GENERO
+  RELEVADOR_EMERGENCIA
 }
 
 model Area {
@@ -584,9 +585,15 @@ model StormVictimRecord {
   estado                  String               @default("REGISTRADO")
   caseId                  String?
   case                    Case?                @relation(fields: [caseId], references: [id])
+  // Usuario que cargó la ficha (el relevador ve solo las suyas).
+  createdById             String?
+  // Identificador que genera el teléfono o la compu al guardar; evita duplicar
+  // una ficha cargada sin conexión si se envía dos veces.
+  clientId                String?              @unique
   createdAt               DateTime             @default(now())
   updatedAt               DateTime             @updatedAt
 
   @@index([dni])
   @@index([sheetId])
+  @@index([createdById])
 }

@@ -11,8 +11,8 @@ import { PrintHeader, PrintFooter } from "@/components/ui/print-layout";
 import { DashboardBreadcrumbs } from "@/components/layout/breadcrumbs";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Tv, Menu } from "lucide-react";
-import Link from "next/link";
+import { Menu } from "lucide-react";
+import { OfflineSupport, SituationRoomButton } from "@/components/layout/header-extras";
 
 export default function DashboardLayout({
   children,
@@ -23,6 +23,7 @@ export default function DashboardLayout({
 
   return (
     <Providers>
+      <OfflineSupport />
       <div className="flex min-h-screen bg-background relative transition-colors duration-300 print:bg-white print:text-black">
         {/* Sidebar escritorio */}
         <aside className="hidden md:block sticky top-0 h-screen shrink-0 self-start print:hidden z-30">
@@ -64,18 +65,7 @@ export default function DashboardLayout({
             </div>
 
             <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
-              <Button
-                asChild
-                variant="outline"
-                size="sm"
-                className="rounded-xl h-9 px-3 text-xs font-bold border-border/60 hover:bg-primary/10 hover:text-primary transition-colors hidden md:flex items-center gap-1.5"
-                title="Abrir Sala de Situación Ejecutiva (Modo Proyector)"
-              >
-                <Link href="/admin/war-room">
-                  <Tv className="h-3.5 w-3.5 text-blue-500" />
-                  <span>Sala de Situación</span>
-                </Link>
-              </Button>
+              <SituationRoomButton />
 
               <EmergencyHeaderWidget />
               <NotificationBell />

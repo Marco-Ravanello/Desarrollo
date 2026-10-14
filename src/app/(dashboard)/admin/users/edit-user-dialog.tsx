@@ -69,6 +69,10 @@ const ROLE_DESCRIPTIONS: Record<Role, { title: string; desc: string }> = {
   VIOLENCIA_GENERO: {
     title: "Especialista Violencia de Género",
     desc: "Acceso exclusivo a legajos y casos confidenciales con protección de datos."
+  },
+  RELEVADOR_EMERGENCIA: {
+    title: "Relevamiento de Emergencia Climática",
+    desc: "Solo carga fichas de emergencia climática y ve las que cargó. No ve stock ni el resto del sistema."
   }
 };
 

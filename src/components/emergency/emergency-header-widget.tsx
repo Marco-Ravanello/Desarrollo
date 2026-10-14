@@ -6,10 +6,15 @@ import { CloudRain, AlertTriangle, ShieldAlert, X, ChevronRight } from "lucide-r
 import Link from "next/link";
 import { getEmergencyStatusAction, toggleEmergencyStatusAction } from "@/app/(dashboard)/admin/actions/emergency-actions";
 import { toast } from "sonner";
+import { useSession } from "next-auth/react";
+import { MANAGEMENT_ROLES } from "@/lib/permissions";
 
 export function EmergencyHeaderWidget() {
   const [isEmergencyActive, setIsEmergencyActive] = useState(false);
   const [dismissBanner, setDismissBanner] = useState(false);
+  const { data: session } = useSession();
+  // Solo la conducción activa o desactiva el modo emergencia; el resto ve el estado.
+  const canToggle = Boolean(session?.user?.role && MANAGEMENT_ROLES.includes(session.user.role));
 
   useEffect(() => {
     // 1. Consumir estado persistido desde el servidor
@@ -84,7 +89,7 @@ export function EmergencyHeaderWidget() {
         </div>
       )}
 
-      <button
+      {canToggle && <button
         onClick={toggleEmergency}
         className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold transition-all border shadow-sm ${
           isEmergencyActive
@@ -105,7 +110,7 @@ export function EmergencyHeaderWidget() {
             <span className="hidden sm:inline font-bold">Modo Temporal: OFF</span>
           </>
         )}
-      </button>
+      </button>}
 
       {isEmergencyActive && (
         <Link href="/admin/emergency">

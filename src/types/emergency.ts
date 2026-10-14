@@ -27,6 +27,10 @@ export interface StormVictimItem {
   descripcionIntervencion?: string | null;
   estado?: string;
   caseId?: string | null;
+  /** Usuario que cargó la ficha. */
+  createdById?: string | null;
+  /** Identificador generado en el dispositivo (evita duplicados al reenviar fichas sin conexión). */
+  clientId?: string | null;
   createdAt?: Date | string;
   updatedAt?: Date | string;
 }
@@ -54,6 +58,12 @@ export interface EmergencyOperatorInfo {
 
 export interface EmergencyOperationsData {
   operator: EmergencyOperatorInfo;
+  viewer: {
+    /** Relevador de emergencia: ve solo las fichas que cargó. */
+    onlyOwnRecords: boolean;
+    canViewStock: boolean;
+    canEdit: boolean;
+  };
   stock: EmergencyStockItem[];
   records: StormVictimItem[];
   metrics: {
