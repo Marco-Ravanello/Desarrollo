@@ -123,7 +123,7 @@ export function GlobalSearch() {
                           key={c.id}
                           value={`${c.title} ${c.subtitle}`}
                           onSelect={() => navigate(c.url)}
-                          className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-accent aria-selected:bg-accent transition-all group"
+                          className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-muted aria-selected:bg-muted transition-all group"
                         >
                           <div className="h-9 w-9 bg-blue-500/15 text-blue-500 rounded-full flex items-center justify-center font-bold text-xs uppercase group-aria-selected:bg-blue-600 group-aria-selected:text-white transition-colors">
                             {c.title[0]}
@@ -143,7 +143,7 @@ export function GlobalSearch() {
                         <Command.Item
                           key={c.id}
                           onSelect={() => navigate(c.url)}
-                          className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-accent aria-selected:bg-accent transition-all group"
+                          className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-muted aria-selected:bg-muted transition-all group"
                         >
                           <div className="h-9 w-9 bg-emerald-500/15 text-emerald-500 rounded-full flex items-center justify-center group-aria-selected:bg-emerald-600 group-aria-selected:text-white transition-colors">
                             <FileText className="h-4 w-4" />
@@ -163,7 +163,7 @@ export function GlobalSearch() {
                         <Command.Item
                           key={h.id}
                           onSelect={() => navigate(h.url)}
-                          className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-accent aria-selected:bg-accent transition-all group"
+                          className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-muted aria-selected:bg-muted transition-all group"
                         >
                           <div className="h-9 w-9 bg-purple-500/15 text-purple-500 rounded-full flex items-center justify-center group-aria-selected:bg-purple-600 group-aria-selected:text-white transition-colors">
                             <Users className="h-4 w-4" />
@@ -183,7 +183,7 @@ export function GlobalSearch() {
                         <Command.Item
                           key={a.id}
                           onSelect={() => navigate(a.url)}
-                          className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-accent aria-selected:bg-accent transition-all group"
+                          className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-muted aria-selected:bg-muted transition-all group"
                         >
                           <div className="h-9 w-9 bg-orange-500/15 text-orange-500 rounded-full flex items-center justify-center group-aria-selected:bg-orange-600 group-aria-selected:text-white transition-colors">
                             <Wallet className="h-4 w-4" />
@@ -207,7 +207,7 @@ export function GlobalSearch() {
               <Command.Group heading="Acciones Rápidas (Creación)">
                 <Command.Item
                   onSelect={() => navigate("/people/new")}
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-accent aria-selected:bg-accent transition-all"
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-muted aria-selected:bg-muted transition-all"
                 >
                   <div className="h-8 w-8 rounded-lg bg-blue-500/15 text-blue-500 flex items-center justify-center">
                     <UserPlus className="h-4 w-4" />
@@ -219,7 +219,7 @@ export function GlobalSearch() {
                 </Command.Item>
                 <Command.Item
                   onSelect={() => navigate("/admin/purchase-orders/new")}
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-accent aria-selected:bg-accent transition-all"
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-muted aria-selected:bg-muted transition-all"
                 >
                   <div className="h-8 w-8 rounded-lg bg-indigo-500/15 text-indigo-500 flex items-center justify-center">
                     <FilePlus className="h-4 w-4" />
@@ -231,7 +231,7 @@ export function GlobalSearch() {
                 </Command.Item>
                 <Command.Item
                   onSelect={() => navigate("/admin/vehicles/reserve")}
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-accent aria-selected:bg-accent transition-all"
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-muted aria-selected:bg-muted transition-all"
                 >
                   <div className="h-8 w-8 rounded-lg bg-teal-500/15 text-teal-500 flex items-center justify-center">
                     <Car className="h-4 w-4" />
@@ -243,7 +243,7 @@ export function GlobalSearch() {
                 </Command.Item>
                 <Command.Item
                   onSelect={() => navigate("/admin/agreements/new")}
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-accent aria-selected:bg-accent transition-all"
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-muted aria-selected:bg-muted transition-all"
                 >
                   <div className="h-8 w-8 rounded-lg bg-amber-500/15 text-amber-500 flex items-center justify-center">
                     <Plus className="h-4 w-4" />
@@ -261,28 +261,28 @@ export function GlobalSearch() {
               <Command.Group heading="Navegación Principal">
                 <Command.Item
                   onSelect={() => navigate("/dashboard")}
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-accent aria-selected:bg-accent transition-all"
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-muted aria-selected:bg-muted transition-all"
                 >
                   <LayoutDashboard className="h-4 w-4 text-blue-500" />
                   <span>Panel de Control (Dashboard)</span>
                 </Command.Item>
                 <Command.Item
                   onSelect={() => navigate("/maps")}
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-accent aria-selected:bg-accent transition-all"
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-muted aria-selected:bg-muted transition-all"
                 >
                   <MapPin className="h-4 w-4 text-emerald-500" />
                   <span>Mapa Social GIS y Mapa de Calor</span>
                 </Command.Item>
                 <Command.Item
                   onSelect={() => navigate("/people")}
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-accent aria-selected:bg-accent transition-all"
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-muted aria-selected:bg-muted transition-all"
                 >
                   <Users className="h-4 w-4 text-purple-500" />
                   <span>Registro Único de Ciudadanos</span>
                 </Command.Item>
                 <Command.Item
                   onSelect={() => navigate("/tasks")}
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-accent aria-selected:bg-accent transition-all"
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-muted aria-selected:bg-muted transition-all"
                 >
                   <CheckCircle2 className="h-4 w-4 text-amber-500" />
                   <span>Mis Tareas y Agenda</span>
@@ -295,28 +295,28 @@ export function GlobalSearch() {
               <Command.Group heading="Módulos Administrativos">
                 <Command.Item
                   onSelect={() => navigate("/admin/purchase-orders")}
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-accent aria-selected:bg-accent transition-all"
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-muted aria-selected:bg-muted transition-all"
                 >
                   <Briefcase className="h-4 w-4 text-indigo-400" />
                   <span>Gestión de Órdenes de Compra</span>
                 </Command.Item>
                 <Command.Item
                   onSelect={() => navigate("/admin/vehicles")}
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-accent aria-selected:bg-accent transition-all"
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-muted aria-selected:bg-muted transition-all"
                 >
                   <Car className="h-4 w-4 text-teal-400" />
                   <span>Flota Logística y Combustible</span>
                 </Command.Item>
                 <Command.Item
                   onSelect={() => navigate("/admin/hr")}
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-accent aria-selected:bg-accent transition-all"
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-muted aria-selected:bg-muted transition-all"
                 >
                   <Building2 className="h-4 w-4 text-sky-400" />
                   <span>Recursos Humanos y Nómina</span>
                 </Command.Item>
                 <Command.Item
                   onSelect={() => navigate("/admin/stock")}
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-accent aria-selected:bg-accent transition-all"
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-muted aria-selected:bg-muted transition-all"
                 >
                   <Briefcase className="h-4 w-4 text-emerald-400" />
                   <span>Inventario y Stock de Depósito</span>
@@ -325,21 +325,21 @@ export function GlobalSearch() {
                   <>
                     <Command.Item
                       onSelect={() => navigate("/admin/users")}
-                      className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-accent aria-selected:bg-accent transition-all"
+                      className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-muted aria-selected:bg-muted transition-all"
                     >
                       <UserCog className="h-4 w-4 text-rose-400" />
                       <span>Gestión de Usuarios y Roles</span>
                     </Command.Item>
                     <Command.Item
                       onSelect={() => navigate("/admin/audit")}
-                      className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-accent aria-selected:bg-accent transition-all"
+                      className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-muted aria-selected:bg-muted transition-all"
                     >
                       <History className="h-4 w-4 text-amber-400" />
                       <span>Auditoría e Historial del Sistema</span>
                     </Command.Item>
                     <Command.Item
                       onSelect={() => navigate("/admin/budget")}
-                      className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-accent aria-selected:bg-accent transition-all"
+                      className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-muted aria-selected:bg-muted transition-all"
                     >
                       <DollarSign className="h-4 w-4 text-emerald-400" />
                       <span>Control de Presupuesto Anual</span>
@@ -354,7 +354,7 @@ export function GlobalSearch() {
               <Command.Group heading="Comandos de Sistema">
                 <Command.Item
                   onSelect={toggleTheme}
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-accent aria-selected:bg-accent transition-all"
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-muted aria-selected:bg-muted transition-all"
                 >
                   {theme === "dark" ? (
                     <Sun className="h-4 w-4 text-amber-400" />
@@ -365,7 +365,7 @@ export function GlobalSearch() {
                 </Command.Item>
                 <Command.Item
                   onSelect={() => navigate("/admin/assistant")}
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-accent aria-selected:bg-accent transition-all"
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-muted aria-selected:bg-muted transition-all"
                 >
                   <Sparkles className="h-4 w-4 text-violet-400" />
                   <span>Abrir Asistente IA Municipal</span>

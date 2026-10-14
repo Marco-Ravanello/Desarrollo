@@ -28,7 +28,7 @@ export function CloseCaseButton({ caseId }: { caseId: string }) {
       size="sm"
       onClick={handleClose}
       disabled={loading}
-      className="h-7 text-xs border-green-200 text-green-600 hover:bg-green-50 hover:text-green-700"
+      className="h-7 text-xs border-green-500/30 text-green-600 hover:bg-green-500/10 hover:text-green-700 dark:text-green-300"
     >
       <CheckCircle2 className="h-3 w-3 mr-1" /> Cerrar
     </Button>

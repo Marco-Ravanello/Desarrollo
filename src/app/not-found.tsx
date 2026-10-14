@@ -65,18 +65,18 @@ export default function NotFoundPage() {
 
       <div className="max-w-2xl w-full space-y-6 text-center relative z-10">
         <div className="flex flex-col items-center space-y-3">
-          <div className="p-4 rounded-3xl bg-card border border-border/80 shadow-xl relative group">
+          <div className="p-4 rounded-2xl bg-card border border-border/80 shadow-xl relative group">
             <MunicipalCrest className="h-16 w-16" />
-            <div className="absolute -bottom-2 -right-2 p-1.5 rounded-xl bg-amber-500 text-slate-950 font-black text-[10px] shadow-sm flex items-center gap-1">
+            <div className="absolute -bottom-2 -right-2 p-1.5 rounded-xl bg-amber-500 text-slate-950 font-bold text-[10px] shadow-sm flex items-center gap-1">
               <FileQuestion className="h-3.5 w-3.5" /> 404
             </div>
           </div>
 
           <div>
-            <p className="text-[11px] font-black uppercase tracking-[0.25em] text-primary">
+            <p className="text-[11px] font-bold uppercase tracking-[0.25em] text-primary">
               MUNICIPALIDAD DE TRES DE FEBRERO
             </p>
-            <h1 className="text-3xl sm:text-4xl font-black text-foreground tracking-tight mt-1">
+            <h1 className="text-3xl sm:text-4xl font-bold text-foreground tracking-tight mt-1">
               Recurso No Encontrado
             </h1>
             <p className="text-xs sm:text-sm text-muted-foreground font-semibold mt-1 max-w-md mx-auto leading-relaxed">
@@ -85,10 +85,10 @@ export default function NotFoundPage() {
           </div>
         </div>
 
-        <Card className="bg-card text-card-foreground border border-border/60 shadow-lg rounded-3xl p-5 sm:p-6 text-left">
+        <Card className="bg-card text-card-foreground border border-border/60 shadow-lg rounded-2xl p-5 sm:p-6 text-left">
           <CardContent className="p-0 space-y-4">
             <form onSubmit={handleSearchSubmit} className="space-y-2">
-              <label className="text-[11px] font-black uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+              <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
                 <Search className="h-3.5 w-3.5 text-primary" /> Búsqueda Rápida en Padrón Municipal
               </label>
               <div className="flex gap-2">
@@ -138,7 +138,7 @@ export default function NotFoundPage() {
         </Card>
 
         <div className="space-y-2 text-left">
-          <p className="text-[11px] font-black uppercase tracking-wider text-muted-foreground pl-1">
+          <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground pl-1">
             Accesos Directos Módulos Oficiales
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

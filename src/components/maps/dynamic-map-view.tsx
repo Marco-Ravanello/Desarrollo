@@ -9,7 +9,7 @@ const MapViewComponent = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="h-[600px] w-full bg-muted/40 animate-pulse flex flex-col items-center justify-center gap-2 rounded-[2.5rem]">
+      <div className="h-[600px] w-full bg-muted/40 animate-pulse flex flex-col items-center justify-center gap-2 rounded-2xl">
         <Loader2 className="h-8 w-8 text-primary animate-spin" />
         <p className="text-sm font-bold text-muted-foreground">Cargando componentes del mapa...</p>
       </div>

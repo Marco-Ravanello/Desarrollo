@@ -9,10 +9,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { PageBreadcrumbs } from "@/components/layout/breadcrumbs-context";
+import { PageHeader } from "@/components/layout/page-header";
+import { StatCard } from "@/components/ui/stat-card";
+import { EmptyMessage } from "@/components/ui/empty-message";
 import { hasPermission, PERMISSIONS } from "@/lib/permissions";
 import {
   FileText, ShieldAlert, CheckCircle2, Clock, Plus, Search,
-  ArrowRight
+  ArrowRight, ClipboardList
 } from "lucide-react";
 import Link from "next/link";
 
@@ -53,7 +56,7 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
   const getPriorityBadge = (p: string) => {
     switch (p) {
       case "URGENTE":
-        return <Badge className="bg-rose-500/15 text-rose-500 border-rose-500/30 text-[10px] font-black">URGENTE</Badge>;
+        return <Badge className="bg-rose-500/15 text-rose-500 border-rose-500/30 text-[10px] font-bold">URGENTE</Badge>;
       case "ALTA":
         return <Badge className="bg-amber-500/15 text-amber-500 border-amber-500/30 text-[10px] font-bold">ALTA</Badge>;
       case "MEDIA":
@@ -85,64 +88,26 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20">
       <PageBreadcrumbs items={breadcrumbs} />
 
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-foreground">
-              Expedientes y Casos Sociales
-            </h1>
-            <Badge className="hidden sm:inline-flex bg-primary/20 text-primary border border-primary/30 text-[10px] font-bold uppercase py-0.5">
-              Gestión Integral
-            </Badge>
-          </div>
-          <p className="text-xs text-muted-foreground mt-1">
-            Bandeja unificada de seguimiento, intervenciones y resolución territorial de todas las áreas municipales.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
+      <PageHeader
+        title="Expedientes y Casos Sociales"
+        description="Bandeja unificada de seguimiento, intervenciones y resolución territorial de todas las áreas municipales."
+        icon={ClipboardList}
+        badge="Gestión Integral"
+        actions={
           <Button asChild className="rounded-xl font-bold text-xs gap-1.5 shadow-sm">
             <Link href="/cases/new">
               <Plus className="h-4 w-4" /> Nuevo Expediente
             </Link>
           </Button>
-        </div>
-      </div>
+        }
+      />
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card className="rounded-2xl border-border/60 bg-card p-4 shadow-xs">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Total Casos</span>
-            <FileText className="h-4 w-4 text-blue-500" />
-          </div>
-          <p className="text-2xl font-black mt-2 text-foreground">{data.stats.totalAll}</p>
-          <span className="text-[10px] text-muted-foreground">Registrados en el sistema</span>
-        </Card>
-        <Card className="rounded-2xl border-border/60 bg-card p-4 shadow-xs">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">En Curso</span>
-            <Clock className="h-4 w-4 text-emerald-500" />
-          </div>
-          <p className="text-2xl font-black mt-2 text-emerald-500">{data.stats.active}</p>
-          <span className="text-[10px] text-muted-foreground">Abiertos o en proceso</span>
-        </Card>
-        <Card className="rounded-2xl border-border/60 bg-card p-4 shadow-xs">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Alertas Urgentes</span>
-            <ShieldAlert className="h-4 w-4 text-rose-500" />
-          </div>
-          <p className="text-2xl font-black mt-2 text-rose-500">{data.stats.urgent}</p>
-          <span className="text-[10px] text-muted-foreground">Prioridad máxima</span>
-        </Card>
-        <Card className="rounded-2xl border-border/60 bg-card p-4 shadow-xs">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Resueltos</span>
-            <CheckCircle2 className="h-4 w-4 text-slate-400" />
-          </div>
-          <p className="text-2xl font-black mt-2 text-foreground">{data.stats.closed}</p>
-          <span className="text-[10px] text-muted-foreground">Casos cerrados</span>
-        </Card>
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+        <StatCard label="Total Casos" value={data.stats.totalAll} hint="Registrados en el sistema" icon={FileText} tone="blue" />
+        <StatCard label="En Curso" value={data.stats.active} hint="Abiertos o en proceso" icon={Clock} tone="green" />
+        <StatCard label="Alertas Urgentes" value={data.stats.urgent} hint="Prioridad máxima" icon={ShieldAlert} tone="red" />
+        <StatCard label="Resueltos" value={data.stats.closed} hint="Casos cerrados" icon={CheckCircle2} tone="slate" />
       </div>
 
       {/* Filters Form */}
@@ -216,30 +181,27 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
       {/* Cases Table */}
       <Card className="rounded-2xl border-border/60 bg-card shadow-xs overflow-hidden">
         {data.cases.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 text-center space-y-3">
-            <div className="p-3 bg-muted/40 rounded-full text-muted-foreground">
-              <FileText className="h-8 w-8" />
-            </div>
-            <h3 className="font-bold text-base text-foreground">No se encontraron expedientes</h3>
-            <p className="text-xs text-muted-foreground max-w-sm">
-              No hay casos que coincidan con los criterios de búsqueda o filtros seleccionados.
-            </p>
-            <Button asChild variant="outline" size="sm" className="rounded-xl mt-2 text-xs">
-              <Link href="/cases">Restablecer búsqueda</Link>
-            </Button>
-          </div>
+          <EmptyMessage
+            title="No se encontraron expedientes"
+            description="No hay casos que coincidan con los criterios de búsqueda o filtros seleccionados."
+            icon={FileText}
+            action={
+              <Button asChild variant="outline" size="sm" className="rounded-xl text-xs">
+                <Link href="/cases">Restablecer búsqueda</Link>
+              </Button>
+            }
+          />
         ) : (
-          <div className="overflow-x-auto">
-            <Table>
+          <Table>
               <TableHeader>
                 <TableRow className="border-border/60 bg-muted/30">
-                  <TableHead className="text-[11px] font-black uppercase text-muted-foreground">Carátula / Título</TableHead>
-                  <TableHead className="text-[11px] font-black uppercase text-muted-foreground">Ciudadano</TableHead>
-                  <TableHead className="text-[11px] font-black uppercase text-muted-foreground">Área</TableHead>
-                  <TableHead className="text-[11px] font-black uppercase text-muted-foreground text-center">Prioridad</TableHead>
-                  <TableHead className="text-[11px] font-black uppercase text-muted-foreground text-center">Estado</TableHead>
-                  <TableHead className="text-[11px] font-black uppercase text-muted-foreground text-right">Actualizado</TableHead>
-                  <TableHead className="text-[11px] font-black uppercase text-muted-foreground text-center">Acción</TableHead>
+                  <TableHead className="text-[11px] font-bold uppercase text-muted-foreground">Carátula / Título</TableHead>
+                  <TableHead className="text-[11px] font-bold uppercase text-muted-foreground">Ciudadano</TableHead>
+                  <TableHead className="text-[11px] font-bold uppercase text-muted-foreground">Área</TableHead>
+                  <TableHead className="text-[11px] font-bold uppercase text-muted-foreground text-center">Prioridad</TableHead>
+                  <TableHead className="text-[11px] font-bold uppercase text-muted-foreground text-center">Estado</TableHead>
+                  <TableHead className="text-[11px] font-bold uppercase text-muted-foreground text-right">Actualizado</TableHead>
+                  <TableHead className="text-[11px] font-bold uppercase text-muted-foreground text-center">Acción</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -313,7 +275,6 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
                 })}
               </TableBody>
             </Table>
-          </div>
         )}
       </Card>
 

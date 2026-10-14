@@ -61,7 +61,7 @@ function formatTimelineDate(dateStr: string) {
 export function CitizenTimeline({ events }: { events: TimelineEvent[] }) {
   if (events.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-12 text-muted-foreground border-2 border-dashed border-border/60 rounded-3xl bg-muted/20">
+      <div className="flex flex-col items-center justify-center py-12 text-muted-foreground border-2 border-dashed border-border/60 rounded-2xl bg-muted/20">
         <History className="h-10 w-10 mb-2 opacity-20" />
         <p className="text-xs font-bold">No hay eventos registrados en la línea de tiempo.</p>
       </div>

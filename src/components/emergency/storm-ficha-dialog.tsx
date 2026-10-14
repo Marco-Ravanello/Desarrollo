@@ -203,7 +203,7 @@ export function StormFichaDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto rounded-3xl p-6 sm:p-8 print:p-0 print:max-w-full print:border-none print:shadow-none">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto rounded-2xl p-6 sm:p-8 print:p-0 print:max-w-full print:border-none print:shadow-none">
         {/* Printable Letterhead - Visible only in print or formatted modal header */}
         <div className="hidden print:block mb-6">
           <MunicipalLetterhead
@@ -215,7 +215,7 @@ export function StormFichaDialog({
         <DialogHeader className="print:hidden border-b border-border/40 pb-4">
           <div className="flex justify-between items-start gap-4">
             <div>
-              <DialogTitle className="text-xl font-black text-foreground flex items-center gap-2">
+              <DialogTitle className="text-xl font-bold text-foreground flex items-center gap-2">
                 <ShieldAlert className="h-6 w-6 text-amber-500" />
                 FICHA - TORMENTA INDIVIDUAL (MUNI 3F)
               </DialogTitle>
@@ -241,7 +241,7 @@ export function StormFichaDialog({
           {/* Encabezado Institucional Ficha */}
           <div className="bg-muted/30 border border-border/60 rounded-2xl p-4 grid grid-cols-1 md:grid-cols-3 gap-4 text-xs font-semibold">
             <div>
-              <Label className="text-[11px] text-muted-foreground uppercase font-black">Barrio / Localidad</Label>
+              <Label className="text-[11px] text-muted-foreground uppercase font-bold">Barrio / Localidad</Label>
               <Input
                 value={barrio}
                 onChange={(e) => setBarrio(e.target.value)}
@@ -250,7 +250,7 @@ export function StormFichaDialog({
               />
             </div>
             <div>
-              <Label className="text-[11px] text-muted-foreground uppercase font-black">Agente(s) Intervinientes</Label>
+              <Label className="text-[11px] text-muted-foreground uppercase font-bold">Agente(s) Intervinientes</Label>
               <Input
                 value={agentes}
                 onChange={(e) => setAgentes(e.target.value)}
@@ -259,7 +259,7 @@ export function StormFichaDialog({
               />
             </div>
             <div>
-              <Label className="text-[11px] text-muted-foreground uppercase font-black">Fecha y Hora</Label>
+              <Label className="text-[11px] text-muted-foreground uppercase font-bold">Fecha y Hora</Label>
               <Input
                 value={new Date().toLocaleDateString("es-AR") + " " + new Date().toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" })}
                 readOnly
@@ -270,7 +270,7 @@ export function StormFichaDialog({
 
           {/* Datos del Vecino o Grupo Familiar con Autocompletado */}
           <div className="space-y-4">
-            <h4 className="text-xs font-black uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+            <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
               <UserCheck className="h-4 w-4 text-primary" /> Datos del Afectado / Grupo Familiar
             </h4>
 
@@ -292,7 +292,7 @@ export function StormFichaDialog({
 
                 {showSuggestions && suggestions.length > 0 && (
                   <div className="absolute z-50 w-full mt-1 bg-popover text-popover-foreground border border-border rounded-2xl shadow-2xl max-h-56 overflow-y-auto p-1">
-                    <div className="px-3 py-1.5 text-[10px] font-black uppercase text-muted-foreground border-b border-border/40">
+                    <div className="px-3 py-1.5 text-[10px] font-bold uppercase text-muted-foreground border-b border-border/40">
                       Sugerencias de Padrón Unificado
                     </div>
                     {suggestions.map((s, idx) => (
@@ -400,7 +400,7 @@ export function StormFichaDialog({
           {/* Emergencia Social y Prioridad */}
           <div className="space-y-4 pt-2 border-t border-border/40">
             <div className="flex justify-between items-center">
-              <h4 className="text-xs font-black uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
                 <ShieldAlert className="h-4 w-4 text-amber-500" /> Nivel de Emergencia Social & Prioridad
               </h4>
             </div>
@@ -413,7 +413,7 @@ export function StormFichaDialog({
                     key={p}
                     type="button"
                     onClick={() => setPrioridad(p)}
-                    className={`p-3 rounded-2xl border text-center transition-all flex items-center justify-center gap-2 font-black text-xs ${
+                    className={`p-3 rounded-2xl border text-center transition-all flex items-center justify-center gap-2 font-bold text-xs ${
                       selected
                         ? p === "ALTA"
                           ? "bg-rose-500 text-white border-rose-600 shadow-md"
@@ -443,7 +443,7 @@ export function StormFichaDialog({
 
           {/* Asignación de Elementos Solicitados */}
           <div className="space-y-4 pt-2 border-t border-border/40">
-            <h4 className="text-xs font-black uppercase tracking-wider text-muted-foreground">
+            <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
               Asignación de Elementos de Emergencia
             </h4>
 
@@ -459,7 +459,7 @@ export function StormFichaDialog({
                       if (c && cantidadColchon === 0) setCantidadColchon(1);
                     }}
                   />
-                  <Label htmlFor="reqColchon" className="text-xs font-black cursor-pointer">
+                  <Label htmlFor="reqColchon" className="text-xs font-bold cursor-pointer">
                     Colchón
                   </Label>
                 </div>
@@ -488,7 +488,7 @@ export function StormFichaDialog({
                       if (c && cantidadCama === 0) setCantidadCama(1);
                     }}
                   />
-                  <Label htmlFor="reqCama" className="text-xs font-black cursor-pointer">
+                  <Label htmlFor="reqCama" className="text-xs font-bold cursor-pointer">
                     Cama
                   </Label>
                 </div>
@@ -517,7 +517,7 @@ export function StormFichaDialog({
                       if (c && cantidadCucheta === 0) setCantidadCucheta(1);
                     }}
                   />
-                  <Label htmlFor="reqCucheta" className="text-xs font-black cursor-pointer">
+                  <Label htmlFor="reqCucheta" className="text-xs font-bold cursor-pointer">
                     Cucheta
                   </Label>
                 </div>
@@ -546,7 +546,7 @@ export function StormFichaDialog({
                       if (c && cantidadFrazada === 0) setCantidadFrazada(1);
                     }}
                   />
-                  <Label htmlFor="reqFrazada" className="text-xs font-black cursor-pointer">
+                  <Label htmlFor="reqFrazada" className="text-xs font-bold cursor-pointer">
                     Frazada
                   </Label>
                 </div>

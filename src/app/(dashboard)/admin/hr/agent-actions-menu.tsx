@@ -60,7 +60,7 @@ export function AgentActionsMenu({ agent, areas }: AgentActionsMenuProps) {
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-56 rounded-2xl p-2 shadow-2xl border-border/50">
-          <DropdownMenuLabel className="px-3 py-2 text-xs font-black uppercase tracking-widest text-muted-foreground">Opciones de Legajo</DropdownMenuLabel>
+          <DropdownMenuLabel className="px-3 py-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">Opciones de Legajo</DropdownMenuLabel>
           <DropdownMenuSeparator className="bg-border/50" />
 
           <DropdownMenuItem
@@ -94,7 +94,7 @@ export function AgentActionsMenu({ agent, areas }: AgentActionsMenuProps) {
       <Sheet open={open} onOpenChange={handleOpenChange}>
         <SheetContent side="right" className="sm:max-w-lg w-full border-l border-border bg-background rounded-l-[2rem] shadow-2xl p-8 overflow-y-auto">
         <SheetHeader className="mb-8">
-          <SheetTitle className="text-2xl font-black">
+          <SheetTitle className="text-2xl font-bold">
             {mode === 'view' ? 'Detalle del Agente' : 'Editar Legajo'}
           </SheetTitle>
           <SheetDescription className="text-base">

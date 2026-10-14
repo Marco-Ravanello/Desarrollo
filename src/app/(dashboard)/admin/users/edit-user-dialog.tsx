@@ -121,9 +121,9 @@ export function EditUserDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg rounded-3xl bg-card border-border/60 text-card-foreground p-6 sm:p-8">
+      <DialogContent className="sm:max-w-lg rounded-2xl bg-card border-border/60 text-card-foreground p-6 sm:p-8">
         <DialogHeader>
-          <DialogTitle className="text-xl font-black flex items-center gap-2">
+          <DialogTitle className="text-xl font-bold flex items-center gap-2">
             <User className="h-5 w-5 text-primary" />
             Editar Perfil de Agente Municipal
           </DialogTitle>

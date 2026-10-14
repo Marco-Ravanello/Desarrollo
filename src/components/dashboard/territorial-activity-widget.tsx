@@ -27,16 +27,17 @@ interface LocationPoint {
 }
 
 interface TerritorialActivityWidgetProps {
-  topArea?: string;
+  topArea?: string | null;
   locations?: LocationPoint[];
 }
 
 export function TerritorialActivityWidget({
-  topArea = "Caseros",
+  topArea,
   locations = []
 }: TerritorialActivityWidgetProps) {
+  const hasTopArea = Boolean(topArea && topArea !== "Sin datos");
   return (
-    <div className="rounded-2xl border border-border/50 bg-card text-card-foreground shadow-none p-5 flex flex-col justify-between h-full">
+    <div className="rounded-2xl border border-border/60 bg-card text-card-foreground shadow-sm p-5 flex flex-col justify-between h-full">
       {/* Header Minimalista */}
       <div className="flex items-center justify-between pb-3 border-b border-border/30">
         <div className="flex items-center gap-2">
@@ -53,48 +54,36 @@ export function TerritorialActivityWidget({
 
       {/* Map Canvas */}
       <div className="relative w-full h-[220px] rounded-xl overflow-hidden border border-border/40 my-3">
-        {/* Floating Legend */}
-        <div className="absolute top-2.5 right-2.5 z-20 bg-background/85 dark:bg-background/85 backdrop-blur-md border border-border/40 rounded-xl px-2.5 py-1.5 shadow-none space-y-1 text-[10px] font-medium text-foreground">
-          <div className="flex items-center gap-1.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0"></span>
-            <span>Casos activos</span>
-          </div>
-          <div className="flex items-center gap-1.5">
+        {locations.length > 0 ? (
+          <div className="absolute top-2.5 right-2.5 z-20 bg-background/85 backdrop-blur-md border border-border/40 rounded-lg px-2.5 py-1.5 text-[10px] font-medium text-foreground flex items-center gap-1.5">
             <span className="w-1.5 h-1.5 rounded-full bg-blue-600 shrink-0"></span>
-            <span>Familias registradas</span>
+            <span>Personas con domicilio ubicado</span>
           </div>
-          <div className="flex items-center gap-1.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0"></span>
-            <span>Intervenciones</span>
+        ) : (
+          <div className="absolute inset-0 z-20 flex items-center justify-center bg-background/60 backdrop-blur-[1px] p-6 text-center">
+            <p className="text-xs text-muted-foreground">Todavía no hay personas con domicilio ubicado en el mapa.</p>
           </div>
-        </div>
+        )}
 
-        <DynamicTerritorialMap locations={locations} topArea={topArea} />
+        <DynamicTerritorialMap locations={locations} />
       </div>
 
-      {/* Footer bar minimalista */}
+      {/* Pie: zona con más personas registradas */}
       <Link
         href="/maps"
-        className="flex items-center justify-between p-2.5 rounded-xl bg-muted/20 hover:bg-muted/40 transition-colors border border-border/30 group"
+        className="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors border border-border/40 group"
       >
         <div className="flex items-center gap-2 min-w-0">
           <MapPin className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400 shrink-0" />
-          <div className="min-w-0 flex items-center gap-1.5">
-            <span className="text-xs font-semibold text-foreground truncate">
-              {topArea}
-            </span>
-            <span className="text-muted-foreground/60 text-xs">·</span>
-            <span className="text-[11px] text-muted-foreground truncate">
-              Mayor concentración
-            </span>
-          </div>
+          {hasTopArea ? (
+            <p className="text-xs text-muted-foreground truncate">
+              Mayor concentración: <span className="font-semibold text-foreground">{topArea}</span>
+            </p>
+          ) : (
+            <p className="text-xs text-muted-foreground truncate">Ver el mapa social completo</p>
+          )}
         </div>
-        <div className="flex items-center gap-1.5">
-          <span className="text-[10px] text-muted-foreground font-medium hidden sm:inline-block">
-            13 localidades
-          </span>
-          <ChevronRight className="h-3.5 w-3.5 text-muted-foreground group-hover:text-foreground group-hover:translate-x-0.5 transition-all" />
-        </div>
+        <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground group-hover:text-foreground group-hover:translate-x-0.5 transition-all" />
       </Link>
     </div>
   );

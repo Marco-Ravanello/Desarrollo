@@ -11,6 +11,8 @@ import {
   Settings, FileText, ChevronRight
 } from "lucide-react";
 import Link from "next/link";
+import { PageHeader } from "@/components/layout/page-header";
+import { StatCard } from "@/components/ui/stat-card";
 import { Progress } from "@/components/ui/progress";
 
 export default async function VehiclesPage() {
@@ -62,91 +64,66 @@ export default async function VehiclesPage() {
 
   return (
     <div className="space-y-8 pb-10">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight text-foreground">Gestión de Flota</h2>
-          <p className="text-muted-foreground">Control operativo, mantenimiento y logística municipal.</p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Button variant="outline" asChild className="rounded-xl border-border/60">
-            <Link href="/admin/vehicles/reports">
-              <FileText className="mr-2 h-4 w-4 text-muted-foreground"/> Reportes
-            </Link>
-          </Button>
-          <Button variant="outline" asChild className="rounded-xl border-border/60">
-            <Link href="/admin/vehicles/fuel">
-              <Fuel className="mr-2 h-4 w-4 text-amber-500"/> Carga Combustible
-            </Link>
-          </Button>
-          <Button asChild className="rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground">
-            <Link href="/admin/vehicles/new">
-              <Plus className="mr-2 h-4 w-4"/> Nueva Unidad
-            </Link>
-          </Button>
-        </div>
-      </div>
-
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-        <Card className="rounded-3xl border border-border/60 shadow-xs bg-card text-card-foreground overflow-hidden relative group">
-          <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
-             <Car size={80} className="text-primary" />
-          </div>
-          <CardHeader className="pb-2">
-            <CardDescription className="text-muted-foreground font-medium">Disponibles Hoy</CardDescription>
-            <CardTitle className="text-4xl font-bold text-primary">{availableNow}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center text-xs text-emerald-500 font-medium bg-emerald-500/10 w-fit px-2 py-1 rounded-full">
-              <CheckCircle2 className="h-3 w-3 mr-1" /> de {totalVehicles} unidades
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="rounded-3xl border border-border/60 shadow-xs bg-card text-card-foreground overflow-hidden relative group">
-          <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
-             <Clock size={80} className="text-amber-500" />
-          </div>
-          <CardHeader className="pb-2">
-            <CardDescription className="text-muted-foreground font-medium">Solicitudes Pendientes</CardDescription>
-            <CardTitle className="text-4xl font-bold text-amber-500">{pendingRequestsCount}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Button variant="link" asChild className="p-0 h-auto text-xs font-semibold text-amber-500 hover:text-amber-600">
-              <Link href="/admin/vehicles/requests" className="flex items-center">
-                Ver solicitudes <ChevronRight className="h-3 w-3 ml-1" />
+      <PageHeader
+        title="Gestión de Flota"
+        description="Control operativo, mantenimiento y logística municipal."
+        icon={Car}
+        actions={
+          <>
+            <Button variant="outline" asChild className="rounded-xl border-border/60">
+              <Link href="/admin/vehicles/reports">
+                <FileText className="mr-2 h-4 w-4 text-muted-foreground"/> Reportes
               </Link>
             </Button>
-          </CardContent>
-        </Card>
+            <Button variant="outline" asChild className="rounded-xl border-border/60">
+              <Link href="/admin/vehicles/fuel">
+                <Fuel className="mr-2 h-4 w-4 text-amber-500"/> Carga Combustible
+              </Link>
+            </Button>
+            <Button asChild className="rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground">
+              <Link href="/admin/vehicles/new">
+                <Plus className="mr-2 h-4 w-4"/> Nueva Unidad
+              </Link>
+            </Button>
+          </>
+        }
+      />
 
-        <Card className="rounded-3xl border border-border/60 shadow-xs bg-card text-card-foreground overflow-hidden relative group">
-          <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
-             <Settings size={80} className="text-rose-500" />
-          </div>
-          <CardHeader className="pb-2">
-            <CardDescription className="text-muted-foreground font-medium">En Mantenimiento</CardDescription>
-            <CardTitle className="text-4xl font-bold text-rose-500">{inMaintenance}</CardTitle>
-          </CardHeader>
-          <CardContent>
-             <div className="text-xs text-muted-foreground">Unidades fuera de servicio</div>
-          </CardContent>
-        </Card>
-
-        <Card className="rounded-3xl border border-border/60 shadow-xs bg-card text-card-foreground overflow-hidden relative group">
-          <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
-             <AlertTriangle size={80} className="text-amber-500" />
-          </div>
-          <CardHeader className="pb-2">
-            <CardDescription className="text-muted-foreground font-medium">Alertas Críticas</CardDescription>
-            <CardTitle className="text-4xl font-bold text-amber-500">{criticalAlerts}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-xs text-muted-foreground">VTV o Seguros próximos a vencer</div>
-          </CardContent>
-        </Card>
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+        <StatCard
+          label="Disponibles Hoy"
+          value={availableNow}
+          hint={`de ${totalVehicles} unidades`}
+          icon={CheckCircle2}
+          tone="green"
+        />
+        <Link href="/admin/vehicles/requests" className="block">
+          <StatCard
+            label="Solicitudes Pendientes"
+            value={pendingRequestsCount}
+            hint={<span className="inline-flex items-center">Ver solicitudes <ChevronRight className="h-3 w-3 ml-1" /></span>}
+            icon={Clock}
+            tone="orange"
+            className="h-full transition-colors hover:border-primary/40"
+          />
+        </Link>
+        <StatCard
+          label="En Mantenimiento"
+          value={inMaintenance}
+          hint="Unidades fuera de servicio"
+          icon={Settings}
+          tone="red"
+        />
+        <StatCard
+          label="Alertas Críticas"
+          value={criticalAlerts}
+          hint="VTV o Seguros próximos a vencer"
+          icon={AlertTriangle}
+          tone="orange"
+        />
       </div>
 
-      <Card className="rounded-3xl shadow-xs border border-border/60 bg-card text-card-foreground overflow-hidden">
+      <Card className="rounded-2xl shadow-xs border border-border/60 bg-card text-card-foreground overflow-hidden">
         <CardHeader className="bg-muted/30 flex flex-row items-center justify-between space-y-0">
           <div>
             <CardTitle className="text-xl">Estado de la Flota</CardTitle>

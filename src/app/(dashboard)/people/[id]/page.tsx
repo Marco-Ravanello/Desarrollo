@@ -17,6 +17,8 @@ import { AddFamilyMemberForm } from "./add-family-member-form";
 import { EditPersonDialog } from "./edit-person-dialog";
 import { removeFromFamily } from "../actions/family-actions";
 import { PageBreadcrumbs } from "@/components/layout/breadcrumbs-context";
+import { PageHeader } from "@/components/layout/page-header";
+import { EmptyMessage } from "@/components/ui/empty-message";
 
 export default async function PersonDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
@@ -92,46 +94,41 @@ export default async function PersonDetailPage({ params }: { params: Promise<{ i
     <div className="space-y-6">
       <PageBreadcrumbs items={breadcrumbs} />
 
-      <div className="flex justify-between items-center flex-wrap gap-4">
-        <div className="flex items-center gap-4">
-          <div className="h-16 w-16 bg-blue-500/10 text-blue-500 rounded-full flex items-center justify-center font-bold text-xl border-2 border-blue-500/30 shrink-0">
-            {person.firstName[0]}{person.lastName[0]}
-          </div>
-          <div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <h2 className="text-3xl font-bold text-foreground">{person.lastName}, {person.firstName}</h2>
-              {(person as any).barrio && (
-                <Badge variant="outline" className="border-primary/40 text-primary bg-primary/5 text-xs font-bold">
-                  Barrio {(person as any).barrio}
-                </Badge>
-              )}
-            </div>
-            <div className="flex flex-wrap gap-2 items-center mt-1.5">
-              <Badge variant="outline" className="border-border text-foreground font-mono font-bold">DNI: {person.dni}</Badge>
-              {(person as any).programasActivos && (person as any).programasActivos.length > 0 && (
-                <Badge className="bg-emerald-500/15 text-emerald-500 border border-emerald-500/30 font-bold text-xs">
-                  {(person as any).programasActivos.length} Programas Activos
-                </Badge>
-              )}
-              {person.email && <Badge variant="secondary" className="font-normal">{person.email}</Badge>}
-            </div>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <Button variant="outline" asChild className="rounded-2xl border-border/60 text-xs font-bold gap-2 text-indigo-500 hover:text-indigo-600">
-            <Link href={`/ficha-social?dni=${person.dni}`}>
-              <Network className="h-4 w-4" />
-              Ver Ficha 360°
-            </Link>
-          </Button>
-          <EditPersonDialog person={person} />
+      <div className="space-y-3">
+        <PageHeader
+          title={<>{person.lastName}, {person.firstName}</>}
+          icon={Users}
+          actions={
+            <>
+              <Button variant="outline" asChild className="rounded-2xl border-border/60 text-xs font-bold gap-2 text-indigo-500 hover:text-indigo-600">
+                <Link href={`/ficha-social?dni=${person.dni}`}>
+                  <Network className="h-4 w-4" />
+                  Ver Ficha 360°
+                </Link>
+              </Button>
+              <EditPersonDialog person={person} />
+            </>
+          }
+        />
+        <div className="flex flex-wrap gap-2 items-center">
+          {(person as any).barrio && (
+            <Badge variant="outline" className="border-primary/40 text-primary bg-primary/5 text-xs font-bold">
+              Barrio {(person as any).barrio}
+            </Badge>
+          )}
+          <Badge variant="outline" className="border-border text-foreground font-mono font-bold">DNI: {person.dni}</Badge>
+          {(person as any).programasActivos && (person as any).programasActivos.length > 0 && (
+            <Badge className="bg-emerald-500/15 text-emerald-500 border border-emerald-500/30 font-bold text-xs">
+              {(person as any).programasActivos.length} Programas Activos
+            </Badge>
+          )}
+          {person.email && <Badge variant="secondary" className="font-normal">{person.email}</Badge>}
         </div>
       </div>
 
       <div className="grid md:grid-cols-3 gap-6">
-        <Card className="col-span-1 border border-border/60 shadow-xs bg-card text-card-foreground rounded-3xl">
-          <CardHeader><CardTitle className="text-lg font-black text-foreground">Datos de Contacto</CardTitle></CardHeader>
+        <Card className="col-span-1 border border-border/60 shadow-xs bg-card text-card-foreground rounded-2xl">
+          <CardHeader><CardTitle className="text-lg font-bold text-foreground">Datos de Contacto</CardTitle></CardHeader>
           <CardContent className="space-y-3">
             <div className="flex items-center gap-2 text-sm text-foreground"><MapPin className="h-4 w-4 text-muted-foreground"/> {person.address || 'Sin dirección'}</div>
             <div className="flex items-center gap-2 text-sm text-foreground"><Phone className="h-4 w-4 text-muted-foreground"/> {person.phone || 'Sin teléfono'}</div>
@@ -143,7 +140,7 @@ export default async function PersonDetailPage({ params }: { params: Promise<{ i
           </CardContent>
         </Card>
 
-        <Card className="col-span-2 border border-border/60 shadow-xs bg-card text-card-foreground rounded-3xl overflow-hidden">
+        <Card className="col-span-2 border border-border/60 shadow-xs bg-card text-card-foreground rounded-2xl overflow-hidden">
           <Tabs defaultValue="timeline">
             <TabsList className="m-4 bg-muted/40 p-1 border border-border/40 rounded-2xl">
               <TabsTrigger value="timeline" className="rounded-xl text-xs font-bold uppercase tracking-wider">Línea de Tiempo</TabsTrigger>
@@ -155,7 +152,7 @@ export default async function PersonDetailPage({ params }: { params: Promise<{ i
 
             <TabsContent value="timeline" className="p-6 pt-0">
                <div className="flex justify-between items-center mb-6">
-                <h3 className="text-xs font-black text-muted-foreground uppercase tracking-widest flex items-center gap-2">
+                <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
                    <History className="h-4 w-4" /> Evolución del Ciudadano
                 </h3>
               </div>
@@ -164,9 +161,9 @@ export default async function PersonDetailPage({ params }: { params: Promise<{ i
 
             <TabsContent value="cases" className="p-4 pt-0">
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-xs font-black text-muted-foreground uppercase tracking-widest">Casos Activos</h3>
+                <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Casos Activos</h3>
               </div>
-              {activeCases.length === 0 ? <p className="text-muted-foreground text-sm py-4 text-center border rounded-2xl border-dashed border-border/60">No hay casos activos.</p> : (
+              {activeCases.length === 0 ? <EmptyMessage title="No hay casos activos." icon={FileIcon} className="rounded-2xl border border-dashed border-border/60" /> : (
                 <div className="space-y-3">
                   {activeCases.map(c => (
                     <div key={c.id} className="p-4 border border-border/60 rounded-2xl flex justify-between items-center bg-muted/20 shadow-xs hover:border-primary/50 transition-all">
@@ -194,15 +191,16 @@ export default async function PersonDetailPage({ params }: { params: Promise<{ i
 
             <TabsContent value="family" className="p-4 pt-0">
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-xs font-black text-muted-foreground uppercase tracking-widest">Composición Familiar</h3>
+                <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Composición Familiar</h3>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                 {familyMembers.length === 0 && !(person as any).familyId && (
-                  <div className="md:col-span-2 flex flex-col items-center justify-center py-8 text-muted-foreground border rounded-2xl border-dashed border-border/60">
-                    <Users className="h-10 w-10 mb-2 opacity-20" />
-                    <p className="text-sm text-center font-medium">No se han registrado vínculos familiares.</p>
-                  </div>
+                  <EmptyMessage
+                    title="No se han registrado vínculos familiares."
+                    icon={Users}
+                    className="md:col-span-2 rounded-2xl border border-dashed border-border/60"
+                  />
                 )}
 
                 {familyMembers.map((m: any) => {
@@ -248,13 +246,10 @@ export default async function PersonDetailPage({ params }: { params: Promise<{ i
 
             <TabsContent value="history" className="p-4 pt-0">
                <div className="flex justify-between items-center mb-4">
-                <h3 className="text-xs font-black text-muted-foreground uppercase tracking-widest">Historial de Casos Cerrados</h3>
+                <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Historial de Casos Cerrados</h3>
               </div>
               {closedCases.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
-                  <History className="h-10 w-10 mb-2 opacity-20" />
-                  <p className="text-sm font-medium">No hay casos cerrados aún.</p>
-                </div>
+                <EmptyMessage title="No hay casos cerrados aún." icon={History} />
               ) : (
                 <div className="space-y-3">
                   {closedCases.map(c => (
@@ -282,9 +277,9 @@ export default async function PersonDetailPage({ params }: { params: Promise<{ i
 
             <TabsContent value="docs" className="p-4 pt-0">
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-xs font-black text-muted-foreground uppercase tracking-widest">Documentación Adjunta</h3>
+                <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Documentación Adjunta</h3>
               </div>
-              {filteredDocuments.length === 0 ? <p className="text-muted-foreground text-center text-sm py-4 border rounded-2xl border-dashed border-border/60 font-medium font-medium">No hay documentos adjuntos.</p> : (
+              {filteredDocuments.length === 0 ? <EmptyMessage title="No hay documentos adjuntos." icon={FileIcon} className="rounded-2xl border border-dashed border-border/60" /> : (
                 <div className="grid grid-cols-1 gap-2">
                   {filteredDocuments.map(d => {
                     const href = d.url.startsWith("/api") ? d.url : `/api${d.url}`;

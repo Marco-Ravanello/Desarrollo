@@ -71,9 +71,9 @@ export function EditPersonDialog({ person }: EditPersonDialogProps) {
           <Edit className="h-3.5 w-3.5 text-primary" /> Editar Vecino
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[500px] rounded-3xl bg-card border-border/60 p-6 shadow-2xl">
+      <DialogContent className="sm:max-w-[500px] rounded-2xl bg-card border-border/60 p-6 shadow-2xl">
         <DialogHeader>
-          <DialogTitle className="text-xl font-black text-foreground">Editar Datos del Ciudadano</DialogTitle>
+          <DialogTitle className="text-xl font-bold text-foreground">Editar Datos del Ciudadano</DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4 py-2">

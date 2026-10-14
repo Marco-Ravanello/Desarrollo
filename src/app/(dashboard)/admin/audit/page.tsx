@@ -6,7 +6,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
-import { Activity, User, Calendar, Database } from "lucide-react";
+import { Activity, User, Calendar, Database, ScrollText } from "lucide-react";
+import { PageHeader } from "@/components/layout/page-header";
+import { EmptyMessage } from "@/components/ui/empty-message";
 import { hasPermission, PERMISSIONS } from "@/lib/permissions";
 
 export default async function AuditPage() {
@@ -30,12 +32,13 @@ export default async function AuditPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-3xl font-bold tracking-tight text-foreground">Registro de Auditoría</h2>
-        <p className="text-muted-foreground">Seguimiento de acciones realizadas por los usuarios en el sistema.</p>
-      </div>
+      <PageHeader
+        title="Registro de Auditoría"
+        description="Seguimiento de acciones realizadas por los usuarios en el sistema."
+        icon={ScrollText}
+      />
 
-      <Card className="bg-card text-card-foreground border border-border/60 rounded-3xl shadow-xs">
+      <Card className="bg-card text-card-foreground border border-border/60 rounded-2xl shadow-xs">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-foreground">
             <Activity className="h-5 w-5 text-primary" />
@@ -57,8 +60,8 @@ export default async function AuditPage() {
             <TableBody className="divide-y divide-border/30">
               {logs.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center py-10 text-muted-foreground italic">
-                    No se han registrado acciones de auditoría aún.
+                  <TableCell colSpan={5}>
+                    <EmptyMessage title="No se han registrado acciones de auditoría aún." />
                   </TableCell>
                 </TableRow>
               ) : (

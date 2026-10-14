@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { EmptyMessage } from "@/components/ui/empty-message";
 import { addTaskAction, toggleTaskAction, deleteTaskAction } from "./actions";
 import { toast } from "sonner";
 
@@ -183,7 +184,7 @@ export function TaskList({ initialTasks, userId }: { initialTasks: TaskItem[], u
 
   return (
     <div className="space-y-6">
-      <Card className="bg-card text-card-foreground border border-border/60 shadow-xs rounded-3xl overflow-hidden">
+      <Card className="bg-card text-card-foreground border border-border/60 shadow-xs rounded-2xl overflow-hidden">
         <CardContent className="p-5 space-y-4">
           <form onSubmit={handleAdd} className="space-y-3">
             <div className="flex flex-col sm:flex-row gap-2">
@@ -229,7 +230,7 @@ export function TaskList({ initialTasks, userId }: { initialTasks: TaskItem[], u
                         key={p}
                         type="button"
                         onClick={() => setPriority(p)}
-                        className={`text-[10px] font-black px-2 py-1 rounded-lg transition-all ${
+                        className={`text-[10px] font-bold px-2 py-1 rounded-lg transition-all ${
                           isSel
                             ? "bg-primary text-primary-foreground shadow-xs"
                             : "text-muted-foreground hover:text-foreground"
@@ -329,12 +330,12 @@ export function TaskList({ initialTasks, userId }: { initialTasks: TaskItem[], u
 
       <div className="space-y-3">
         {filteredTasks.length === 0 ? (
-          <Card className="bg-card text-card-foreground border-2 border-dashed border-border/60 rounded-3xl p-12 text-center text-muted-foreground">
-            <Sparkles className="h-10 w-10 mx-auto mb-2 opacity-30 text-primary" />
-            <p className="text-sm font-bold text-foreground">No hay tareas para mostrar.</p>
-            <p className="text-xs text-muted-foreground mt-1">
-              Pruebe cambiando los filtros de búsqueda o registre un nuevo compromiso.
-            </p>
+          <Card className="bg-card text-card-foreground border-2 border-dashed border-border/60 rounded-2xl">
+            <EmptyMessage
+              title="No hay tareas para mostrar."
+              description="Pruebe cambiando los filtros de búsqueda o registre un nuevo compromiso."
+              icon={Sparkles}
+            />
           </Card>
         ) : (
           filteredTasks.map((t) => {

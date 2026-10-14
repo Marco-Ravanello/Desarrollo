@@ -97,11 +97,11 @@ export function EmptyState({
   const displayActionHref = actionHref || config.actionHref;
 
   return (
-    <div className={`flex flex-col items-center justify-center text-center p-8 sm:p-12 rounded-[2.5rem] bg-card/60 border border-border/60 shadow-xs relative overflow-hidden backdrop-blur-xs ${className}`}>
+    <div className={`flex flex-col items-center justify-center text-center p-8 sm:p-12 rounded-2xl bg-card/60 border border-border/60 shadow-xs relative overflow-hidden backdrop-blur-xs ${className}`}>
       <div className="absolute w-48 h-48 bg-primary/5 dark:bg-primary/10 rounded-full blur-3xl pointer-events-none" />
 
       <div className="relative mb-6">
-        <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-primary/15 via-primary/10 to-primary/5 border border-primary/20 flex items-center justify-center shadow-lg shadow-primary/5 text-primary group-hover:scale-105 transition-transform duration-300">
+        <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary/15 via-primary/10 to-primary/5 border border-primary/20 flex items-center justify-center shadow-lg shadow-primary/5 text-primary group-hover:scale-105 transition-transform duration-300">
           <IconComponent className="h-9 w-9 stroke-[1.75]" />
         </div>
         <div className="absolute -bottom-1 -right-1 p-1 bg-background rounded-full shadow-sm">
@@ -110,7 +110,7 @@ export function EmptyState({
       </div>
 
       <div className="max-w-md space-y-2 mb-8 relative z-10">
-        <h3 className="text-lg sm:text-xl font-black text-foreground tracking-tight">
+        <h3 className="text-lg sm:text-xl font-bold text-foreground tracking-tight">
           {displayTitle}
         </h3>
         <p className="text-xs sm:text-sm text-muted-foreground font-medium leading-relaxed">

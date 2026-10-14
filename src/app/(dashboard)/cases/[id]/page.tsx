@@ -5,13 +5,15 @@ import { ensurePersonInPrisma } from "@/services/people";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { notFound, redirect } from "next/navigation";
-import { Calendar, User, MapPin, Tag, ArrowLeft, ShieldAlert, History } from "lucide-react";
+import { Calendar, User, MapPin, Tag, ArrowLeft, ShieldAlert, History, ClipboardList } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { auth } from "@/auth";
 import { hasPermission, PERMISSIONS } from "@/lib/permissions";
 import { QuickInterventionForm } from "./quick-intervention-form";
 import { PageBreadcrumbs } from "@/components/layout/breadcrumbs-context";
+import { PageHeader } from "@/components/layout/page-header";
+import { EmptyMessage } from "@/components/ui/empty-message";
 import { getAreaDashboardUrl, getAreaShortName } from "@/lib/area-theme";
 
 export default async function CaseDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -68,22 +70,23 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
       <PageBreadcrumbs items={breadcrumbs} />
 
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" asChild className="rounded-xl">
-          <Link href={areaUrl}><ArrowLeft className="h-4 w-4" /></Link>
-        </Button>
-        <div>
-          <h2 className="text-3xl font-black tracking-tight text-foreground">{titleStr}</h2>
-          <div className="flex items-center gap-2 mt-1">
-             <Badge variant={isClosed ? 'secondary' : 'default'} className="font-bold uppercase text-[10px]">{caseData.status}</Badge>
-             <span className="text-muted-foreground text-sm font-semibold">{areaName}</span>
-          </div>
-        </div>
-      </div>
+      <PageHeader
+        title={titleStr}
+        description={areaName}
+        icon={ClipboardList}
+        actions={
+          <>
+            <Badge variant={isClosed ? 'secondary' : 'default'} className="font-bold uppercase text-[10px]">{caseData.status}</Badge>
+            <Button variant="ghost" size="icon" asChild className="rounded-xl">
+              <Link href={areaUrl} aria-label="Volver"><ArrowLeft className="h-4 w-4" /></Link>
+            </Button>
+          </>
+        }
+      />
 
       <div className="grid md:grid-cols-3 gap-6">
         <div className="md:col-span-2 space-y-6">
-          <Card className="rounded-3xl border border-border/60 shadow-sm bg-card">
+          <Card className="rounded-2xl border border-border/60 shadow-sm bg-card">
             <CardHeader>
               <CardTitle className="text-lg font-bold text-foreground">Descripción del Caso</CardTitle>
             </CardHeader>
@@ -92,7 +95,7 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
             </CardContent>
           </Card>
 
-          <Card className="rounded-3xl border border-border/60 shadow-sm bg-card space-y-4 p-6">
+          <Card className="rounded-2xl border border-border/60 shadow-sm bg-card space-y-4 p-6">
             <div className="flex justify-between items-center pb-2 border-b border-border/40">
               <div>
                 <CardTitle className="text-lg font-bold text-foreground">Evolución e Intervenciones</CardTitle>
@@ -106,7 +109,10 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
 
             <CardContent className="px-0 pt-2">
               {!caseData.interventions || caseData.interventions.length === 0 ? (
-                <p className="text-muted-foreground text-sm text-center py-6 border border-dashed border-border/60 rounded-2xl font-medium">No hay intervenciones registradas en este expediente.</p>
+                <EmptyMessage
+                  title="No hay intervenciones registradas en este expediente."
+                  className="rounded-2xl border border-dashed border-border/60"
+                />
               ) : (
                 <div className="space-y-3">
                   {caseData.interventions.map((int) => (
@@ -125,7 +131,7 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
         </div>
 
         <div className="space-y-6">
-          <Card className="rounded-3xl border border-border/60 shadow-sm bg-card">
+          <Card className="rounded-2xl border border-border/60 shadow-sm bg-card">
             <CardHeader><CardTitle className="text-lg font-bold text-foreground">Información del Ciudadano</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               {person ? (
@@ -144,14 +150,12 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
                   </div>
                 </>
               ) : (
-                <div className="text-xs text-muted-foreground italic">
-                  Información del titular no disponible
-                </div>
+                <EmptyMessage title="Información del titular no disponible" icon={User} className="py-6" />
               )}
             </CardContent>
           </Card>
 
-          <Card className="rounded-3xl border border-border/60 shadow-sm bg-card">
+          <Card className="rounded-2xl border border-border/60 shadow-sm bg-card">
              <CardHeader><CardTitle className="text-lg font-bold text-foreground">Fechas del Expediente</CardTitle></CardHeader>
              <CardContent className="space-y-3 text-sm font-semibold">
                 <div className="flex justify-between">

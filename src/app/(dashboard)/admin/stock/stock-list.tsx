@@ -8,6 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { AlertTriangle, Save, Package, Download } from "lucide-react";
+import { EmptyMessage } from "@/components/ui/empty-message";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
 
@@ -71,7 +72,7 @@ export function StockList({ supplies }: { supplies: any[] }) {
             <TableRow key={item.id}>
               <TableCell>
                 <div className="font-medium">{item.name}</div>
-                <div className="text-xs text-slate-500">{item.description}</div>
+                <div className="text-xs text-muted-foreground">{item.description}</div>
               </TableCell>
               <TableCell>
                 <Badge variant="outline">{item.area?.name || "Gral."}</Badge>
@@ -122,9 +123,8 @@ export function StockList({ supplies }: { supplies: any[] }) {
           ))}
           {supplies.length === 0 && (
             <TableRow>
-              <TableCell colSpan={5} className="text-center py-10 text-slate-500">
-                <Package className="h-10 w-10 mx-auto mb-2 opacity-20" />
-                No hay insumos registrados.
+              <TableCell colSpan={5}>
+                <EmptyMessage icon={Package} title="No hay insumos registrados." />
               </TableCell>
             </TableRow>
           )}

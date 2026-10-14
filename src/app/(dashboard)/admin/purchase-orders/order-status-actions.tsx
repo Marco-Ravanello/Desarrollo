@@ -40,7 +40,7 @@ export function OrderStatusActions({ orderId, currentStatus }: { orderId: string
         <Button
           size="sm"
           variant="outline"
-          className="h-8 text-xs font-bold text-rose-600 border-rose-200 hover:bg-rose-50 rounded-xl"
+          className="h-8 text-xs font-bold text-rose-600 border-rose-500/30 hover:bg-rose-500/10 rounded-xl"
           onClick={() => handleUpdate("CANCELADA")}
           disabled={loading}
         >
@@ -56,7 +56,7 @@ export function OrderStatusActions({ orderId, currentStatus }: { orderId: string
         <Button
           size="sm"
           variant="outline"
-          className="h-8 text-xs font-bold text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 border-emerald-300 rounded-xl"
+          className="h-8 text-xs font-bold text-emerald-600 hover:text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/10 border-emerald-500/30 rounded-xl"
           onClick={() => handleUpdate("APROBADA")}
           disabled={loading}
         >
@@ -66,7 +66,7 @@ export function OrderStatusActions({ orderId, currentStatus }: { orderId: string
         <Button
           size="sm"
           variant="outline"
-          className="h-8 text-xs font-bold text-rose-600 hover:text-rose-700 hover:bg-rose-50 border-rose-300 rounded-xl"
+          className="h-8 text-xs font-bold text-rose-600 hover:text-rose-700 dark:text-rose-300 hover:bg-rose-500/10 border-rose-500/30 rounded-xl"
           onClick={() => handleUpdate("RECHAZADA")}
           disabled={loading}
         >
@@ -82,7 +82,7 @@ export function OrderStatusActions({ orderId, currentStatus }: { orderId: string
         <Button
           size="sm"
           variant="ghost"
-          className="h-8 text-xs font-bold text-rose-600 hover:bg-rose-50 rounded-xl"
+          className="h-8 text-xs font-bold text-rose-600 hover:bg-rose-500/10 rounded-xl"
           onClick={() => handleUpdate("CANCELADA")}
           disabled={loading}
         >

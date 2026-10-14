@@ -8,6 +8,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Building2, Plus, Search, AlertTriangle } from "lucide-react";
+import { PageHeader } from "@/components/layout/page-header";
+import { EmptyMessage } from "@/components/ui/empty-message";
 import { ProviderFormDialog } from "./provider-form-dialog";
 
 const money = (n: number) => `$ ${n.toLocaleString("es-AR", { maximumFractionDigits: 0 })}`;
@@ -19,15 +21,16 @@ export default async function ProvidersPage({ searchParams }: { searchParams: Pr
 
   return (
     <div className="space-y-6 max-w-6xl mx-auto">
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight text-foreground">Proveedores</h2>
-          <p className="text-sm text-muted-foreground">Padrón de proveedores y su historial de órdenes de compra.</p>
-        </div>
-        {canEdit && (
-          <ProviderFormDialog trigger={<Button className="gap-2"><Plus className="h-4 w-4" /> Nuevo proveedor</Button>} />
-        )}
-      </div>
+      <PageHeader
+        title="Proveedores"
+        description="Padrón de proveedores y su historial de órdenes de compra."
+        icon={Building2}
+        actions={
+          canEdit ? (
+            <ProviderFormDialog trigger={<Button className="gap-2"><Plus className="h-4 w-4" /> Nuevo proveedor</Button>} />
+          ) : undefined
+        }
+      />
 
       {canEdit && unregistered.length > 0 && (
         <Card className="border-amber-500/30 bg-amber-500/5 shadow-none">
@@ -67,10 +70,10 @@ export default async function ProvidersPage({ searchParams }: { searchParams: Pr
         </CardHeader>
         <CardContent>
           {providers.length === 0 ? (
-            <div className="py-10 text-center text-sm text-muted-foreground">
-              <Building2 className="h-8 w-8 mx-auto mb-2 opacity-50" />
-              {q ? "Ningún proveedor coincide con la búsqueda." : "Todavía no hay proveedores registrados."}
-            </div>
+            <EmptyMessage
+              icon={Building2}
+              title={q ? "Ningún proveedor coincide con la búsqueda." : "Todavía no hay proveedores registrados."}
+            />
           ) : (
             <div className="overflow-x-auto">
               <Table>

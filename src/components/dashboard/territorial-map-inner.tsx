@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { MapContainer, TileLayer, CircleMarker, Circle, Tooltip } from "react-leaflet";
+import { MapContainer, TileLayer, CircleMarker, Tooltip } from "react-leaflet";
 import { useTheme } from "next-themes";
 import "leaflet/dist/leaflet.css";
 
@@ -18,26 +18,8 @@ interface TerritorialMapInnerProps {
   topArea?: string;
 }
 
-const T3F_OFFICIAL_POINTS = [
-  { lat: -34.6083, lng: -58.5642, type: "case", label: "Caseros · Caso Activo" },
-  { lat: -34.6050, lng: -58.5600, type: "family", label: "Caseros · Familia Registrada" },
-  { lat: -34.6110, lng: -58.5670, type: "intervention", label: "Caseros · Operativo Barrial" },
-  { lat: -34.6367, lng: -58.5411, type: "case", label: "Ciudadela · Caso Activo" },
-  { lat: -34.6320, lng: -58.5450, type: "family", label: "Ciudadela · Familia Registrada" },
-  { lat: -34.6067, lng: -58.5917, type: "family", label: "El Palomar · Familia Registrada" },
-  { lat: -34.5980, lng: -58.5940, type: "intervention", label: "Ciudad Jardín · Intervención" },
-  { lat: -34.5889, lng: -58.5833, type: "family", label: "Villa Bosch · Familia Registrada" },
-  { lat: -34.5850, lng: -58.5800, type: "intervention", label: "Villa Bosch · Operativo" },
-  { lat: -34.5622, lng: -58.5989, type: "case", label: "Loma Hermosa · Caso Activo" },
-  { lat: -34.5660, lng: -58.6010, type: "family", label: "Loma Hermosa · Familia Registrada" },
-  { lat: -34.6000, lng: -58.5486, type: "intervention", label: "Santos Lugares · Operativo" },
-  { lat: -34.6086, lng: -58.5361, type: "family", label: "Sáenz Peña · Familia Registrada" },
-  { lat: -34.5833, lng: -58.5917, type: "case", label: "Martín Coronado · Caso Activo" },
-  { lat: -34.5722, lng: -58.6083, type: "family", label: "Pablo Podestá · Familia Registrada" },
-  { lat: -34.5667, lng: -58.6167, type: "case", label: "Churruca · Caso Activo" }
-];
 
-export function TerritorialMapInner({ locations = [], topArea = "Caseros" }: TerritorialMapInnerProps) {
+export function TerritorialMapInner({ locations = [] }: TerritorialMapInnerProps) {
   const { theme } = useTheme();
   const isDark = theme === "dark";
 
@@ -61,62 +43,24 @@ export function TerritorialMapInner({ locations = [], topArea = "Caseros" }: Ter
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
         url={tileUrl}
       />
-      <Circle
-        center={[-34.6083, -58.5642]}
-        radius={750}
-        pathOptions={{
-          color: "#3B82F6",
-          fillColor: "#3B82F6",
-          fillOpacity: 0.16,
-          weight: 1.5,
-          dashArray: "4, 4"
-        }}
-      />
-      {locations.length > 0 ? (
-        locations.map((loc, idx) => {
-          const isCase = idx % 4 === 0;
-          const isIntervention = idx % 4 === 1;
-          const color = isCase ? "#EF4444" : isIntervention ? "#10B981" : "#2563EB";
-          return (
-            <CircleMarker
-              key={loc.id || idx}
-              center={[loc.latitude, loc.longitude]}
-              radius={isCase ? 5.5 : 4.5}
-              pathOptions={{
-                color: "#FFFFFF",
-                fillColor: color,
-                fillOpacity: 0.9,
-                weight: 1.5
-              }}
-            >
-              <Tooltip direction="top" offset={[0, -5]} opacity={0.9}>
-                <span className="text-xs font-semibold">{loc.neighborhood || loc.address || "Tres de Febrero"}</span>
-              </Tooltip>
-            </CircleMarker>
-          );
-        })
-      ) : (
-        T3F_OFFICIAL_POINTS.map((pt, idx) => {
-          const color = pt.type === "case" ? "#EF4444" : pt.type === "intervention" ? "#10B981" : "#2563EB";
-          return (
-            <CircleMarker
-              key={idx}
-              center={[pt.lat, pt.lng]}
-              radius={pt.type === "case" ? 5.5 : 4.5}
-              pathOptions={{
-                color: "#FFFFFF",
-                fillColor: color,
-                fillOpacity: 0.9,
-                weight: 1.5
-              }}
-            >
-              <Tooltip direction="top" offset={[0, -5]} opacity={0.9}>
-                <span className="text-xs font-semibold">{pt.label}</span>
-              </Tooltip>
-            </CircleMarker>
-          );
-        })
-      )}
+      {/* Solo personas reales con ubicación cargada; sin puntos de ejemplo. */}
+      {locations.map((loc, idx) => (
+        <CircleMarker
+          key={loc.id || idx}
+          center={[loc.latitude, loc.longitude]}
+          radius={4.5}
+          pathOptions={{
+            color: "#FFFFFF",
+            fillColor: "#2563EB",
+            fillOpacity: 0.9,
+            weight: 1.5
+          }}
+        >
+          <Tooltip direction="top" offset={[0, -5]} opacity={0.9}>
+            <span className="text-xs font-semibold">{loc.neighborhood || loc.address || "Tres de Febrero"}</span>
+          </Tooltip>
+        </CircleMarker>
+      ))}
     </MapContainer>
   );
 }

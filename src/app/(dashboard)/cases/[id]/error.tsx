@@ -18,7 +18,7 @@ export default function CaseDetailError({
 
   return (
     <div className="min-h-[50vh] flex flex-col items-center justify-center text-center p-6 space-y-4">
-      <div className="p-4 rounded-3xl bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20">
+      <div className="p-4 rounded-2xl bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20">
         <AlertTriangle className="h-10 w-10 animate-pulse" />
       </div>
       <div className="space-y-1 max-w-md">

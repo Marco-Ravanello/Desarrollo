@@ -3,7 +3,10 @@ export const dynamic = "force-dynamic";
 import { getVehicleWithHistory } from "@/services/admin";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
+import { Badge, badgeVariants } from "@/components/ui/badge";
+import { PageHeader } from "@/components/layout/page-header";
+import { EmptyMessage } from "@/components/ui/empty-message";
+import { cn } from "@/lib/utils";
 import { Car, Fuel, Calendar, User, ArrowLeft, Settings, ShieldCheck, Wrench } from "lucide-react";
 import { notFound } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -25,36 +28,34 @@ export default async function VehicleDetailPage({ params }: { params: Promise<{ 
 
   return (
     <div className="space-y-8 pb-10">
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" asChild className="rounded-full">
-           <Link href="/admin/vehicles"><ArrowLeft className="h-5 w-5" /></Link>
-        </Button>
-        <div className="flex items-center gap-4">
-          <div className="bg-[#163C68] dark:bg-primary/20 dark:border dark:border-primary/30 p-4 rounded-3xl shadow-lg shadow-blue-900/20">
-            <Car className="h-8 w-8 text-white dark:text-primary" />
-          </div>
-          <div>
-            <h2 className="text-3xl font-bold text-foreground tracking-tight">{vehicle.brand} {vehicle.model}</h2>
-            <div className="flex items-center gap-2 mt-1">
-              <span className="px-2 py-0.5 bg-muted text-foreground font-mono font-bold text-xs uppercase border-b-2 border-border/80 rounded">
-                {vehicle.plate}
-              </span>
-              <Badge className={
-                vehicle.status === 'DISPONIBLE' ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border dark:border-emerald-500/20" :
-                vehicle.status === 'EN_TALLER' ? "bg-rose-100 text-rose-700 hover:bg-rose-100 dark:bg-rose-500/10 dark:text-rose-400 dark:border dark:border-rose-500/20" :
-                "bg-muted text-muted-foreground hover:bg-muted"
-              }>
-                {vehicle.status}
-              </Badge>
-            </div>
-          </div>
-        </div>
-      </div>
+      <PageHeader
+        title={`${vehicle.brand} ${vehicle.model}`}
+        icon={Car}
+        description={
+          <span className="mt-1 inline-flex flex-wrap items-center gap-2">
+            <span className="px-2 py-0.5 bg-muted text-foreground font-mono font-bold text-xs uppercase border-b-2 border-border/80 rounded">
+              {vehicle.plate}
+            </span>
+            <span className={cn(badgeVariants(),
+              vehicle.status === 'DISPONIBLE' ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border dark:border-emerald-500/20" :
+              vehicle.status === 'EN_TALLER' ? "bg-rose-100 text-rose-700 hover:bg-rose-100 dark:bg-rose-500/10 dark:text-rose-400 dark:border dark:border-rose-500/20" :
+              "bg-muted text-muted-foreground hover:bg-muted"
+            )}>
+              {vehicle.status}
+            </span>
+          </span>
+        }
+        actions={
+          <Button variant="ghost" size="icon" asChild className="rounded-full">
+            <Link href="/admin/vehicles"><ArrowLeft className="h-5 w-5" /></Link>
+          </Button>
+        }
+      />
 
       <div className="grid gap-8 lg:grid-cols-3">
         {/* Left Column: Stats and Info */}
         <div className="lg:col-span-1 space-y-6">
-          <Card className="rounded-3xl border border-border/60 shadow-xs bg-card text-card-foreground overflow-hidden">
+          <Card className="rounded-2xl border border-border/60 shadow-xs bg-card text-card-foreground overflow-hidden">
             <CardHeader className="bg-muted/30 border-b border-border/40">
               <CardTitle className="text-lg flex items-center gap-2">
                 <Settings className="h-5 w-5 text-muted-foreground" /> Ficha Técnica
@@ -78,7 +79,7 @@ export default async function VehicleDetailPage({ params }: { params: Promise<{ 
             </CardContent>
           </Card>
 
-          <Card className="rounded-3xl border border-border/60 shadow-xs bg-card text-card-foreground overflow-hidden">
+          <Card className="rounded-2xl border border-border/60 shadow-xs bg-card text-card-foreground overflow-hidden">
             <CardHeader className="bg-muted/30 border-b border-border/40">
               <CardTitle className="text-lg flex items-center gap-2">
                 <ShieldCheck className="h-5 w-5 text-muted-foreground" /> Documentación
@@ -114,7 +115,7 @@ export default async function VehicleDetailPage({ params }: { params: Promise<{ 
 
         {/* Right Column: Tables */}
         <div className="lg:col-span-2 space-y-6">
-          <Card className="rounded-3xl border border-border/60 shadow-xs bg-card text-card-foreground overflow-hidden">
+          <Card className="rounded-2xl border border-border/60 shadow-xs bg-card text-card-foreground overflow-hidden">
             <CardHeader className="bg-muted/30 border-b border-border/40">
               <CardTitle className="text-lg flex items-center gap-2">
                 <Calendar className="h-5 w-5 text-blue-500" /> Historial de Reservas
@@ -155,7 +156,7 @@ export default async function VehicleDetailPage({ params }: { params: Promise<{ 
                   ))}
                   {vehicle.reservations.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={4} className="text-center py-12 text-muted-foreground">Sin reservas registradas</TableCell>
+                      <TableCell colSpan={4}><EmptyMessage title="Sin reservas registradas" /></TableCell>
                     </TableRow>
                   )}
                 </TableBody>
@@ -163,7 +164,7 @@ export default async function VehicleDetailPage({ params }: { params: Promise<{ 
             </CardContent>
           </Card>
 
-          <Card className="rounded-3xl border border-border/60 shadow-xs bg-card text-card-foreground overflow-hidden">
+          <Card className="rounded-2xl border border-border/60 shadow-xs bg-card text-card-foreground overflow-hidden">
             <CardHeader className="bg-muted/30 border-b border-border/40">
               <CardTitle className="text-lg flex items-center gap-2">
                 <Fuel className="h-5 w-5 text-emerald-500" /> Cargas de Combustible
@@ -199,7 +200,7 @@ export default async function VehicleDetailPage({ params }: { params: Promise<{ 
                   ))}
                   {vehicle.fuelRecords.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={4} className="text-center py-12 text-muted-foreground">Sin cargas registradas</TableCell>
+                      <TableCell colSpan={4}><EmptyMessage title="Sin cargas registradas" /></TableCell>
                     </TableRow>
                   )}
                 </TableBody>

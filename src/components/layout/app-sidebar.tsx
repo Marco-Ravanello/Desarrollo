@@ -42,12 +42,12 @@ export function AppSidebar({ isMobile = false, onNavigate }: AppSidebarProps) {
   };
 
   const navigation = [
-    { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard, color: "text-blue-500" },
-    { title: "Ficha Social 360°", url: "/ficha-social", icon: Network, color: "text-indigo-500 font-bold" },
-    { title: "Expedientes", url: "/cases", icon: ClipboardList, color: "text-rose-500 font-bold" },
-    { title: "Mapa Social", url: "/maps", icon: MapPin, color: "text-emerald-500" },
-    { title: "Mis Tareas", url: "/tasks", icon: CheckCircle2, color: "text-amber-500" },
-    { title: "Registro Único", url: "/people", icon: Users, color: "text-purple-500" },
+    { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
+    { title: "Ficha Social 360°", url: "/ficha-social", icon: Network },
+    { title: "Expedientes", url: "/cases", icon: ClipboardList },
+    { title: "Mapa Social", url: "/maps", icon: MapPin },
+    { title: "Mis Tareas", url: "/tasks", icon: CheckCircle2 },
+    { title: "Registro Único", url: "/people", icon: Users },
   ];
 
   const role = user?.role as any;
@@ -150,15 +150,13 @@ export function AppSidebar({ isMobile = false, onNavigate }: AppSidebarProps) {
 
       <div className={`p-5 space-y-4 shrink-0 ${isCollapsed ? "px-3" : ""}`}>
         <div className={`text-2xl font-bold flex items-center gap-2.5 ${isCollapsed ? "justify-center" : ""}`}>
-          <div className="h-11 w-11 rounded-2xl overflow-hidden shrink-0 border border-primary/20 bg-white p-1 shadow-sm flex items-center justify-center">
-            <MunicipalCrest className="h-full w-full" />
-          </div>
+          <MunicipalCrest className="h-11 w-11 shadow-sm" />
           {!isCollapsed && (
             <div className="flex flex-col min-w-0 leading-tight">
-              <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground truncate">
-                TRES DE FEBRERO
+              <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground truncate">
+                Tres de Febrero
               </span>
-              <span className="tracking-tight truncate font-black text-[#163C68] dark:text-blue-400 text-lg font-heading">
+              <span className="tracking-tight truncate font-bold text-[#163C68] dark:text-blue-300 text-lg font-heading">
                 MuniGestión <span className="text-[#F69321]">3F</span>
               </span>
             </div>
@@ -178,13 +176,13 @@ export function AppSidebar({ isMobile = false, onNavigate }: AppSidebarProps) {
                 href={item.url}
                 onClick={() => onNavigate?.()}
                 title={isCollapsed ? item.title : ""}
-                className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all group mb-1 ${
+                className={`flex items-center gap-3 px-3.5 py-2 rounded-xl transition-all group mb-0.5 ${
                   isCollapsed ? "justify-center" : ""
                 } ${
-                  isActive ? "bg-[#163C68] text-white shadow-sm font-bold border-l-4 border-[#F69321]" : "text-muted-foreground hover:text-foreground hover:bg-muted/60 font-medium"
+                  isActive ? "bg-primary/10 text-primary font-semibold dark:bg-primary/20 dark:text-blue-200 border-l-4 border-[#F69321]" : "text-muted-foreground hover:text-foreground hover:bg-muted/60 font-medium"
                 }`}
               >
-                <item.icon className={`h-5 w-5 shrink-0 ${isActive ? "text-white" : item.color} group-hover:text-primary transition-colors`} />
+                <item.icon className={`h-[18px] w-[18px] shrink-0 ${isActive ? "text-primary dark:text-blue-200" : "text-muted-foreground"} group-hover:text-primary transition-colors`} />
                 {!isCollapsed && <span className="text-sm truncate">{item.title}</span>}
               </Link>
             );
@@ -218,10 +216,10 @@ export function AppSidebar({ isMobile = false, onNavigate }: AppSidebarProps) {
                     className={`flex items-center gap-3 px-3.5 py-2 rounded-xl transition-all group mb-0.5 ${
                       isCollapsed ? "justify-center" : ""
                     } ${
-                      isActive ? "bg-primary/10 text-primary font-bold dark:bg-primary/20 border-l-4 border-[#F69321]" : "text-muted-foreground hover:text-foreground hover:bg-muted/60 font-medium"
+                      isActive ? "bg-primary/10 text-primary font-semibold dark:bg-primary/20 dark:text-blue-200 border-l-4 border-[#F69321]" : "text-muted-foreground hover:text-foreground hover:bg-muted/60 font-medium"
                     }`}
                   >
-                    <item.icon className={`h-[18px] w-[18px] shrink-0 ${isActive ? "text-primary" : "text-muted-foreground"} group-hover:text-primary transition-colors`} />
+                    <item.icon className={`h-[18px] w-[18px] shrink-0 ${isActive ? "text-primary dark:text-blue-200" : "text-muted-foreground"} group-hover:text-primary transition-colors`} />
                     {!isCollapsed && <span className="text-sm truncate">{item.title}</span>}
                   </Link>
                 );
@@ -231,18 +229,18 @@ export function AppSidebar({ isMobile = false, onNavigate }: AppSidebarProps) {
         })}
 
         <div className="pt-3 pb-2">
-          {!isCollapsed && <p className="px-3 text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Áreas Sociales</p>}
+          {!isCollapsed && <p className="px-3 text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-2 font-heading">Áreas Sociales</p>}
           {socialAreas.map((item) => (
             <Link
               key={item.title}
               href={item.url}
               onClick={() => onNavigate?.()}
               title={isCollapsed ? item.title : ""}
-              className={`flex items-center gap-3 px-3.5 py-2.5 text-muted-foreground hover:text-foreground hover:bg-muted/60 rounded-xl transition-all group mb-1 font-medium ${
+              className={`flex items-center gap-3 px-3.5 py-2 text-muted-foreground hover:text-foreground hover:bg-muted/60 rounded-xl transition-all group mb-0.5 font-medium ${
                 isCollapsed ? "justify-center" : ""
               }`}
             >
-              <item.icon className={`h-5 w-5 shrink-0 ${getAreaNavColor(item.color)} opacity-70 group-hover:opacity-100 transition-opacity`} />
+              <item.icon className={`h-[18px] w-[18px] shrink-0 ${getAreaNavColor(item.color)} opacity-80 group-hover:opacity-100 transition-opacity`} />
               {!isCollapsed && <span className="text-sm truncate">{item.title}</span>}
             </Link>
           ))}

@@ -1,16 +1,13 @@
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Briefcase, Package, Car, Users } from "lucide-react";
 import Link from "next/link";
+import { PageHeader } from "@/components/layout/page-header";
+import { EmptyMessage } from "@/components/ui/empty-message";
 
 export default function AdminPlaceholder({ title, description }: { title: string, description: string }) {
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-3xl font-bold text-foreground">{title}</h2>
-          <p className="text-muted-foreground">{description}</p>
-        </div>
-      </div>
+      <PageHeader title={title} description={description} icon={Briefcase} />
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         {[
@@ -30,14 +27,13 @@ export default function AdminPlaceholder({ title, description }: { title: string
         ))}
       </div>
 
-      <Card className="flex flex-col items-center justify-center py-20 text-center border-dashed border-border/60 bg-card">
-        <div className="bg-muted/40 p-4 rounded-full mb-4">
-          <Briefcase className="h-8 w-8 text-muted-foreground" />
-        </div>
-        <h3 className="text-lg font-semibold text-foreground">Módulo en construcción</h3>
-        <p className="text-muted-foreground max-w-xs mx-auto">
-          Próximamente podrá gestionar {title} desde aquí.
-        </p>
+      <Card className="border-dashed border-border/60 bg-card">
+        <EmptyMessage
+          className="py-16"
+          icon={Briefcase}
+          title="Módulo en construcción"
+          description={`Próximamente podrá gestionar ${title} desde aquí.`}
+        />
       </Card>
     </div>
   );

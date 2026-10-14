@@ -63,7 +63,7 @@ export function PeopleFilters({ barrios, programas }: PeopleFiltersProps) {
     (currentLimit && currentLimit !== "20");
 
   return (
-    <Card className="p-5 bg-card text-card-foreground border border-border/60 rounded-3xl shadow-xs space-y-4">
+    <Card className="p-5 bg-card text-card-foreground border border-border/60 rounded-2xl shadow-xs space-y-4">
       <form onSubmit={handleSearchSubmit} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3">
         <div className="lg:col-span-5 relative">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -114,7 +114,7 @@ export function PeopleFilters({ barrios, programas }: PeopleFiltersProps) {
 
       <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-border/40 text-xs">
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-[11px] font-black uppercase tracking-wider text-muted-foreground flex items-center gap-1">
+          <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
             <Filter className="h-3.5 w-3.5 text-primary" /> Filtros Activos:
           </span>
 

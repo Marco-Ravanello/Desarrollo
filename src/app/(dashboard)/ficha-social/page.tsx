@@ -13,6 +13,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { PageHeader } from "@/components/layout/page-header";
+import { EmptyMessage } from "@/components/ui/empty-message";
 import {
   Search, Users, User, MapPin, Phone,
   Layers, ArrowRight, Share2, Sparkles, AlertCircle, CheckCircle2,
@@ -79,36 +81,22 @@ function FichaSocialContent() {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <div className="p-2.5 rounded-2xl bg-primary/10 text-primary border border-primary/20">
-              <Network className="h-6 w-6" />
-            </div>
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-black text-foreground tracking-tight flex items-center gap-2">
-                Ficha Social Unificada 360°
-                <Badge className="hidden sm:inline-flex bg-primary/20 text-primary border border-primary/30 text-[10px] font-bold uppercase py-0.5">
-                  Cruce de Datos 3F
-                </Badge>
-              </h1>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                Cruce integral de bases de datos municipales, programas nacionales y detección automática de vínculos familiares.
-              </p>
-            </div>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
+      <PageHeader
+        title="Ficha Social Unificada 360°"
+        description="Cruce integral de bases de datos municipales, programas nacionales y detección automática de vínculos familiares."
+        icon={Network}
+        badge="Cruce de Datos 3F"
+        actions={
           <Button variant="outline" asChild className="rounded-xl border-border/60 text-xs font-bold gap-2">
             <Link href="/ficha-social/cruces">
               <BarChart2 className="h-4 w-4 text-primary" />
               Matriz de Cruces Masivos
             </Link>
           </Button>
-        </div>
-      </div>
+        }
+      />
 
-      <Card className="bg-card text-card-foreground border border-border/60 shadow-xs rounded-3xl overflow-visible relative">
+      <Card className="bg-card text-card-foreground border border-border/60 shadow-xs rounded-2xl overflow-visible relative">
         <CardContent className="p-4 sm:p-5">
           <form
             onSubmit={(e) => {
@@ -173,15 +161,15 @@ function FichaSocialContent() {
 
       {ficha && ficha.encontrado ? (
         <div className="space-y-6">
-          <Card className="bg-card text-card-foreground border border-border/60 shadow-sm rounded-3xl overflow-hidden">
+          <Card className="bg-card text-card-foreground border border-border/60 shadow-sm rounded-2xl overflow-hidden">
             <div className="p-6 sm:p-7 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 border-b border-border/40">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="flex items-center gap-4">
-                  <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-primary to-indigo-600 flex items-center justify-center text-primary-foreground text-2xl font-black shadow-lg shadow-primary/20">
+                  <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-primary to-indigo-600 flex items-center justify-center text-primary-foreground text-2xl font-bold shadow-lg shadow-primary/20">
                     {ficha.nombre_detectado ? ficha.nombre_detectado.split(" ").map(n => n[0]).slice(0, 2).join("") : "360"}
                   </div>
                   <div>
-                    <h2 className="text-2xl font-black text-foreground tracking-tight">{ficha.nombre_detectado}</h2>
+                    <h2 className="text-2xl font-bold text-foreground tracking-tight">{ficha.nombre_detectado}</h2>
                     <div className="flex flex-wrap items-center gap-2 mt-1.5">
                       <Badge variant="outline" className="font-mono text-xs border-border/60 font-bold">
                         DNI / CUIL: {ficha.dni}
@@ -203,7 +191,7 @@ function FichaSocialContent() {
               </div>
 
               <div className="mt-5 pt-4 border-t border-border/30 flex flex-wrap items-center gap-2">
-                <span className="text-[10px] font-black uppercase tracking-wider text-muted-foreground mr-1">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mr-1">
                   Programas Sociales Detectados:
                 </span>
                 {ficha.programas_activos?.map((prog, idx) => (
@@ -242,7 +230,7 @@ function FichaSocialContent() {
                             <HeartHandshake className="h-4 w-4" />
                           </div>
                           <div>
-                            <h3 className="text-sm font-black text-foreground leading-tight">{progName}</h3>
+                            <h3 className="text-sm font-bold text-foreground leading-tight">{progName}</h3>
                             <p className="text-[10px] text-muted-foreground font-medium">
                               Roles: {detalle.roles.join(", ")}
                             </p>
@@ -331,7 +319,7 @@ function FichaSocialContent() {
                           </Badge>
                         </div>
                         <div>
-                          <h4 className="font-black text-foreground text-sm leading-tight">{rel.nombre_completo}</h4>
+                          <h4 className="font-bold text-foreground text-sm leading-tight">{rel.nombre_completo}</h4>
                           <p className="text-xs text-muted-foreground font-mono mt-0.5">DNI: {rel.dni}</p>
                         </div>
                         <div className="text-[11px] text-muted-foreground space-y-1 pt-2 border-t border-border/30">
@@ -355,10 +343,11 @@ function FichaSocialContent() {
                       </Card>
                     ))
                   ) : (
-                    <div className="col-span-full py-12 text-center text-muted-foreground border-2 border-dashed border-border/60 rounded-3xl">
-                      <Users className="h-10 w-10 mx-auto mb-2 opacity-30 text-primary" />
-                      <p className="text-xs font-bold">No se detectaron vínculos familiares automáticos para este DNI.</p>
-                    </div>
+                    <EmptyMessage
+                      title="No se detectaron vínculos familiares automáticos para este DNI."
+                      icon={Users}
+                      className="col-span-full rounded-2xl border-2 border-dashed border-border/60"
+                    />
                   )}
                 </div>
               </TabsContent>
@@ -366,24 +355,25 @@ function FichaSocialContent() {
           </Card>
         </div>
       ) : ficha && !ficha.encontrado ? (
-        <Card className="bg-card border border-border/60 rounded-3xl p-12 text-center text-muted-foreground">
-          <AlertCircle className="h-12 w-12 mx-auto mb-3 text-amber-500/60" />
-          <h3 className="text-lg font-black text-foreground">No se encontraron registros</h3>
-          <p className="text-xs text-muted-foreground max-w-md mx-auto mt-1">
-            El DNI o CUIL ingresado no figura actualmente en las bases de datos de programas sociales del municipio.
-          </p>
+        <Card className="bg-card border border-border/60 rounded-2xl">
+          <EmptyMessage
+            title="No se encontraron registros"
+            description="El DNI o CUIL ingresado no figura actualmente en las bases de datos de programas sociales del municipio."
+            icon={AlertCircle}
+            className="py-12"
+          />
         </Card>
       ) : !ficha && !isPending ? (
-        <Card className="bg-card border border-border/60 shadow-xs rounded-3xl p-8 sm:p-12 text-center text-muted-foreground relative overflow-hidden">
+        <Card className="bg-card border border-border/60 shadow-xs rounded-2xl p-8 sm:p-12 text-center text-muted-foreground relative overflow-hidden">
           <div className="absolute -right-10 -bottom-10 opacity-5 pointer-events-none">
             <Network className="h-64 w-64 text-primary" />
           </div>
           <div className="max-w-xl mx-auto space-y-4">
-            <div className="h-16 w-16 mx-auto rounded-3xl bg-primary/10 text-primary border border-primary/20 flex items-center justify-center">
+            <div className="h-16 w-16 mx-auto rounded-2xl bg-primary/10 text-primary border border-primary/20 flex items-center justify-center">
               <Network className="h-8 w-8" />
             </div>
             <div>
-              <h3 className="text-xl font-black text-foreground tracking-tight">
+              <h3 className="text-xl font-bold text-foreground tracking-tight">
                 Consulta de Ficha Social Unificada 360°
               </h3>
               <p className="text-xs text-muted-foreground mt-2 leading-relaxed">

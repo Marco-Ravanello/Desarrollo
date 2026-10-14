@@ -18,6 +18,9 @@ import {
 import InterventionsAdminPage from "../admin/interventions/page";
 import { PeopleFilters } from "@/components/people/people-filters";
 import { PeoplePagination } from "@/components/people/people-pagination";
+import { PageHeader } from "@/components/layout/page-header";
+import { StatCard } from "@/components/ui/stat-card";
+import { EmptyMessage } from "@/components/ui/empty-message";
 
 export default async function PeoplePage({
   searchParams,
@@ -51,96 +54,81 @@ export default async function PeoplePage({
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <h2 className="text-3xl sm:text-4xl font-black tracking-tight text-foreground">Registro Único</h2>
-            <Badge className="hidden sm:inline-flex bg-primary/20 text-primary border border-primary/30 text-[10px] font-bold uppercase py-0.5">
-              Padrón 360°
-            </Badge>
-          </div>
-          <p className="text-muted-foreground text-sm sm:text-base mt-1">
-            Padrón centralizado de ciudadanos, familias y asistencia municipal unificada de Tres de Febrero.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2 flex-wrap">
-          <Button variant="outline" asChild className="rounded-2xl h-11 px-4 text-xs font-bold transition-all hover:bg-accent border-border/60 gap-2">
-            <Link href="/ficha-social">
-              <Network className="h-4 w-4 text-indigo-500" />
-              Buscador Ficha 360°
-            </Link>
-          </Button>
-          <Button variant="outline" asChild className="rounded-2xl h-11 px-4 text-xs font-bold transition-all hover:bg-accent border-border/60 gap-2">
-            <Link href="/ficha-social/cruces">
-              Matriz de Cruces
-            </Link>
-          </Button>
-          <Sheet>
-            <SheetTrigger asChild>
-              <Button variant="outline" className="rounded-2xl h-11 px-4 text-xs font-bold transition-all hover:bg-accent border-border/60">
-                <Upload className="mr-2 h-4 w-4"/> Importar
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="right" className="sm:max-w-xl w-full bg-card text-card-foreground rounded-l-[2rem] shadow-2xl p-8 overflow-y-auto border-l border-border">
-              <SheetHeader className="mb-8">
-                <SheetTitle className="text-2xl font-black">Importación Masiva</SheetTitle>
-                <SheetDescription>Suba su archivo Excel para migrar intervenciones y ciudadanos.</SheetDescription>
-              </SheetHeader>
-              <InterventionsAdminPage />
-            </SheetContent>
-          </Sheet>
-          <Button asChild className="rounded-2xl h-11 px-5 shadow-lg shadow-primary/20 transition-all hover:scale-105 bg-primary text-primary-foreground font-bold text-xs">
-            <Link href="/people/new"><Plus className="mr-2 h-4 w-4"/> Nueva Persona</Link>
-          </Button>
-        </div>
-      </div>
+      <PageHeader
+        title="Registro Único"
+        description="Padrón centralizado de ciudadanos, familias y asistencia municipal unificada de Tres de Febrero."
+        icon={Users}
+        badge="Padrón 360°"
+        actions={
+          <>
+            <Button variant="outline" asChild className="rounded-2xl h-11 px-4 text-xs font-bold transition-all hover:bg-accent border-border/60 gap-2">
+              <Link href="/ficha-social">
+                <Network className="h-4 w-4 text-indigo-500" />
+                Buscador Ficha 360°
+              </Link>
+            </Button>
+            <Button variant="outline" asChild className="rounded-2xl h-11 px-4 text-xs font-bold transition-all hover:bg-accent border-border/60 gap-2">
+              <Link href="/ficha-social/cruces">
+                Matriz de Cruces
+              </Link>
+            </Button>
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="outline" className="rounded-2xl h-11 px-4 text-xs font-bold transition-all hover:bg-accent border-border/60">
+                  <Upload className="mr-2 h-4 w-4"/> Importar
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="right" className="sm:max-w-xl w-full bg-card text-card-foreground rounded-l-[2rem] shadow-2xl p-8 overflow-y-auto border-l border-border">
+                <SheetHeader className="mb-8">
+                  <SheetTitle className="text-2xl font-bold">Importación Masiva</SheetTitle>
+                  <SheetDescription>Suba su archivo Excel para migrar intervenciones y ciudadanos.</SheetDescription>
+                </SheetHeader>
+                <InterventionsAdminPage />
+              </SheetContent>
+            </Sheet>
+            <Button asChild className="rounded-2xl h-11 px-5 shadow-lg shadow-primary/20 transition-all hover:scale-105 bg-primary text-primary-foreground font-bold text-xs">
+              <Link href="/people/new"><Plus className="mr-2 h-4 w-4"/> Nueva Persona</Link>
+            </Button>
+          </>
+        }
+      />
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="p-6 border border-blue-500/30 shadow-md bg-gradient-to-br from-blue-600 to-blue-700 text-white rounded-3xl relative overflow-hidden">
-          <div className="flex justify-between items-start mb-3">
-            <p className="text-xs font-black uppercase tracking-widest text-blue-100">Padrón Unificado</p>
-            <div className="p-2 bg-white/10 rounded-xl">
-              <Users className="h-4 w-4 text-white" />
-            </div>
-          </div>
-          <div className="text-4xl font-black tabular-nums">{stats.total.toLocaleString("es-AR")}</div>
-          <p className="text-[11px] mt-2 text-blue-100/80 font-medium">Ciudadanos unificados con cruce de programas</p>
-        </Card>
-
-        <Card className="p-6 border border-border/60 shadow-sm bg-card text-card-foreground rounded-3xl">
-          <div className="flex justify-between items-start mb-3">
-            <p className="text-xs font-black uppercase tracking-widest text-muted-foreground">Edad Promedio</p>
-            <div className="p-2 bg-primary/10 text-primary rounded-xl">
-              <Calendar className="h-4 w-4" />
-            </div>
-          </div>
-          <div className="text-4xl font-black text-foreground tabular-nums">
-            {stats.avgAge > 0 ? (
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
+        <StatCard
+          label="Padrón Unificado"
+          value={stats.total.toLocaleString("es-AR")}
+          hint="Ciudadanos unificados con cruce de programas"
+          icon={Users}
+          tone="blue"
+        />
+        <StatCard
+          label="Edad Promedio"
+          value={
+            stats.avgAge > 0 ? (
               <>
                 {stats.avgAge} <span className="text-xl font-normal text-muted-foreground">años</span>
               </>
             ) : (
               <span className="text-2xl font-bold text-muted-foreground">S/D</span>
-            )}
-          </div>
-          <p className="text-[11px] mt-2 text-muted-foreground font-medium">Promedio etario de titulares y beneficiarios</p>
-        </Card>
-
-        <Card className="p-6 border border-border/60 shadow-sm bg-card text-card-foreground rounded-3xl">
-          <div className="flex justify-between items-start mb-3">
-            <p className="text-xs font-black uppercase tracking-widest text-muted-foreground">Barrio con Mayor Asistencia</p>
-            <div className="p-2 bg-amber-500/10 text-amber-500 rounded-xl">
-              <Building2 className="h-4 w-4" />
-            </div>
-          </div>
-          <div className="text-xl font-black text-foreground line-clamp-1" title={stats.topArea}>
-            {stats.topArea && stats.topArea !== "Tres de Febrero" && stats.topArea !== "Sin datos" ? stats.topArea : "Sin registros"}
-          </div>
-          <p className="text-[11px] mt-2 text-muted-foreground font-medium">Zona de mayor concentración de prestaciones</p>
-        </Card>
+            )
+          }
+          hint="Promedio etario de titulares y beneficiarios"
+          icon={Calendar}
+          tone="purple"
+        />
+        <StatCard
+          className="col-span-2 lg:col-span-1"
+          label="Barrio con Mayor Asistencia"
+          value={
+            <span className="line-clamp-1 text-xl" title={stats.topArea}>
+              {stats.topArea && stats.topArea !== "Tres de Febrero" && stats.topArea !== "Sin datos" ? stats.topArea : "Sin registros"}
+            </span>
+          }
+          hint="Zona de mayor concentración de prestaciones"
+          icon={Building2}
+          tone="orange"
+        />
       </div>
 
       {/* Componente de Filtros Avanzados */}
@@ -150,27 +138,26 @@ export default async function PeoplePage({
       />
 
       {/* Tabla de Ciudadanos */}
-      <Card className="border border-border/60 shadow-sm overflow-hidden rounded-3xl bg-card p-2 sm:p-4 space-y-4">
-        <div className="overflow-x-auto">
+      <Card className="border border-border/60 shadow-sm overflow-hidden rounded-2xl bg-card p-2 sm:p-4 space-y-4">
           <Table>
             <TableHeader className="bg-muted/40">
               <TableRow className="border-b border-border/60 hover:bg-transparent">
-                <TableHead className="font-black text-muted-foreground uppercase text-[10px] tracking-wider py-4 px-6">
+                <TableHead className="font-bold text-muted-foreground uppercase text-[10px] tracking-wider py-4 px-6">
                   Apellido y Nombre
                 </TableHead>
-                <TableHead className="font-black text-muted-foreground uppercase text-[10px] tracking-wider py-4 px-6">
+                <TableHead className="font-bold text-muted-foreground uppercase text-[10px] tracking-wider py-4 px-6">
                   DNI
                 </TableHead>
-                <TableHead className="font-black text-muted-foreground uppercase text-[10px] tracking-wider py-4 px-6">
+                <TableHead className="font-bold text-muted-foreground uppercase text-[10px] tracking-wider py-4 px-6">
                   Programas Sociales Activos
                 </TableHead>
-                <TableHead className="font-black text-muted-foreground uppercase text-[10px] tracking-wider py-4 px-6">
+                <TableHead className="font-bold text-muted-foreground uppercase text-[10px] tracking-wider py-4 px-6">
                   Barrio / Domicilio
                 </TableHead>
-                <TableHead className="font-black text-muted-foreground uppercase text-[10px] tracking-wider py-4 px-6">
+                <TableHead className="font-bold text-muted-foreground uppercase text-[10px] tracking-wider py-4 px-6">
                   Contacto
                 </TableHead>
-                <TableHead className="font-black text-muted-foreground uppercase text-[10px] tracking-wider py-4 px-6 text-right">
+                <TableHead className="font-bold text-muted-foreground uppercase text-[10px] tracking-wider py-4 px-6 text-right">
                   Acciones
                 </TableHead>
               </TableRow>
@@ -245,28 +232,25 @@ export default async function PeoplePage({
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-16 text-muted-foreground">
-                    <div className="flex flex-col items-center justify-center space-y-3">
-                      <UserX className="h-10 w-10 text-muted-foreground/40" />
-                      <div>
-                        <p className="text-sm font-bold text-foreground">No se encontraron ciudadanos empadronados</p>
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                          Pruebe ajustando la búsqueda por texto o limpiando los filtros de barrio y programa social.
-                        </p>
-                      </div>
-                      <Button variant="outline" asChild className="rounded-2xl text-xs font-bold gap-2 border-border/60">
-                        <Link href="/people">
-                          <RotateCcw className="h-3.5 w-3.5 text-primary" />
-                          Restablecer Filtros
-                        </Link>
-                      </Button>
-                    </div>
+                  <TableCell colSpan={6} className="p-0">
+                    <EmptyMessage
+                      title="No se encontraron ciudadanos empadronados"
+                      description="Pruebe ajustando la búsqueda por texto o limpiando los filtros de barrio y programa social."
+                      icon={UserX}
+                      action={
+                        <Button variant="outline" asChild className="rounded-2xl text-xs font-bold gap-2 border-border/60">
+                          <Link href="/people">
+                            <RotateCcw className="h-3.5 w-3.5 text-primary" />
+                            Restablecer Filtros
+                          </Link>
+                        </Button>
+                      }
+                    />
                   </TableCell>
                 </TableRow>
               )}
             </TableBody>
           </Table>
-        </div>
 
         {/* Componente de Paginación Server-Side */}
         <PeoplePagination

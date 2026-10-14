@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { BudgetEditDialog } from "@/app/(dashboard)/admin/budget/budget-edit-dialog";
 import Link from "next/link";
+import { PageHeader } from "@/components/layout/page-header";
+import { StatCard } from "@/components/ui/stat-card";
 
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat('es-AR', {
@@ -59,86 +61,65 @@ export default async function BudgetPage() {
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-3xl font-black tracking-tight text-foreground">Gestión de Presupuesto</h2>
-          <p className="text-muted-foreground text-base">Monitoreo y ejecución presupuestaria de las secretarías municipales.</p>
-        </div>
-
-        <div className="flex gap-2">
+      <PageHeader
+        title="Gestión de Presupuesto"
+        description="Monitoreo y ejecución presupuestaria de las secretarías municipales."
+        icon={Wallet}
+        actions={
           <Button asChild variant="outline" className="rounded-xl font-bold gap-2">
             <Link href="/admin/agreements">
               <FileCheck className="h-4 w-4 text-primary" /> Ver Convenios Institucionales
             </Link>
           </Button>
-        </div>
-      </div>
+        }
+      />
 
       {/* Grid de 4 KPI Cards */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-        <Card className="rounded-3xl bg-card border-border/60 shadow-sm overflow-hidden">
-          <CardHeader className="pb-2 flex flex-row items-center justify-between">
-            <CardTitle className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Presupuesto Votado</CardTitle>
-            <div className="p-2.5 rounded-2xl bg-blue-500/10 text-blue-600 dark:text-blue-400">
-              <Wallet className="h-5 w-5" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-black text-foreground">{formatCurrency(totalBudget)}</div>
-            <p className="text-xs text-muted-foreground mt-1">Asignación total anual</p>
-          </CardContent>
-        </Card>
-
-        <Card className="rounded-3xl bg-card border-border/60 shadow-sm overflow-hidden">
-          <CardHeader className="pb-2 flex flex-row items-center justify-between">
-            <CardTitle className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Total Ejecutado</CardTitle>
-            <div className="p-2.5 rounded-2xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
-              <TrendingUp className="h-5 w-5" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-black text-foreground">{formatCurrency(totalSpent)}</div>
-            <p className="text-xs text-muted-foreground mt-1">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+        <StatCard
+          label="Presupuesto Votado"
+          value={formatCurrency(totalBudget)}
+          hint="Asignación total anual"
+          icon={Wallet}
+          tone="blue"
+        />
+        <StatCard
+          label="Total Ejecutado"
+          value={formatCurrency(totalSpent)}
+          hint={
+            <>
               Órdenes aprobadas y cumplidas
               {unassignedSpent > 0 && ` (incluye ${formatCurrency(unassignedSpent)} sin área asignada)`}
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="rounded-3xl bg-card border-border/60 shadow-sm overflow-hidden">
-          <CardHeader className="pb-2 flex flex-row items-center justify-between">
-            <CardTitle className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Saldo Disponible Global</CardTitle>
-            <div className="p-2.5 rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-              <Coins className="h-5 w-5" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-black text-foreground">{formatCurrency(remainingBudget)}</div>
-            <p className="text-xs text-muted-foreground mt-1">Fondo remanente</p>
-          </CardContent>
-        </Card>
-
-        <Card className="rounded-3xl bg-card border-border/60 shadow-sm overflow-hidden">
-          <CardHeader className="pb-2 flex flex-row items-center justify-between">
-            <CardTitle className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Ejecución Promedio</CardTitle>
-            <div className="p-2.5 rounded-2xl bg-purple-500/10 text-purple-600 dark:text-purple-400">
-              <Activity className="h-5 w-5" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-baseline justify-between">
-              <span className="text-2xl font-black text-foreground">{globalPercentage.toFixed(1)}%</span>
-              <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border ${healthBadge.color}`}>
+            </>
+          }
+          icon={TrendingUp}
+          tone="purple"
+        />
+        <StatCard
+          label="Saldo Disponible Global"
+          value={formatCurrency(remainingBudget)}
+          hint="Fondo remanente"
+          icon={Coins}
+          tone="green"
+        />
+        <StatCard
+          label="Ejecución Promedio"
+          value={
+            <span className="flex flex-wrap items-baseline justify-between gap-2">
+              <span>{globalPercentage.toFixed(1)}%</span>
+              <span className={`font-sans text-[10px] font-bold px-2.5 py-0.5 rounded-full border ${healthBadge.color}`}>
                 {healthBadge.label}
               </span>
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">Tasa global de utilización</p>
-          </CardContent>
-        </Card>
+            </span>
+          }
+          hint="Tasa global de utilización"
+          icon={Activity}
+          tone="purple"
+        />
       </div>
 
       {/* Termómetro de Avance Global */}
-      <Card className="rounded-3xl bg-card border-border/60 shadow-sm p-6 space-y-3">
+      <Card className="rounded-2xl bg-card border-border/60 shadow-sm p-6 space-y-3">
         <div className="flex justify-between items-center text-xs font-bold text-foreground">
           <span className="uppercase tracking-wider text-muted-foreground">Avance Presupuestario Global</span>
           <span className="font-mono text-primary">{formatCurrency(totalSpent)} de {formatCurrency(totalBudget)} ({globalPercentage.toFixed(1)}%)</span>
@@ -149,7 +130,7 @@ export default async function BudgetPage() {
       {/* Tarjetas de Áreas */}
       <div className="grid gap-6 md:grid-cols-2">
         {summary.map((area) => (
-          <Card key={area.id} className="rounded-3xl bg-card border-border/60 shadow-sm overflow-hidden hover:shadow-md transition-all">
+          <Card key={area.id} className="rounded-2xl bg-card border-border/60 shadow-sm overflow-hidden hover:shadow-md transition-all">
             <CardHeader className="pb-2 flex flex-row items-start justify-between">
               <div>
                 <CardTitle className="text-lg font-bold text-foreground">{area.name}</CardTitle>

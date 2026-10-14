@@ -11,6 +11,7 @@ import {
   FileSpreadsheet, CheckCircle2, ArrowUpRight, Copy, Download
 } from "lucide-react";
 import { toast } from "sonner";
+import { PageHeader } from "@/components/layout/page-header";
 import { useTheme } from "next-themes";
 import {
   Bar, BarChart, ResponsiveContainer, XAxis, YAxis,
@@ -303,7 +304,7 @@ export default function AssistantPage() {
             <table className="w-full text-xs text-left border-collapse">
               <thead>
                 <tr className="bg-muted/70 text-muted-foreground uppercase font-bold tracking-wider border-b border-border/40">
-                  {tableHeaders.map((header, hIdx) => <th key={hIdx} className="px-4 py-3 font-black">{header}</th>)}
+                  {tableHeaders.map((header, hIdx) => <th key={hIdx} className="px-4 py-3 font-bold">{header}</th>)}
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/40">
@@ -320,9 +321,9 @@ export default function AssistantPage() {
       }
 
       if (trimmed.startsWith("###")) {
-        elements.push(<h3 key={index} className="text-lg font-black tracking-tight mt-5 mb-2 text-foreground flex items-center gap-2">{trimmed.replace("###", "").trim()}</h3>);
+        elements.push(<h3 key={index} className="text-lg font-bold tracking-tight mt-5 mb-2 text-foreground flex items-center gap-2">{trimmed.replace("###", "").trim()}</h3>);
       } else if (trimmed.startsWith("####")) {
-        elements.push(<h4 key={index} className="text-xs font-black uppercase tracking-wider text-muted-foreground mt-4 mb-2">{trimmed.replace("####", "").trim()}</h4>);
+        elements.push(<h4 key={index} className="text-xs font-bold uppercase tracking-wider text-muted-foreground mt-4 mb-2">{trimmed.replace("####", "").trim()}</h4>);
       } else if (trimmed.startsWith("*   ") || trimmed.startsWith("-   ")) {
         elements.push(<li key={index} className="ml-5 list-disc text-xs text-foreground/90 my-1 font-medium leading-relaxed" dangerouslySetInnerHTML={{ __html: inlineMarkdown(trimmed.substring(4)) }} />);
       } else if (trimmed.startsWith("* ") || trimmed.startsWith("- ")) {
@@ -340,7 +341,7 @@ export default function AssistantPage() {
           <table className="w-full text-xs text-left border-collapse">
             <thead>
               <tr className="bg-muted/70 text-muted-foreground uppercase font-bold tracking-wider border-b border-border/40">
-                {tableHeaders.map((header, hIdx) => <th key={hIdx} className="px-4 py-3 font-black">{header}</th>)}
+                {tableHeaders.map((header, hIdx) => <th key={hIdx} className="px-4 py-3 font-bold">{header}</th>)}
               </tr>
             </thead>
             <tbody className="divide-y divide-border/40">
@@ -359,7 +360,7 @@ export default function AssistantPage() {
 
   const inlineMarkdown = (text: string) => {
     let html = text;
-    html = html.replace(/\*\*(.*?)\*\*/g, "<strong class='font-black text-foreground'>$1</strong>");
+    html = html.replace(/\*\*(.*?)\*\*/g, "<strong class='font-bold text-foreground'>$1</strong>");
     html = html.replace(/\*(.*?)\*/g, "<em class='text-muted-foreground font-medium'>$1</em>");
     html = html.replace(/`(.*?)`/g, "<code class='bg-muted px-1.5 py-0.5 rounded text-rose-500 font-bold font-mono text-xs'>$1</code>");
     return html;
@@ -372,7 +373,7 @@ export default function AssistantPage() {
     return (
       <div className="mt-4 p-5 rounded-2xl border border-border/40 shadow-sm bg-card/60 backdrop-blur-sm w-full min-h-[220px]">
         <div className="flex items-center justify-between mb-4">
-          <p className="text-xs font-black uppercase tracking-wider text-muted-foreground">{chartTitle}</p>
+          <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{chartTitle}</p>
           <Button
             size="sm"
             variant="ghost"
@@ -475,31 +476,28 @@ export default function AssistantPage() {
 
   return (
     <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500 h-[calc(100vh-8rem)] max-h-[calc(100vh-8rem)] flex flex-col overflow-hidden">
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 shrink-0">
-        <div className="flex flex-col gap-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <div className="p-2 bg-blue-500/10 text-blue-500 rounded-xl animate-pulse">
-              <Sparkles className="h-5 w-5" />
-            </div>
-            <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-foreground">Asistente de IA</h2>
-          </div>
-          <p className="text-muted-foreground text-xs sm:text-sm">Consultas y análisis dinámico de la base de datos municipal en tiempo real.</p>
-        </div>
-        <Button
-          variant="outline"
-          onClick={clearChat}
-          className="self-start sm:self-auto rounded-xl text-xs font-bold uppercase tracking-wider h-9 flex items-center gap-2 border-border/60 hover:bg-muted/50 text-foreground"
-        >
-          <RefreshCw className="h-3.5 w-3.5" />
-          Limpiar Conversación
-        </Button>
-      </div>
+      <PageHeader
+        className="shrink-0"
+        title="Asistente de IA"
+        description="Consultas y análisis dinámico de la base de datos municipal en tiempo real."
+        icon={Sparkles}
+        actions={
+          <Button
+            variant="outline"
+            onClick={clearChat}
+            className="rounded-xl text-xs font-bold uppercase tracking-wider h-9 flex items-center gap-2 border-border/60 hover:bg-muted/50 text-foreground"
+          >
+            <RefreshCw className="h-3.5 w-3.5" />
+            Limpiar Conversación
+          </Button>
+        }
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 flex-1 min-h-0 overflow-hidden">
         <div className="hidden lg:flex lg:col-span-1 flex-col gap-4 min-h-0 overflow-hidden">
-          <Card className="bg-card text-card-foreground border border-border/60 shadow-sm h-full flex flex-col overflow-hidden rounded-3xl">
+          <Card className="bg-card text-card-foreground border border-border/60 shadow-sm h-full flex flex-col overflow-hidden rounded-2xl">
             <CardHeader className="pb-3 shrink-0">
-              <CardTitle className="text-xs font-black uppercase tracking-wider text-foreground">Consultas Frecuentes</CardTitle>
+              <CardTitle className="text-xs font-bold uppercase tracking-wider text-foreground">Consultas Frecuentes</CardTitle>
               <CardDescription className="text-[11px] text-muted-foreground">Selecciona un tema para consultar los datos reales al instante.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-2.5 overflow-y-auto flex-1 min-h-0 pr-2 custom-scrollbar">
@@ -524,7 +522,7 @@ export default function AssistantPage() {
         </div>
 
         <div className="lg:col-span-3 flex flex-col h-full min-h-0 overflow-hidden">
-          <Card className="bg-card text-card-foreground border border-border/60 shadow-sm flex-1 min-h-0 flex flex-col overflow-hidden rounded-[2rem]">
+          <Card className="bg-card text-card-foreground border border-border/60 shadow-sm flex-1 min-h-0 flex flex-col overflow-hidden rounded-2xl">
             {/* En el celular las consultas frecuentes van como botones deslizables arriba del chat. */}
             <div className="lg:hidden flex gap-2 overflow-x-auto shrink-0 px-3 pt-3 pb-1 custom-scrollbar">
               {suggestions.map((s, idx) => (
@@ -554,7 +552,7 @@ export default function AssistantPage() {
                   }`}>
                     {m.sender === "user" ? <User className="h-4 w-4" /> : <Bot className="h-4 w-4" />}
                   </div>
-                  <div className={`rounded-3xl p-3 sm:p-5 shadow-xs text-foreground relative min-w-0 ${
+                  <div className={`rounded-2xl p-3 sm:p-5 shadow-xs text-foreground relative min-w-0 ${
                     m.sender === "user"
                       ? "bg-primary/10 border border-primary/20 rounded-tr-none text-foreground font-semibold"
                       : "bg-muted/40 border border-border/40 rounded-tl-none w-full sm:pr-16 text-foreground"
@@ -567,7 +565,7 @@ export default function AssistantPage() {
                         {m.dataSummary?.chart && renderChart(m.dataSummary.chart)}
                         {m.dataSummary?.sources && m.dataSummary.sources.length > 0 && (
                           <div className="mt-4 pt-3 border-t border-border/20 space-y-2">
-                            <p className="text-[10px] font-black uppercase tracking-wider text-muted-foreground flex items-center gap-1 select-none">
+                            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1 select-none">
                               <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
                               Fuentes Verificadas de la BD Municipal
                             </p>
@@ -640,7 +638,7 @@ export default function AssistantPage() {
                   <div className="w-8 h-8 rounded-full bg-muted border border-border/40 text-primary flex items-center justify-center shrink-0">
                     <Bot className="h-4 w-4 animate-spin" />
                   </div>
-                  <div className="bg-muted/40 border border-border/40 rounded-3xl rounded-tl-none p-4 flex items-center gap-3">
+                  <div className="bg-muted/40 border border-border/40 rounded-2xl rounded-tl-none p-4 flex items-center gap-3">
                     <span className="flex h-2 w-2 relative">
                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
                       <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>

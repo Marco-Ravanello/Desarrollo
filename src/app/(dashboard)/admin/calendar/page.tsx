@@ -4,7 +4,7 @@ import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { UnifiedCalendar } from "@/components/calendar/unified-calendar";
-import { Badge } from "@/components/ui/badge";
+import { PageHeader } from "@/components/layout/page-header";
 import { Car, ShoppingBag, CheckSquare, Calendar as CalendarIcon } from "lucide-react";
 
 export default async function AdminCalendarPage() {
@@ -89,43 +89,30 @@ export default async function AdminCalendarPage() {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500 pb-20">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <div className="p-2.5 bg-primary/10 text-primary border border-primary/20 rounded-2xl">
-              <CalendarIcon className="h-6 w-6" />
+      <PageHeader
+        title="Agenda Unificada de Logística y Tareas"
+        description="Calendario interactivo con vista semanal/diaria, capas operativas, arrastrar y soltar (drag & drop) y mini mapa mensual."
+        icon={CalendarIcon}
+        badge="Planificación 3F"
+        actions={
+          <>
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-blue-500/10 border border-blue-500/20 text-blue-500 text-xs font-bold">
+              <Car className="h-3.5 w-3.5" />
+              <span>{serializedReservations.length} Móviles en servicio</span>
             </div>
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-black text-foreground tracking-tight flex items-center gap-2">
-                Agenda Unificada de Logística y Tareas
-                <Badge className="hidden sm:inline-flex bg-primary/20 text-primary border border-primary/30 text-[10px] font-bold uppercase py-0.5">
-                  Planificación 3F
-                </Badge>
-              </h1>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                Calendario interactivo con vista semanal/diaria, capas operativas, arrastrar y soltar (drag & drop) y mini mapa mensual.
-              </p>
+
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 text-xs font-bold">
+              <ShoppingBag className="h-3.5 w-3.5" />
+              <span>{serializedOrders.length} Entregas de Compras</span>
             </div>
-          </div>
-        </div>
 
-        <div className="flex items-center gap-2 flex-wrap">
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-blue-500/10 border border-blue-500/20 text-blue-500 text-xs font-bold">
-            <Car className="h-3.5 w-3.5" />
-            <span>{serializedReservations.length} Móviles en servicio</span>
-          </div>
-
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 text-xs font-bold">
-            <ShoppingBag className="h-3.5 w-3.5" />
-            <span>{serializedOrders.length} Entregas de Compras</span>
-          </div>
-
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-500 text-xs font-bold">
-            <CheckSquare className="h-3.5 w-3.5" />
-            <span>{serializedTasks.length} Tareas Compartidas</span>
-          </div>
-        </div>
-      </div>
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-500 text-xs font-bold">
+              <CheckSquare className="h-3.5 w-3.5" />
+              <span>{serializedTasks.length} Tareas Compartidas</span>
+            </div>
+          </>
+        }
+      />
 
       <UnifiedCalendar
         reservations={serializedReservations}

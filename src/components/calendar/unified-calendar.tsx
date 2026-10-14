@@ -11,6 +11,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { EmptyMessage } from "@/components/ui/empty-message";
 import { toast } from "sonner";
 import Link from "next/link";
 import {
@@ -296,10 +297,10 @@ export function UnifiedCalendar({ reservations = [], purchaseOrders = [], tasks 
   return (
     <div className="grid grid-cols-1 xl:grid-cols-4 gap-8">
       <div className="xl:col-span-1 space-y-6">
-        <Card className="bg-card text-card-foreground border border-border/60 shadow-xs p-5 space-y-5 rounded-3xl">
+        <Card className="bg-card text-card-foreground border border-border/60 shadow-xs p-5 space-y-5 rounded-2xl">
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-black uppercase tracking-wider text-foreground">
+              <span className="text-xs font-bold uppercase tracking-wider text-foreground">
                 {monthNames[miniCalMonth.getMonth()]} {miniCalMonth.getFullYear()}
               </span>
               <div className="flex items-center gap-1">
@@ -322,7 +323,7 @@ export function UnifiedCalendar({ reservations = [], purchaseOrders = [], tasks 
               </div>
             </div>
 
-            <div className="grid grid-cols-7 text-center text-[10px] font-black uppercase text-muted-foreground py-1 border-b border-border/30">
+            <div className="grid grid-cols-7 text-center text-[10px] font-bold uppercase text-muted-foreground py-1 border-b border-border/30">
               {["D", "L", "M", "M", "J", "V", "S"].map((d, idx) => (
                 <span key={idx}>{d}</span>
               ))}
@@ -351,9 +352,9 @@ export function UnifiedCalendar({ reservations = [], purchaseOrders = [], tasks 
                     }}
                     className={`h-7 w-7 mx-auto rounded-xl font-bold flex flex-col items-center justify-center relative transition-all ${
                       isSelected
-                        ? "bg-primary text-primary-foreground shadow-xs font-black"
+                        ? "bg-primary text-primary-foreground shadow-xs font-bold"
                         : isToday
-                        ? "border border-primary text-primary font-black"
+                        ? "border border-primary text-primary font-bold"
                         : "hover:bg-muted text-foreground"
                     }`}
                   >
@@ -377,7 +378,7 @@ export function UnifiedCalendar({ reservations = [], purchaseOrders = [], tasks 
           </div>
 
           <div className="space-y-2">
-            <span className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
               Capas de Actividad Operativa
             </span>
 
@@ -462,13 +463,13 @@ export function UnifiedCalendar({ reservations = [], purchaseOrders = [], tasks 
       </div>
 
       <div className="xl:col-span-3 space-y-6">
-        <Card className="bg-card text-card-foreground border border-border/60 shadow-xs overflow-hidden rounded-3xl">
+        <Card className="bg-card text-card-foreground border border-border/60 shadow-xs overflow-hidden rounded-2xl">
           <div className="p-5 border-b border-border/40 flex flex-col md:flex-row justify-between items-center gap-4 bg-muted/20">
             <div className="flex items-center gap-3">
               <div className="p-2.5 bg-primary/10 text-primary rounded-2xl border border-primary/20">
                 <Calendar className="h-5 w-5" />
               </div>
-              <h3 className="font-black text-xl text-foreground">
+              <h3 className="font-bold text-xl text-foreground">
                 {view === "month" && `${monthNames[currentDate.getMonth()]} ${currentDate.getFullYear()}`}
                 {view === "week" && `Semana del ${weekDays[0].getDate()} de ${monthNames[weekDays[0].getMonth()]}`}
                 {view === "day" && `${currentDate.toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long" })}`}
@@ -526,7 +527,7 @@ export function UnifiedCalendar({ reservations = [], purchaseOrders = [], tasks 
             <div>
               <div className="grid grid-cols-7 text-center border-b border-border/40 bg-muted/30 py-2.5">
                 {["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"].map((day) => (
-                  <div key={day} className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                  <div key={day} className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                     {day}
                   </div>
                 ))}
@@ -559,8 +560,8 @@ export function UnifiedCalendar({ reservations = [], purchaseOrders = [], tasks 
                       }`}
                     >
                       <span
-                        className={`text-[10px] font-black w-5 h-5 rounded-full flex items-center justify-center mb-1.5 ${
-                          isToday ? "bg-primary text-primary-foreground font-black" : "text-muted-foreground"
+                        className={`text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center mb-1.5 ${
+                          isToday ? "bg-primary text-primary-foreground font-bold" : "text-muted-foreground"
                         }`}
                       >
                         {d}
@@ -604,7 +605,7 @@ export function UnifiedCalendar({ reservations = [], purchaseOrders = [], tasks 
             <div className="overflow-x-auto custom-scrollbar">
               <div className="min-w-[850px] relative">
                 <div className="grid grid-cols-8 border-b border-border/40 bg-muted/30 py-3 text-center">
-                  <div className="text-[10px] font-black uppercase tracking-widest text-muted-foreground border-r border-border/40">
+                  <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground border-r border-border/40">
                     Horario
                   </div>
                   {weekDays.map((date, idx) => {
@@ -617,17 +618,17 @@ export function UnifiedCalendar({ reservations = [], purchaseOrders = [], tasks 
                         }`}
                       >
                         <div className="flex items-center gap-1">
-                          <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">
+                          <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">
                             {["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"][idx]}
                           </span>
                           {isToday && (
-                            <Badge className="bg-primary text-primary-foreground text-[8px] font-black px-1 py-0 h-3.5 uppercase">
+                            <Badge className="bg-primary text-primary-foreground text-[8px] font-bold px-1 py-0 h-3.5 uppercase">
                               Hoy
                             </Badge>
                           )}
                         </div>
                         <span
-                          className={`text-sm font-black w-7 h-7 rounded-full flex items-center justify-center mt-1 ${
+                          className={`text-sm font-bold w-7 h-7 rounded-full flex items-center justify-center mt-1 ${
                             isToday ? "bg-primary text-primary-foreground shadow-xs" : "text-foreground"
                           }`}
                         >
@@ -802,9 +803,7 @@ export function UnifiedCalendar({ reservations = [], purchaseOrders = [], tasks 
           {view === "agenda" && (
             <div className="divide-y divide-border/20 p-6 max-h-[620px] overflow-y-auto custom-scrollbar">
               {filteredEvents.length === 0 ? (
-                <div className="py-20 text-center text-muted-foreground italic font-medium">
-                  No hay compromisos registrados en esta vista.
-                </div>
+                <EmptyMessage title="No hay compromisos registrados en esta vista." icon={Calendar} className="py-20" />
               ) : (
                 filteredEvents
                   .sort((a, b) => a.startDate.getTime() - b.startDate.getTime())
@@ -826,10 +825,10 @@ export function UnifiedCalendar({ reservations = [], purchaseOrders = [], tasks 
                       >
                         <div className="flex items-start md:items-center gap-4">
                           <div className="p-2.5 bg-muted rounded-2xl text-center shrink-0 w-16 shadow-2xs border border-border/40">
-                            <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">
+                            <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">
                               {e.startDate.toLocaleDateString("es-AR", { weekday: "short" })}
                             </p>
-                            <p className="text-lg font-black text-foreground">
+                            <p className="text-lg font-bold text-foreground">
                               {e.startDate.getDate()}
                             </p>
                           </div>
@@ -838,7 +837,7 @@ export function UnifiedCalendar({ reservations = [], purchaseOrders = [], tasks 
                             <h4 className="font-bold text-sm text-foreground group-hover:text-primary transition-colors flex items-center gap-2">
                               <IconComp className="h-4 w-4 shrink-0 text-primary" />
                               {e.title}
-                              <Badge className={`rounded-full px-2.5 py-0.5 text-[9px] font-black border-none ${e.badgeBg}`}>
+                              <Badge className={`rounded-full px-2.5 py-0.5 text-[9px] font-bold border-none ${e.badgeBg}`}>
                                 {e.type === "reservation" ? "RESERVA" : e.type === "order" ? "ENTREGA OC" : "TAREA"}
                               </Badge>
                             </h4>
@@ -865,7 +864,7 @@ export function UnifiedCalendar({ reservations = [], purchaseOrders = [], tasks 
 
       {selectedEvent && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs transition-opacity animate-in fade-in duration-300">
-          <Card className="w-full max-w-lg bg-card border border-border/60 shadow-xl p-6 space-y-6 relative rounded-3xl animate-in zoom-in-95 duration-200">
+          <Card className="w-full max-w-lg bg-card border border-border/60 shadow-xl p-6 space-y-6 relative rounded-2xl animate-in zoom-in-95 duration-200">
             <Button
               variant="ghost"
               size="icon"
@@ -876,10 +875,10 @@ export function UnifiedCalendar({ reservations = [], purchaseOrders = [], tasks 
             </Button>
 
             <div className="space-y-2">
-              <Badge className={`rounded-full px-3 py-0.5 text-[10px] font-black tracking-widest border-none w-fit ${selectedEvent.badgeBg}`}>
+              <Badge className={`rounded-full px-3 py-0.5 text-[10px] font-bold tracking-widest border-none w-fit ${selectedEvent.badgeBg}`}>
                 {selectedEvent.type === "reservation" ? "RESERVA DE VEHÍCULO" : selectedEvent.type === "order" ? "ENTREGA DE ORDEN" : "TAREA ADMINISTRATIVA"}
               </Badge>
-              <h3 className="text-xl font-black text-foreground tracking-tight">{selectedEvent.title}</h3>
+              <h3 className="text-xl font-bold text-foreground tracking-tight">{selectedEvent.title}</h3>
             </div>
 
             <div className="bg-muted/40 rounded-2xl border border-border/40 p-4 space-y-3.5">
@@ -949,7 +948,7 @@ export function UnifiedCalendar({ reservations = [], purchaseOrders = [], tasks 
             </div>
 
             <div className="space-y-4 pt-4 border-t border-border/20">
-              <h4 className="text-xs font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
+              <h4 className="text-xs font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
                 <Edit2 className="h-3.5 w-3.5" /> Reprogramar Horarios de Logística
               </h4>
 
@@ -1019,7 +1018,7 @@ export function UnifiedCalendar({ reservations = [], purchaseOrders = [], tasks 
                     ? `/admin/purchase-orders/${selectedEvent.id}`
                     : "/tasks"
                 }
-                className="text-xs text-primary font-black uppercase tracking-wider hover:underline flex items-center gap-1"
+                className="text-xs text-primary font-bold uppercase tracking-wider hover:underline flex items-center gap-1"
               >
                 Ver detalle completo <ArrowRight className="h-3 w-3" />
               </Link>
@@ -1030,7 +1029,7 @@ export function UnifiedCalendar({ reservations = [], purchaseOrders = [], tasks 
 
       {showAddModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs transition-opacity animate-in fade-in duration-300">
-          <Card className="w-full max-w-xl bg-card border border-border/60 shadow-xl p-6 space-y-6 relative rounded-3xl animate-in zoom-in-95 duration-200 overflow-y-auto max-h-[90vh]">
+          <Card className="w-full max-w-xl bg-card border border-border/60 shadow-xl p-6 space-y-6 relative rounded-2xl animate-in zoom-in-95 duration-200 overflow-y-auto max-h-[90vh]">
             <Button
               variant="ghost"
               size="icon"
@@ -1041,7 +1040,7 @@ export function UnifiedCalendar({ reservations = [], purchaseOrders = [], tasks 
             </Button>
 
             <div className="space-y-1">
-              <h3 className="text-2xl font-black text-foreground tracking-tight uppercase">Nueva Tarea Compartida</h3>
+              <h3 className="text-2xl font-bold text-foreground tracking-tight uppercase">Nueva Tarea Compartida</h3>
               <p className="text-sm text-muted-foreground font-medium">Cree tareas administrativas y elija qué agentes municipales pueden visualizarlas.</p>
             </div>
 

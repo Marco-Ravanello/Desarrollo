@@ -63,7 +63,7 @@ export async function getDashboardStats(filters?: { from: Date; to: Date }) {
       todayTasks,
       criticalCases
     ] = await Promise.all([
-      getPeopleStats().catch(() => ({ total: 0, avgAge: 0, topArea: "Caseros", localityTotals: {} })),
+      getPeopleStats().catch(() => ({ total: 0, avgAge: 0, topArea: "Sin datos", localityTotals: {} })),
       getPeopleForMap(200).catch(() => []),
       prisma.person.count().catch(() => 0),
       prisma.case.count({ where: { status: { in: ['ABIERTO', 'EN_PROCESO'] } } }).catch(() => 0),
@@ -88,7 +88,7 @@ export async function getDashboardStats(filters?: { from: Date; to: Date }) {
 
     const topArea = (peopleStats?.topArea && peopleStats.topArea !== "Sin datos" && !peopleStats.topArea.toLowerCase().includes("partido"))
       ? peopleStats.topArea
-      : "Caseros";
+      : null;
 
     let occupiedVehicles = 0;
     try {
@@ -368,7 +368,7 @@ export async function getDashboardStats(filters?: { from: Date; to: Date }) {
       vehiclesList: [],
       attentionItems: [],
       areaBudgetProgress: [],
-      topArea: "Caseros"
+      topArea: null
     };
   }
 }

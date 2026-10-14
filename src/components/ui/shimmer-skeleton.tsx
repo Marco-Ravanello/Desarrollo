@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card";
 
 export function TableSkeleton({ rows = 5, columns = 4 }: { rows?: number; columns?: number }) {
   return (
-    <div className="w-full rounded-3xl border border-border/60 overflow-hidden bg-card animate-pulse">
+    <div className="w-full rounded-2xl border border-border/60 overflow-hidden bg-card animate-pulse">
       <div className="bg-muted/50 p-4 border-b border-border/60 flex items-center justify-between gap-4">
         {Array.from({ length: columns }).map((_, i) => (
           <div key={i} className="h-4 bg-muted-foreground/15 rounded-md w-24" />
@@ -27,7 +27,7 @@ export function CardSkeleton({ count = 3 }: { count?: number }) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
       {Array.from({ length: count }).map((_, i) => (
-        <Card key={i} className="p-6 rounded-3xl border border-border/60 bg-card/80 animate-pulse space-y-4">
+        <Card key={i} className="p-6 rounded-2xl border border-border/60 bg-card/80 animate-pulse space-y-4">
           <div className="flex justify-between items-center">
             <div className="h-3 bg-muted-foreground/20 rounded-md w-24" />
             <div className="w-8 h-8 bg-muted-foreground/15 rounded-xl" />

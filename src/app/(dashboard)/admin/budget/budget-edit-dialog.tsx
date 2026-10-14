@@ -38,7 +38,7 @@ export function BudgetEditDialog({ areaId, areaName, currentBudget }: { areaId: 
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button variant="ghost" size="icon">
-          <Settings2 className="h-4 w-4 text-slate-400" />
+          <Settings2 className="h-4 w-4 text-muted-foreground" />
         </Button>
       </DialogTrigger>
       <DialogContent>

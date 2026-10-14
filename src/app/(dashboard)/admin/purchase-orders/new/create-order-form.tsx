@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { createPurchaseOrderAction } from "../../actions/create-purchase-order";
 import { Plus, Trash2, Info } from "lucide-react";
+import { EmptyMessage } from "@/components/ui/empty-message";
 import dynamic from "next/dynamic";
 
 const OCRScanner = dynamic(() => import("@/components/ocr/ocr-scanner").then(mod => mod.OCRScanner), {
@@ -133,7 +134,7 @@ export function CreatePurchaseOrderForm({ providers, areas = [] }: { providers: 
       </CardHeader>
       <CardContent className="space-y-8">
         <div className="bg-slate-50/50 dark:bg-slate-900/30 p-4 rounded-2xl border border-slate-200/50 dark:border-slate-800/50">
-           <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-3">Asistente de Carga Rápida</h4>
+           <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-3">Asistente de Carga Rápida</h4>
            <OCRScanner onScanComplete={handleScanComplete} />
         </div>
 
@@ -268,36 +269,37 @@ export function CreatePurchaseOrderForm({ providers, areas = [] }: { providers: 
              <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <h3 className="text-lg font-semibold">Ítems de la Orden</h3>
-                  <div className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full text-xs font-bold">
+                  <div className="bg-blue-500/15 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded-full text-xs font-bold">
                     {items.length} {items.length === 1 ? 'renglón' : 'renglones'}
                   </div>
                 </div>
-                <Button type="button" variant="outline" size="sm" onClick={addItem} className="text-blue-600 border-blue-200">
+                <Button type="button" variant="outline" size="sm" onClick={addItem} className="text-blue-600 border-blue-500/30">
                   <Plus className="h-4 w-4 mr-1" /> Agregar Ítem
                 </Button>
              </div>
 
              {items.length === 0 ? (
-               <div className="border-2 border-dashed rounded-xl p-8 text-center text-slate-500 bg-slate-50/50">
-                  <Info className="h-8 w-8 mx-auto mb-2 opacity-20" />
-                  <p className="text-sm">No hay ítems cargados. Usa el asistente de OCR o agrega uno manualmente.</p>
-               </div>
+               <EmptyMessage
+                 icon={Info}
+                 title="No hay ítems cargados. Usa el asistente de OCR o agrega uno manualmente."
+                 className="rounded-xl border-2 border-dashed border-border/60"
+               />
              ) : (
                <div className="border rounded-xl overflow-hidden">
                  <table className="w-full text-sm">
-                   <thead className="bg-slate-50 border-b">
+                   <thead className="bg-muted/50 border-b">
                      <tr>
-                       <th className="text-left p-3 font-medium text-slate-600">Cant.</th>
-                       <th className="text-left p-3 font-medium text-slate-600">Unidad</th>
-                       <th className="text-left p-3 font-medium text-slate-600 w-full">Descripción</th>
-                       <th className="text-left p-3 font-medium text-slate-600 text-right">Unitario</th>
-                       <th className="text-left p-3 font-medium text-slate-600 text-right">Total</th>
+                       <th className="text-left p-3 font-medium text-muted-foreground">Cant.</th>
+                       <th className="text-left p-3 font-medium text-muted-foreground">Unidad</th>
+                       <th className="text-left p-3 font-medium text-muted-foreground w-full">Descripción</th>
+                       <th className="text-left p-3 font-medium text-muted-foreground text-right">Unitario</th>
+                       <th className="text-left p-3 font-medium text-muted-foreground text-right">Total</th>
                        <th className="p-3"></th>
                      </tr>
                    </thead>
                    <tbody className="divide-y">
                      {items.map((item, index) => (
-                       <tr key={index} className="hover:bg-slate-50/50 transition-colors">
+                       <tr key={index} className="hover:bg-muted/30 transition-colors">
                          <td className="p-2">
                            <Input
                             className="w-16 h-8 text-center"
@@ -330,7 +332,7 @@ export function CreatePurchaseOrderForm({ providers, areas = [] }: { providers: 
                          </td>
                          <td className="p-2">
                            <Input
-                            className="w-24 h-8 text-right font-medium bg-slate-50"
+                            className="w-24 h-8 text-right font-medium bg-muted/50"
                             type="number"
                             readOnly
                             value={item.totalPrice}
@@ -341,7 +343,7 @@ export function CreatePurchaseOrderForm({ providers, areas = [] }: { providers: 
                             type="button"
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50"
+                            className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-500/10"
                             onClick={() => removeItem(index)}
                            >
                              <Trash2 className="h-4 w-4" />
@@ -350,10 +352,10 @@ export function CreatePurchaseOrderForm({ providers, areas = [] }: { providers: 
                        </tr>
                      ))}
                    </tbody>
-                   <tfoot className="bg-slate-50/50">
+                   <tfoot className="bg-muted/30">
                       <tr>
-                        <td colSpan={4} className="p-3 text-right font-bold text-slate-600">Total Ítems:</td>
-                        <td className="p-3 text-right font-bold text-blue-700">
+                        <td colSpan={4} className="p-3 text-right font-bold text-muted-foreground">Total Ítems:</td>
+                        <td className="p-3 text-right font-bold text-blue-700 dark:text-blue-300">
                           ${items.reduce((acc, item) => acc + (parseFloat(item.totalPrice) || 0), 0).toLocaleString()}
                         </td>
                         <td></td>

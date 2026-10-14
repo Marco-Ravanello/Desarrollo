@@ -6,6 +6,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { ReservationActions } from "./reservation-actions";
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
+import { Car } from "lucide-react";
+import { PageHeader } from "@/components/layout/page-header";
+import { EmptyMessage } from "@/components/ui/empty-message";
 
 export default async function VehicleRequestsPage() {
   const session = await auth();
@@ -38,12 +41,13 @@ export default async function VehicleRequestsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-3xl font-bold tracking-tight text-foreground font-heading">Solicitudes de Vehículos</h2>
-        <p className="text-muted-foreground text-sm">Gestión y aprobación de uso de flota municipal.</p>
-      </div>
+      <PageHeader
+        title="Solicitudes de Vehículos"
+        description="Gestión y aprobación de uso de flota municipal."
+        icon={Car}
+      />
 
-      <Card className="rounded-3xl border border-border/60 shadow-xs overflow-hidden bg-card text-card-foreground">
+      <Card className="rounded-2xl border border-border/60 shadow-xs overflow-hidden bg-card text-card-foreground">
         <CardHeader className="bg-muted/30 border-b border-border/40">
           <CardTitle className="font-heading">Pendientes de Aprobación</CardTitle>
           <CardDescription className="text-muted-foreground">Revise las solicitudes antes de confirmar la reserva.</CardDescription>
@@ -63,8 +67,8 @@ export default async function VehicleRequestsPage() {
             <TableBody>
               {requests.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-10 text-muted-foreground">
-                    No hay solicitudes pendientes.
+                  <TableCell colSpan={6}>
+                    <EmptyMessage title="No hay solicitudes pendientes." />
                   </TableCell>
                 </TableRow>
               ) : (

@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Users, UserPlus, BarChart2,
-  Plus, Calendar, Wallet, PieChart
+  Plus, Calendar, Wallet, PieChart, Briefcase
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -23,6 +23,9 @@ import { CreateHRForm } from "./create-hr-form";
 import { AgentActionsMenu } from "./agent-actions-menu";
 import { HRFilters } from "./hr-filters";
 import { UniversalExportMenu } from "@/components/ui/universal-export-menu";
+import { PageHeader } from "@/components/layout/page-header";
+import { StatCard } from "@/components/ui/stat-card";
+import { EmptyMessage } from "@/components/ui/empty-message";
 
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
@@ -60,10 +63,10 @@ export default async function HRPage({
   }));
 
   const kpis = [
-    { title: "Total Personal", value: stats.total, icon: Users, color: "text-blue-500", bg: "bg-blue-500/10", sub: "Agentes registrados" },
-    { title: "Presupuesto Mensual", value: `$${stats.totalBudget.toLocaleString('es-AR')}`, icon: Wallet, color: "text-emerald-500", bg: "bg-emerald-500/10", sub: "Costo total de nómina" },
-    { title: "Nuevos (Mes)", value: stats.newThisMonth, icon: UserPlus, color: "text-purple-500", bg: "bg-purple-500/10", sub: "Altas este período" },
-    { title: "Áreas Cubiertas", value: stats.areaCount, icon: BarChart2, color: "text-amber-500", bg: "bg-amber-500/10", sub: "Distribución municipal" },
+    { title: "Total Personal", value: stats.total, icon: Users, tone: "blue" as const, sub: "Agentes registrados" },
+    { title: "Presupuesto Mensual", value: `$${stats.totalBudget.toLocaleString('es-AR')}`, icon: Wallet, tone: "green" as const, sub: "Costo total de nómina" },
+    { title: "Nuevos (Mes)", value: stats.newThisMonth, icon: UserPlus, tone: "purple" as const, sub: "Altas este período" },
+    { title: "Áreas Cubiertas", value: stats.areaCount, icon: BarChart2, tone: "orange" as const, sub: "Distribución municipal" },
   ];
 
   const sanitizedRecords = records.map(r => ({
@@ -105,12 +108,12 @@ export default async function HRPage({
 
   return (
     <div className="space-y-10 pb-20">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-        <div className="space-y-1">
-          <h2 className="text-4xl font-black tracking-tight text-foreground uppercase tracking-tighter">Recursos Humanos</h2>
-          <p className="text-muted-foreground text-lg font-medium italic">Gestión integral y control presupuestario de la nómina.</p>
-        </div>
-        <div className="flex flex-wrap items-center gap-3">
+      <PageHeader
+        title="Recursos Humanos"
+        description="Gestión integral y control presupuestario de la nómina."
+        icon={Briefcase}
+        actions={
+          <>
            <UniversalExportMenu
               data={exportData}
               columns={exportColumns}
@@ -128,38 +131,33 @@ export default async function HRPage({
               </SheetTrigger>
               <SheetContent side="right" className="sm:max-w-xl w-full border-l border-border bg-background rounded-l-[2rem] shadow-2xl p-8 overflow-y-auto">
                 <SheetHeader className="mb-8">
-                  <SheetTitle className="text-2xl font-black">Registrar Nuevo Agente</SheetTitle>
+                  <SheetTitle className="text-2xl font-bold">Registrar Nuevo Agente</SheetTitle>
                   <SheetDescription className="text-base font-medium">Complete los datos para crear el legajo municipal.</SheetDescription>
                 </SheetHeader>
                 <CreateHRForm areas={sanitizedAreas} />
               </SheetContent>
            </Sheet>
-        </div>
-      </div>
+          </>
+        }
+      />
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         {kpis.map((kpi) => (
-          <Card key={kpi.title} className="border border-border/60 shadow-xs overflow-hidden bg-card text-card-foreground rounded-3xl group transition-all">
-            <CardContent className="p-6">
-              <div className="flex items-center gap-4">
-                <div className={`p-4 rounded-2xl ${kpi.bg} group-hover:scale-110 transition-transform`}>
-                  <kpi.icon className={`h-6 w-6 ${kpi.color}`} />
-                </div>
-                <div>
-                  <p className="text-2xl font-black tracking-tighter text-card-foreground">{kpi.value}</p>
-                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">{kpi.title}</p>
-                </div>
-              </div>
-              <p className="text-[10px] text-muted-foreground mt-4 font-medium italic">{kpi.sub}</p>
-            </CardContent>
-          </Card>
+          <StatCard
+            key={kpi.title}
+            label={kpi.title}
+            value={kpi.value}
+            hint={kpi.sub}
+            icon={kpi.icon}
+            tone={kpi.tone}
+          />
         ))}
       </div>
 
       {/* Area Budget Summary - New Section */}
-      <Card className="rounded-[2rem] border border-border/60 shadow-xs bg-card text-card-foreground">
+      <Card className="rounded-2xl border border-border/60 shadow-xs bg-card text-card-foreground">
         <CardContent className="p-6">
-            <h3 className="text-sm font-black uppercase tracking-widest text-muted-foreground mb-6 flex items-center gap-2">
+            <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground mb-6 flex items-center gap-2">
                 <PieChart className="h-4 w-4" /> Distribución Salarial por Área
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
@@ -167,7 +165,7 @@ export default async function HRPage({
                     const areaBudget = stats.budgetByArea[area.id] || 0;
                     return (
                         <div key={area.id} className="bg-muted/30 p-4 rounded-2xl border border-border/40 shadow-xs">
-                            <p className="text-[9px] font-black text-muted-foreground uppercase truncate mb-1" title={area.name}>{area.name}</p>
+                            <p className="text-[9px] font-bold text-muted-foreground uppercase truncate mb-1" title={area.name}>{area.name}</p>
                             <p className="text-sm font-bold text-card-foreground">${areaBudget.toLocaleString('es-AR')}</p>
                         </div>
                     )
@@ -176,7 +174,7 @@ export default async function HRPage({
         </CardContent>
       </Card>
 
-      <div className="bg-card text-card-foreground rounded-[2rem] border border-border/60 shadow-xs overflow-hidden transition-all">
+      <div className="bg-card text-card-foreground rounded-2xl border border-border/60 shadow-xs overflow-hidden transition-all">
         <HRFilters areas={sanitizedAreas} />
 
         <Table>
@@ -192,8 +190,8 @@ export default async function HRPage({
           <TableBody>
             {sanitizedRecords.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center py-20 text-muted-foreground italic font-medium">
-                  No se encontraron agentes con los filtros aplicados.
+                <TableCell colSpan={5}>
+                  <EmptyMessage title="No se encontraron agentes con los filtros aplicados." />
                 </TableCell>
               </TableRow>
             ) : (
@@ -203,12 +201,12 @@ export default async function HRPage({
                     <div className="flex items-center gap-4">
                       <Avatar className="h-12 w-12 border-2 border-card shadow-xs ring-1 ring-border">
                         <AvatarImage src={r.imageUrl || ""} alt={r.firstName} className="object-cover" />
-                        <AvatarFallback className="bg-primary text-primary-foreground font-black text-sm uppercase">
+                        <AvatarFallback className="bg-primary text-primary-foreground font-bold text-sm uppercase">
                           {r.firstName?.[0]}{r.lastName?.[0]}
                         </AvatarFallback>
                       </Avatar>
                       <div>
-                        <p className="font-black text-foreground group-hover:text-primary transition-colors">{r.firstName} {r.lastName}</p>
+                        <p className="font-bold text-foreground group-hover:text-primary transition-colors">{r.firstName} {r.lastName}</p>
                         <p className="text-[10px] font-bold text-muted-foreground tracking-widest flex items-center gap-2">
                            {r.fileNumber || 'S/L'} <span className="text-border">•</span> DNI {r.dni}
                         </p>
@@ -228,7 +226,7 @@ export default async function HRPage({
                   </TableCell>
                   <TableCell>
                     <div className="flex flex-col gap-1">
-                      <Badge className={`rounded-full px-3 py-0.5 text-[10px] font-black tracking-widest border-none w-fit ${
+                      <Badge className={`rounded-full px-3 py-0.5 text-[10px] font-bold tracking-widest border-none w-fit ${
                         r.status === 'ACTIVO' ? 'bg-emerald-500/10 text-emerald-600' :
                         r.status === 'LICENCIA' ? 'bg-amber-500/10 text-amber-600' :
                         r.status === 'VACACIONES' ? 'bg-blue-500/10 text-blue-600' :

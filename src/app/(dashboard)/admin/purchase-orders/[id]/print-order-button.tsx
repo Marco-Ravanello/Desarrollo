@@ -7,7 +7,7 @@ export function PrintOrderButton() {
   return (
     <Button
       onClick={() => window.print()}
-      className="bg-primary text-primary-foreground font-black text-xs uppercase tracking-widest px-6 rounded-xl flex items-center gap-2"
+      className="bg-primary text-primary-foreground font-bold text-xs uppercase tracking-widest px-6 rounded-xl flex items-center gap-2"
     >
       <Printer className="h-4 w-4" />
       Exportar PDF / Imprimir

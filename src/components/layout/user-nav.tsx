@@ -46,7 +46,7 @@ export function UserNav({ variant = "header", isCollapsed = false }: UserNavProp
             title="Opciones de cuenta y perfil"
           >
             <Avatar className="h-9 w-9 rounded-xl border border-primary/20 shrink-0 shadow-xs">
-              <AvatarFallback className="bg-primary/10 text-primary font-black text-xs">
+              <AvatarFallback className="bg-primary/10 text-primary font-bold text-xs">
                 {initial}
               </AvatarFallback>
             </Avatar>
@@ -71,7 +71,7 @@ export function UserNav({ variant = "header", isCollapsed = false }: UserNavProp
             className="h-9 gap-2 px-2.5 rounded-xl text-xs font-bold text-foreground hover:bg-muted/60"
           >
             <Avatar className="h-7 w-7 rounded-lg border border-primary/20 shrink-0">
-              <AvatarFallback className="bg-primary/10 text-primary font-black text-[11px]">
+              <AvatarFallback className="bg-primary/10 text-primary font-bold text-[11px]">
                 {initial}
               </AvatarFallback>
             </Avatar>
@@ -88,14 +88,14 @@ export function UserNav({ variant = "header", isCollapsed = false }: UserNavProp
       >
         <DropdownMenuLabel className="p-2 space-y-1">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
               Agente Municipal
             </span>
             <Badge className="bg-primary/15 text-primary border border-primary/20 text-[9px] font-bold uppercase py-0">
               {user.role || "OPERATIVO"}
             </Badge>
           </div>
-          <p className="text-xs font-black text-foreground truncate">{user.name || "Usuario Municipal"}</p>
+          <p className="text-xs font-bold text-foreground truncate">{user.name || "Usuario Municipal"}</p>
           <p className="text-[11px] text-muted-foreground font-mono truncate">{user.email || ""}</p>
         </DropdownMenuLabel>
 
