@@ -98,7 +98,7 @@ export default async function AdminCalendarPage() {
             <div>
               <h1 className="text-2xl sm:text-3xl font-black text-foreground tracking-tight flex items-center gap-2">
                 Agenda Unificada de Logística y Tareas
-                <Badge className="bg-primary/20 text-primary border border-primary/30 text-[10px] font-bold uppercase py-0.5">
+                <Badge className="hidden sm:inline-flex bg-primary/20 text-primary border border-primary/30 text-[10px] font-bold uppercase py-0.5">
                   Planificación 3F
                 </Badge>
               </h1>

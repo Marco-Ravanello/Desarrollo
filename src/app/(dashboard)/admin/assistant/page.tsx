@@ -475,20 +475,20 @@ export default function AssistantPage() {
 
   return (
     <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500 h-[calc(100vh-8rem)] max-h-[calc(100vh-8rem)] flex flex-col overflow-hidden">
-      <div className="flex justify-between items-center shrink-0">
-        <div className="flex flex-col gap-1">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 shrink-0">
+        <div className="flex flex-col gap-1 min-w-0">
           <div className="flex items-center gap-2">
             <div className="p-2 bg-blue-500/10 text-blue-500 rounded-xl animate-pulse">
               <Sparkles className="h-5 w-5" />
             </div>
-            <h2 className="text-3xl font-black tracking-tight text-foreground">Asistente de IA (Data Analytics)</h2>
+            <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-foreground">Asistente de IA</h2>
           </div>
           <p className="text-muted-foreground text-xs sm:text-sm">Consultas y análisis dinámico de la base de datos municipal en tiempo real.</p>
         </div>
         <Button
           variant="outline"
           onClick={clearChat}
-          className="rounded-xl text-xs font-bold uppercase tracking-wider h-9 flex items-center gap-2 border-border/60 hover:bg-muted/50 text-foreground"
+          className="self-start sm:self-auto rounded-xl text-xs font-bold uppercase tracking-wider h-9 flex items-center gap-2 border-border/60 hover:bg-muted/50 text-foreground"
         >
           <RefreshCw className="h-3.5 w-3.5" />
           Limpiar Conversación
@@ -496,7 +496,7 @@ export default function AssistantPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 flex-1 min-h-0 overflow-hidden">
-        <div className="lg:col-span-1 flex flex-col gap-4 min-h-0 overflow-hidden">
+        <div className="hidden lg:flex lg:col-span-1 flex-col gap-4 min-h-0 overflow-hidden">
           <Card className="bg-card text-card-foreground border border-border/60 shadow-sm h-full flex flex-col overflow-hidden rounded-3xl">
             <CardHeader className="pb-3 shrink-0">
               <CardTitle className="text-xs font-black uppercase tracking-wider text-foreground">Consultas Frecuentes</CardTitle>
@@ -525,11 +525,25 @@ export default function AssistantPage() {
 
         <div className="lg:col-span-3 flex flex-col h-full min-h-0 overflow-hidden">
           <Card className="bg-card text-card-foreground border border-border/60 shadow-sm flex-1 min-h-0 flex flex-col overflow-hidden rounded-[2rem]">
-            <div ref={chatContainerRef} className="flex-1 min-h-0 overflow-y-auto p-6 space-y-6 custom-scrollbar">
+            {/* En el celular las consultas frecuentes van como botones deslizables arriba del chat. */}
+            <div className="lg:hidden flex gap-2 overflow-x-auto shrink-0 px-3 pt-3 pb-1 custom-scrollbar">
+              {suggestions.map((s, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => handleQuery(s.query)}
+                  disabled={loading}
+                  className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-border/50 bg-muted/40 text-[11px] font-semibold text-foreground disabled:opacity-50"
+                >
+                  <s.icon className={`h-3.5 w-3.5 ${s.color}`} />
+                  {s.label}
+                </button>
+              ))}
+            </div>
+            <div ref={chatContainerRef} className="flex-1 min-h-0 overflow-y-auto p-3 sm:p-6 space-y-4 sm:space-y-6 custom-scrollbar">
               {messages.map((m) => (
                 <div
                   key={m.id}
-                  className={`flex gap-4 max-w-[85%] ${
+                  className={`flex gap-2 sm:gap-4 max-w-full sm:max-w-[85%] ${
                     m.sender === "user" ? "ml-auto flex-row-reverse" : ""
                   }`}
                 >
@@ -540,10 +554,10 @@ export default function AssistantPage() {
                   }`}>
                     {m.sender === "user" ? <User className="h-4 w-4" /> : <Bot className="h-4 w-4" />}
                   </div>
-                  <div className={`rounded-3xl p-5 shadow-xs text-foreground relative ${
+                  <div className={`rounded-3xl p-3 sm:p-5 shadow-xs text-foreground relative min-w-0 ${
                     m.sender === "user"
                       ? "bg-primary/10 border border-primary/20 rounded-tr-none text-foreground font-semibold"
-                      : "bg-muted/40 border border-border/40 rounded-tl-none w-full pr-16 text-foreground"
+                      : "bg-muted/40 border border-border/40 rounded-tl-none w-full sm:pr-16 text-foreground"
                   }`}>
                     {m.sender === "user" ? (
                       <p className="text-xs font-semibold leading-relaxed">{m.text}</p>
@@ -597,7 +611,7 @@ export default function AssistantPage() {
                       </div>
                     )}
                     {m.sender === "assistant" && m.text && (
-                      <div className="absolute top-4 right-4 flex items-center gap-1">
+                      <div className="flex items-center justify-end gap-1 mt-2 sm:mt-0 sm:absolute sm:top-4 sm:right-4">
                         <button
                           onClick={() => copyToClipboard(m.text)}
                           className="p-1.5 rounded-xl bg-muted/40 hover:bg-muted text-muted-foreground hover:text-foreground transition-all"

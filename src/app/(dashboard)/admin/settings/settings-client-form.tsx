@@ -114,7 +114,7 @@ export function MunicipalSettingsClient({
             Personalización de identidad institucional, logotipo/escudo, autoridades y contactos oficiales.
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Button
             variant="outline"
             onClick={handleReset}

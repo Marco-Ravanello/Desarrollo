@@ -56,7 +56,7 @@ export default async function PeoplePage({
         <div>
           <div className="flex items-center gap-2">
             <h2 className="text-3xl sm:text-4xl font-black tracking-tight text-foreground">Registro Único</h2>
-            <Badge className="bg-primary/20 text-primary border border-primary/30 text-[10px] font-bold uppercase py-0.5">
+            <Badge className="hidden sm:inline-flex bg-primary/20 text-primary border border-primary/30 text-[10px] font-bold uppercase py-0.5">
               Padrón 360°
             </Badge>
           </div>

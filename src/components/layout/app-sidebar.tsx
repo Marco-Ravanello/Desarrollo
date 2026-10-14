@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { LayoutDashboard, Users, ShieldAlert, ClipboardList, LogOut, Briefcase, Car, UserCog, ChevronLeft, ChevronRight, CheckCircle2, MapPin, Wallet, Building2, FileSpreadsheet, Calendar, Sparkles, CloudRain, Settings, Tv, Network, BarChart3 } from "lucide-react";
+import { LayoutDashboard, Users, ShieldAlert, ClipboardList, LogOut, Briefcase, Car, UserCog, ChevronLeft, ChevronRight, CheckCircle2, MapPin, Wallet, Building2, FileSpreadsheet, Calendar, Sparkles, CloudRain, Settings, Tv, Network, BarChart3, ChevronDown, Package, ScrollText } from "lucide-react";
 import { MunicipalCrest } from "@/components/ui/municipal-crest";
 import { UserNav } from "./user-nav";
 import { useSession, signOut } from "next-auth/react";
@@ -50,34 +50,79 @@ export function AppSidebar({ isMobile = false, onNavigate }: AppSidebarProps) {
     { title: "Registro Único", url: "/people", icon: Users, color: "text-purple-500" },
   ];
 
-  const adminNav = [
-    { title: "Sala de Situación", url: "/admin/war-room", icon: Tv, color: "text-blue-400 font-bold" },
-    { title: "Agenda Unificada", url: "/admin/calendar", icon: Calendar, color: "text-slate-400" },
-    { title: "Asistente de IA", url: "/admin/assistant", icon: Sparkles, color: "text-blue-500 animate-pulse" },
-    { title: "Órdenes de compras", url: "/admin/purchase-orders", icon: Briefcase, color: "text-slate-400" },
-    { title: "Proveedores", url: "/admin/providers", icon: Building2, color: "text-slate-400" },
-    { title: "Vehículos y Logística", url: "/admin/vehicles", icon: Car, color: "text-slate-400" },
-    { title: "Stock de Insumos", url: "/admin/stock", icon: ClipboardList, color: "text-slate-400" },
-    { title: "Convenios y Presupuesto", url: "/admin/budget", icon: Wallet, color: "text-slate-400" },
-    { title: "Recursos Humanos", url: "/admin/hr", icon: UserCog, color: "text-slate-400" },
-    { title: "Emergencia Climática", url: "/admin/emergency", icon: CloudRain, color: "text-amber-500 font-bold" },
-    { title: "Configuración", url: "/admin/settings", icon: Settings, color: "text-slate-400" },
-    ...(user?.role && (
-      user.role === 'SUPERADMIN' ||
-      user.role === 'DIRECCION_GENERAL' ||
-      user.role === 'ADMIN_GENERAL' ||
-      hasPermission(user.role as any, PERMISSIONS.MANAGE_USERS)
-    ) ? [
-      { title: "Importar Datos", url: "/admin/interventions", icon: FileSpreadsheet, color: "text-slate-400" },
-      { title: "Usuarios", url: "/admin/users", icon: UserCog, color: "text-slate-400 font-bold" },
-    ] : []),
-    ...(user?.role && hasPermission(user.role as any, PERMISSIONS.VIEW_REPORTS) ? [
-      { title: "Reportes", url: "/admin/reports", icon: BarChart3, color: "text-slate-400" }
-    ] : []),
-    ...(user?.role && hasPermission(user.role as any, PERMISSIONS.VIEW_AUDIT_LOGS) ? [
-      { title: "Auditoría", url: "/admin/audit", icon: ClipboardList, color: "text-slate-400" }
-    ] : [])
-  ];
+  const role = user?.role as any;
+  const canManageUsers = Boolean(
+    role && (role === "SUPERADMIN" || role === "DIRECCION_GENERAL" || role === "ADMIN_GENERAL" || hasPermission(role, PERMISSIONS.MANAGE_USERS))
+  );
+
+  // Administración agrupada por tema; cada grupo se puede plegar.
+  const adminGroups: { id: string; title: string; items: { title: string; url: string; icon: any }[] }[] = [
+    {
+      id: "operacion",
+      title: "Operación diaria",
+      items: [
+        { title: "Sala de Situación", url: "/admin/war-room", icon: Tv },
+        { title: "Agenda Unificada", url: "/admin/calendar", icon: Calendar },
+        { title: "Asistente de IA", url: "/admin/assistant", icon: Sparkles },
+        { title: "Emergencia Climática", url: "/admin/emergency", icon: CloudRain },
+      ],
+    },
+    {
+      id: "compras",
+      title: "Compras y presupuesto",
+      items: [
+        { title: "Órdenes de compras", url: "/admin/purchase-orders", icon: Briefcase },
+        { title: "Proveedores", url: "/admin/providers", icon: Building2 },
+        { title: "Convenios y Presupuesto", url: "/admin/budget", icon: Wallet },
+        ...(role && hasPermission(role, PERMISSIONS.VIEW_REPORTS)
+          ? [{ title: "Reportes", url: "/admin/reports", icon: BarChart3 }]
+          : []),
+      ],
+    },
+    {
+      id: "recursos",
+      title: "Recursos",
+      items: [
+        { title: "Vehículos y Logística", url: "/admin/vehicles", icon: Car },
+        { title: "Stock de Insumos", url: "/admin/stock", icon: Package },
+        { title: "Recursos Humanos", url: "/admin/hr", icon: UserCog },
+      ],
+    },
+    {
+      id: "sistema",
+      title: "Sistema",
+      items: [
+        { title: "Configuración", url: "/admin/settings", icon: Settings },
+        ...(canManageUsers
+          ? [
+              { title: "Importar Datos", url: "/admin/interventions", icon: FileSpreadsheet },
+              { title: "Usuarios", url: "/admin/users", icon: Users },
+            ]
+          : []),
+        ...(role && hasPermission(role, PERMISSIONS.VIEW_AUDIT_LOGS)
+          ? [{ title: "Auditoría", url: "/admin/audit", icon: ScrollText }]
+          : []),
+      ],
+    },
+  ].filter((g) => g.items.length > 0);
+
+  const activeGroup = adminGroups.find((g) => g.items.some((i) => pathname.startsWith(i.url)))?.id;
+  const [closedGroups, setClosedGroups] = React.useState<string[]>([]);
+
+  React.useEffect(() => {
+    try {
+      const saved = localStorage.getItem("sidebar-closed-groups");
+      if (saved) setClosedGroups(JSON.parse(saved));
+    } catch {}
+  }, []);
+
+  const toggleGroup = (id: string) => {
+    setClosedGroups((prev) => {
+      const next = prev.includes(id) ? prev.filter((g) => g !== id) : [...prev, id];
+      try { localStorage.setItem("sidebar-closed-groups", JSON.stringify(next)); } catch {}
+      return next;
+    });
+  };
 
   const socialAreas = [
     { title: "Protección Social", url: "/areas/social", icon: ClipboardList, color: "emerald" },
@@ -146,28 +191,44 @@ export function AppSidebar({ isMobile = false, onNavigate }: AppSidebarProps) {
           })}
         </div>
 
-        <div className="pt-3 pb-2">
-          {!isCollapsed && <p className="px-3 text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-2 font-heading">Administración</p>}
-          {adminNav.map((item) => {
-            const isActive = pathname.startsWith(item.url);
-            return (
-              <Link
-                key={item.title}
-                href={item.url}
-                onClick={() => onNavigate?.()}
-                title={isCollapsed ? item.title : ""}
-                className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all group mb-1 ${
-                  isCollapsed ? "justify-center" : ""
-                } ${
-                  isActive ? "bg-primary/10 text-primary font-bold dark:bg-primary/20 border-l-4 border-[#F69321]" : "text-muted-foreground hover:text-foreground hover:bg-muted/60 font-medium"
-                }`}
-              >
-                <item.icon className={`h-5 w-5 shrink-0 ${isActive ? "text-primary" : "text-muted-foreground"} group-hover:text-primary transition-colors`} />
-                {!isCollapsed && <span className="text-sm truncate">{item.title}</span>}
-              </Link>
-            );
-          })}
-        </div>
+        {adminGroups.map((group) => {
+          // El grupo de la pantalla actual siempre queda abierto.
+          const isOpen = isCollapsed || group.id === activeGroup || !closedGroups.includes(group.id);
+          return (
+            <div key={group.id} className={isCollapsed ? "pt-2 mt-2 border-t border-border/40" : "pt-2"}>
+              {!isCollapsed && (
+                <button
+                  type="button"
+                  onClick={() => toggleGroup(group.id)}
+                  aria-expanded={isOpen}
+                  className="w-full flex items-center justify-between px-3 py-1.5 mb-1 rounded-lg text-[11px] font-bold text-muted-foreground uppercase tracking-wider font-heading hover:text-foreground hover:bg-muted/40 transition-colors"
+                >
+                  {group.title}
+                  <ChevronDown className={`h-3.5 w-3.5 transition-transform ${isOpen ? "" : "-rotate-90"}`} />
+                </button>
+              )}
+              {isOpen && group.items.map((item) => {
+                const isActive = pathname.startsWith(item.url);
+                return (
+                  <Link
+                    key={item.title}
+                    href={item.url}
+                    onClick={() => onNavigate?.()}
+                    title={isCollapsed ? item.title : ""}
+                    className={`flex items-center gap-3 px-3.5 py-2 rounded-xl transition-all group mb-0.5 ${
+                      isCollapsed ? "justify-center" : ""
+                    } ${
+                      isActive ? "bg-primary/10 text-primary font-bold dark:bg-primary/20 border-l-4 border-[#F69321]" : "text-muted-foreground hover:text-foreground hover:bg-muted/60 font-medium"
+                    }`}
+                  >
+                    <item.icon className={`h-[18px] w-[18px] shrink-0 ${isActive ? "text-primary" : "text-muted-foreground"} group-hover:text-primary transition-colors`} />
+                    {!isCollapsed && <span className="text-sm truncate">{item.title}</span>}
+                  </Link>
+                );
+              })}
+            </div>
+          );
+        })}
 
         <div className="pt-3 pb-2">
           {!isCollapsed && <p className="px-3 text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Áreas Sociales</p>}

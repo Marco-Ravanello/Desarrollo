@@ -92,7 +92,7 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
             <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-foreground">
               Expedientes y Casos Sociales
             </h1>
-            <Badge className="bg-primary/20 text-primary border border-primary/30 text-[10px] font-bold uppercase py-0.5">
+            <Badge className="hidden sm:inline-flex bg-primary/20 text-primary border border-primary/30 text-[10px] font-bold uppercase py-0.5">
               Gestión Integral
             </Badge>
           </div>
