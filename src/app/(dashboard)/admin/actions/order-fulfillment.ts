@@ -4,9 +4,13 @@ import prisma from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { actionErrorMessage } from "@/lib/action-error";
 import { auth } from "@/auth";
+import { PURCHASING_EDIT_ROLES } from "@/lib/permissions";
 
 export async function updateItemFulfillmentAction(itemId: string, increment: number) {
   const session = await auth();
+  if (session?.user && !PURCHASING_EDIT_ROLES.includes(session.user.role)) {
+    return { success: false, error: "No se pudo registrar la entrega: tu rol no puede modificar órdenes de compra." };
+  }
   if (!session?.user?.id) {
     return { success: false, error: "No tenés permiso para hacer esto o tu sesión expiró. Si sigue pasando, volvé a iniciar sesión." };
   }

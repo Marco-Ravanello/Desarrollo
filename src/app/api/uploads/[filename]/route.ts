@@ -1,7 +1,9 @@
 import { basename } from "path";
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { readUploadedFile } from "@/lib/file-storage";
+import { readUploadedFile, uploadUrl } from "@/lib/file-storage";
+import prisma from "@/lib/prisma";
+import { hasPermission, PERMISSIONS } from "@/lib/permissions";
 
 export async function GET(
   request: Request,
@@ -16,6 +18,18 @@ export async function GET(
 
   // Prevent Path Traversal by extracting only the base name
   const safeFilename = basename(filename);
+
+  // Documentos de casos de Violencia de Género: solo roles con permiso para verlos.
+  if (!hasPermission(session.user.role, PERMISSIONS.VIEW_SENSITIVE_CASES)) {
+    const sensitive = await prisma.document.findFirst({
+      where: {
+        url: uploadUrl(safeFilename),
+        case: { area: { name: { contains: "violencia", mode: "insensitive" } } },
+      },
+      select: { id: true },
+    });
+    if (sensitive) return new NextResponse("Forbidden", { status: 403 });
+  }
 
   try {
     const file = await readUploadedFile(safeFilename);

@@ -5,9 +5,13 @@ import { createAuditLog } from "@/services/system";
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
 import { actionErrorMessage } from "@/lib/action-error";
+import { canEditSocialRecords } from "@/lib/permissions";
 
 export async function createPersonAction(formData: FormData) {
   const session = await auth();
+  if (session?.user && !canEditSocialRecords(session.user.role)) {
+    return { success: false, error: "Tu rol (Auditoría) puede consultar pero no cargar ni modificar datos." };
+  }
   const dni = formData.get("dni") as string;
   const firstName = formData.get("firstName") as string;
   const lastName = formData.get("lastName") as string;

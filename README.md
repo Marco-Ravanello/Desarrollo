@@ -25,6 +25,5 @@ DATABASE_URL="postgresql://user:password@localhost:5432/munidb?schema=public"
 AUTH_SECRET="tu-secreto-aqui"
 ```
 
-## Credenciales de prueba (Seed)
-- **Email**: admin@municipio.gob.ar
-- **Password**: admin123
+## Usuario administrador inicial (Seed)
+`npx prisma db seed` crea `admin@municipio.gob.ar` solo si no existe. La clave inicial sale de `SEED_ADMIN_PASSWORD` o, si no está, se genera al azar y se muestra una vez en la consola. Si el usuario ya existe, el seed no cambia su clave.

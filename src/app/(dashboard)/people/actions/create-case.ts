@@ -5,11 +5,15 @@ import { ensurePersonInPrisma } from "@/services/people";
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
 import prisma from "@/lib/prisma";
-import { createNotification } from "@/app/(dashboard)/actions/notifications";
+import { createNotification } from "@/services/notifications";
 import { actionErrorMessage } from "@/lib/action-error";
+import { canEditSocialRecords } from "@/lib/permissions";
 
 export async function createCaseAction(formData: FormData) {
   const session = await auth();
+  if (session?.user && !canEditSocialRecords(session.user.role)) {
+    return { success: false, error: "Tu rol (Auditoría) puede consultar pero no cargar ni modificar datos." };
+  }
   if (!session?.user) return { error: "No tenés permiso para hacer esto o tu sesión expiró. Si sigue pasando, volvé a iniciar sesión." };
 
   const personId = formData.get("personId") as string;

@@ -6,6 +6,7 @@ import { createAuditLog } from "@/services/system";
 import { auth } from "@/auth";
 import { ensurePersonInPrisma } from "@/services/people";
 import { actionErrorMessage } from "@/lib/action-error";
+import { canEditSocialRecords } from "@/lib/permissions";
 
 export async function addFamilyMember(
   personId: string,
@@ -13,6 +14,9 @@ export async function addFamilyMember(
   relationship: string = "Familiar a cargo"
 ) {
   const session = await auth();
+  if (session?.user && !canEditSocialRecords(session.user.role)) {
+    return { success: false, error: "Tu rol (Auditoría) puede consultar pero no cargar ni modificar datos." };
+  }
   if (!session?.user?.id) {
     return { success: false, error: "No tenés permiso para hacer esto o tu sesión expiró. Si sigue pasando, volvé a iniciar sesión." };
   }
@@ -81,6 +85,9 @@ export async function addFamilyMember(
 
 export async function removeFromFamily(personId: string) {
   const session = await auth();
+  if (session?.user && !canEditSocialRecords(session.user.role)) {
+    return { success: false, error: "Tu rol (Auditoría) puede consultar pero no cargar ni modificar datos." };
+  }
   if (!session?.user?.id) {
     return { success: false, error: "No tenés permiso para hacer esto o tu sesión expiró. Si sigue pasando, volvé a iniciar sesión." };
   }

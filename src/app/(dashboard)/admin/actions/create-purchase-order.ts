@@ -5,9 +5,13 @@ import { createAuditLog } from "@/services/system";
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
 import { actionErrorMessage } from "@/lib/action-error";
+import { PURCHASING_EDIT_ROLES } from "@/lib/permissions";
 
 export async function createPurchaseOrderAction(formData: FormData) {
   const session = await auth();
+  if (session?.user && !PURCHASING_EDIT_ROLES.includes(session.user.role)) {
+    return { success: false, error: "No se pudo guardar la orden: tu rol no puede cargar órdenes de compra." };
+  }
   if (!session?.user?.id) {
     return { success: false, error: "No tenés permiso para hacer esto o tu sesión expiró. Si sigue pasando, volvé a iniciar sesión." };
   }

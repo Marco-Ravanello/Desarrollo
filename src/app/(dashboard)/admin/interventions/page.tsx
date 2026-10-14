@@ -62,9 +62,13 @@ export default function InterventionsAdminPage() {
           return;
         }
         setResults({ createdCount: res.createdCount, errors: res.errors });
-        toast.success(`Importación finalizada: ${res.createdCount} registros.`);
+        if (res.errors.length > 0) {
+          toast.warning(`Se cargaron ${res.createdCount} intervenciones. ${res.errors.length} filas no se cargaron: revisá el detalle abajo.`);
+        } else {
+          toast.success(`Se cargaron ${res.createdCount} intervenciones.`);
+        }
       } catch (error) {
-        toast.error("Error al procesar el archivo");
+        toast.error("No se pudo leer el archivo. Revisá que sea un Excel (.xlsx o .xls).");
       } finally {
         setImporting(false);
         e.target.value = '';
@@ -112,7 +116,7 @@ export default function InterventionsAdminPage() {
           </CardHeader>
           <CardContent className="pt-6 space-y-4">
             <div className="text-xs text-muted-foreground mb-2">
-              <strong>Formato requerido:</strong> DNI, Nombre, Apellido, Area, Caso, Descripcion, Fecha
+              <strong>Columnas:</strong> DNI, Area, Caso, Descripcion y Fecha (dd/mm/aaaa). Nombre y Apellido solo hacen falta si la persona no está en el Registro Único ni en el padrón. Las filas incompletas no se cargan y se listan abajo con el motivo.
             </div>
             <div className="relative">
               <input
@@ -139,16 +143,16 @@ export default function InterventionsAdminPage() {
         <div className="space-y-4 animate-in fade-in slide-in-from-top-4 duration-500">
            <Alert className="bg-emerald-500/10 border-emerald-500/30 rounded-2xl">
              <CheckCircle2 className="h-5 w-5 text-emerald-600" />
-             <AlertTitle className="text-emerald-800 font-bold">Importación Exitosa</AlertTitle>
+             <AlertTitle className="text-emerald-800 dark:text-emerald-200 font-bold">Importación terminada</AlertTitle>
              <AlertDescription className="text-emerald-700 dark:text-emerald-300">
-               Se han creado o actualizado {results.createdCount} intervenciones correctamente.
+               Se cargaron {results.createdCount} intervenciones.
              </AlertDescription>
            </Alert>
 
            {results.errors.length > 0 && (
              <Alert variant="destructive" className="rounded-2xl">
                <AlertCircle className="h-5 w-5" />
-               <AlertTitle className="font-bold">Advertencias ({results.errors.length})</AlertTitle>
+               <AlertTitle className="font-bold">Filas que no se cargaron ({results.errors.length})</AlertTitle>
                <AlertDescription>
                  <ul className="list-disc list-inside mt-2 text-sm max-h-40 overflow-y-auto">
                    {results.errors.map((err, idx) => (

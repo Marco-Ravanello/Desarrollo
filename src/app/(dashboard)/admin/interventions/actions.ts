@@ -4,6 +4,8 @@ import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
 import { actionErrorMessage } from "@/lib/action-error";
+import { ensurePersonInPrisma } from "@/services/people";
+import { MANAGEMENT_ROLES } from "@/lib/permissions";
 
 export async function exportInterventionsAction() {
   const session = await auth();
@@ -54,110 +56,119 @@ export async function exportInterventionsAction() {
 
 export async function importInterventionsAction(data: any[]) {
   const session = await auth();
+  if (session?.user && !MANAGEMENT_ROLES.includes(session.user.role)) {
+    return { success: false, createdCount: 0, errors: ["No se pudo importar: tu rol no tiene permiso para importar datos."] };
+  }
   if (!session?.user) {
     return { success: false, createdCount: 0, errors: ["Tu sesión expiró. Volvé a iniciar sesión."] };
   }
 
   let createdCount = 0;
-  let errors: string[] = [];
+  const errors: string[] = [];
 
-  const validRows = data.filter(row => {
-    const dni = String(row.DNI || row.dni || row.Documento || "").trim();
+  // Solo se cargan datos reales: si falta algo, la fila se saltea y se avisa por qué.
+  // Nunca se crean personas con nombres de relleno ("S/N") ni fechas inventadas.
+  const rows = data.map((row, index) => ({
+    row,
+    rowNumber: index + 2, // fila 1 = encabezados en la planilla
+    dni: String(row.DNI || row.dni || row.Documento || "").replace(/[^0-9]/g, ""),
+  }));
+
+  const withDni = rows.filter(({ dni, rowNumber }) => {
     if (!dni) {
-      errors.push("Fila saltada: DNI faltante");
+      errors.push(`Fila ${rowNumber}: falta el DNI.`);
       return false;
     }
     return true;
   });
 
-  if (validRows.length === 0) {
+  if (withDni.length === 0) {
     return { success: true, createdCount: 0, errors };
   }
 
-  const uniqueDnis = Array.from(new Set(validRows.map(row => String(row.DNI || row.dni || row.Documento || "").trim())));
+  const uniqueDnis = Array.from(new Set(withDni.map((r) => r.dni)));
 
-  // 1. Bulk preload existing persons and areas
-  const existingPersons = await prisma.person.findMany({
-    where: { dni: { in: uniqueDnis } }
-  });
-  const personMap = new Map(existingPersons.map(p => [p.dni, p]));
+  const existingPersons = await prisma.person.findMany({ where: { dni: { in: uniqueDnis } } });
+  const personMap = new Map(existingPersons.map((p) => [p.dni, p]));
 
-  const allAreas = await prisma.area.findMany();
-  const areaMap = new Map(allAreas.map(a => [a.name.toLowerCase().trim(), a]));
-
-  // Find missing persons and create them in bulk
-  const missingPersonsList: { dni: string; firstName: string; lastName: string }[] = [];
-  for (const row of validRows) {
-    const dni = String(row.DNI || row.dni || row.Documento || "").trim();
-    if (!personMap.has(dni) && !missingPersonsList.some(p => p.dni === dni)) {
-      const Nombre = String(row.Nombre || row.firstName || "").trim() || "S/N";
-      const Apellido = String(row.Apellido || row.lastName || "").trim() || "S/A";
-      missingPersonsList.push({
-        dni,
-        firstName: Nombre,
-        lastName: Apellido
+  // Personas que no están en el Registro Único: se buscan en el padrón unificado y,
+  // si no figuran, se crean solo si la planilla trae nombre y apellido reales.
+  for (const { row, dni } of withDni) {
+    if (personMap.has(dni)) continue;
+    const fromPadron = await ensurePersonInPrisma(dni).catch(() => null);
+    if (fromPadron) {
+      personMap.set(dni, fromPadron);
+      continue;
+    }
+    const firstName = String(row.Nombre || row.firstName || "").trim();
+    const lastName = String(row.Apellido || row.lastName || "").trim();
+    if (firstName && lastName) {
+      const created = await prisma.person.upsert({
+        where: { dni },
+        update: {},
+        create: { dni, firstName, lastName },
       });
+      personMap.set(dni, created);
     }
   }
 
-  if (missingPersonsList.length > 0) {
-    await prisma.person.createMany({
-      data: missingPersonsList,
-      skipDuplicates: true
-    });
+  const allAreas = await prisma.area.findMany();
+  const areaMap = new Map(allAreas.map((a) => [a.name.toLowerCase().trim(), a]));
 
-    const newlyCreatedPersons = await prisma.person.findMany({
-      where: { dni: { in: missingPersonsList.map(p => p.dni) } }
-    });
-    newlyCreatedPersons.forEach(p => personMap.set(p.dni, p));
-  }
+  const personIds = Array.from(personMap.values()).map((p) => p.id);
+  const existingCases = await prisma.case.findMany({ where: { personId: { in: personIds } } });
+  const caseMap = new Map(existingCases.map((c) => [`${c.personId}_${c.areaId}_${c.title}`, c]));
 
-  const personIds = Array.from(personMap.values()).map(p => p.id);
-  const existingCases = await prisma.case.findMany({
-    where: { personId: { in: personIds } }
-  });
-  const caseMap = new Map(existingCases.map(c => [`${c.personId}_${c.areaId}_${c.title}`, c]));
-
-  for (const row of validRows) {
+  for (const { row, rowNumber, dni } of withDni) {
     try {
-      const DNI = String(row.DNI || row.dni || row.Documento || "").trim();
-      const AreaName = String(row.Area || row.area || "").toLowerCase().trim();
-      const Caso = String(row.Caso || row.Asunto || row.title || "Caso Migrado").trim();
-      const Descripcion = String(row.Descripcion || row.Observaciones || row.description || "Sin descripción");
-      const FechaStr = row.Fecha || row.date || null;
-
-      const person = personMap.get(DNI);
+      const person = personMap.get(dni);
       if (!person) {
-        errors.push(`Persona no encontrada para DNI ${DNI}`);
+        errors.push(`Fila ${rowNumber}: el DNI ${dni} no está en el Registro Único ni en el padrón, y la planilla no trae nombre y apellido. Cargá primero a la persona.`);
         continue;
       }
 
-      let area = areaMap.get(AreaName);
+      const areaName = String(row.Area || row.area || "").toLowerCase().trim();
+      if (!areaName) {
+        errors.push(`Fila ${rowNumber}: falta el área.`);
+        continue;
+      }
+      let area = areaMap.get(areaName);
       if (!area) {
         for (const [name, a] of areaMap.entries()) {
-          if (name.includes(AreaName) || AreaName.includes(name)) {
+          if (name.includes(areaName) || areaName.includes(name)) {
             area = a;
             break;
           }
         }
       }
-
       if (!area) {
-        errors.push(`Área no encontrada: ${row.Area || row.area} para DNI ${DNI}`);
+        errors.push(`Fila ${rowNumber}: no existe el área "${row.Area || row.area}".`);
         continue;
       }
 
-      const caseKey = `${person.id}_${area.id}_${Caso}`;
-      let dbCase = caseMap.get(caseKey);
+      const caseTitle = String(row.Caso || row.Asunto || row.title || "").trim();
+      if (!caseTitle) {
+        errors.push(`Fila ${rowNumber}: falta el nombre del caso.`);
+        continue;
+      }
 
+      const description = String(row.Descripcion || row.Observaciones || row.description || "").trim();
+      if (!description) {
+        errors.push(`Fila ${rowNumber}: falta la descripción de la intervención.`);
+        continue;
+      }
+
+      const date = parseSheetDate(row.Fecha ?? row.date);
+      if (!date) {
+        errors.push(`Fila ${rowNumber}: falta la fecha o no se entiende (usá dd/mm/aaaa).`);
+        continue;
+      }
+
+      const caseKey = `${person.id}_${area.id}_${caseTitle}`;
+      let dbCase = caseMap.get(caseKey);
       if (!dbCase) {
         dbCase = await prisma.case.create({
-          data: {
-            personId: person.id,
-            areaId: area.id,
-            title: Caso,
-            status: 'ABIERTO'
-          }
+          data: { personId: person.id, areaId: area.id, title: caseTitle, status: "ABIERTO" },
         });
         caseMap.set(caseKey, dbCase);
       }
@@ -166,15 +177,15 @@ export async function importInterventionsAction(data: any[]) {
         data: {
           caseId: dbCase.id,
           personId: person.id,
-          description: Descripcion,
-          date: FechaStr ? new Date(FechaStr) : new Date(),
-          userId: session.user.id!
-        }
+          description,
+          date,
+          userId: session.user.id!,
+        },
       });
 
       createdCount++;
-    } catch (e: any) {
-      errors.push(actionErrorMessage(e, `No se pudo importar la fila del DNI ${row.DNI || row.dni || row.Documento || "sin DNI"}`));
+    } catch (e) {
+      errors.push(actionErrorMessage(e, `Fila ${rowNumber}: no se pudo importar`));
     }
   }
 
@@ -182,4 +193,27 @@ export async function importInterventionsAction(data: any[]) {
   revalidatePath("/people");
 
   return { success: true, createdCount, errors };
+}
+
+// Fechas de planilla: número de serie de Excel, "dd/mm/aaaa", "aaaa-mm-dd" u objeto Date.
+function parseSheetDate(value: unknown): Date | null {
+  if (value === null || value === undefined || value === "") return null;
+  if (value instanceof Date) return isNaN(value.getTime()) ? null : value;
+  if (typeof value === "number") {
+    // Excel cuenta días desde el 30/12/1899.
+    const date = new Date(Date.UTC(1899, 11, 30) + Math.round(value * 86400000));
+    return isNaN(date.getTime()) ? null : date;
+  }
+  const text = String(value).trim();
+  const dmy = text.match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{2,4})$/);
+  if (dmy) {
+    const year = Number(dmy[3].length === 2 ? `20${dmy[3]}` : dmy[3]);
+    const date = new Date(year, Number(dmy[2]) - 1, Number(dmy[1]), 12);
+    return date.getDate() === Number(dmy[1]) ? date : null;
+  }
+  if (/^\d{4}-\d{2}-\d{2}/.test(text)) {
+    const date = new Date(text);
+    return isNaN(date.getTime()) ? null : date;
+  }
+  return null;
 }

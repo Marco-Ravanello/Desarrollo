@@ -11,7 +11,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { GlobalSearch } from "@/components/search/global-search";
 import { ThemeToggle } from "./theme-toggle";
-import { hasPermission, PERMISSIONS } from "@/lib/permissions";
+import { canAccessPath } from "@/lib/permissions";
 
 interface AppSidebarProps {
   isMobile?: boolean;
@@ -50,12 +50,10 @@ export function AppSidebar({ isMobile = false, onNavigate }: AppSidebarProps) {
     { title: "Registro Único", url: "/people", icon: Users },
   ];
 
-  const role = user?.role as any;
-  const canManageUsers = Boolean(
-    role && (role === "SUPERADMIN" || role === "DIRECCION_GENERAL" || role === "ADMIN_GENERAL" || hasPermission(role, PERMISSIONS.MANAGE_USERS))
-  );
+  const role = user?.role;
+  const canOpen = (url: string) => canAccessPath(role, url);
 
-  // Administración agrupada por tema; cada grupo se puede plegar.
+  // Administración agrupada por tema; cada grupo se puede plegar. Cada rol ve solo lo que puede abrir.
   const adminGroups: { id: string; title: string; items: { title: string; url: string; icon: any }[] }[] = [
     {
       id: "operacion",
@@ -74,9 +72,7 @@ export function AppSidebar({ isMobile = false, onNavigate }: AppSidebarProps) {
         { title: "Órdenes de compras", url: "/admin/purchase-orders", icon: Briefcase },
         { title: "Proveedores", url: "/admin/providers", icon: Building2 },
         { title: "Convenios y Presupuesto", url: "/admin/budget", icon: Wallet },
-        ...(role && hasPermission(role, PERMISSIONS.VIEW_REPORTS)
-          ? [{ title: "Reportes", url: "/admin/reports", icon: BarChart3 }]
-          : []),
+        { title: "Reportes", url: "/admin/reports", icon: BarChart3 },
       ],
     },
     {
@@ -93,18 +89,14 @@ export function AppSidebar({ isMobile = false, onNavigate }: AppSidebarProps) {
       title: "Sistema",
       items: [
         { title: "Configuración", url: "/admin/settings", icon: Settings },
-        ...(canManageUsers
-          ? [
-              { title: "Importar Datos", url: "/admin/interventions", icon: FileSpreadsheet },
-              { title: "Usuarios", url: "/admin/users", icon: Users },
-            ]
-          : []),
-        ...(role && hasPermission(role, PERMISSIONS.VIEW_AUDIT_LOGS)
-          ? [{ title: "Auditoría", url: "/admin/audit", icon: ScrollText }]
-          : []),
+        { title: "Importar Datos", url: "/admin/interventions", icon: FileSpreadsheet },
+        { title: "Usuarios", url: "/admin/users", icon: Users },
+        { title: "Auditoría", url: "/admin/audit", icon: ScrollText },
       ],
     },
-  ].filter((g) => g.items.length > 0);
+  ]
+    .map((g) => ({ ...g, items: g.items.filter((i) => canOpen(i.url)) }))
+    .filter((g) => g.items.length > 0);
 
   const activeGroup = adminGroups.find((g) => g.items.some((i) => pathname.startsWith(i.url)))?.id;
   const [closedGroups, setClosedGroups] = React.useState<string[]>([]);
@@ -128,10 +120,8 @@ export function AppSidebar({ isMobile = false, onNavigate }: AppSidebarProps) {
     { title: "Protección Social", url: "/areas/social", icon: ClipboardList, color: "emerald" },
     { title: "Niñez y Familia", url: "/areas/ninez", icon: ClipboardList, color: "amber" },
     { title: "Hábitat y Vivienda", url: "/areas/habitat", icon: Building2, color: "blue" },
-    ...(user?.role && hasPermission(user.role as any, PERMISSIONS.VIEW_SENSITIVE_CASES) ? [
-      { title: "Violencia y Género", url: "/areas/violence", icon: ShieldAlert, color: "rose" }
-    ] : [])
-  ];
+    { title: "Violencia y Género", url: "/areas/violence", icon: ShieldAlert, color: "rose" },
+  ].filter((i) => canOpen(i.url));
 
   const sidebarColor = getAreaBgColor(user?.role === 'SUPERADMIN' ? 'slate' : (user as any)?.area?.color);
 

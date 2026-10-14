@@ -5,9 +5,13 @@ import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
 import { getPeople, ensurePersonInPrisma } from "@/services/people";
 import { actionErrorMessage } from "@/lib/action-error";
+import { canEditSocialRecords } from "@/lib/permissions";
 
 export async function addCaseInterventionAction(caseId: string, description: string) {
   const session = await auth();
+  if (session?.user && !canEditSocialRecords(session.user.role)) {
+    return { success: false, error: "Tu rol (Auditoría) puede consultar pero no cargar ni modificar datos." };
+  }
   if (!session?.user?.id) {
     return { success: false, error: "No tenés permiso para hacer esto o tu sesión expiró. Si sigue pasando, volvé a iniciar sesión." };
   }
@@ -120,6 +124,9 @@ export interface CreateCentralizedCaseInput {
 
 export async function createCentralizedCaseAction(input: CreateCentralizedCaseInput) {
   const session = await auth();
+  if (session?.user && !canEditSocialRecords(session.user.role)) {
+    return { success: false, error: "Tu rol (Auditoría) puede consultar pero no cargar ni modificar datos." };
+  }
   if (!session?.user?.id) {
     return { success: false, error: "No tenés permiso para hacer esto o tu sesión expiró. Si sigue pasando, volvé a iniciar sesión." };
   }
@@ -206,6 +213,9 @@ export async function createDerivationAction(
   observations?: string
 ) {
   const session = await auth();
+  if (session?.user && !canEditSocialRecords(session.user.role)) {
+    return { success: false, error: "Tu rol (Auditoría) puede consultar pero no cargar ni modificar datos." };
+  }
   if (!session?.user?.id) return { success: false, error: "No tenés permiso para hacer esto o tu sesión expiró. Si sigue pasando, volvé a iniciar sesión." };
   try {
     const caseItem = await prisma.case.findUnique({
