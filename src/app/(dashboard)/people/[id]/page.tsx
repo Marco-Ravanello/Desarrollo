@@ -5,7 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Phone, MapPin, ShieldAlert, Mail, History, Eye, FileIcon, ExternalLink, Users, UserMinus, Network } from "lucide-react";
+import { Calendar, Phone, MapPin, ShieldAlert, Mail, History, Eye, FileIcon, ExternalLink, Users, Network } from "lucide-react";
 import { notFound } from "next/navigation";
 import { auth } from "@/auth";
 import { getAreas } from "@/services/cases";
@@ -15,7 +15,7 @@ import { CitizenTimeline } from "@/components/timeline/citizen-timeline";
 import { CloseCaseButton } from "./close-case-button";
 import { AddFamilyMemberForm } from "./add-family-member-form";
 import { EditPersonDialog } from "./edit-person-dialog";
-import { removeFromFamily } from "../actions/family-actions";
+import { RemoveFamilyMemberButton } from "./remove-family-member-button";
 import { PageBreadcrumbs } from "@/components/layout/breadcrumbs-context";
 import { PageHeader } from "@/components/layout/page-header";
 import { EmptyMessage } from "@/components/ui/empty-message";
@@ -231,11 +231,7 @@ export default async function PersonDetailPage({ params }: { params: Promise<{ i
                           <span className="text-[10px] text-muted-foreground font-mono truncate">DNI: {m.dni || "N/R"}</span>
                         </div>
                       </Link>
-                      <form action={async () => { "use server"; await removeFromFamily(m.id); }} className="shrink-0">
-                        <Button variant="ghost" size="icon" className="h-7 w-7 text-rose-500 hover:text-rose-600 hover:bg-rose-500/10 shrink-0">
-                          <UserMinus className="h-4 w-4 shrink-0" />
-                        </Button>
-                      </form>
+                      <RemoveFamilyMemberButton id={m.id} name={`${rawName} ${m.lastName && !m.lastName.startsWith("(") ? m.lastName : ""}`.trim() || "Este familiar"} />
                     </div>
                   );
                 })}

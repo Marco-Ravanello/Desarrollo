@@ -121,7 +121,7 @@ export function CreatePurchaseOrderForm({ providers, areas = [] }: { providers: 
         toast.error(result.error || "Error al registrar orden");
       }
     } catch (error) {
-      toast.error("Ocurrió un error inesperado");
+      toast.error("No se pudo guardar la orden. Revisá la conexión y probá de nuevo.");
     } finally {
       setLoading(false);
     }

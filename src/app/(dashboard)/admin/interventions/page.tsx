@@ -18,14 +18,18 @@ export default function InterventionsAdminPage() {
   const handleExport = async () => {
     setExporting(true);
     try {
-      const data = await exportInterventionsAction();
-      const worksheet = XLSX.utils.json_to_sheet(data);
+      const result = await exportInterventionsAction();
+      if (!result.success) {
+        toast.error(result.error);
+        return;
+      }
+      const worksheet = XLSX.utils.json_to_sheet(result.rows);
       const workbook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(workbook, worksheet, "Intervenciones");
       XLSX.writeFile(workbook, `Intervenciones_Municipal_${new Date().toISOString().split('T')[0]}.xlsx`);
       toast.success("Exportación completada");
-    } catch (error) {
-      toast.error("Error al exportar");
+    } catch {
+      toast.error("No se pudo exportar. Revisá la conexión y probá de nuevo.");
     } finally {
       setExporting(false);
     }
@@ -53,6 +57,10 @@ export default function InterventionsAdminPage() {
         }
 
         const res = await importInterventionsAction(data as any[]);
+        if (!res.success) {
+          toast.error(res.errors[0]);
+          return;
+        }
         setResults({ createdCount: res.createdCount, errors: res.errors });
         toast.success(`Importación finalizada: ${res.createdCount} registros.`);
       } catch (error) {

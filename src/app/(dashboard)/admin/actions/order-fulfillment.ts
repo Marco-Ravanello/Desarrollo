@@ -2,12 +2,13 @@
 
 import prisma from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
+import { actionErrorMessage } from "@/lib/action-error";
 import { auth } from "@/auth";
 
 export async function updateItemFulfillmentAction(itemId: string, increment: number) {
   const session = await auth();
   if (!session?.user?.id) {
-    return { success: false, error: "No autorizado" };
+    return { success: false, error: "No tenés permiso para hacer esto o tu sesión expiró. Si sigue pasando, volvé a iniciar sesión." };
   }
 
   try {
@@ -61,6 +62,6 @@ export async function updateItemFulfillmentAction(itemId: string, increment: num
     return { success: true };
   } catch (error: any) {
     console.error("Fulfillment Error:", error);
-    return { success: false, error: error.message };
+    return { success: false, error: actionErrorMessage(error, "No se pudo registrar la entrega") };
   }
 }

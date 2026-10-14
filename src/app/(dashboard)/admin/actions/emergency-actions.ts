@@ -10,6 +10,7 @@ import {
   getStormVictimRecords
 } from "@/services/emergency";
 import { StormVictimItem } from "@/types/emergency";
+import { actionErrorMessage } from "@/lib/action-error";
 
 export async function searchPeopleForEmergencyAction(query: string) {
   return await searchPeopleForEmergency(query);
@@ -283,13 +284,13 @@ export async function saveStormVictimAction(recordData: Partial<StormVictimItem>
     }
   } catch (err: any) {
     console.error("Error saving storm victim action:", err);
-    return { success: false, error: err.message || "Error al registrar la ficha de tormenta" };
+    return { success: false, error: actionErrorMessage(err, "No se pudo registrar la ficha de tormenta") };
   }
 }
 
 export async function deleteStormVictimAction(recordId: string) {
   const session = await auth();
-  if (!session?.user?.id) return { success: false, error: "No autorizado" };
+  if (!session?.user?.id) return { success: false, error: "No tenés permiso para hacer esto o tu sesión expiró. Si sigue pasando, volvé a iniciar sesión." };
 
   const cleanId = recordId.replace(/^case-/, "").replace(/^temp-/, "");
 
@@ -373,7 +374,7 @@ export async function deleteStormVictimAction(recordId: string) {
     return { success: true };
   } catch (err: any) {
     console.error("Error in deleteStormVictimAction:", err);
-    return { success: false, error: err.message || "Error al eliminar el registro" };
+    return { success: false, error: actionErrorMessage(err, "No se pudo eliminar el registro") };
   }
 }
 
@@ -383,7 +384,7 @@ export async function updateEmergencyStockAction(
   itemName?: string
 ) {
   const session = await auth();
-  if (!session?.user?.id) return { success: false, error: "No autorizado" };
+  if (!session?.user?.id) return { success: false, error: "No tenés permiso para hacer esto o tu sesión expiró. Si sigue pasando, volvé a iniciar sesión." };
 
   try {
     const validStock = Math.max(0, Math.floor(newStock));
@@ -462,7 +463,7 @@ export async function updateEmergencyStockAction(
     return { success: true, newStock: validStock };
   } catch (error: any) {
     console.error("Error updating emergency stock:", error);
-    return { success: false, error: error.message || "Error al actualizar stock" };
+    return { success: false, error: actionErrorMessage(error, "No se pudo actualizar stock") };
   }
 }
 
@@ -474,7 +475,7 @@ export async function createEmergencyStockItemAction(data: {
   description?: string;
 }) {
   const session = await auth();
-  if (!session?.user?.id) return { success: false, error: "No autorizado" };
+  if (!session?.user?.id) return { success: false, error: "No tenés permiso para hacer esto o tu sesión expiró. Si sigue pasando, volvé a iniciar sesión." };
 
   if (!data.name || data.name.trim().length === 0) {
     return { success: false, error: "El nombre del insumo es obligatorio" };
@@ -550,7 +551,7 @@ export async function createEmergencyStockItemAction(data: {
     return { success: true };
   } catch (error: any) {
     console.error("Error creating emergency stock item:", error);
-    return { success: false, error: error.message || "Error al registrar el insumo" };
+    return { success: false, error: actionErrorMessage(error, "No se pudo registrar el insumo") };
   }
 }
 
@@ -560,7 +561,7 @@ export async function dispatchEmergencyStockAction(
   victimInfo?: string
 ) {
   const session = await auth();
-  if (!session?.user?.id) return { success: false, error: "No autorizado" };
+  if (!session?.user?.id) return { success: false, error: "No tenés permiso para hacer esto o tu sesión expiró. Si sigue pasando, volvé a iniciar sesión." };
 
   try {
     let item = await prisma.supplyItem.findUnique({ where: { id: supplyId } });
@@ -616,7 +617,7 @@ export async function dispatchEmergencyStockAction(
     return { success: true, newStock: updatedItem.stock };
   } catch (error: any) {
     console.error("Error dispatching emergency stock:", error);
-    return { success: false, error: error.message || "Error al despachar insumo" };
+    return { success: false, error: actionErrorMessage(error, "No se pudo despachar insumo") };
   }
 }
 
@@ -633,7 +634,7 @@ export async function getEmergencyStatusAction() {
 
 export async function toggleEmergencyStatusAction(active: boolean) {
   const session = await auth();
-  if (!session?.user?.id) return { success: false, error: "No autorizado" };
+  if (!session?.user?.id) return { success: false, error: "No tenés permiso para hacer esto o tu sesión expiró. Si sigue pasando, volvé a iniciar sesión." };
   try {
     await prisma.systemSetting.upsert({
       where: { key: "muni-emergency-mode" },
@@ -654,6 +655,6 @@ export async function toggleEmergencyStatusAction(active: boolean) {
     revalidatePath("/", "layout");
     return { success: true, active };
   } catch (err: any) {
-    return { success: false, error: err.message || "Error al actualizar estado de emergencia" };
+    return { success: false, error: actionErrorMessage(err, "No se pudo actualizar estado de emergencia") };
   }
 }

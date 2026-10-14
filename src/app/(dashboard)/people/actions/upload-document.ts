@@ -5,10 +5,11 @@ import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
 import { ensurePersonInPrisma } from "@/services/people";
 import { makeStoredName, saveUploadedFile, uploadUrl } from "@/lib/file-storage";
+import { actionErrorMessage } from "@/lib/action-error";
 
 export async function uploadDocumentAction(formData: FormData) {
   const session = await auth();
-  if (!session?.user) return { error: "No autorizado" };
+  if (!session?.user) return { error: "No tenés permiso para hacer esto o tu sesión expiró. Si sigue pasando, volvé a iniciar sesión." };
 
   const file = formData.get("file") as File;
   const personId = formData.get("personId") as string;
@@ -54,6 +55,6 @@ export async function uploadDocumentAction(formData: FormData) {
     return { success: true, fileName: file.name };
   } catch (error: any) {
     console.error("UPLOAD_ERROR:", error);
-    return { error: `Error en el servidor: ${error.message || "Fallo desconocido"}` };
+    return { error: actionErrorMessage(error, "No se pudo subir el documento") };
   }
 }

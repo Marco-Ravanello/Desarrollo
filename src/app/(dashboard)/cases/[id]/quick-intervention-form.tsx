@@ -35,7 +35,7 @@ export function QuickInterventionForm({ caseId, caseTitle }: QuickInterventionFo
         toast.error(result.error || "Error al registrar intervención");
       }
     } catch (error) {
-      toast.error("Ocurrió un error inesperado");
+      toast.error("No se pudo registrar la intervención. Revisá la conexión y probá de nuevo.");
     } finally {
       setLoading(false);
     }

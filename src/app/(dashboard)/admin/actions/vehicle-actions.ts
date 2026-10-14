@@ -4,6 +4,7 @@ import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
 import { ReservationStatus, VehicleStatus } from "@prisma/client";
+import { actionErrorMessage } from "@/lib/action-error";
 
 const parseLocalDate = (dateStr: string) => {
   if (!dateStr) return new Date();
@@ -15,7 +16,7 @@ const parseLocalDate = (dateStr: string) => {
 
 export async function createVehicleReservationAction(formData: FormData) {
   const session = await auth();
-  if (!session?.user) return { error: "No autorizado" };
+  if (!session?.user) return { error: "No tenés permiso para hacer esto o tu sesión expiró. Si sigue pasando, volvé a iniciar sesión." };
 
   const vehicleId = formData.get("vehicleId") as string;
   const startDate = parseLocalDate(formData.get("startDate") as string);
@@ -88,13 +89,13 @@ export async function createVehicleReservationAction(formData: FormData) {
     return { success: true };
   } catch (error) {
     console.error(error);
-    return { error: "Error al realizar la solicitud" };
+    return { error: actionErrorMessage(error, "No se pudo realizar la solicitud") };
   }
 }
 
 export async function updateReservationStatusAction(reservationId: string, newStatus: ReservationStatus, observations?: string) {
   const session = await auth();
-  if (!session?.user) return { error: "No autorizado" };
+  if (!session?.user) return { error: "No tenés permiso para hacer esto o tu sesión expiró. Si sigue pasando, volvé a iniciar sesión." };
 
   const role = session.user.role;
   if (role !== "SUPERADMIN" && role !== "ADMIN_GENERAL" && role !== "DIRECTOR_AREA") {
@@ -137,14 +138,14 @@ export async function updateReservationStatusAction(reservationId: string, newSt
     return { success: true };
   } catch (error) {
     console.error(error);
-    return { error: "Error al actualizar la reserva" };
+    return { error: actionErrorMessage(error, "No se pudo actualizar la reserva") };
   }
 }
 
 export async function updateVehicleStatusAction(vehicleId: string, status: VehicleStatus) {
   const session = await auth();
   if (!session?.user || (session.user.role !== 'SUPERADMIN' && session.user.role !== 'ADMIN_GENERAL')) {
-    return { error: "No autorizado" };
+    return { error: "No tenés permiso para hacer esto o tu sesión expiró. Si sigue pasando, volvé a iniciar sesión." };
   }
 
   try {
@@ -156,13 +157,13 @@ export async function updateVehicleStatusAction(vehicleId: string, status: Vehic
     revalidatePath("/admin/vehicles");
     return { success: true };
   } catch (error) {
-    return { error: "Error al actualizar estado del vehículo" };
+    return { error: actionErrorMessage(error, "No se pudo actualizar estado del vehículo") };
   }
 }
 
 export async function createFuelRecordAction(formData: FormData) {
   const session = await auth();
-  if (!session?.user) return { error: "No autorizado" };
+  if (!session?.user) return { error: "No tenés permiso para hacer esto o tu sesión expiró. Si sigue pasando, volvé a iniciar sesión." };
 
   const vehicleId = formData.get("vehicleId") as string;
   const dateStr = formData.get("date") as string;
@@ -222,6 +223,6 @@ export async function createFuelRecordAction(formData: FormData) {
     revalidatePath("/admin/vehicles");
     return { success: true };
   } catch (error) {
-    return { error: "Error al registrar combustible" };
+    return { error: actionErrorMessage(error, "No se pudo registrar combustible") };
   }
 }

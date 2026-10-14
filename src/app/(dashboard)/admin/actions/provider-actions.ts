@@ -5,6 +5,7 @@ import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { formatCuit, normalizeCuit } from "@/services/providers";
+import { actionErrorMessage } from "@/lib/action-error";
 
 const ProviderSchema = z.object({
   id: z.string().optional(),
@@ -69,7 +70,7 @@ export async function saveProviderAction(input: ProviderInput) {
     return { success: true, id: provider.id };
   } catch (error) {
     console.error("Error al guardar proveedor:", error);
-    return { success: false, error: "No se pudo guardar el proveedor" };
+    return { success: false, error: actionErrorMessage(error, "No se pudo guardar el proveedor") };
   }
 }
 
@@ -112,6 +113,6 @@ export async function deleteProviderAction(id: string) {
     return { success: true };
   } catch (error) {
     console.error("Error al eliminar proveedor:", error);
-    return { success: false, error: "No se pudo eliminar el proveedor" };
+    return { success: false, error: actionErrorMessage(error, "No se pudo eliminar el proveedor") };
   }
 }

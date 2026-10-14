@@ -47,19 +47,23 @@ export function TaskList({ initialTasks, userId }: { initialTasks: TaskItem[], u
 
     startTransition(async () => {
       try {
-        await addTaskAction(
+        const result = await addTaskAction(
           title.trim(),
           description.trim() || undefined,
           dueDate || null,
           priority
         );
+        if (!result.success) {
+          toast.error(result.error);
+          return;
+        }
         setTitle("");
         setDescription("");
         setDueDate("");
         setPriority("MEDIA");
         toast.success("Tarea registrada correctamente");
-      } catch (err: any) {
-        toast.error(err.message || "Error al registrar la tarea");
+      } catch {
+        toast.error("No se pudo guardar la tarea. Revisá la conexión y probá de nuevo.");
       }
     });
   };
@@ -67,10 +71,14 @@ export function TaskList({ initialTasks, userId }: { initialTasks: TaskItem[], u
   const handleToggle = (id: string, currentStatus: string) => {
     startTransition(async () => {
       try {
-        await toggleTaskAction(id, currentStatus);
+        const result = await toggleTaskAction(id, currentStatus);
+        if (!result.success) {
+          toast.error(result.error);
+          return;
+        }
         toast.success(currentStatus === "COMPLETADA" ? "Tarea reabierta" : "¡Tarea completada!");
-      } catch (err: any) {
-        toast.error(err.message || "Error al actualizar estado");
+      } catch {
+        toast.error("No se pudo actualizar la tarea. Revisá la conexión y probá de nuevo.");
       }
     });
   };
@@ -78,10 +86,14 @@ export function TaskList({ initialTasks, userId }: { initialTasks: TaskItem[], u
   const handleDelete = (id: string) => {
     startTransition(async () => {
       try {
-        await deleteTaskAction(id);
+        const result = await deleteTaskAction(id);
+        if (!result.success) {
+          toast.error(result.error);
+          return;
+        }
         toast.success("Tarea eliminada");
-      } catch (err: any) {
-        toast.error(err.message || "Error al eliminar tarea");
+      } catch {
+        toast.error("No se pudo eliminar la tarea. Revisá la conexión y probá de nuevo.");
       }
     });
   };

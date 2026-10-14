@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { createAuditLog } from "@/services/system";
 import { auth } from "@/auth";
 import { ensurePersonInPrisma } from "@/services/people";
+import { actionErrorMessage } from "@/lib/action-error";
 
 export async function addFamilyMember(
   personId: string,
@@ -13,7 +14,7 @@ export async function addFamilyMember(
 ) {
   const session = await auth();
   if (!session?.user?.id) {
-    return { success: false, error: "No autorizado" };
+    return { success: false, error: "No tenés permiso para hacer esto o tu sesión expiró. Si sigue pasando, volvé a iniciar sesión." };
   }
 
   const cleanDni = memberDni.trim().replace(/[^0-9]/g, "");
@@ -81,7 +82,7 @@ export async function addFamilyMember(
 export async function removeFromFamily(personId: string) {
   const session = await auth();
   if (!session?.user?.id) {
-    return { success: false, error: "No autorizado" };
+    return { success: false, error: "No tenés permiso para hacer esto o tu sesión expiró. Si sigue pasando, volvé a iniciar sesión." };
   }
 
   try {
@@ -96,6 +97,6 @@ export async function removeFromFamily(personId: string) {
     revalidatePath(`/people/${personId}`);
     return { success: true };
   } catch (err: any) {
-    return { success: false, error: err.message || "Error al desvincular familiar" };
+    return { success: false, error: actionErrorMessage(err, "No se pudo desvincular familiar") };
   }
 }

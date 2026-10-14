@@ -60,7 +60,7 @@ export function CreateAgreementForm({ areas }: { areas: any[] }) {
         toast.error(result.error || "Error al registrar convenio");
       }
     } catch (error) {
-      toast.error("Ocurrió un error inesperado");
+      toast.error("No se pudo guardar el convenio. Revisá la conexión y probá de nuevo.");
     } finally {
       setLoading(false);
     }

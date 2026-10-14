@@ -7,6 +7,7 @@ import bcrypt from "bcryptjs";
 import { Role, User } from "@prisma/client";
 import { hasPermission, PERMISSIONS } from "@/lib/permissions";
 import { ActionResult } from "@/types/actions";
+import { actionErrorMessage } from "@/lib/action-error";
 
 function canManageUsers(role?: string | null): boolean {
   if (!role) return false;
@@ -75,7 +76,7 @@ export async function createUserAction(formData: FormData): Promise<ActionResult
   } catch (error) {
     console.error(error);
     if ((error as any).code === 'P2002') return { success: false, error: "Ya existe un usuario con ese email" };
-    return { success: false, error: "Error al crear el usuario" };
+    return { success: false, error: actionErrorMessage(error, "No se pudo crear el usuario") };
   }
 }
 
@@ -151,14 +152,14 @@ export async function updateUserAction(input: UpdateUserInput): Promise<ActionRe
     return { success: true, data: updatedUser, message: "Usuario actualizado con éxito" };
   } catch (error: any) {
     console.error("Error al actualizar usuario:", error);
-    return { success: false, error: error.message || "Error al actualizar el usuario" };
+    return { success: false, error: actionErrorMessage(error, "No se pudo actualizar el usuario") };
   }
 }
 
 export async function toggleUserStatusAction(userId: string) {
   const session = await auth();
   if (!session?.user || !canManageUsers(session.user.role)) {
-    return { success: false, error: "No autorizado" };
+    return { success: false, error: "No tenés permiso para hacer esto o tu sesión expiró. Si sigue pasando, volvé a iniciar sesión." };
   }
 
   if (session.user.id === userId) {
@@ -200,6 +201,6 @@ export async function toggleUserStatusAction(userId: string) {
     return { success: true, isActive: updated.isActive, isDeactivated: !updated.isActive };
   } catch (error: any) {
     console.error("Error en toggleUserStatusAction:", error);
-    return { success: false, error: error.message || "Error al cambiar el estado del usuario" };
+    return { success: false, error: actionErrorMessage(error, "No se pudo cambiar el estado del usuario") };
   }
 }

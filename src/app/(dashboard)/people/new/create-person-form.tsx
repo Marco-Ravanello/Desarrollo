@@ -28,7 +28,7 @@ export function CreatePersonForm() {
         toast.error(result.error || "Error al registrar persona");
       }
     } catch (error) {
-      toast.error("Ocurrió un error inesperado");
+      toast.error("No se pudo guardar la persona. Revisá la conexión y probá de nuevo.");
     } finally {
       setLoading(false);
     }

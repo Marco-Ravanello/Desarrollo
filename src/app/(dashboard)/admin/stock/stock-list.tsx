@@ -18,11 +18,15 @@ export function StockList({ supplies }: { supplies: any[] }) {
 
   const handleAdjust = async (id: string) => {
     try {
-      await adjustStockAction(id, tempStock);
+      const result = await adjustStockAction(id, tempStock);
+      if (!result.success) {
+        toast.error(result.error);
+        return;
+      }
       toast.success("Stock actualizado");
       setEditingId(null);
-    } catch (error) {
-      toast.error("Error al actualizar");
+    } catch {
+      toast.error("No se pudo actualizar el stock. Revisá la conexión y probá de nuevo.");
     }
   };
 

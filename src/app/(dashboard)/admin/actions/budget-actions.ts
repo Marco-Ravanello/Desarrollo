@@ -3,6 +3,7 @@
 import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
+import { actionErrorMessage } from "@/lib/action-error";
 
 export async function getBudgetSummary() {
   const areas = await prisma.area.findMany({
@@ -42,11 +43,11 @@ export async function updateAreaBudget(areaId: string, amount: number) {
   const session = await auth();
 
   if (!session?.user || (session.user.role !== 'SUPERADMIN' && session.user.role !== 'ADMIN_GENERAL')) {
-    return { success: false, error: "No autorizado" };
+    return { success: false, error: "No se pudo actualizar el presupuesto: tu rol no tiene permiso para modificarlo." };
   }
 
   if (typeof amount !== "number" || isNaN(amount) || amount < 0) {
-    return { success: false, error: "Monto de presupuesto inválido" };
+    return { success: false, error: "No se pudo actualizar el presupuesto: el monto tiene que ser un número igual o mayor a 0." };
   }
 
   try {
@@ -68,6 +69,6 @@ export async function updateAreaBudget(areaId: string, amount: number) {
     revalidatePath("/admin/budget");
     return { success: true };
   } catch (error: any) {
-    return { success: false, error: error.message || "Error al actualizar presupuesto" };
+    return { success: false, error: actionErrorMessage(error, "No se pudo actualizar el presupuesto") };
   }
 }

@@ -4,12 +4,13 @@ import { createAgreement } from "@/services/admin";
 import { createAuditLog } from "@/services/system";
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
+import { actionErrorMessage } from "@/lib/action-error";
 
 export async function createAgreementAction(formData: FormData) {
   const session = await auth();
 
   if (!session?.user?.id) {
-    return { success: false, error: "No autorizado" };
+    return { success: false, error: "No tenés permiso para hacer esto o tu sesión expiró. Si sigue pasando, volvé a iniciar sesión." };
   }
 
   const role = session.user.role;
@@ -53,6 +54,6 @@ export async function createAgreementAction(formData: FormData) {
     if (error.code === 'P2002') {
       return { success: false, error: "Ya existe un convenio con ese número" };
     }
-    return { success: false, error: "Ocurrió un error al guardar el convenio" };
+    return { success: false, error: actionErrorMessage(error, "No se pudo guardar el convenio") };
   }
 }

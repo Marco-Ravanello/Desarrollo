@@ -3,11 +3,12 @@
 import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
+import { actionErrorMessage } from "@/lib/action-error";
 
 export async function createVehicleAction(formData: FormData) {
   const session = await auth();
   if (!session?.user || (session.user.role !== 'SUPERADMIN' && session.user.role !== 'ADMIN_GENERAL')) {
-    return { error: "No autorizado" };
+    return { error: "No tenés permiso para hacer esto o tu sesión expiró. Si sigue pasando, volvé a iniciar sesión." };
   }
 
   const plate = formData.get("plate") as string;
@@ -50,6 +51,6 @@ export async function createVehicleAction(formData: FormData) {
   } catch (error) {
     console.error(error);
     if ((error as any).code === 'P2002') return { error: "Ya existe un vehículo con esa patente" };
-    return { error: "Error al registrar el vehículo" };
+    return { error: actionErrorMessage(error, "No se pudo registrar el vehículo") };
   }
 }

@@ -68,7 +68,7 @@ export function RecordFulfillmentSheet({
         toast.error(result.error || "Error al registrar entrega");
       }
     } catch (error) {
-      toast.error("Error inesperado");
+      toast.error("No se pudo registrar la entrega. Revisá la conexión y probá de nuevo.");
     } finally {
       setLoading(false);
     }
