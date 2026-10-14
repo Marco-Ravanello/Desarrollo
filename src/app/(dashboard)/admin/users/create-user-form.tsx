@@ -18,7 +18,8 @@ const ROLE_LABELS: Record<Role, string> = {
   DIRECTOR_AREA: "DIRECTOR_AREA - Dirección de Área Municipal",
   OPERATIVO: "OPERATIVO - Trabajo Social y Carga de Expedientes",
   AUDITOR: "AUDITOR - Fiscalización y Trazabilidad de Gestión",
-  VIOLENCIA_GENERO: "VIOLENCIA_GENERO - Abordaje Confidencial de Casos"
+  VIOLENCIA_GENERO: "VIOLENCIA_GENERO - Abordaje Confidencial de Casos",
+  RELEVADOR_EMERGENCIA: "RELEVADOR_EMERGENCIA - Solo carga de fichas de emergencia climática"
 };
 
 export function CreateUserForm({

@@ -16,7 +16,8 @@ import { Badge } from "@/components/ui/badge";
 import { Printer, Save, UserCheck, ShieldAlert, Sparkles, MapPin, Phone, Home } from "lucide-react";
 import { toast } from "sonner";
 import { StormVictimItem, EmergencyPriority, SearchPersonSuggestion } from "@/types/emergency";
-import { searchPeopleForEmergencyAction, saveStormVictimAction } from "@/app/(dashboard)/admin/actions/emergency-actions";
+import { searchPeopleForEmergencyAction } from "@/app/(dashboard)/admin/actions/emergency-actions";
+import { saveFichaOrQueue } from "@/lib/emergency-offline";
 import { MunicipalLetterhead } from "@/components/ui/municipal-letterhead";
 
 interface StormFichaDialogProps {
@@ -26,6 +27,10 @@ interface StormFichaDialogProps {
   operatorName: string;
   areaName: string;
   onSaved?: () => void;
+  /** Usuario que carga (las fichas sin conexión se guardan a su nombre en el dispositivo). */
+  userId: string;
+  /** Auditoría consulta e imprime pero no guarda. */
+  canEdit?: boolean;
 }
 
 export function StormFichaDialog({
@@ -35,6 +40,8 @@ export function StormFichaDialog({
   operatorName,
   areaName,
   onSaved,
+  userId,
+  canEdit = true,
 }: StormFichaDialogProps) {
   const [nombreApellido, setNombreApellido] = useState("");
   const [dni, setDni] = useState("");
@@ -124,9 +131,10 @@ export function StormFichaDialog({
 
   const handleSearchName = async (val: string) => {
     setNombreApellido(val);
-    if (val.trim().length >= 3) {
+    if (val.trim().length >= 3 && navigator.onLine !== false) {
+      // Sin conexión no hay búsqueda en el padrón: se completa a mano.
       setIsSearching(true);
-      const res = await searchPeopleForEmergencyAction(val);
+      const res = await searchPeopleForEmergencyAction(val).catch(() => []);
       setSuggestions(res);
       setIsSearching(false);
       setShowSuggestions(true);
@@ -161,7 +169,10 @@ export function StormFichaDialog({
     const toastId = toast.loading("Guardando Ficha de Tormenta...");
 
     const payload: Partial<StormVictimItem> = {
-      id: initialRecord?.id,
+      id: initialRecord?.id || undefined,
+      caseId: initialRecord?.caseId || undefined,
+      // Una ficha que todavía está en el dispositivo conserva su identificador.
+      clientId: initialRecord?.clientId || undefined,
       nombreApellido,
       dni,
       edad,
@@ -185,13 +196,21 @@ export function StormFichaDialog({
       observaciones,
     };
 
-    const res = await saveStormVictimAction(payload);
+    const res = await saveFichaOrQueue(userId, payload);
 
     setIsSubmitting(false);
-    if (res.success) {
+    if (res.status === "saved") {
       toast.success("Ficha - Tormenta guardada y sincronizada en base de datos", { id: toastId });
       onOpenChange(false);
       if (onSaved) onSaved();
+    } else if (res.status === "queued") {
+      toast.warning(
+        res.sessionExpired
+          ? "Tu sesión venció: la ficha quedó guardada en este dispositivo. Volvé a iniciar sesión para enviarla."
+          : "Sin conexión: la ficha quedó guardada en este dispositivo y se envía sola cuando vuelva internet.",
+        { id: toastId, duration: 6000 }
+      );
+      onOpenChange(false);
     } else {
       toast.error(res.error || "Error al guardar la ficha", { id: toastId });
     }
@@ -573,14 +592,14 @@ export function StormFichaDialog({
             >
               Cancelar
             </Button>
-            <Button
+            {canEdit && <Button
               type="submit"
               disabled={isSubmitting}
               className="rounded-xl text-xs font-bold bg-primary text-primary-foreground"
             >
               <Save className="mr-2 h-4 w-4" />
               {isSubmitting ? "Guardando..." : "Guardar y Abrir Expediente"}
-            </Button>
+            </Button>}
           </DialogFooter>
         </form>
       </DialogContent>

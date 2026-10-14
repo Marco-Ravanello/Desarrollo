@@ -1,6 +1,7 @@
 "use client";
 
 import { useSession, signOut } from "next-auth/react";
+import { clearOfflineCache } from "@/lib/emergency-offline";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -131,7 +132,7 @@ export function UserNav({ variant = "header", isCollapsed = false }: UserNavProp
         <DropdownMenuSeparator className="my-1 bg-border/60" />
 
         <DropdownMenuItem
-          onClick={() => signOut({ callbackUrl: "/login" })}
+          onClick={() => clearOfflineCache().finally(() => signOut({ callbackUrl: "/login" }))}
           className="rounded-xl text-xs font-semibold cursor-pointer py-2 text-rose-500 hover:text-rose-600 focus:bg-rose-500/10 focus:text-rose-600"
         >
           <LogOut className="h-4 w-4 mr-2.5" />

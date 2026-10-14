@@ -3,293 +3,23 @@
 import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
-import {
-  searchPeopleForEmergency,
-  syncPersonInDatabase,
-  getEmergencyOperator,
-  getStormVictimRecords
-} from "@/services/emergency";
+import { searchPeopleForEmergency, getStormVictimRecords } from "@/services/emergency";
+import { saveStormVictimRecord } from "@/services/emergency-save";
 import { StormVictimItem } from "@/types/emergency";
 import { actionErrorMessage } from "@/lib/action-error";
-import { MANAGEMENT_ROLES, canEditSocialRecords } from "@/lib/permissions";
+import { MANAGEMENT_ROLES, canEditSocialRecords, canManageEmergencyStock, isEmergencySurveyor } from "@/lib/permissions";
+
+const STOCK_DENIED = "Tu usuario no puede modificar el stock de contingencia.";
 
 export async function searchPeopleForEmergencyAction(query: string) {
+  const session = await auth();
+  if (!session?.user?.id) return [];
   return await searchPeopleForEmergency(query);
 }
 
 export async function saveStormVictimAction(recordData: Partial<StormVictimItem>) {
   const session = await auth();
-  if (session?.user && !canEditSocialRecords(session.user.role)) {
-    return { success: false, error: "Tu rol (Auditoría) puede consultar pero no cargar ni modificar datos." };
-  }
-  if (!session?.user?.id) {
-    return { success: false, error: "Sesión no válida o expirada" };
-  }
-
-  try {
-    const operator = await getEmergencyOperator(session.user);
-
-    const personId = await syncPersonInDatabase({
-      dni: recordData.dni || "",
-      nombreApellido: recordData.nombreApellido || "Vecino Registrado",
-      domicilio: recordData.domicilio,
-      contacto: recordData.contacto || undefined,
-    });
-
-    let defaultArea = await prisma.area.findFirst({
-      where: {
-        OR: [
-          { id: operator.areaId },
-          { name: { contains: "Desarrollo", mode: "insensitive" } },
-          { name: { contains: "Hábitat", mode: "insensitive" } },
-          { name: { contains: "Social", mode: "insensitive" } },
-        ],
-      },
-    }) || await prisma.area.findFirst();
-
-    if (!defaultArea) {
-      return { success: false, error: "No se encontró un área administrativa para imputar la asistencia." };
-    }
-
-    const itemElements: string[] = [];
-    if (recordData.requiereColchon && recordData.cantidadColchon) itemElements.push(`${recordData.cantidadColchon} Colchón(es)`);
-    if (recordData.requiereCama && recordData.cantidadCama) itemElements.push(`${recordData.cantidadCama} Cama(s)`);
-    if (recordData.requiereCucheta && recordData.cantidadCucheta) itemElements.push(`${recordData.cantidadCucheta} Cucheta(s)`);
-    if (recordData.requiereFrazada && recordData.cantidadFrazada) itemElements.push(`${recordData.cantidadFrazada} Frazada(s)`);
-
-    const elementsSummary = itemElements.length > 0 ? itemElements.join(", ") : "Sin solicitud inmediata de mobiliario";
-
-    const caseTitle = `[CONTINGENCIA TORMENTA] Asistencia a ${recordData.nombreApellido} - ${recordData.barrio || recordData.domicilio}`;
-    const caseDescription = `Relevamiento territorial de contingencia registrado por ${operator.name} (${operator.areaName}). Domicilio: ${recordData.domicilio} (Ref: ${recordData.referencia || "N/A"}). Afectados: Grupo Familiar: ${recordData.grupoFamiliar ? "Sí" : "No"}, Niños: ${recordData.ninos || "0"}. Elementos solicitados: ${elementsSummary}. Intervención: ${recordData.descripcionIntervencion || "Asistencia social en territorio"}.`;
-
-    let priorityEnum: "ALTA" | "MEDIA" | "BAJA" = "MEDIA";
-    if (recordData.prioridad === "ALTA") priorityEnum = "ALTA";
-    if (recordData.prioridad === "BAJA") priorityEnum = "BAJA";
-
-    let activeCaseId = recordData.caseId;
-
-    if (recordData.id) {
-      // UPDATE CASE & INTERVENTION FIRST
-      if (activeCaseId) {
-        try {
-          await prisma.case.update({
-            where: { id: activeCaseId },
-            data: {
-              title: caseTitle,
-              description: caseDescription,
-              priority: priorityEnum,
-              personId: personId,
-            },
-          });
-        } catch (cErr) {
-          console.warn("Could not update case in DB:", cErr);
-        }
-      }
-
-      if (activeCaseId) {
-        try {
-          await prisma.intervention.create({
-            data: {
-              caseId: activeCaseId,
-              personId: personId,
-              userId: session.user.id,
-              description: `Actualización de Ficha Tormenta por ${operator.name}. Requerimientos: ${elementsSummary}.`,
-            },
-          });
-        } catch (iErr) {
-          console.warn("Could not create intervention in DB:", iErr);
-        }
-      }
-
-      let updatedRecord: any = null;
-      try {
-        updatedRecord = await prisma.stormVictimRecord.update({
-          where: { id: recordData.id },
-          data: {
-            personId: personId,
-            nombreApellido: recordData.nombreApellido || "Vecino Afectado",
-            dni: recordData.dni || null,
-            edad: recordData.edad || null,
-            grupoFamiliar: recordData.grupoFamiliar || false,
-            ninos: recordData.ninos || "0",
-            domicilio: recordData.domicilio || "Sin especificación",
-            referencia: recordData.referencia || null,
-            barrio: recordData.barrio || null,
-            requiereColchon: recordData.requiereColchon || false,
-            cantidadColchon: Number(recordData.cantidadColchon) || 0,
-            requiereCama: recordData.requiereCama || false,
-            cantidadCama: Number(recordData.cantidadCama) || 0,
-            requiereCucheta: recordData.requiereCucheta || false,
-            cantidadCucheta: Number(recordData.cantidadCucheta) || 0,
-            requiereFrazada: recordData.requiereFrazada || false,
-            cantidadFrazada: Number(recordData.cantidadFrazada) || 0,
-            observaciones: recordData.observaciones || null,
-            contacto: recordData.contacto || null,
-            agentes: recordData.agentes || operator.name,
-            prioridad: recordData.prioridad || "MEDIA",
-            descripcionIntervencion: recordData.descripcionIntervencion || null,
-          },
-        });
-      } catch (stormErr) {
-        console.warn("StormVictimRecord update skipped/failed:", stormErr);
-      }
-
-      const allRecords = await getStormVictimRecords();
-      const recordToSave = updatedRecord || {
-        ...recordData,
-        id: recordData.id,
-        personId,
-        caseId: activeCaseId,
-      };
-      const updatedList = allRecords.map((r) => (r.id === recordData.id ? recordToSave : r));
-
-      await prisma.systemSetting.upsert({
-        where: { key: "muni-storm-records-backup" },
-        update: { value: JSON.stringify(updatedList) },
-        create: { key: "muni-storm-records-backup", value: JSON.stringify(updatedList) },
-      });
-
-      revalidatePath("/admin/emergency");
-      revalidatePath("/cases");
-      revalidatePath("/dashboard");
-
-      return {
-        success: true,
-        record: recordToSave,
-        caseId: activeCaseId,
-        message: "Expediente y persona registrados correctamente",
-      };
-    } else {
-      // CREATE NEW CASE & INTERVENTION FIRST
-      let createdCase: any = null;
-      try {
-        createdCase = await prisma.case.create({
-          data: {
-            title: caseTitle,
-            description: caseDescription,
-            status: "ABIERTO",
-            priority: priorityEnum,
-            personId: personId,
-            areaId: defaultArea.id,
-          },
-        });
-
-        await prisma.intervention.create({
-          data: {
-            caseId: createdCase.id,
-            personId: personId,
-            userId: session.user.id,
-            description: `Entrevista e inspección técnica de contingencia climática por ${operator.name}. Requerimientos: ${elementsSummary}. Detalle: ${recordData.descripcionIntervencion || "Sin observaciones adicionales"}`,
-          },
-        });
-      } catch (cErr) {
-        console.warn("Error creating case or intervention:", cErr);
-      }
-
-      const existingRecords = await getStormVictimRecords();
-      let createdRecord: any = null;
-
-      try {
-        createdRecord = await prisma.stormVictimRecord.create({
-          data: {
-            itemNumber: recordData.itemNumber || existingRecords.length + 1,
-            personId: personId,
-            nombreApellido: recordData.nombreApellido || "Vecino Afectado",
-            dni: recordData.dni || null,
-            edad: recordData.edad || null,
-            grupoFamiliar: recordData.grupoFamiliar || false,
-            ninos: recordData.ninos || "0",
-            domicilio: recordData.domicilio || "Sin especificación",
-            referencia: recordData.referencia || null,
-            barrio: recordData.barrio || null,
-            requiereColchon: recordData.requiereColchon || false,
-            cantidadColchon: Number(recordData.cantidadColchon) || 0,
-            requiereCama: recordData.requiereCama || false,
-            cantidadCama: Number(recordData.cantidadCama) || 0,
-            requiereCucheta: recordData.requiereCucheta || false,
-            cantidadCucheta: Number(recordData.cantidadCucheta) || 0,
-            requiereFrazada: recordData.requiereFrazada || false,
-            cantidadFrazada: Number(recordData.cantidadFrazada) || 0,
-            observaciones: recordData.observaciones || null,
-            contacto: recordData.contacto || null,
-            agentes: recordData.agentes || operator.name,
-            prioridad: recordData.prioridad || "MEDIA",
-            descripcionIntervencion: recordData.descripcionIntervencion || null,
-            estado: "REGISTRADO",
-            caseId: createdCase?.id || null,
-          },
-        });
-      } catch (stormErr) {
-        console.warn("StormVictimRecord create skipped/failed (table may not exist yet):", stormErr);
-      }
-
-      const recordToSave = createdRecord || {
-        id: `temp-${Date.now()}`,
-        itemNumber: recordData.itemNumber || existingRecords.length + 1,
-        personId: personId,
-        nombreApellido: recordData.nombreApellido || "Vecino Afectado",
-        dni: recordData.dni || null,
-        edad: recordData.edad || null,
-        grupoFamiliar: recordData.grupoFamiliar || false,
-        ninos: recordData.ninos || "0",
-        domicilio: recordData.domicilio || "Sin especificación",
-        referencia: recordData.referencia || null,
-        barrio: recordData.barrio || null,
-        requiereColchon: recordData.requiereColchon || false,
-        cantidadColchon: Number(recordData.cantidadColchon) || 0,
-        requiereCama: recordData.requiereCama || false,
-        cantidadCama: Number(recordData.cantidadCama) || 0,
-        requiereCucheta: recordData.requiereCucheta || false,
-        cantidadCucheta: Number(recordData.cantidadCucheta) || 0,
-        requiereFrazada: recordData.requiereFrazada || false,
-        cantidadFrazada: Number(recordData.cantidadFrazada) || 0,
-        observaciones: recordData.observaciones || null,
-        contacto: recordData.contacto || null,
-        agentes: recordData.agentes || operator.name,
-        prioridad: recordData.prioridad || "MEDIA",
-        descripcionIntervencion: recordData.descripcionIntervencion || null,
-        estado: "REGISTRADO",
-        caseId: createdCase?.id || null,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
-
-      const updatedRecords = [recordToSave, ...existingRecords];
-      await prisma.systemSetting.upsert({
-        where: { key: "muni-storm-records-backup" },
-        update: { value: JSON.stringify(updatedRecords) },
-        create: { key: "muni-storm-records-backup", value: JSON.stringify(updatedRecords) },
-      });
-
-      try {
-        await prisma.auditLog.create({
-          data: {
-            userId: session.user.id,
-            action: "STORM_VICTIM_REGISTERED",
-            entity: "StormVictimRecord",
-            entityId: recordToSave.id,
-            details: `Carga de damnificado por tormenta: ${recordData.nombreApellido} (DNI ${recordData.dni || 'S/D'}). Caso N° ${createdCase?.id || 'Backup'} generado en ${defaultArea.name}.`,
-          },
-        });
-      } catch (auditErr) {
-        console.warn("AuditLog creation skipped:", auditErr);
-      }
-
-      revalidatePath("/admin/emergency");
-      revalidatePath("/cases");
-      revalidatePath("/dashboard");
-
-      return {
-        success: true,
-        record: recordToSave,
-        caseId: createdCase?.id || null,
-        message: "Expediente y persona registrados correctamente",
-      };
-    }
-  } catch (err: any) {
-    console.error("Error saving storm victim action:", err);
-    return { success: false, error: actionErrorMessage(err, "No se pudo registrar la ficha de tormenta") };
-  }
+  return await saveStormVictimRecord(session?.user, recordData);
 }
 
 export async function deleteStormVictimAction(recordId: string) {
@@ -300,6 +30,13 @@ export async function deleteStormVictimAction(recordId: string) {
   if (!session?.user?.id) return { success: false, error: "No tenés permiso para hacer esto o tu sesión expiró. Si sigue pasando, volvé a iniciar sesión." };
 
   const cleanId = recordId.replace(/^case-/, "").replace(/^temp-/, "");
+
+  if (isEmergencySurveyor(session.user.role)) {
+    const owned = await prisma.stormVictimRecord.findUnique({ where: { id: recordId }, select: { createdById: true } }).catch(() => null);
+    if (!owned || owned.createdById !== session.user.id) {
+      return { success: false, error: "Solo podés eliminar las fichas que cargaste vos." };
+    }
+  }
 
   try {
     // 1. Delete associated interventions if it corresponds to a Case
@@ -391,6 +128,7 @@ export async function updateEmergencyStockAction(
   itemName?: string
 ) {
   const session = await auth();
+  if (session?.user && !canManageEmergencyStock(session.user.role)) return { success: false, error: STOCK_DENIED };
   if (!session?.user?.id) return { success: false, error: "No tenés permiso para hacer esto o tu sesión expiró. Si sigue pasando, volvé a iniciar sesión." };
 
   try {
@@ -482,6 +220,7 @@ export async function createEmergencyStockItemAction(data: {
   description?: string;
 }) {
   const session = await auth();
+  if (session?.user && !canManageEmergencyStock(session.user.role)) return { success: false, error: STOCK_DENIED };
   if (!session?.user?.id) return { success: false, error: "No tenés permiso para hacer esto o tu sesión expiró. Si sigue pasando, volvé a iniciar sesión." };
 
   if (!data.name || data.name.trim().length === 0) {
@@ -568,6 +307,7 @@ export async function dispatchEmergencyStockAction(
   victimInfo?: string
 ) {
   const session = await auth();
+  if (session?.user && !canManageEmergencyStock(session.user.role)) return { success: false, error: STOCK_DENIED };
   if (!session?.user?.id) return { success: false, error: "No tenés permiso para hacer esto o tu sesión expiró. Si sigue pasando, volvé a iniciar sesión." };
 
   try {

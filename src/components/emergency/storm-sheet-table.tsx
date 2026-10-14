@@ -11,9 +11,9 @@ import { FileText, Trash2, Plus, Search, Filter, Sparkles, UserCheck } from "luc
 import { toast } from "sonner";
 import {
   searchPeopleForEmergencyAction,
-  saveStormVictimAction,
   deleteStormVictimAction
 } from "@/app/(dashboard)/admin/actions/emergency-actions";
+import { saveFichaOrQueue } from "@/lib/emergency-offline";
 
 interface StormSheetTableProps {
   records: StormVictimItem[];
@@ -21,6 +21,10 @@ interface StormSheetTableProps {
   areaName: string;
   onOpenFicha: (record: StormVictimItem) => void;
   onRefresh: () => void;
+  /** Usuario que carga (las fichas sin conexión se guardan a su nombre en el dispositivo). */
+  userId: string;
+  /** Auditoría consulta pero no carga ni borra. */
+  canEdit?: boolean;
 }
 
 export function StormSheetTable({
@@ -29,6 +33,8 @@ export function StormSheetTable({
   areaName,
   onOpenFicha,
   onRefresh,
+  userId,
+  canEdit = true,
 }: StormSheetTableProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [priorityFilter, setPriorityFilter] = useState<string>("ALL");
@@ -57,8 +63,9 @@ export function StormSheetTable({
 
   const handleSearchName = async (val: string) => {
     setFastNombre(val);
-    if (val.trim().length >= 3) {
-      const res = await searchPeopleForEmergencyAction(val);
+    if (val.trim().length >= 3 && navigator.onLine !== false) {
+      // Sin conexión no hay búsqueda en el padrón: se completa a mano.
+      const res = await searchPeopleForEmergencyAction(val).catch(() => []);
       setSuggestions(res);
       setShowSuggestions(true);
     } else {
@@ -107,11 +114,15 @@ export function StormSheetTable({
       agentes: operatorName,
     };
 
-    const res = await saveStormVictimAction(payload);
+    const res = await saveFichaOrQueue(userId, payload);
     setIsAdding(false);
 
-    if (res.success) {
-      toast.success("Fila agregada correctamente", { id: toastId });
+    if (res.status !== "error") {
+      if (res.status === "saved") {
+        toast.success("Fila agregada correctamente", { id: toastId });
+      } else {
+        toast.warning("Sin conexión: la fila quedó guardada en este dispositivo y se envía sola cuando vuelva internet.", { id: toastId, duration: 6000 });
+      }
       setFastNombre("");
       setFastDni("");
       setFastGrupoFam(false);
@@ -127,7 +138,7 @@ export function StormSheetTable({
       setFastReqFrazada(false);
       setFastCantFrazada(0);
       setFastObs("");
-      onRefresh();
+      if (res.status === "saved") onRefresh();
     } else {
       toast.error(res.error || "Error al agregar fila", { id: toastId });
     }
@@ -279,7 +290,7 @@ export function StormSheetTable({
                     >
                       <FileText className="h-4 w-4" />
                     </Button>
-                    <Button
+                    {canEdit && <Button
                       size="icon"
                       variant="ghost"
                       onClick={() => handleDelete(r.id)}
@@ -287,14 +298,14 @@ export function StormSheetTable({
                       className="h-8 w-8 rounded-lg hover:bg-rose-500/10 hover:text-rose-600"
                     >
                       <Trash2 className="h-4 w-4" />
-                    </Button>
+                    </Button>}
                   </div>
                 </TableCell>
               </TableRow>
             ))}
 
             {/* FILA INFERIOR INTERACTIVA DE CARGA RÁPIDA CONTINUA */}
-            <TableRow className="bg-primary/5 border-t-2 border-primary/30">
+            {canEdit && <TableRow className="bg-primary/5 border-t-2 border-primary/30">
               <TableCell className="text-center font-bold text-primary">+</TableCell>
               <TableCell className="relative">
                 <Input
@@ -398,7 +409,7 @@ export function StormSheetTable({
                   <Plus className="h-3.5 w-3.5 mr-1" /> Cargar
                 </Button>
               </TableCell>
-            </TableRow>
+            </TableRow>}
           </TableBody>
         </Table>
       </div>

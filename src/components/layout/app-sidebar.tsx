@@ -11,7 +11,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { GlobalSearch } from "@/components/search/global-search";
 import { ThemeToggle } from "./theme-toggle";
-import { canAccessPath } from "@/lib/permissions";
+import { canAccessPath, isEmergencySurveyor } from "@/lib/permissions";
+import { clearOfflineCache } from "@/lib/emergency-offline";
 
 interface AppSidebarProps {
   isMobile?: boolean;
@@ -41,6 +42,9 @@ export function AppSidebar({ isMobile = false, onNavigate }: AppSidebarProps) {
     localStorage.setItem("sidebar-collapsed", JSON.stringify(newState));
   };
 
+  const role = user?.role;
+  const canOpen = (url: string) => canAccessPath(role, url);
+
   const navigation = [
     { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
     { title: "Ficha Social 360°", url: "/ficha-social", icon: Network },
@@ -48,10 +52,7 @@ export function AppSidebar({ isMobile = false, onNavigate }: AppSidebarProps) {
     { title: "Mapa Social", url: "/maps", icon: MapPin },
     { title: "Mis Tareas", url: "/tasks", icon: CheckCircle2 },
     { title: "Registro Único", url: "/people", icon: Users },
-  ];
-
-  const role = user?.role;
-  const canOpen = (url: string) => canAccessPath(role, url);
+  ].filter((i) => canOpen(i.url));
 
   // Administración agrupada por tema; cada grupo se puede plegar. Cada rol ve solo lo que puede abrir.
   const adminGroups: { id: string; title: string; items: { title: string; url: string; icon: any }[] }[] = [
@@ -152,12 +153,12 @@ export function AppSidebar({ isMobile = false, onNavigate }: AppSidebarProps) {
             </div>
           )}
         </div>
-        {!isCollapsed && <GlobalSearch />}
+        {!isCollapsed && !isEmergencySurveyor(role) && <GlobalSearch />}
       </div>
 
       <nav className="flex-1 min-h-0 px-3 space-y-1 overflow-y-auto custom-scrollbar">
         <div className="pb-2">
-          {!isCollapsed && <p className="px-3 text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-2 font-heading">Principal</p>}
+          {!isCollapsed && navigation.length > 0 && <p className="px-3 text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-2 font-heading">Principal</p>}
           {navigation.map((item) => {
             const isActive = pathname === item.url || (item.url !== "/dashboard" && pathname.startsWith(item.url));
             return (
@@ -219,7 +220,7 @@ export function AppSidebar({ isMobile = false, onNavigate }: AppSidebarProps) {
         })}
 
         <div className="pt-3 pb-2">
-          {!isCollapsed && <p className="px-3 text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-2 font-heading">Áreas Sociales</p>}
+          {!isCollapsed && socialAreas.length > 0 && <p className="px-3 text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-2 font-heading">Áreas Sociales</p>}
           {socialAreas.map((item) => (
             <Link
               key={item.title}
@@ -248,7 +249,7 @@ export function AppSidebar({ isMobile = false, onNavigate }: AppSidebarProps) {
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => signOut({ callbackUrl: "/login" })}
+                onClick={() => clearOfflineCache().finally(() => signOut({ callbackUrl: "/login" }))}
                 className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg"
                 title="Cerrar sesión"
               >

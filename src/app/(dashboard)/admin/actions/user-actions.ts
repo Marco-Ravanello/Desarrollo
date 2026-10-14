@@ -8,6 +8,7 @@ import { Role, User } from "@prisma/client";
 import { hasPermission, PERMISSIONS } from "@/lib/permissions";
 import { ActionResult } from "@/types/actions";
 import { actionErrorMessage } from "@/lib/action-error";
+import { isEmergencyDbUpdated, EMERGENCY_DB_PENDING_MESSAGE } from "@/services/emergency-db-status";
 
 function canManageUsers(role?: string | null): boolean {
   if (!role) return false;
@@ -45,6 +46,9 @@ export async function createUserAction(formData: FormData): Promise<ActionResult
 
   if (!canAssignRole(session.user.role, role)) {
     return { success: false, error: "No tiene permisos para asignar ese rol" };
+  }
+  if (role === Role.RELEVADOR_EMERGENCIA && !(await isEmergencyDbUpdated())) {
+    return { success: false, error: EMERGENCY_DB_PENDING_MESSAGE };
   }
 
   try {
@@ -107,6 +111,9 @@ export async function updateUserAction(input: UpdateUserInput): Promise<ActionRe
 
     if (!canModifyUser(session.user.role, existing.role) || !canAssignRole(session.user.role, input.role)) {
       return { success: false, error: "No tiene permisos para asignar ese rol o modificar este usuario" };
+    }
+    if (input.role === Role.RELEVADOR_EMERGENCIA && existing.role !== Role.RELEVADOR_EMERGENCIA && !(await isEmergencyDbUpdated())) {
+      return { success: false, error: EMERGENCY_DB_PENDING_MESSAGE };
     }
 
     if (input.email !== existing.email) {
