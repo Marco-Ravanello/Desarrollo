@@ -50,7 +50,7 @@ export function EditHRForm({ agent, areas, onComplete }: { agent: any, areas: an
   return (
     <form onSubmit={handleSubmit} className="space-y-6 py-4">
       <div className="space-y-4">
-        <h4 className="text-sm font-black uppercase tracking-widest text-primary">Información Personal</h4>
+        <h4 className="text-sm font-bold uppercase tracking-widest text-primary">Información Personal</h4>
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label htmlFor="firstName" className="font-bold text-foreground">Nombre</Label>
@@ -82,7 +82,7 @@ export function EditHRForm({ agent, areas, onComplete }: { agent: any, areas: an
       <Separator />
 
       <div className="space-y-4">
-        <h4 className="text-sm font-black uppercase tracking-widest text-primary">Situación Revista y Salarial</h4>
+        <h4 className="text-sm font-bold uppercase tracking-widest text-primary">Situación Revista y Salarial</h4>
 
         <div className="space-y-2">
           <Label className="font-bold text-foreground">Área de Pertenencia</Label>
@@ -175,7 +175,7 @@ export function EditHRForm({ agent, areas, onComplete }: { agent: any, areas: an
       <Separator />
 
       <div className="space-y-4">
-        <h4 className="text-sm font-black uppercase tracking-widest text-primary">Legajo Digital Unificado</h4>
+        <h4 className="text-sm font-bold uppercase tracking-widest text-primary">Legajo Digital Unificado</h4>
         <div className="space-y-2">
           <Label htmlFor="tasks" className="font-bold text-foreground">📋 Funciones y Tareas del Puesto</Label>
           <Textarea id="tasks" name="tasks" defaultValue={legajoData.tasksText} rows={2} />

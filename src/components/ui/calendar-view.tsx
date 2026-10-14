@@ -22,7 +22,7 @@ export function VehicleCalendar({ reservations }: { reservations: any[] }) {
     });
     days.push(
       <div key={d} className="h-32 border p-1 overflow-y-auto bg-card relative group hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-colors">
-        <span className="text-[10px] font-bold text-slate-400 mb-1 block px-1">{d}</span>
+        <span className="text-[10px] font-bold text-muted-foreground mb-1 block px-1">{d}</span>
         <div className="space-y-1">
           {dayReservations.map(r => (
             <div key={r.id} className="text-[9px] p-1 bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 rounded border border-blue-200 dark:border-blue-800 leading-tight">

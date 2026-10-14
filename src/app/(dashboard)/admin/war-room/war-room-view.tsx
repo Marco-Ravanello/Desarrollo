@@ -105,7 +105,7 @@ export function WarRoomView({ initialData }: WarRoomViewProps) {
   return (
     <div className={`space-y-6 transition-all duration-500 ${isFullscreen ? "p-6 sm:p-8 fixed inset-0 z-50 bg-background text-foreground overflow-y-auto" : ""}`}>
       {/* Header Institucional */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 p-5 sm:p-6 rounded-3xl bg-card border border-border/70 text-card-foreground shadow-sm backdrop-blur-xl">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 p-5 sm:p-6 rounded-2xl bg-card border border-border/70 text-card-foreground shadow-sm backdrop-blur-xl">
         <div className="flex items-center gap-4">
           <div className="p-3 bg-primary/10 border border-primary/20 rounded-2xl shrink-0">
             <MunicipalCrest className="h-10 w-10 text-primary" />
@@ -116,11 +116,11 @@ export function WarRoomView({ initialData }: WarRoomViewProps) {
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
               </span>
-              <span className="text-[10px] font-black uppercase tracking-[0.25em] text-primary">
+              <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-primary">
                 SALA DE SITUACIÓN • GOBIERNO MUNICIPAL
               </span>
             </div>
-            <h1 className="text-xl sm:text-2xl font-black tracking-tight text-foreground mt-0.5">
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground mt-0.5">
               Tablero de Control Estratégico y Monitoreo en Vivo
             </h1>
           </div>
@@ -129,7 +129,7 @@ export function WarRoomView({ initialData }: WarRoomViewProps) {
           <div className="flex items-center gap-3 bg-muted/60 border border-border/60 px-4 py-2 rounded-2xl">
             <Clock className="h-5 w-5 text-amber-500 shrink-0" />
             <div className="text-right">
-              <div className="text-lg font-black font-mono tracking-widest text-foreground leading-none">
+              <div className="text-lg font-bold font-mono tracking-widest text-foreground leading-none">
                 {currentTime || "12:00:00"}
               </div>
               <div className="text-[10px] text-muted-foreground font-semibold capitalize mt-0.5">
@@ -158,7 +158,7 @@ export function WarRoomView({ initialData }: WarRoomViewProps) {
           <div className="flex items-center gap-3">
             <ShieldAlert className="h-6 w-6 text-amber-500 shrink-0" />
             <div>
-              <p className="font-black text-sm uppercase tracking-wider text-amber-900 dark:text-amber-200">
+              <p className="font-bold text-sm uppercase tracking-wider text-amber-900 dark:text-amber-200">
                 CENTRO DE OPERACIONES DE EMERGENCIA CLIMÁTICA (COE) ACTIVADO
               </p>
               <p className="text-xs opacity-90 text-amber-800 dark:text-amber-300">
@@ -166,75 +166,75 @@ export function WarRoomView({ initialData }: WarRoomViewProps) {
               </p>
             </div>
           </div>
-          <Badge className="bg-amber-500 text-black font-black uppercase text-xs">Alerta Máxima</Badge>
+          <Badge className="bg-amber-500 text-black font-bold uppercase text-xs">Alerta Máxima</Badge>
         </div>
       )}
       {/* 5 Tarjetas KPI Principales */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-        <Card className="rounded-3xl border-border/60 bg-card text-card-foreground shadow-sm hover:shadow-md transition-all p-5 relative overflow-hidden">
+        <Card className="rounded-2xl border-border/60 bg-card text-card-foreground shadow-sm hover:shadow-md transition-all p-5 relative overflow-hidden">
           <div className="flex justify-between items-start mb-2">
-            <span className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">Vecinos Registrados</span>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Vecinos Registrados</span>
             <div className="p-2 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-xl">
               <Users className="h-4 w-4" />
             </div>
           </div>
-          <div className="text-3xl sm:text-4xl font-black font-mono tracking-tight text-foreground">
+          <div className="text-3xl sm:text-4xl font-bold font-mono tracking-tight text-foreground">
             {initialData.totalCitizens.toLocaleString("es-AR")}
           </div>
           <div className="flex items-center gap-1.5 text-[11px] text-emerald-600 dark:text-emerald-400 mt-2 font-bold">
             <TrendingUp className="h-3 w-3" /> Datos reales en sistema
           </div>
         </Card>
-        <Card className="rounded-3xl border-border/60 bg-card text-card-foreground shadow-sm hover:shadow-md transition-all p-5 relative overflow-hidden">
+        <Card className="rounded-2xl border-border/60 bg-card text-card-foreground shadow-sm hover:shadow-md transition-all p-5 relative overflow-hidden">
           <div className="flex justify-between items-start mb-2">
-            <span className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">Casos Críticos</span>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Casos Críticos</span>
             <div className="p-2 bg-rose-500/10 text-rose-600 dark:text-rose-400 rounded-xl">
               <ShieldAlert className="h-4 w-4" />
             </div>
           </div>
-          <div className="text-3xl sm:text-4xl font-black font-mono tracking-tight text-rose-600 dark:text-rose-400">
+          <div className="text-3xl sm:text-4xl font-bold font-mono tracking-tight text-rose-600 dark:text-rose-400">
             {initialData.activeCriticalCases}
           </div>
           <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground mt-2 font-semibold">
             {initialData.resolvedToday} casilleros cerrados
           </div>
         </Card>
-        <Card className="rounded-3xl border-border/60 bg-card text-card-foreground shadow-sm hover:shadow-md transition-all p-5 relative overflow-hidden">
+        <Card className="rounded-2xl border-border/60 bg-card text-card-foreground shadow-sm hover:shadow-md transition-all p-5 relative overflow-hidden">
           <div className="flex justify-between items-start mb-2">
-            <span className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">Flota Disponible</span>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Flota Disponible</span>
             <div className="p-2 bg-amber-500/10 text-amber-600 dark:text-amber-400 rounded-xl">
               <Car className="h-4 w-4" />
             </div>
           </div>
-          <div className="text-3xl sm:text-4xl font-black font-mono tracking-tight text-foreground">
+          <div className="text-3xl sm:text-4xl font-bold font-mono tracking-tight text-foreground">
             {initialData.activeVehicles} <span className="text-lg text-muted-foreground font-medium">/ {initialData.totalVehicles}</span>
           </div>
           <div className="flex items-center gap-1.5 text-[11px] text-emerald-600 dark:text-emerald-400 mt-2 font-bold">
             {initialData.totalVehicles > 0 ? `${Math.round((initialData.activeVehicles / initialData.totalVehicles) * 100)}% Operatividad` : "Sin Flota"}
           </div>
         </Card>
-        <Card className="rounded-3xl border-border/60 bg-card text-card-foreground shadow-sm hover:shadow-md transition-all p-5 relative overflow-hidden">
+        <Card className="rounded-2xl border-border/60 bg-card text-card-foreground shadow-sm hover:shadow-md transition-all p-5 relative overflow-hidden">
           <div className="flex justify-between items-start mb-2">
-            <span className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">Nivel de Stock</span>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Nivel de Stock</span>
             <div className="p-2 bg-purple-500/10 text-purple-600 dark:text-purple-400 rounded-xl">
               <Package className="h-4 w-4" />
             </div>
           </div>
-          <div className="text-3xl sm:text-4xl font-black font-mono tracking-tight text-purple-600 dark:text-purple-400">
+          <div className="text-3xl sm:text-4xl font-bold font-mono tracking-tight text-purple-600 dark:text-purple-400">
             {initialData.emergencyStockPercent}%
           </div>
           <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground mt-2 font-semibold">
             Insumos en depósitos
           </div>
         </Card>
-        <Card className="rounded-3xl border-border/60 bg-card text-card-foreground shadow-sm hover:shadow-md transition-all p-5 relative overflow-hidden">
+        <Card className="rounded-2xl border-border/60 bg-card text-card-foreground shadow-sm hover:shadow-md transition-all p-5 relative overflow-hidden">
           <div className="flex justify-between items-start mb-2">
-            <span className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">Presupuesto Adjudicado</span>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Presupuesto Adjudicado</span>
             <div className="p-2 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-xl">
               <DollarSign className="h-4 w-4" />
             </div>
           </div>
-          <div className="text-2xl sm:text-3xl font-black font-mono tracking-tight text-emerald-600 dark:text-emerald-400 truncate">
+          <div className="text-2xl sm:text-3xl font-bold font-mono tracking-tight text-emerald-600 dark:text-emerald-400 truncate">
             {initialData.committedBudgetFormatted}
           </div>
           <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground mt-2 font-semibold">
@@ -244,11 +244,11 @@ export function WarRoomView({ initialData }: WarRoomViewProps) {
       </div>
       {/* 2 Paneles Inferiores */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Card className="lg:col-span-2 rounded-3xl border-border/60 bg-card text-card-foreground p-6 shadow-sm space-y-4">
+        <Card className="lg:col-span-2 rounded-2xl border-border/60 bg-card text-card-foreground p-6 shadow-sm space-y-4">
           <div className="flex items-center justify-between border-b border-border/40 pb-4">
             <div className="flex items-center gap-2.5">
               <Radio className="h-5 w-5 text-rose-500 animate-pulse" />
-              <h2 className="text-lg font-black tracking-tight text-foreground">
+              <h2 className="text-lg font-bold tracking-tight text-foreground">
                 Casos y Alertas Reales en Vivo
               </h2>
             </div>
@@ -265,7 +265,7 @@ export function WarRoomView({ initialData }: WarRoomViewProps) {
                 >
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
-                      <Badge className={`text-[10px] font-black uppercase border-none ${
+                      <Badge className={`text-[10px] font-bold uppercase border-none ${
                         alert.priority === 'URGENTE' || alert.priority === 'CRITICA' ? 'bg-rose-500 text-white' :
                         alert.priority === 'ALTA' ? 'bg-amber-500 text-black' : 'bg-primary text-primary-foreground'
                       }`}>
@@ -285,9 +285,9 @@ export function WarRoomView({ initialData }: WarRoomViewProps) {
             )}
           </div>
         </Card>
-        <Card className="rounded-3xl border-border/60 bg-card text-card-foreground p-6 shadow-sm space-y-4">
+        <Card className="rounded-2xl border-border/60 bg-card text-card-foreground p-6 shadow-sm space-y-4">
           <div className="border-b border-border/40 pb-4">
-            <h2 className="text-lg font-black tracking-tight text-foreground flex items-center gap-2">
+            <h2 className="text-lg font-bold tracking-tight text-foreground flex items-center gap-2">
               <Building2 className="h-5 w-5 text-primary" />
               Carga de Trabajo por Área
             </h2>

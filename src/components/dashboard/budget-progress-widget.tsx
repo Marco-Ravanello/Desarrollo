@@ -96,7 +96,7 @@ export function BudgetProgressWidget({
             <DollarSign className={`h-5 w-5 ${colorStyle.text}`} />
           </div>
           <div>
-            <CardTitle className="text-base font-black text-foreground flex items-center gap-2">
+            <CardTitle className="text-base font-bold text-foreground flex items-center gap-2">
               Termómetro Presupuestario Municipal 3F
             </CardTitle>
             <CardDescription className="text-xs text-muted-foreground mt-0.5">
@@ -130,7 +130,7 @@ export function BudgetProgressWidget({
             <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest block">
               Total Ejecutado
             </span>
-            <span className="text-lg font-black text-foreground tracking-tight font-mono">
+            <span className="text-lg font-bold text-foreground tracking-tight font-mono">
               {formatCurrency(executedAmount)}
             </span>
             <span className="text-[10px] text-emerald-400 font-semibold block mt-0.5">
@@ -142,7 +142,7 @@ export function BudgetProgressWidget({
             <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest block">
               Saldo Remanente
             </span>
-            <span className="text-lg font-black text-emerald-400 tracking-tight font-mono">
+            <span className="text-lg font-bold text-emerald-400 tracking-tight font-mono">
               {formatCurrency(remainingBudget)}
             </span>
             <span className="text-[10px] text-muted-foreground block mt-0.5">
@@ -154,7 +154,7 @@ export function BudgetProgressWidget({
             <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest block">
               Presupuesto Anual
             </span>
-            <span className="text-lg font-black text-foreground tracking-tight font-mono">
+            <span className="text-lg font-bold text-foreground tracking-tight font-mono">
               {formatCurrency(effectiveBudget)}
             </span>
             <span className="text-[10px] text-muted-foreground block mt-0.5">
@@ -167,7 +167,7 @@ export function BudgetProgressWidget({
               Ritmo de Gasto
             </span>
             <div className="flex items-center gap-1.5 mt-0.5">
-              <span className="text-base font-black text-foreground">{burnRateStatus}</span>
+              <span className="text-base font-bold text-foreground">{burnRateStatus}</span>
               <Badge className="text-[9px] font-bold uppercase bg-primary/20 text-primary border-none px-1.5 py-0">
                 {expectedPercentage}% esp.
               </Badge>
@@ -218,7 +218,7 @@ export function BudgetProgressWidget({
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="flex items-center gap-2">
                 <Building2 className="h-4 w-4 text-primary" />
-                <h4 className="text-xs font-black uppercase tracking-wider text-foreground">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-foreground">
                   Ejecución por Dependencia Municipal
                 </h4>
               </div>

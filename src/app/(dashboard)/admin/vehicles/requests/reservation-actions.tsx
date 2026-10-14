@@ -25,7 +25,7 @@ export function ReservationActions({ reservationId }: { reservationId: string })
       <Button
         size="sm"
         variant="outline"
-        className="text-emerald-600 border-emerald-200 hover:bg-emerald-50"
+        className="text-emerald-600 border-emerald-500/30 hover:bg-emerald-500/10"
         onClick={() => handleAction('APROBADA')}
         disabled={loading}
       >
@@ -34,7 +34,7 @@ export function ReservationActions({ reservationId }: { reservationId: string })
       <Button
         size="sm"
         variant="outline"
-        className="text-rose-600 border-rose-200 hover:bg-rose-50"
+        className="text-rose-600 border-rose-500/30 hover:bg-rose-500/10"
         onClick={() => handleAction('RECHAZADA')}
         disabled={loading}
       >

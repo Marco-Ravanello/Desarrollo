@@ -49,9 +49,9 @@ export function CreateUserForm({
   }
 
   return (
-    <Card className="rounded-3xl border-border/60 shadow-xs bg-card text-card-foreground">
+    <Card className="rounded-2xl border-border/60 shadow-xs bg-card text-card-foreground">
       <CardHeader className="pb-3 border-b border-border/40">
-        <CardTitle className="text-base font-black flex items-center gap-2">
+        <CardTitle className="text-base font-bold flex items-center gap-2">
           <UserPlus className="h-5 w-5 text-primary" /> Nuevo Agente Municipal
         </CardTitle>
         <CardDescription className="text-xs text-muted-foreground">

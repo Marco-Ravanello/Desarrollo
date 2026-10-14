@@ -3,6 +3,8 @@ export const dynamic = "force-dynamic";
 import { getProviders } from "@/services/admin";
 import { getAreas } from "@/services/cases";
 import { CreatePurchaseOrderForm } from "./create-order-form";
+import { PageHeader } from "@/components/layout/page-header";
+import { Briefcase } from "lucide-react";
 
 export default async function NewPurchaseOrderPage() {
   const [providers, areas] = await Promise.all([
@@ -12,12 +14,11 @@ export default async function NewPurchaseOrderPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Nueva Orden de Compra</h1>
-        <p className="text-slate-500 mt-2">
-          Genere una nueva solicitud de compra para proveedores registrados.
-        </p>
-      </div>
+      <PageHeader
+        title="Nueva Orden de Compra"
+        description="Genere una nueva solicitud de compra para proveedores registrados."
+        icon={Briefcase}
+      />
 
       <CreatePurchaseOrderForm providers={providers} areas={areas} />
     </div>

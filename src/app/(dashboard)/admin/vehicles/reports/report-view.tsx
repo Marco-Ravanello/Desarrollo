@@ -5,6 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { Printer, Download, Filter } from "lucide-react";
 import { useState } from "react";
+import { EmptyMessage } from "@/components/ui/empty-message";
 
 export function FuelReportView({ vehicles }: { vehicles: any[] }) {
   const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7)); // YYYY-MM
@@ -95,7 +96,7 @@ export function FuelReportView({ vehicles }: { vehicles: any[] }) {
                  <div className="flex justify-between items-center">
                    <CardTitle className="text-lg">{v.brand} {v.model} - <span className="font-mono uppercase">{v.plate}</span></CardTitle>
                    <div className="text-right">
-                     <p className="text-xs text-slate-500">Tarjeta: {v.fuelCardNumber || "N/A"}</p>
+                     <p className="text-xs text-muted-foreground">Tarjeta: {v.fuelCardNumber || "N/A"}</p>
                    </div>
                  </div>
                </CardHeader>
@@ -135,9 +136,10 @@ export function FuelReportView({ vehicles }: { vehicles: any[] }) {
            const recordMonth = recordDate.toISOString().slice(0, 7);
            return recordMonth === selectedMonth;
         }).length === 0) && (
-           <div className="text-center py-20 text-slate-400 border-2 border-dashed rounded-xl">
-              No hay registros de combustible para el período seleccionado.
-           </div>
+           <EmptyMessage
+             className="rounded-xl border-2 border-dashed border-border/60"
+             title="No hay registros de combustible para el período seleccionado."
+           />
         )}
       </div>
     </div>

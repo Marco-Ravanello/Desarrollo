@@ -171,13 +171,13 @@ export function NewCaseForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <Card className="bg-card text-card-foreground border border-border/60 shadow-xs rounded-3xl overflow-visible">
+      <Card className="bg-card text-card-foreground border border-border/60 shadow-xs rounded-2xl overflow-visible">
         <CardContent className="p-6 space-y-4">
           <div className="flex items-center gap-2 border-b border-border/40 pb-3">
             <Badge className="bg-primary/20 text-primary border border-primary/30 text-[10px] font-bold">
               PASO 1
             </Badge>
-            <h3 className="text-sm font-black text-foreground uppercase tracking-wider">
+            <h3 className="text-sm font-bold text-foreground uppercase tracking-wider">
               Titular del Expediente (Búsqueda en Padrón Municipal)
             </h3>
           </div>
@@ -250,7 +250,7 @@ export function NewCaseForm({
                   {selectedPerson.firstName[0]}{selectedPerson.lastName[0]}
                 </div>
                 <div>
-                  <h4 className="text-base font-black text-foreground">
+                  <h4 className="text-base font-bold text-foreground">
                     {selectedPerson.lastName}, {selectedPerson.firstName}
                   </h4>
                   <div className="flex flex-wrap items-center gap-2 mt-1">
@@ -280,13 +280,13 @@ export function NewCaseForm({
         </CardContent>
       </Card>
 
-      <Card className="bg-card text-card-foreground border border-border/60 shadow-xs rounded-3xl overflow-hidden">
+      <Card className="bg-card text-card-foreground border border-border/60 shadow-xs rounded-2xl overflow-hidden">
         <CardContent className="p-6 space-y-5">
           <div className="flex items-center gap-2 border-b border-border/40 pb-3">
             <Badge className="bg-primary/20 text-primary border border-primary/30 text-[10px] font-bold">
               PASO 2
             </Badge>
-            <h3 className="text-sm font-black text-foreground uppercase tracking-wider">
+            <h3 className="text-sm font-bold text-foreground uppercase tracking-wider">
               Área Responsable y Prioridad Operativa
             </h3>
           </div>
@@ -324,7 +324,7 @@ export function NewCaseForm({
                       key={p}
                       type="button"
                       onClick={() => setPriority(p)}
-                      className={`h-11 rounded-2xl border text-xs font-black transition-all flex items-center justify-center ${
+                      className={`h-11 rounded-2xl border text-xs font-bold transition-all flex items-center justify-center ${
                         isSel
                           ? `${config[p].activeClass} shadow-xs`
                           : "bg-muted/20 border-border/40 text-muted-foreground hover:text-foreground"
@@ -352,13 +352,13 @@ export function NewCaseForm({
         </CardContent>
       </Card>
 
-      <Card className="bg-card text-card-foreground border border-border/60 shadow-xs rounded-3xl overflow-hidden">
+      <Card className="bg-card text-card-foreground border border-border/60 shadow-xs rounded-2xl overflow-hidden">
         <CardContent className="p-6 space-y-5">
           <div className="flex items-center gap-2 border-b border-border/40 pb-3">
             <Badge className="bg-primary/20 text-primary border border-primary/30 text-[10px] font-bold">
               PASO 3
             </Badge>
-            <h3 className="text-sm font-black text-foreground uppercase tracking-wider">
+            <h3 className="text-sm font-bold text-foreground uppercase tracking-wider">
               Carátula y Nota Inicial de Intervención
             </h3>
           </div>

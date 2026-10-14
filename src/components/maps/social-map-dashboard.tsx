@@ -5,8 +5,9 @@ import dynamic from "next/dynamic";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { UniversalExportMenu } from "@/components/ui/universal-export-menu";
+import { PageHeader } from "@/components/layout/page-header";
+import { StatCard } from "@/components/ui/stat-card";
 import {
   MapPin, Users, Filter, Search, RotateCcw, Map as MapIcon,
   Flame, Layers, Building2, Sparkles, HeartHandshake
@@ -23,7 +24,7 @@ const DynamicMapView = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="h-[620px] w-full rounded-3xl bg-muted/40 animate-pulse flex flex-col items-center justify-center gap-2">
+      <div className="h-[620px] w-full rounded-2xl bg-muted/40 animate-pulse flex flex-col items-center justify-center gap-2">
         <MapIcon className="h-8 w-8 text-primary animate-bounce" />
         <p className="text-xs font-bold text-muted-foreground">
           Cargando Cartografía Social Tres de Febrero...
@@ -253,22 +254,12 @@ export function SocialMapDashboard({ initialPeople, stats }: SocialMapDashboardP
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500 pb-20">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl sm:text-3xl font-black text-foreground tracking-tight flex items-center gap-2">
-              Cartografía Social GIS 3F
-              <Badge className="hidden sm:inline-flex bg-primary/20 text-primary border border-primary/30 text-[10px] font-bold uppercase py-0.5">
-                Georreferenciación Localidades
-              </Badge>
-            </h1>
-          </div>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            Monitoreo territorial, geolocalización de vecinos asistidos y densidad de cobertura socio-barrial.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2">
+      <PageHeader
+        title="Cartografía Social GIS 3F"
+        description="Monitoreo territorial, geolocalización de vecinos asistidos y densidad de cobertura socio-barrial."
+        icon={MapPin}
+        badge="Georreferenciación Localidades"
+        actions={
           <UniversalExportMenu
             data={exportData}
             columns={exportColumns}
@@ -277,13 +268,13 @@ export function SocialMapDashboard({ initialPeople, stats }: SocialMapDashboardP
             subtitle="MUNICIPALIDAD DE TRES DE FEBRERO"
             label="Exportar Padrón Zona"
           />
-        </div>
-      </div>
+        }
+      />
 
-      <Card className="bg-card text-card-foreground border border-border/60 shadow-xs rounded-3xl p-5">
+      <Card className="bg-card text-card-foreground border border-border/60 shadow-xs rounded-2xl p-5">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           <div className="space-y-1">
-            <label className="text-[10px] font-black uppercase tracking-wider text-muted-foreground flex items-center gap-1">
+            <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
               <MapPin className="h-3.5 w-3.5 text-primary" /> Localidad Oficial
             </label>
             <select
@@ -300,7 +291,7 @@ export function SocialMapDashboard({ initialPeople, stats }: SocialMapDashboardP
           </div>
 
           <div className="space-y-1">
-            <label className="text-[10px] font-black uppercase tracking-wider text-muted-foreground flex items-center gap-1">
+            <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
               <HeartHandshake className="h-3.5 w-3.5 text-emerald-500" /> Programa Social
             </label>
             <select
@@ -318,7 +309,7 @@ export function SocialMapDashboard({ initialPeople, stats }: SocialMapDashboardP
           </div>
 
           <div className="space-y-1">
-            <label className="text-[10px] font-black uppercase tracking-wider text-muted-foreground flex items-center gap-1">
+            <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
               <Search className="h-3.5 w-3.5 text-blue-500" /> Búsqueda por Texto
             </label>
             <Input
@@ -342,63 +333,55 @@ export function SocialMapDashboard({ initialPeople, stats }: SocialMapDashboardP
         </div>
       </Card>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="bg-card text-card-foreground border border-border/60 rounded-2xl p-5 shadow-xs flex items-center justify-between">
-          <div>
-            <p className="text-[11px] font-black uppercase tracking-wider text-muted-foreground">Vecinos en Zona</p>
-            <h3 className="text-2xl font-black text-foreground mt-1 font-mono">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+        <StatCard
+          label="Vecinos en Zona"
+          value={
+            <span className="font-mono">
               {(
                 selectedLocalityId === "all"
                   ? (stats?.total ?? 0)
                   : (stats?.localityTotals?.[selectedLocalityId] || filteredPeople.length)
               ).toLocaleString("es-AR")}
-            </h3>
-            <p className="text-[10px] text-muted-foreground font-medium mt-0.5">Población censada en padrón</p>
-          </div>
-          <div className="p-3 rounded-2xl bg-primary/10 text-primary border border-primary/20">
-            <Users className="h-6 w-6" />
-          </div>
-        </Card>
+            </span>
+          }
+          hint="Población censada en padrón"
+          icon={Users}
+          tone="blue"
+        />
 
-        <Card className="bg-card text-card-foreground border border-border/60 rounded-2xl p-5 shadow-xs flex items-center justify-between">
-          <div>
-            <p className="text-[11px] font-black uppercase tracking-wider text-muted-foreground">Puntos GPS Activos</p>
-            <h3 className="text-2xl font-black text-foreground mt-1">{georeferencedFiltered.length}</h3>
-            <p className="text-[10px] text-emerald-500 font-bold mt-0.5">
+        <StatCard
+          label="Puntos GPS Activos"
+          value={georeferencedFiltered.length}
+          hint={
+            <span className="font-bold text-emerald-500">
               {filteredPeople.length > 0
                 ? `${Math.round((georeferencedFiltered.length / filteredPeople.length) * 100)}% georreferenciados`
                 : "0%"}
-            </p>
-          </div>
-          <div className="p-3 rounded-2xl bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
-            <MapPin className="h-6 w-6" />
-          </div>
-        </Card>
+            </span>
+          }
+          icon={MapPin}
+          tone="green"
+        />
 
-        <Card className="bg-card text-card-foreground border border-border/60 rounded-2xl p-5 shadow-xs flex items-center justify-between">
-          <div>
-            <p className="text-[11px] font-black uppercase tracking-wider text-muted-foreground">Sector Dominante</p>
-            <h3 className="text-base font-black text-foreground mt-1 truncate max-w-[140px]">{topBarrio}</h3>
-            <p className="text-[10px] text-muted-foreground font-medium mt-0.5">Barrio con mayor demanda</p>
-          </div>
-          <div className="p-3 rounded-2xl bg-amber-500/10 text-amber-500 border border-amber-500/20">
-            <Building2 className="h-6 w-6" />
-          </div>
-        </Card>
+        <StatCard
+          label="Sector Dominante"
+          value={<span className="block truncate text-base sm:text-lg" title={topBarrio}>{topBarrio}</span>}
+          hint="Barrio con mayor demanda"
+          icon={Building2}
+          tone="orange"
+        />
 
-        <Card className="bg-card text-card-foreground border border-border/60 rounded-2xl p-5 shadow-xs flex items-center justify-between">
-          <div>
-            <p className="text-[11px] font-black uppercase tracking-wider text-muted-foreground">Programa Principal</p>
-            <h3 className="text-base font-black text-foreground mt-1 truncate max-w-[140px]">{topProgram}</h3>
-            <p className="text-[10px] text-blue-500 font-bold mt-0.5">Cobertura socio-asistencial</p>
-          </div>
-          <div className="p-3 rounded-2xl bg-blue-500/10 text-blue-500 border border-blue-500/20">
-            <Sparkles className="h-6 w-6" />
-          </div>
-        </Card>
+        <StatCard
+          label="Programa Principal"
+          value={<span className="block truncate text-base sm:text-lg" title={topProgram}>{topProgram}</span>}
+          hint={<span className="font-bold text-blue-500">Cobertura socio-asistencial</span>}
+          icon={Sparkles}
+          tone="purple"
+        />
       </div>
 
-      <Card className="bg-card text-card-foreground border border-border/60 shadow-xs rounded-3xl overflow-hidden p-2">
+      <Card className="bg-card text-card-foreground border border-border/60 shadow-xs rounded-2xl overflow-hidden p-2">
         <DynamicMapView
           people={georeferencedFiltered}
           center={selectedLocality.coordinates}

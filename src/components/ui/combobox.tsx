@@ -57,14 +57,14 @@ export function Combobox({ options, placeholder = "Seleccionar...", name, value:
           </div>
           <div className="max-h-60 overflow-y-auto">
             {filteredOptions.length === 0 ? (
-              <div className="py-2 px-4 text-sm text-slate-500">No se encontraron resultados.</div>
+              <div className="py-2 px-4 text-sm text-muted-foreground">No se encontraron resultados.</div>
             ) : (
               filteredOptions.map((option) => (
                 <div
                   key={option.value}
                   className={cn(
-                    "relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground",
-                    value === option.value && "bg-accent text-accent-foreground"
+                    "relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-muted hover:text-foreground",
+                    value === option.value && "bg-muted text-foreground"
                   )}
                   onClick={() => {
                     const newValue = option.value === value ? "" : option.value;

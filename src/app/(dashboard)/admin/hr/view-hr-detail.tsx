@@ -39,22 +39,22 @@ export function ViewHRDetail({ agent }: { agent: any }) {
 
   return (
     <div className="space-y-6 py-2">
-      <div className="flex flex-col items-center text-center space-y-3 bg-muted/20 p-6 rounded-3xl border border-border/50">
+      <div className="flex flex-col items-center text-center space-y-3 bg-muted/20 p-6 rounded-2xl border border-border/50">
         <Avatar className="h-28 w-24 border-4 border-background shadow-xl rounded-2xl">
           <AvatarImage src={agent.imageUrl || ""} alt={agent.firstName} className="object-cover" />
-          <AvatarFallback className="bg-primary text-primary-foreground font-black text-3xl">
+          <AvatarFallback className="bg-primary text-primary-foreground font-bold text-3xl">
             {agent.firstName?.[0]}{agent.lastName?.[0]}
           </AvatarFallback>
         </Avatar>
         <div>
-          <h3 className="text-2xl font-black text-foreground">{agent.firstName} {agent.lastName}</h3>
+          <h3 className="text-2xl font-bold text-foreground">{agent.firstName} {agent.lastName}</h3>
           <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mt-0.5">
             DNI {agent.dni} • Legajo #{agent.fileNumber || 'S/L'}
           </p>
         </div>
 
         <div className="flex items-center gap-2">
-          <Badge className={`rounded-full px-3.5 py-1 text-xs font-black tracking-wider border-none ${
+          <Badge className={`rounded-full px-3.5 py-1 text-xs font-bold tracking-wider border-none ${
             agent.status === 'ACTIVO' ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30' :
             agent.status === 'LICENCIA' ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30' :
             agent.status === 'VACACIONES' ? 'bg-blue-500/15 text-blue-400 border border-blue-500/30' :
@@ -171,7 +171,7 @@ export function ViewHRDetail({ agent }: { agent: any }) {
 
               <div className="text-right">
                 <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Haber Mensual</p>
-                <p className="text-base font-black text-emerald-400">{formatCurrency(agent.salary)}</p>
+                <p className="text-base font-bold text-emerald-400">{formatCurrency(agent.salary)}</p>
               </div>
             </div>
           </div>

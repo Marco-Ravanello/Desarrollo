@@ -68,7 +68,7 @@ export function FuelForm({ vehicles }: { vehicles: any[] }) {
   return (
     <div className="space-y-8">
       <div className="bg-amber-50 dark:bg-amber-950/20 p-4 rounded-2xl border border-amber-200 dark:border-amber-900/30">
-           <h4 className="text-xs font-black text-amber-600 dark:text-amber-400 uppercase tracking-widest mb-3">Asistente de Carga Rápida (Foto Ticket)</h4>
+           <h4 className="text-xs font-bold text-amber-600 dark:text-amber-400 uppercase tracking-widest mb-3">Asistente de Carga Rápida (Foto Ticket)</h4>
            <OCRScanner onScanComplete={handleScanComplete} />
       </div>
 
@@ -127,13 +127,13 @@ export function FuelForm({ vehicles }: { vehicles: any[] }) {
                 onChange={(e) => setFuelData({...fuelData, liters: e.target.value})}
                 className="rounded-xl pr-10"
             />
-            <span className="absolute right-3 top-2.5 text-slate-400 text-sm font-bold">Lts</span>
+            <span className="absolute right-3 top-2.5 text-muted-foreground text-sm font-bold">Lts</span>
           </div>
         </div>
         <div className="space-y-2">
           <Label htmlFor="amount" className="font-semibold">Importe Total</Label>
           <div className="relative">
-             <span className="absolute left-3 top-2.5 text-slate-400 text-sm font-bold">$</span>
+             <span className="absolute left-3 top-2.5 text-muted-foreground text-sm font-bold">$</span>
              <Input
                 id="amount"
                 name="amount"

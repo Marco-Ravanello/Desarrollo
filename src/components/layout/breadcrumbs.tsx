@@ -7,6 +7,14 @@ import { useBreadcrumbs, BreadcrumbItem } from "./breadcrumbs-context";
 import { Home, ChevronRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
+const NEW_LABELS: Record<string, string> = {
+  cases: "Nuevo Expediente",
+  people: "Nueva Persona",
+  vehicles: "Nuevo Vehículo",
+  "purchase-orders": "Nueva Orden",
+  agreements: "Nuevo Convenio",
+};
+
 const PATH_DICTIONARY: Record<string, string> = {
   dashboard: "Dashboard",
   admin: "Administración",
@@ -34,7 +42,13 @@ const PATH_DICTIONARY: Record<string, string> = {
   maps: "Mapa Social GIS",
   "ficha-social": "Ficha Social 360°",
   cruces: "Matriz de Cruces",
-  tasks: "Mis Tareas & Pendientes"
+  tasks: "Mis Tareas & Pendientes",
+  agreements: "Convenios",
+  stock: "Stock de Insumos",
+  audit: "Auditoría",
+  fuel: "Combustible",
+  reserve: "Reservar Vehículo",
+  requests: "Solicitudes"
 };
 
 // Segmentos que agrupan secciones pero no tienen una página propia: se muestran sin link.
@@ -66,12 +80,12 @@ export function DashboardBreadcrumbs() {
     resolvedItems = segments.map((segment, idx) => {
       currentHref += `/${segment}`;
       const isLast = idx === segments.length - 1;
-      const dictLabel = PATH_DICTIONARY[segment];
+      const dictLabel = segment === "new" ? NEW_LABELS[segments[idx - 1]] || "Nuevo" : PATH_DICTIONARY[segment];
 
       let label = dictLabel || segment;
 
       if (!dictLabel && segment.length >= 8) {
-        label = `Ref: ${segment.substring(0, 8)}...`;
+        label = "Detalle";
       }
 
       return {
@@ -109,7 +123,7 @@ export function DashboardBreadcrumbs() {
                 {item.label}
               </Link>
             ) : (
-              <span className="font-black text-foreground bg-muted/40 px-2 py-0.5 rounded-lg border border-border/40 truncate max-w-[200px]">
+              <span className="font-bold text-foreground bg-muted/40 px-2 py-0.5 rounded-lg border border-border/40 truncate max-w-[200px]">
                 {item.label}
               </span>
             )}

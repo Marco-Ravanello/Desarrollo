@@ -52,9 +52,9 @@ export function PeoplePagination({
   return (
     <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 px-2 border-t border-border/40 text-xs">
       <p className="text-muted-foreground font-semibold">
-        Mostrando <b className="text-foreground font-black">{startItem}</b> a{" "}
-        <b className="text-foreground font-black">{endItem}</b> de{" "}
-        <b className="text-foreground font-black">{totalItems.toLocaleString("es-AR")}</b> vecinos empadronados
+        Mostrando <b className="text-foreground font-bold">{startItem}</b> a{" "}
+        <b className="text-foreground font-bold">{endItem}</b> de{" "}
+        <b className="text-foreground font-bold">{totalItems.toLocaleString("es-AR")}</b> vecinos empadronados
       </p>
 
       <div className="flex items-center gap-1.5">

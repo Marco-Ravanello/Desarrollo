@@ -1,9 +1,11 @@
 import { getAgreements } from "@/services/admin";
 import { getAreas } from "@/services/cases";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Plus, FileText, Calendar, Building2, User } from "lucide-react";
+import { Plus, FileText, Calendar, Building2, User, Landmark } from "lucide-react";
+import { PageHeader } from "@/components/layout/page-header";
+import { EmptyMessage } from "@/components/ui/empty-message";
 import Link from "next/link";
 
 export default async function AgreementsPage({ searchParams }: { searchParams: Promise<{ areaId?: string }> }) {
@@ -16,24 +18,24 @@ export default async function AgreementsPage({ searchParams }: { searchParams: P
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight">Convenios</h2>
-          <p className="text-muted-foreground">Registro y seguimiento de acuerdos institucionales.</p>
-        </div>
-        <Button asChild className="bg-emerald-600 hover:bg-emerald-700">
-          <Link href="/admin/agreements/new">
-            <Plus className="mr-2 h-4 w-4" /> Nuevo Convenio
-          </Link>
-        </Button>
-      </div>
+      <PageHeader
+        title="Convenios"
+        description="Registro y seguimiento de acuerdos institucionales."
+        icon={Landmark}
+        actions={
+          <Button asChild className="bg-emerald-600 hover:bg-emerald-700">
+            <Link href="/admin/agreements/new">
+              <Plus className="mr-2 h-4 w-4" /> Nuevo Convenio
+            </Link>
+          </Button>
+        }
+      />
 
       <div className="grid gap-4">
         {agreements.length === 0 ? (
           <Card className="border-dashed border-2 bg-muted/20">
-            <CardContent className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-              <FileText className="h-12 w-12 mb-4 opacity-20" />
-              <p>No se han registrado convenios todavía.</p>
+            <CardContent className="p-0">
+              <EmptyMessage icon={FileText} title="No se han registrado convenios todavía." />
             </CardContent>
           </Card>
         ) : (
@@ -45,7 +47,7 @@ export default async function AgreementsPage({ searchParams }: { searchParams: P
                   <div className="space-y-2">
                     <div className="flex items-center gap-2">
                       <h3 className="text-lg font-bold">{agreement.title}</h3>
-                      <Badge variant={agreement.status === 'VIGENTE' ? 'default' : 'secondary'} className={agreement.status === 'VIGENTE' ? 'bg-emerald-100 text-emerald-700' : ''}>
+                      <Badge variant={agreement.status === 'VIGENTE' ? 'default' : 'secondary'} className={agreement.status === 'VIGENTE' ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300' : ''}>
                         {agreement.status}
                       </Badge>
                     </div>
@@ -68,7 +70,7 @@ export default async function AgreementsPage({ searchParams }: { searchParams: P
                   </div>
                   <div className="text-right">
                     {agreement.amount && (
-                      <div className="text-xl font-black text-foreground">
+                      <div className="text-xl font-bold text-foreground">
                         ${Number(agreement.amount).toLocaleString('es-AR')}
                       </div>
                     )}

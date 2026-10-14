@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Download, Upload, FileSpreadsheet, Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
+import { Download, Upload, FileSpreadsheet, Loader2, AlertCircle, CheckCircle2, HandHeart } from "lucide-react";
+import { PageHeader } from "@/components/layout/page-header";
 import * as XLSX from "xlsx";
 import { exportInterventionsAction, importInterventionsAction } from "./actions";
 import { toast } from "sonner";
@@ -66,15 +67,16 @@ export default function InterventionsAdminPage() {
 
   return (
     <div className="space-y-8 max-w-5xl mx-auto">
-      <div>
-        <h2 className="text-3xl font-black tracking-tight text-[#004a80]">Gestión de Datos Externos</h2>
-        <p className="text-slate-500">Importación y exportación masiva de intervenciones sociales.</p>
-      </div>
+      <PageHeader
+        title="Gestión de Datos Externos"
+        description="Importación y exportación masiva de intervenciones sociales."
+        icon={HandHeart}
+      />
 
       <div className="grid gap-6 md:grid-cols-2">
-        <Card className="rounded-3xl border-none shadow-xl overflow-hidden group hover:shadow-2xl transition-all">
-          <CardHeader className="bg-emerald-50/50">
-            <div className="bg-emerald-100 w-12 h-12 rounded-2xl flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
+        <Card className="rounded-2xl border-none shadow-xl overflow-hidden group hover:shadow-2xl transition-all">
+          <CardHeader className="bg-emerald-500/5">
+            <div className="bg-emerald-500/15 w-12 h-12 rounded-2xl flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
                 <Download className="text-emerald-600" />
             </div>
             <CardTitle>Exportar a Excel</CardTitle>
@@ -92,16 +94,16 @@ export default function InterventionsAdminPage() {
           </CardContent>
         </Card>
 
-        <Card className="rounded-3xl border-none shadow-xl overflow-hidden group hover:shadow-2xl transition-all">
-          <CardHeader className="bg-blue-50/50">
-            <div className="bg-blue-100 w-12 h-12 rounded-2xl flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
+        <Card className="rounded-2xl border-none shadow-xl overflow-hidden group hover:shadow-2xl transition-all">
+          <CardHeader className="bg-blue-500/5">
+            <div className="bg-blue-500/15 w-12 h-12 rounded-2xl flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
                 <Upload className="text-blue-600" />
             </div>
             <CardTitle>Importar desde Excel</CardTitle>
             <CardDescription>Cargue datos históricos desde sus planillas actuales.</CardDescription>
           </CardHeader>
           <CardContent className="pt-6 space-y-4">
-            <div className="text-xs text-slate-500 mb-2">
+            <div className="text-xs text-muted-foreground mb-2">
               <strong>Formato requerido:</strong> DNI, Nombre, Apellido, Area, Caso, Descripcion, Fecha
             </div>
             <div className="relative">
@@ -115,7 +117,7 @@ export default function InterventionsAdminPage() {
               <Button
                 disabled={importing}
                 variant="outline"
-                className="w-full border-blue-200 text-blue-600 hover:bg-blue-50 rounded-xl"
+                className="w-full border-blue-500/30 text-blue-600 hover:bg-blue-500/10 rounded-xl"
               >
                 {importing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
                 Seleccionar Archivo
@@ -127,10 +129,10 @@ export default function InterventionsAdminPage() {
 
       {results && (
         <div className="space-y-4 animate-in fade-in slide-in-from-top-4 duration-500">
-           <Alert className="bg-emerald-50 border-emerald-200 rounded-2xl">
+           <Alert className="bg-emerald-500/10 border-emerald-500/30 rounded-2xl">
              <CheckCircle2 className="h-5 w-5 text-emerald-600" />
              <AlertTitle className="text-emerald-800 font-bold">Importación Exitosa</AlertTitle>
-             <AlertDescription className="text-emerald-700">
+             <AlertDescription className="text-emerald-700 dark:text-emerald-300">
                Se han creado o actualizado {results.createdCount} intervenciones correctamente.
              </AlertDescription>
            </Alert>

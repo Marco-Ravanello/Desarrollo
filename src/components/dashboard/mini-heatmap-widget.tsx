@@ -134,7 +134,7 @@ export function MiniHeatmapWidget({ peopleLocations = [] }: MiniHeatmapWidgetPro
           <DynamicMiniHeatmap locations={peopleLocations} />
 
           {/* Floating Badge for Georeferenced Point Count */}
-          <div className="absolute top-2 right-2 z-[400] flex items-center gap-1.5 px-3 py-1 rounded-full bg-background/85 backdrop-blur-md border border-border/60 text-[10px] font-black uppercase text-foreground shadow-md">
+          <div className="absolute top-2 right-2 z-[400] flex items-center gap-1.5 px-3 py-1 rounded-full bg-background/85 backdrop-blur-md border border-border/60 text-[10px] font-bold uppercase text-foreground shadow-md">
             <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping" />
             <span>● {pointCount} Puntos Georreferenciados</span>
           </div>

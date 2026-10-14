@@ -40,7 +40,7 @@ export function MunicipalLetterhead({
   const currentDir = direction || settings.directionName;
 
   return (
-    <div className="border-b border-border/80 pb-4 mb-6 bg-card/40 p-5 rounded-3xl relative overflow-hidden">
+    <div className="border-b border-border/80 pb-4 mb-6 bg-card/40 p-5 rounded-2xl relative overflow-hidden">
       {showWatermark && (
         <div className="absolute -right-8 -top-8 opacity-5 pointer-events-none">
           <MunicipalCrest className="h-48 w-48" />
@@ -52,10 +52,10 @@ export function MunicipalLetterhead({
             <MunicipalCrest className="h-10 w-10 text-primary" />
           </div>
           <div>
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary">
               {settings.municipalityName.toUpperCase()} • {settings.provinceName.toUpperCase()}
             </p>
-            <h2 className="text-base sm:text-lg font-black text-foreground tracking-tight">
+            <h2 className="text-base sm:text-lg font-bold text-foreground tracking-tight">
               {currentDept}
             </h2>
             <p className="text-xs text-muted-foreground font-semibold">
@@ -64,7 +64,7 @@ export function MunicipalLetterhead({
           </div>
         </div>
         <div className="text-center sm:text-right space-y-1">
-          <Badge variant="outline" className="text-[10px] font-black uppercase tracking-wider bg-background/80 border-border/80">
+          <Badge variant="outline" className="text-[10px] font-bold uppercase tracking-wider bg-background/80 border-border/80">
             Sistema Oficial MuniGestión
           </Badge>
           <p className="text-[10px] text-muted-foreground font-mono">

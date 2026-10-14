@@ -2,13 +2,15 @@
 
 import { useState } from "react";
 import { EmergencyOperationsData, StormVictimItem } from "@/types/emergency";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   FileSpreadsheet, FileText, Package, Plus,
-  Download, RefreshCw, UserCheck, ShieldAlert, Users, Baby
+  Download, RefreshCw, UserCheck, ShieldAlert, Users, Baby, CloudRain
 } from "lucide-react";
+import { PageHeader } from "@/components/layout/page-header";
+import { StatCard } from "@/components/ui/stat-card";
 import { StormSheetTable } from "@/components/emergency/storm-sheet-table";
 import { StormFichaDialog } from "@/components/emergency/storm-ficha-dialog";
 import { StormStockTab } from "@/components/emergency/storm-stock-tab";
@@ -55,99 +57,71 @@ export function EmergencyView({ initialData }: EmergencyViewProps) {
   return (
     <div className="space-y-6 pb-20 animate-in fade-in duration-500">
       {/* Header Institucional de Contingencia con Responsable y Área Automáticos */}
-      <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-amber-950 text-white p-6 sm:p-8 rounded-[2.5rem] border border-amber-500/20 shadow-2xl relative overflow-hidden">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative z-10">
-          <div className="space-y-2">
-            <div className="flex items-center gap-3">
-              <div className="p-3 bg-amber-500/20 text-amber-400 rounded-2xl border border-amber-500/30">
-                <ShieldAlert className="h-8 w-8 animate-pulse" />
-              </div>
-              <div>
-                <h2 className="text-2xl sm:text-3xl font-black tracking-tight">
-                  Relevamiento Territorial y Ficha de Tormenta
-                </h2>
-                <p className="text-xs text-amber-300 font-bold uppercase tracking-wider mt-0.5">
-                  Planilla Oficial de Contingencia Climática • Municipalidad de Tres de Febrero
-                </p>
-              </div>
-            </div>
-
-            {/* Fila Automática Responsable & Área */}
-            <div className="flex flex-wrap items-center gap-4 pt-2 text-xs">
-              <div className="bg-white/10 px-3.5 py-1.5 rounded-xl border border-white/10 flex items-center gap-2">
-                <UserCheck className="h-4 w-4 text-amber-400" />
-                <span>RESPONSABLE: <b className="text-white uppercase">{operator.name}</b></span>
-              </div>
-              <div className="bg-white/10 px-3.5 py-1.5 rounded-xl border border-white/10 flex items-center gap-2">
-                <ShieldAlert className="h-4 w-4 text-emerald-400" />
-                <span>ÁREA: <b className="text-white uppercase">{operator.areaName}</b></span>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2 shrink-0">
+      <PageHeader
+        title="Relevamiento Territorial y Ficha de Tormenta"
+        description="Planilla Oficial de Contingencia Climática • Municipalidad de Tres de Febrero"
+        icon={CloudRain}
+        actions={
+          <>
             <Button
               onClick={handleExportExcel}
               variant="outline"
-              className="bg-emerald-600 hover:bg-emerald-700 text-white border-none rounded-2xl h-11 px-5 font-bold text-xs"
+              className="bg-emerald-600 hover:bg-emerald-700 text-white hover:text-white border-none rounded-2xl h-11 px-5 font-bold text-xs"
             >
               <Download className="mr-2 h-4 w-4" /> Exportar Excel Oficial
             </Button>
             <Button
               onClick={handleOpenNewFicha}
-              className="bg-amber-500 hover:bg-amber-600 text-black font-black rounded-2xl h-11 px-5 text-xs shadow-lg"
+              className="bg-amber-500 hover:bg-amber-600 text-black font-bold rounded-2xl h-11 px-5 text-xs shadow-lg"
             >
               <Plus className="mr-2 h-4 w-4" /> Nueva Ficha Tormenta
             </Button>
-          </div>
+          </>
+        }
+      />
+
+      {/* Fila Automática Responsable & Área */}
+      <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs text-muted-foreground">
+        <div className="bg-muted/50 px-3.5 py-1.5 rounded-xl border border-border/60 flex items-center gap-2">
+          <UserCheck className="h-4 w-4 text-amber-500" />
+          <span>RESPONSABLE: <b className="text-foreground uppercase">{operator.name}</b></span>
+        </div>
+        <div className="bg-muted/50 px-3.5 py-1.5 rounded-xl border border-border/60 flex items-center gap-2">
+          <ShieldAlert className="h-4 w-4 text-emerald-500" />
+          <span>ÁREA: <b className="text-foreground uppercase">{operator.areaName}</b></span>
         </div>
       </div>
 
       {/* Tarjetas Resumen Métricas */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card className="rounded-3xl border-border/50 shadow-sm bg-card">
-          <CardContent className="p-5 space-y-2">
-            <div className="flex justify-between items-center">
-              <span className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">Damnificados</span>
-              <div className="p-2 bg-blue-500/10 text-blue-500 rounded-xl"><Users className="h-4 w-4" /></div>
-            </div>
-            <p className="text-2xl font-black text-foreground">{metrics.totalVictims}</p>
-            <p className="text-[11px] text-muted-foreground font-semibold">Registrados en planilla</p>
-          </CardContent>
-        </Card>
-
-        <Card className="rounded-3xl border-border/50 shadow-sm bg-card">
-          <CardContent className="p-5 space-y-2">
-            <div className="flex justify-between items-center">
-              <span className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">Niños Afectados</span>
-              <div className="p-2 bg-purple-500/10 text-purple-500 rounded-xl"><Baby className="h-4 w-4" /></div>
-            </div>
-            <p className="text-2xl font-black text-foreground">{metrics.totalChildren}</p>
-            <p className="text-[11px] text-muted-foreground font-semibold">Menores contabilizados</p>
-          </CardContent>
-        </Card>
-
-        <Card className="rounded-3xl border-border/50 shadow-sm bg-card">
-          <CardContent className="p-5 space-y-2">
-            <div className="flex justify-between items-center">
-              <span className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">Colchones / Frazadas</span>
-              <div className="p-2 bg-amber-500/10 text-amber-500 rounded-xl"><Package className="h-4 w-4" /></div>
-            </div>
-            <p className="text-2xl font-black text-foreground">{metrics.totalColchones} / {metrics.totalFrazadas}</p>
-            <p className="text-[11px] text-muted-foreground font-semibold">Unidades requeridas</p>
-          </CardContent>
-        </Card>
-
-        <Card className="rounded-3xl border-border/50 shadow-sm bg-card">
-          <CardContent className="p-5 space-y-2">
-            <div className="flex justify-between items-center">
-              <span className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">Prioridad Alta</span>
-              <div className="p-2 bg-rose-500/10 text-rose-500 rounded-xl"><ShieldAlert className="h-4 w-4" /></div>
-            </div>
-            <p className="text-2xl font-black text-rose-600">{metrics.highPriorityCount}</p>
-            <p className="text-[11px] text-rose-500 font-semibold">Urgencias territoriales</p>
-          </CardContent>
-        </Card>
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+        <StatCard
+          label="Damnificados"
+          value={metrics.totalVictims}
+          hint="Registrados en planilla"
+          icon={Users}
+          tone="blue"
+        />
+        <StatCard
+          label="Niños Afectados"
+          value={metrics.totalChildren}
+          hint="Menores contabilizados"
+          icon={Baby}
+          tone="purple"
+        />
+        <StatCard
+          label="Colchones / Frazadas"
+          value={`${metrics.totalColchones} / ${metrics.totalFrazadas}`}
+          hint="Unidades requeridas"
+          icon={Package}
+          tone="orange"
+        />
+        <StatCard
+          label="Prioridad Alta"
+          value={metrics.highPriorityCount}
+          hint="Urgencias territoriales"
+          icon={ShieldAlert}
+          tone="red"
+        />
       </div>
 
       {/* Navegación por 3 Pestañas Principal */}
@@ -206,7 +180,7 @@ export function EmergencyView({ initialData }: EmergencyViewProps) {
       {activeTab === "fichas" && (
         <div className="space-y-4 animate-in fade-in duration-300">
           <div className="flex justify-between items-center">
-            <h3 className="text-sm font-black text-foreground uppercase tracking-wider">
+            <h3 className="text-sm font-bold text-foreground uppercase tracking-wider">
               Fichas Individuales Generadas ({records.length})
             </h3>
             <Button
@@ -219,9 +193,9 @@ export function EmergencyView({ initialData }: EmergencyViewProps) {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {records.map((r, idx) => (
-              <Card key={r.id || idx} className="rounded-3xl border-border/60 shadow-sm bg-card p-5 space-y-3">
+              <Card key={r.id || idx} className="rounded-2xl border-border/60 shadow-sm bg-card p-5 space-y-3">
                 <div className="flex justify-between items-start">
-                  <Badge variant="outline" className={`text-[10px] font-black uppercase ${
+                  <Badge variant="outline" className={`text-[10px] font-bold uppercase ${
                     r.prioridad === 'ALTA' ? 'bg-rose-500/10 text-rose-600 border-rose-500/30' : 'bg-amber-500/10 text-amber-600'
                   }`}>
                     Prioridad {r.prioridad}
@@ -230,7 +204,7 @@ export function EmergencyView({ initialData }: EmergencyViewProps) {
                 </div>
 
                 <div>
-                  <h4 className="text-base font-black text-foreground uppercase">{r.nombreApellido}</h4>
+                  <h4 className="text-base font-bold text-foreground uppercase">{r.nombreApellido}</h4>
                   <p className="text-xs text-muted-foreground">DNI: {r.dni || "S/D"} • Edad: {r.edad || "N/A"}</p>
                   <p className="text-xs font-semibold text-foreground mt-1">{r.domicilio} {r.barrio ? `(${r.barrio})` : ""}</p>
                 </div>

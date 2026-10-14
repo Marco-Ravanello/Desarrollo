@@ -6,9 +6,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { UniversalExportMenu } from "@/components/ui/universal-export-menu";
+import { PageHeader } from "@/components/layout/page-header";
+import { StatCard } from "@/components/ui/stat-card";
+import { EmptyMessage } from "@/components/ui/empty-message";
+import { TableCards } from "@/components/ui/table";
 import {
   Users, UserCheck, UserX, Shield, Search, Plus, Edit2,
-  Building2
+  Building2, UserCog
 } from "lucide-react";
 import {
   Sheet,
@@ -144,22 +148,12 @@ export function UsersManagementView({
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500 pb-20">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl sm:text-3xl font-black text-foreground tracking-tight">
-              Gestión de Usuarios y Personal
-            </h1>
-            <Badge className="hidden sm:inline-flex bg-primary/20 text-primary border border-primary/30 text-[10px] font-bold uppercase py-0.5">
-              Personal Tres de Febrero
-            </Badge>
-          </div>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            Administración de agentes, reasignación de áreas municipales, roles y conmutador de estados.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2">
+      <PageHeader
+        title="Gestión de Usuarios y Personal"
+        description="Administración de agentes, reasignación de áreas municipales, roles y conmutador de estados."
+        icon={UserCog}
+        badge="Personal Tres de Febrero"
+        actions={
           <Sheet open={isCreateOpen} onOpenChange={setIsCreateOpen}>
             <SheetTrigger asChild>
               <Button className="rounded-2xl h-11 px-5 font-bold text-xs uppercase tracking-wider bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20 gap-2 font-heading">
@@ -169,7 +163,7 @@ export function UsersManagementView({
             </SheetTrigger>
             <SheetContent side="right" className="sm:max-w-md w-full bg-card border-l border-border/60 p-6 overflow-y-auto">
               <SheetHeader className="mb-4">
-                <SheetTitle className="text-xl font-black font-heading">Alta de Funcionario</SheetTitle>
+                <SheetTitle className="text-xl font-bold font-heading">Alta de Funcionario</SheetTitle>
                 <SheetDescription className="text-xs">
                   Creación de credenciales para agentes de Tres de Febrero.
                 </SheetDescription>
@@ -177,56 +171,41 @@ export function UsersManagementView({
               <CreateUserForm areas={areas} onSuccess={() => setIsCreateOpen(false)} />
             </SheetContent>
           </Sheet>
-        </div>
+        }
+      />
+
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+        <StatCard
+          label="Total Agentes"
+          value={totalUsers}
+          hint="Registrados en sistema"
+          icon={Users}
+          tone="blue"
+        />
+        <StatCard
+          label="Cuentas Activas"
+          value={activeCount}
+          hint="Habilitados para login"
+          icon={UserCheck}
+          tone="green"
+        />
+        <StatCard
+          label="Cuentas Suspendidas"
+          value={inactiveCount}
+          hint="Acceso bloqueado"
+          icon={UserX}
+          tone="red"
+        />
+        <StatCard
+          label="Directivos y Admin"
+          value={execCount}
+          hint="Roles ejecutivos"
+          icon={Shield}
+          tone="purple"
+        />
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="bg-card text-card-foreground border border-border/60 rounded-2xl p-5 shadow-xs flex items-center justify-between">
-          <div>
-            <p className="text-[11px] font-black uppercase tracking-wider text-muted-foreground">Total Agentes</p>
-            <h3 className="text-2xl font-black text-foreground mt-1">{totalUsers}</h3>
-            <p className="text-[10px] text-muted-foreground font-medium mt-0.5">Registrados en sistema</p>
-          </div>
-          <div className="p-3 rounded-2xl bg-primary/10 text-primary border border-primary/20">
-            <Users className="h-6 w-6" />
-          </div>
-        </Card>
-
-        <Card className="bg-card text-card-foreground border border-border/60 rounded-2xl p-5 shadow-xs flex items-center justify-between">
-          <div>
-            <p className="text-[11px] font-black uppercase tracking-wider text-muted-foreground">Cuentas Activas</p>
-            <h3 className="text-2xl font-black text-foreground mt-1">{activeCount}</h3>
-            <p className="text-[10px] text-emerald-500 font-bold mt-0.5">Habilitados para login</p>
-          </div>
-          <div className="p-3 rounded-2xl bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
-            <UserCheck className="h-6 w-6" />
-          </div>
-        </Card>
-
-        <Card className="bg-card text-card-foreground border border-border/60 rounded-2xl p-5 shadow-xs flex items-center justify-between">
-          <div>
-            <p className="text-[11px] font-black uppercase tracking-wider text-muted-foreground">Cuentas Suspendidas</p>
-            <h3 className="text-2xl font-black text-foreground mt-1">{inactiveCount}</h3>
-            <p className="text-[10px] text-rose-500 font-bold mt-0.5">Acceso bloqueado</p>
-          </div>
-          <div className="p-3 rounded-2xl bg-rose-500/10 text-rose-500 border border-rose-500/20">
-            <UserX className="h-6 w-6" />
-          </div>
-        </Card>
-
-        <Card className="bg-card text-card-foreground border border-border/60 rounded-2xl p-5 shadow-xs flex items-center justify-between">
-          <div>
-            <p className="text-[11px] font-black uppercase tracking-wider text-muted-foreground">Directivos y Admin</p>
-            <h3 className="text-2xl font-black text-foreground mt-1">{execCount}</h3>
-            <p className="text-[10px] text-purple-500 font-bold mt-0.5">Roles ejecutivos</p>
-          </div>
-          <div className="p-3 rounded-2xl bg-purple-500/10 text-purple-500 border border-purple-500/20">
-            <Shield className="h-6 w-6" />
-          </div>
-        </Card>
-      </div>
-
-      <Card className="bg-card text-card-foreground border border-border/60 shadow-xs rounded-3xl overflow-hidden">
+      <Card className="bg-card text-card-foreground border border-border/60 shadow-xs rounded-2xl overflow-hidden">
         <div className="p-4 sm:p-5 border-b border-border/40 bg-muted/20 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-1.5 bg-muted/40 p-1 rounded-2xl border border-border/40 shrink-0">
             <button
@@ -299,7 +278,7 @@ export function UsersManagementView({
           </div>
         </div>
 
-        <div className="overflow-x-auto">
+        <TableCards>
           <table className="w-full text-xs text-left">
             <thead className="bg-muted/40 text-muted-foreground uppercase font-bold tracking-wider border-b border-border/40">
               <tr>
@@ -380,14 +359,14 @@ export function UsersManagementView({
                 })
               ) : (
                 <tr>
-                  <td colSpan={6} className="text-center py-12 text-muted-foreground italic">
-                    No se encontraron agentes municipales que coincidan con la búsqueda.
+                  <td colSpan={6}>
+                    <EmptyMessage title="No se encontraron agentes municipales que coincidan con la búsqueda." />
                   </td>
                 </tr>
               )}
             </tbody>
           </table>
-        </div>
+        </TableCards>
       </Card>
 
       <EditUserDialog

@@ -30,7 +30,7 @@ export function CreateVehicleForm() {
   }
 
   return (
-    <Card className="max-w-2xl mx-auto shadow-xl border-t-4 border-t-primary rounded-3xl bg-card text-card-foreground">
+    <Card className="max-w-2xl mx-auto shadow-xl border-t-4 border-t-primary rounded-2xl bg-card text-card-foreground">
       <CardHeader>
         <CardTitle className="text-2xl text-foreground font-heading">Registrar Nueva Unidad</CardTitle>
       </CardHeader>
@@ -38,7 +38,7 @@ export function CreateVehicleForm() {
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-4">
-              <h3 className="font-semibold text-slate-700 flex items-center gap-2">
+              <h3 className="font-semibold text-foreground flex items-center gap-2">
                 <div className="w-1 h-4 bg-[#f5a623] rounded-full" />
                 Información Básica
               </h3>
@@ -57,7 +57,7 @@ export function CreateVehicleForm() {
             </div>
 
             <div className="space-y-4">
-              <h3 className="font-semibold text-slate-700 flex items-center gap-2">
+              <h3 className="font-semibold text-foreground flex items-center gap-2">
                 <div className="w-1 h-4 bg-[#f5a623] rounded-full" />
                 Control y Combustible
               </h3>
@@ -79,7 +79,7 @@ export function CreateVehicleForm() {
           <Separator />
 
           <div className="space-y-4">
-            <h3 className="font-semibold text-slate-700 flex items-center gap-2">
+            <h3 className="font-semibold text-foreground flex items-center gap-2">
               <div className="w-1 h-4 bg-[#f5a623] rounded-full" />
               Vencimientos de Documentación
             </h3>

@@ -42,7 +42,7 @@ export function OrderTimeline({ currentStatus }: { currentStatus: string }) {
             </div>
             <div className="mt-2 text-center">
               <p className={cn(
-                "text-[10px] font-black uppercase tracking-widest",
+                "text-[10px] font-bold uppercase tracking-widest",
                 stage.status === 'completed' ? "text-primary" :
                 stage.status === 'current' ? "text-primary" :
                 "text-muted-foreground"

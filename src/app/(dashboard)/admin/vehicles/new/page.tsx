@@ -1,12 +1,15 @@
+import { Car } from "lucide-react";
+import { PageHeader } from "@/components/layout/page-header";
 import { CreateVehicleForm } from "./create-vehicle-form";
 
 export default function NewVehiclePage() {
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-3xl font-bold tracking-tight">Nuevo Vehículo</h2>
-        <p className="text-slate-500">Registre una nueva unidad a la flota municipal.</p>
-      </div>
+      <PageHeader
+        title="Nuevo Vehículo"
+        description="Registre una nueva unidad a la flota municipal."
+        icon={Car}
+      />
 
       <CreateVehicleForm />
     </div>

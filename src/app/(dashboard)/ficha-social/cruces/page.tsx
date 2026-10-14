@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import {
   Search, CheckSquare, Square,
-  Layers, ArrowLeft, Users, Building
+  Layers, ArrowLeft, Users, Building, Network
 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -24,6 +24,10 @@ import {
 } from "recharts";
 import { useTheme } from "next-themes";
 import { UniversalExportMenu } from "@/components/ui/universal-export-menu";
+import { TableCards } from "@/components/ui/table";
+import { PageHeader } from "@/components/layout/page-header";
+import { StatCard } from "@/components/ui/stat-card";
+import { EmptyMessage } from "@/components/ui/empty-message";
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6', '#06b6d4'];
 
@@ -94,45 +98,36 @@ export default function CrucesSocialesPage() {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2">
+      <PageHeader
+        title="Matriz de Cruces Masivos & Auditoría"
+        description="Detección de superposiciones de beneficios, duplicidades y cálculo de cobertura poblacional unificada."
+        icon={Network}
+        badge="Analítica 3F"
+        actions={
+          <>
             <Button variant="ghost" size="icon" asChild className="rounded-xl h-9 w-9">
-              <Link href="/ficha-social">
+              <Link href="/ficha-social" aria-label="Volver">
                 <ArrowLeft className="h-4 w-4" />
               </Link>
             </Button>
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-black text-foreground tracking-tight flex items-center gap-2">
-                Matriz de Cruces Masivos & Auditoría
-                <Badge className="hidden sm:inline-flex bg-primary/20 text-primary border border-primary/30 text-[10px] font-bold uppercase py-0.5">
-                  Analítica 3F
-                </Badge>
-              </h1>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                Detección de superposiciones de beneficios, duplicidades y cálculo de cobertura poblacional unificada.
-              </p>
-            </div>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <UniversalExportMenu
-            data={exportData}
-            columns={exportColumns}
-            filename="matriz_cruces_sociales_3f"
-            title="Matriz de Beneficiarios y Cruces de Programas Sociales"
-            subtitle="AUDITORÍA SOCIAL Y COBERTURA POBLACIONAL"
-            label="Exportar Matriz"
-            orientation="landscape"
-          />
-        </div>
-      </div>
+            <UniversalExportMenu
+              data={exportData}
+              columns={exportColumns}
+              filename="matriz_cruces_sociales_3f"
+              title="Matriz de Beneficiarios y Cruces de Programas Sociales"
+              subtitle="AUDITORÍA SOCIAL Y COBERTURA POBLACIONAL"
+              label="Exportar Matriz"
+              orientation="landscape"
+            />
+          </>
+        }
+      />
 
-      <Card className="bg-card text-card-foreground border border-border/60 shadow-xs rounded-3xl overflow-hidden">
+      <Card className="bg-card text-card-foreground border border-border/60 shadow-xs rounded-2xl overflow-hidden">
         <CardHeader className="pb-3 border-b border-border/40 bg-muted/20">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div>
-              <CardTitle className="text-sm font-black uppercase tracking-wider text-foreground flex items-center gap-2">
+              <CardTitle className="text-sm font-bold uppercase tracking-wider text-foreground flex items-center gap-2">
                 <Layers className="h-4 w-4 text-primary" /> Catálogo de Programas Sociales Disponibles
               </CardTitle>
               <CardDescription className="text-xs text-muted-foreground">
@@ -180,7 +175,7 @@ export default function CrucesSocialesPage() {
                   }`}
                 >
                   <div className="flex items-start justify-between gap-2">
-                    <span className="font-black text-xs text-foreground leading-tight">{prog.nombre}</span>
+                    <span className="font-bold text-xs text-foreground leading-tight">{prog.nombre}</span>
                     {isSelected ? (
                       <CheckSquare className="h-4 w-4 text-primary shrink-0" />
                     ) : (
@@ -201,34 +196,24 @@ export default function CrucesSocialesPage() {
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Card className="bg-card text-card-foreground border border-border/60 rounded-3xl p-5 shadow-xs flex items-center gap-4">
-          <div className="p-3 rounded-2xl bg-blue-500/10 text-blue-500">
-            <Users className="h-6 w-6" />
-          </div>
-          <div>
-            <p className="text-[11px] font-black uppercase tracking-wider text-muted-foreground">Coincidencias Cruzadas</p>
-            <h3 className="text-2xl font-black text-foreground">
-              {cruceData?.total_coincidencias.toLocaleString() || 0}
-            </h3>
-            <p className="text-[10px] text-muted-foreground">
-              Modo: <b className="uppercase">{modo}</b>
-            </p>
-          </div>
-        </Card>
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
+        <StatCard
+          label="Coincidencias Cruzadas"
+          value={cruceData?.total_coincidencias.toLocaleString() || 0}
+          hint={<>Modo: <b className="uppercase">{modo}</b></>}
+          icon={Users}
+          tone="blue"
+        />
 
-        <Card className="bg-card text-card-foreground border border-border/60 rounded-3xl p-5 shadow-xs flex items-center gap-4">
-          <div className="p-3 rounded-2xl bg-emerald-500/10 text-emerald-500">
-            <Layers className="h-6 w-6" />
-          </div>
-          <div>
-            <p className="text-[11px] font-black uppercase tracking-wider text-muted-foreground">Programas Seleccionados</p>
-            <h3 className="text-2xl font-black text-foreground">{selectedPrograms.length}</h3>
-            <p className="text-[10px] text-muted-foreground">Bases de datos cruzadas</p>
-          </div>
-        </Card>
+        <StatCard
+          label="Programas Seleccionados"
+          value={selectedPrograms.length}
+          hint="Bases de datos cruzadas"
+          icon={Layers}
+          tone="green"
+        />
 
-        <Card className="bg-card text-card-foreground border border-border/60 rounded-3xl p-5 shadow-xs flex flex-col justify-center">
+        <Card className="col-span-2 lg:col-span-1 bg-card text-card-foreground border border-border/60 rounded-2xl p-4 sm:p-5 shadow-sm flex flex-col justify-center">
           <div className="flex gap-2">
             <Input
               value={filterText}
@@ -245,10 +230,10 @@ export default function CrucesSocialesPage() {
       </div>
 
       {cruceData?.distribucion_barrios && cruceData.distribucion_barrios.length > 0 && (
-        <Card className="bg-card text-card-foreground border border-border/60 shadow-xs rounded-3xl p-6">
+        <Card className="bg-card text-card-foreground border border-border/60 shadow-xs rounded-2xl p-6">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h3 className="text-xs font-black uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
                 <Building className="h-4 w-4 text-primary" /> Concentración Territorial por Barrio Popular
               </h3>
               <p className="text-[11px] text-muted-foreground">Distribución de personas alcanzadas por el cruce según barrio.</p>
@@ -277,16 +262,16 @@ export default function CrucesSocialesPage() {
         </Card>
       )}
 
-      <Card className="bg-card text-card-foreground border border-border/60 shadow-xs rounded-3xl overflow-hidden">
+      <Card className="bg-card text-card-foreground border border-border/60 shadow-xs rounded-2xl overflow-hidden">
         <div className="p-4 bg-muted/20 border-b border-border/40 flex items-center justify-between">
-          <span className="text-xs font-black uppercase tracking-wider text-foreground">
+          <span className="text-xs font-bold uppercase tracking-wider text-foreground">
             Listado Nominal de Beneficiarios Cruzados
           </span>
           <span className="text-xs text-muted-foreground font-mono">
             Mostrando {cruceData?.resultados.length || 0} registros
           </span>
         </div>
-        <div className="overflow-x-auto">
+        <TableCards>
           <table className="w-full text-xs text-left">
             <thead className="bg-muted/40 text-muted-foreground uppercase font-bold tracking-wider border-b border-border/40">
               <tr>
@@ -330,14 +315,16 @@ export default function CrucesSocialesPage() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={6} className="text-center py-12 text-muted-foreground italic">
-                    {isPending ? "Calculando matriz de cruces..." : "No se encontraron coincidencias para los programas seleccionados."}
+                  <td colSpan={6} className={isPending ? "text-center py-12 text-muted-foreground italic" : "p-0"}>
+                    {isPending ? "Calculando matriz de cruces..." : (
+                      <EmptyMessage title="No se encontraron coincidencias para los programas seleccionados." icon={Users} />
+                    )}
                   </td>
                 </tr>
               )}
             </tbody>
           </table>
-        </div>
+        </TableCards>
       </Card>
     </div>
   );

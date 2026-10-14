@@ -8,7 +8,9 @@ import { getOrderStatusConfig } from "@/lib/status-styles";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Pencil } from "lucide-react";
+import { ArrowLeft, Building2, Pencil } from "lucide-react";
+import { PageHeader } from "@/components/layout/page-header";
+import { EmptyMessage } from "@/components/ui/empty-message";
 import { ProviderFormDialog } from "../provider-form-dialog";
 import { DeleteProviderButton } from "../delete-provider-button";
 
@@ -36,31 +38,30 @@ export default async function ProviderDetailPage({ params }: { params: Promise<{
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <Link href="/admin/providers">
-            <Button variant="ghost" size="icon" aria-label="Volver a proveedores"><ArrowLeft className="h-4 w-4" /></Button>
-          </Link>
-          <div>
-            <h2 className="text-2xl font-bold tracking-tight text-foreground">{provider.name}</h2>
-            <p className="text-sm text-muted-foreground">
-              {orders.length} órdenes de compra · {money(executed)} ejecutado
-            </p>
-          </div>
-        </div>
-        {canEdit && (
-          <div className="flex gap-2">
-            {orders.length === 0 && <DeleteProviderButton id={provider.id} name={provider.name} />}
-            <ProviderFormDialog
-              initial={{
-                id: provider.id, name: provider.name, cuit: provider.cuit, address: provider.address || "",
-                phone: provider.phone || "", email: provider.email || "", bank: provider.bank || "", cbu: provider.cbu || "",
-              }}
-              trigger={<Button variant="outline" className="gap-2"><Pencil className="h-4 w-4" /> Editar</Button>}
-            />
-          </div>
-        )}
-      </div>
+      <PageHeader
+        title={provider.name}
+        description={<>{orders.length} órdenes de compra · {money(executed)} ejecutado</>}
+        icon={Building2}
+        actions={
+          <>
+            <Link href="/admin/providers">
+              <Button variant="ghost" size="icon" aria-label="Volver a proveedores"><ArrowLeft className="h-4 w-4" /></Button>
+            </Link>
+            {canEdit && (
+              <>
+                {orders.length === 0 && <DeleteProviderButton id={provider.id} name={provider.name} />}
+                <ProviderFormDialog
+                  initial={{
+                    id: provider.id, name: provider.name, cuit: provider.cuit, address: provider.address || "",
+                    phone: provider.phone || "", email: provider.email || "", bank: provider.bank || "", cbu: provider.cbu || "",
+                  }}
+                  trigger={<Button variant="outline" className="gap-2"><Pencil className="h-4 w-4" /> Editar</Button>}
+                />
+              </>
+            )}
+          </>
+        }
+      />
 
       <Card className="shadow-none">
         <CardContent className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-6">
@@ -80,7 +81,7 @@ export default async function ProviderDetailPage({ params }: { params: Promise<{
         </CardHeader>
         <CardContent>
           {orders.length === 0 ? (
-            <p className="py-8 text-center text-sm text-muted-foreground">Este proveedor todavía no tiene órdenes de compra.</p>
+            <EmptyMessage title="Este proveedor todavía no tiene órdenes de compra." />
           ) : (
             <div className="overflow-x-auto">
               <Table>

@@ -5,7 +5,8 @@ import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Plus, Filter, Search, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, Filter, Search, ChevronLeft, ChevronRight, Briefcase } from "lucide-react";
+import { PageHeader } from "@/components/layout/page-header";
 import Link from "next/link";
 import { TableFilter } from "@/components/ui/table-filter";
 import { OrderTableRow } from "./order-table-row";
@@ -32,18 +33,16 @@ export default async function PurchaseOrdersPage({
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-3xl sm:text-4xl font-black tracking-tight text-foreground">Órdenes de Compra</h2>
-          <p className="text-muted-foreground text-sm sm:text-base mt-1">
-            Módulo de Administración General • Seguimiento y adjudicación de compras públicas ({totalCount} registros).
-          </p>
-        </div>
-
-        <Button asChild className="rounded-2xl h-11 px-5 font-bold text-xs uppercase tracking-wider bg-primary text-primary-foreground shadow-lg shadow-primary/20">
-          <Link href="/admin/purchase-orders/new"><Plus className="mr-2 h-4 w-4"/> Nueva Orden</Link>
-        </Button>
-      </div>
+      <PageHeader
+        title="Órdenes de Compra"
+        description={<>Módulo de Administración General • Seguimiento y adjudicación de compras públicas ({totalCount} registros).</>}
+        icon={Briefcase}
+        actions={
+          <Button asChild className="rounded-2xl h-11 px-5 font-bold text-xs uppercase tracking-wider bg-primary text-primary-foreground shadow-lg shadow-primary/20">
+            <Link href="/admin/purchase-orders/new"><Plus className="mr-2 h-4 w-4"/> Nueva Orden</Link>
+          </Button>
+        }
+      />
 
       <Card className="p-4 bg-card border border-border/60 shadow-sm rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4">
         <form method="GET" className="flex items-center gap-2 flex-1 max-w-md">
@@ -82,16 +81,16 @@ export default async function PurchaseOrdersPage({
 
       {orders.length > 0 ? (
         <div className="space-y-4">
-          <Card className="bg-card border border-border/60 shadow-sm rounded-3xl overflow-hidden">
+          <Card className="bg-card border border-border/60 shadow-sm rounded-2xl overflow-hidden">
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader className="bg-muted/40">
                   <TableRow className="border-b border-border/60 hover:bg-transparent">
-                    <TableHead className="font-black text-muted-foreground uppercase text-[10px] tracking-wider py-4 px-6">Número</TableHead>
-                    <TableHead className="font-black text-muted-foreground uppercase text-[10px] tracking-wider py-4 px-6">Proveedor / CUIT</TableHead>
-                    <TableHead className="font-black text-muted-foreground uppercase text-[10px] tracking-wider py-4 px-6">Monto Total</TableHead>
-                    <TableHead className="font-black text-muted-foreground uppercase text-[10px] tracking-wider py-4 px-6">Estado</TableHead>
-                    <TableHead className="font-black text-muted-foreground uppercase text-[10px] tracking-wider py-4 px-6 text-right">Acciones</TableHead>
+                    <TableHead className="font-bold text-muted-foreground uppercase text-[10px] tracking-wider py-4 px-6">Número</TableHead>
+                    <TableHead className="font-bold text-muted-foreground uppercase text-[10px] tracking-wider py-4 px-6">Proveedor / CUIT</TableHead>
+                    <TableHead className="font-bold text-muted-foreground uppercase text-[10px] tracking-wider py-4 px-6">Monto Total</TableHead>
+                    <TableHead className="font-bold text-muted-foreground uppercase text-[10px] tracking-wider py-4 px-6">Estado</TableHead>
+                    <TableHead className="font-bold text-muted-foreground uppercase text-[10px] tracking-wider py-4 px-6 text-right">Acciones</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody className="divide-y divide-border/40">

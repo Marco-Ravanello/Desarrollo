@@ -53,9 +53,9 @@ export function QuickInterventionForm({ caseId, caseTitle }: QuickInterventionFo
   }
 
   return (
-    <form onSubmit={handleSubmit} className="p-4 rounded-3xl bg-card border border-primary/30 shadow-md space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
+    <form onSubmit={handleSubmit} className="p-4 rounded-2xl bg-card border border-primary/30 shadow-md space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
       <div className="flex justify-between items-center">
-        <label className="text-xs font-black uppercase tracking-wider text-muted-foreground">
+        <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
           Cargar Nota de Evolución en Expediente
         </label>
         <span className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full">

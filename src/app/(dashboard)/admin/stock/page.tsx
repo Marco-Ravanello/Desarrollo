@@ -6,6 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { CreateSupplyForm } from "./create-supply-form";
 import { StockList } from "./stock-list";
 import { Package, AlertCircle } from "lucide-react";
+import { PageHeader } from "@/components/layout/page-header";
+import { StatCard } from "@/components/ui/stat-card";
 
 export default async function StockPage() {
   const [supplies, areas] = await Promise.all([
@@ -17,37 +19,20 @@ export default async function StockPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-end">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight text-foreground">Gestión de Stock</h2>
-          <p className="text-muted-foreground">Control de inventario de insumos municipales y alertas de reposición.</p>
-        </div>
-      </div>
+      <PageHeader
+        title="Gestión de Stock"
+        description="Control de inventario de insumos municipales y alertas de reposición."
+        icon={Package}
+      />
 
-      <div className="grid lg:grid-cols-4 gap-6">
-        <Card className="bg-muted border-none shadow-none">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-xs font-medium uppercase text-muted-foreground">Total Items</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold flex items-center gap-2 text-foreground">
-              <Package className="h-5 w-5 text-blue-500" />
-              {supplies.length}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className={`${lowStockCount > 0 ? "bg-rose-50 dark:bg-rose-950/20" : "bg-muted"} border-none shadow-none`}>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-xs font-medium uppercase text-muted-foreground">Alertas de Reposición</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className={`text-2xl font-bold flex items-center gap-2 ${lowStockCount > 0 ? "text-rose-600" : "text-foreground"}`}>
-              <AlertCircle className={`h-5 w-5 ${lowStockCount > 0 ? "text-rose-600" : "text-slate-400"}`} />
-              {lowStockCount}
-            </div>
-          </CardContent>
-        </Card>
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+        <StatCard label="Total Items" value={supplies.length} icon={Package} tone="blue" />
+        <StatCard
+          label="Alertas de Reposición"
+          value={<span className={lowStockCount > 0 ? "text-rose-600" : undefined}>{lowStockCount}</span>}
+          icon={AlertCircle}
+          tone={lowStockCount > 0 ? "red" : "slate"}
+        />
       </div>
 
       <div className="grid lg:grid-cols-3 gap-6">

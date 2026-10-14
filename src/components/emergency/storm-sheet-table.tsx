@@ -188,23 +188,23 @@ export function StormSheetTable({
 
       {/* Tabla Oficial Relevamiento Territorial (Exacta a Excel) */}
       <div className="rounded-2xl border border-border/60 overflow-x-auto bg-card shadow-sm">
-        <Table className="min-w-[1200px] text-xs">
+        <Table mobileCards={false} className="min-w-[1200px] text-xs">
           <TableHeader className="bg-muted/50 border-b border-border/60">
             <TableRow className="hover:bg-transparent">
-              <TableHead className="w-10 font-black text-center border-r border-border/40" rowSpan={2}>#</TableHead>
-              <TableHead className="font-black border-r border-border/40" rowSpan={2}>Nombre y Apellido</TableHead>
-              <TableHead className="font-black border-r border-border/40 w-28" rowSpan={2}>DNI</TableHead>
-              <TableHead className="font-black border-r border-border/40 text-center w-20" rowSpan={2}>G. Fam.</TableHead>
-              <TableHead className="font-black border-r border-border/40 text-center w-16" rowSpan={2}>Niños</TableHead>
-              <TableHead className="font-black border-r border-border/40" rowSpan={2}>Domicilio / Referencia</TableHead>
+              <TableHead className="w-10 font-bold text-center border-r border-border/40" rowSpan={2}>#</TableHead>
+              <TableHead className="font-bold border-r border-border/40" rowSpan={2}>Nombre y Apellido</TableHead>
+              <TableHead className="font-bold border-r border-border/40 w-28" rowSpan={2}>DNI</TableHead>
+              <TableHead className="font-bold border-r border-border/40 text-center w-20" rowSpan={2}>G. Fam.</TableHead>
+              <TableHead className="font-bold border-r border-border/40 text-center w-16" rowSpan={2}>Niños</TableHead>
+              <TableHead className="font-bold border-r border-border/40" rowSpan={2}>Domicilio / Referencia</TableHead>
 
               {/* Subencabezados Elementos */}
-              <TableHead className="font-black text-center border-r border-border/40 bg-amber-500/10" colSpan={8}>
+              <TableHead className="font-bold text-center border-r border-border/40 bg-amber-500/10" colSpan={8}>
                 ELEMENTOS (Consideración profesional)
               </TableHead>
 
-              <TableHead className="font-black border-r border-border/40" rowSpan={2}>Observaciones / Contacto</TableHead>
-              <TableHead className="font-black text-center w-28" rowSpan={2}>Acciones</TableHead>
+              <TableHead className="font-bold border-r border-border/40" rowSpan={2}>Observaciones / Contacto</TableHead>
+              <TableHead className="font-bold text-center w-28" rowSpan={2}>Acciones</TableHead>
             </TableRow>
 
             <TableRow className="hover:bg-transparent bg-amber-500/5">
@@ -223,7 +223,7 @@ export function StormSheetTable({
             {filteredRecords.map((r, idx) => (
               <TableRow key={r.id || idx} className="hover:bg-muted/30 transition-colors">
                 <TableCell className="text-center font-bold border-r border-border/40">{idx + 1}</TableCell>
-                <TableCell className="font-black uppercase border-r border-border/40">{r.nombreApellido}</TableCell>
+                <TableCell className="font-bold uppercase border-r border-border/40">{r.nombreApellido}</TableCell>
                 <TableCell className="font-mono border-r border-border/40">{r.dni || "-"}</TableCell>
                 <TableCell className="text-center border-r border-border/40">
                   <Badge variant={r.grupoFamiliar ? "default" : "outline"} className="text-[10px]">
@@ -261,7 +261,7 @@ export function StormSheetTable({
                 <TableCell className="border-r border-border/40 text-[11px]">
                   {r.observaciones && <div>{r.observaciones}</div>}
                   {r.contacto && <div className="text-muted-foreground font-semibold">Tel: {r.contacto}</div>}
-                  <Badge variant="outline" className={`mt-1 text-[9px] font-black ${
+                  <Badge variant="outline" className={`mt-1 text-[9px] font-bold ${
                     r.prioridad === 'ALTA' ? 'bg-rose-500/10 text-rose-600 border-rose-500/30' : 'bg-amber-500/10 text-amber-600'
                   }`}>
                     {r.prioridad}
@@ -393,7 +393,7 @@ export function StormSheetTable({
                   onClick={handleFastAdd}
                   disabled={isAdding}
                   size="sm"
-                  className="h-8 rounded-lg font-black text-xs bg-primary text-primary-foreground px-3"
+                  className="h-8 rounded-lg font-bold text-xs bg-primary text-primary-foreground px-3"
                 >
                   <Plus className="h-3.5 w-3.5 mr-1" /> Cargar
                 </Button>

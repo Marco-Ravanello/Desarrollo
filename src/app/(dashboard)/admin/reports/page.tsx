@@ -13,6 +13,10 @@ import { Input } from "@/components/ui/input";
 import { UniversalExportMenu } from "@/components/ui/universal-export-menu";
 import { ReportTrendChart } from "./report-trend-chart";
 import { ExecutiveReportButton } from "./executive-report-button";
+import { PageHeader } from "@/components/layout/page-header";
+import { StatCard, type StatTone } from "@/components/ui/stat-card";
+import { EmptyMessage } from "@/components/ui/empty-message";
+import { BarChart3, Briefcase, FolderOpen, HandHeart, Wallet } from "lucide-react";
 
 const money = (n: number) => `$ ${n.toLocaleString("es-AR", { maximumFractionDigits: 0 })}`;
 const pct = (part: number, total: number) => (total > 0 ? `${((part / total) * 100).toLocaleString("es-AR", { maximumFractionDigits: 1 })}%` : "Sin presupuesto");
@@ -45,11 +49,11 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
   const periodLabel = `${shortDate(period.fromStr)} al ${shortDate(period.toStr)}`;
   const fileSuffix = `${period.fromStr}_${period.toStr}`;
 
-  const kpis = [
-    { label: "Expedientes nuevos", value: data.totals.cases.toLocaleString("es-AR"), hint: `${data.totals.urgent} urgentes` },
-    { label: "Intervenciones", value: data.totals.interventions.toLocaleString("es-AR") },
-    { label: "Órdenes de compra", value: data.totals.orders.toLocaleString("es-AR") },
-    { label: "Ejecutado", value: money(data.totals.executed), hint: "Órdenes aprobadas o cumplidas" },
+  const kpis: { label: string; value: string; hint?: string; icon: typeof FolderOpen; tone: StatTone }[] = [
+    { label: "Expedientes nuevos", value: data.totals.cases.toLocaleString("es-AR"), hint: `${data.totals.urgent} urgentes`, icon: FolderOpen, tone: "blue" },
+    { label: "Intervenciones", value: data.totals.interventions.toLocaleString("es-AR"), icon: HandHeart, tone: "orange" },
+    { label: "Órdenes de compra", value: data.totals.orders.toLocaleString("es-AR"), icon: Briefcase, tone: "purple" },
+    { label: "Ejecutado", value: money(data.totals.executed), hint: "Órdenes aprobadas o cumplidas", icon: Wallet, tone: "green" },
   ];
 
   const areaRows = data.areas.map((a) => ({
@@ -66,17 +70,16 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
   const orderRows = data.orderStatus.map((o) => ({ estado: getOrderStatusConfig(o.status).label, cantidad: o.count, monto: money(o.amount) }));
   const providerRows = data.topProviders.map((p) => ({ name: p.name, cuit: p.cuit || "Sin CUIT", orders: p.orders, executed: money(p.executed) }));
 
-  const empty = <p className="py-8 text-center text-sm text-muted-foreground">No hay registros en este período.</p>;
+  const empty = <EmptyMessage title="No hay registros en este período." />;
 
   return (
     <div className="space-y-6 max-w-6xl mx-auto">
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight text-foreground">Reportes</h2>
-          <p className="text-sm text-muted-foreground">Indicadores de gestión del {periodLabel}.</p>
-        </div>
-        <ExecutiveReportButton />
-      </div>
+      <PageHeader
+        title="Reportes"
+        description={<>Indicadores de gestión del {periodLabel}.</>}
+        icon={BarChart3}
+        actions={<ExecutiveReportButton />}
+      />
 
       <Card className="shadow-none">
         <CardContent className="pt-6 flex flex-col lg:flex-row lg:items-end gap-4">
@@ -101,15 +104,9 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         {kpis.map((k) => (
-          <Card key={k.label} className="shadow-none">
-            <CardContent className="pt-6">
-              <p className="text-xs text-muted-foreground">{k.label}</p>
-              <p className="text-2xl font-bold text-foreground mt-1">{k.value}</p>
-              {k.hint && <p className="text-xs text-muted-foreground mt-1">{k.hint}</p>}
-            </CardContent>
-          </Card>
+          <StatCard key={k.label} label={k.label} value={k.value} hint={k.hint} icon={k.icon} tone={k.tone} />
         ))}
       </div>
 

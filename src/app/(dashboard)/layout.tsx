@@ -33,7 +33,7 @@ export default function DashboardLayout({
           {/* Franja superior institucional Tres de Febrero */}
           <div className="h-1 w-full bg-gradient-to-r from-[#163C68] via-[#163C68] to-[#F69321] shrink-0 print:hidden" />
 
-          <header className="h-16 sticky top-0 z-40 border-b border-border/40 bg-card/80 backdrop-blur-md flex items-center justify-between px-4 sm:px-8 shadow-xs text-foreground print:hidden">
+          <header className="h-16 sticky top-0 z-40 border-b border-border/60 bg-card/85 backdrop-blur-md flex items-center justify-between px-4 sm:px-8 shadow-xs text-foreground print:hidden">
             <div className="flex items-center gap-2 sm:gap-3 min-w-0">
               {/* Botón menú responsive mobile */}
               <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
@@ -52,15 +52,13 @@ export default function DashboardLayout({
                 </SheetContent>
               </Sheet>
 
-              <div className="p-1.5 bg-primary/10 rounded-xl border border-primary/20 shrink-0 hidden sm:flex">
-                <MunicipalCrest className="h-5 w-5" />
-              </div>
+              <MunicipalCrest className="h-8 w-8 md:hidden" />
               <div className="min-w-0">
-                <h1 className="text-xs sm:text-sm font-black text-foreground uppercase tracking-wider truncate font-heading">
-                  Secretaría de Desarrollo Humano y Hábitat
-                </h1>
-                <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-widest truncate hidden md:block">
-                  Municipalidad de Tres de Febrero • Sistema Integrado de Gestión Pública
+                <p className="text-sm font-semibold text-foreground truncate font-heading">
+                  Desarrollo Humano y Hábitat
+                </p>
+                <p className="text-[11px] text-muted-foreground truncate hidden sm:block">
+                  Municipalidad de Tres de Febrero
                 </p>
               </div>
             </div>

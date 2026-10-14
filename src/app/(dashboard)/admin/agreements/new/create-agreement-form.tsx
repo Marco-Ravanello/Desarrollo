@@ -73,7 +73,7 @@ export function CreateAgreementForm({ areas }: { areas: any[] }) {
       </CardHeader>
       <CardContent className="space-y-8">
         <div className="bg-slate-50 dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800">
-           <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-3">Asistente de Carga (OCR)</h4>
+           <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-3">Asistente de Carga (OCR)</h4>
            <OCRScanner onScanComplete={handleScanComplete} />
         </div>
 

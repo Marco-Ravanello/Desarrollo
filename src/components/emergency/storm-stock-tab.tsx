@@ -125,9 +125,9 @@ export function StormStockTab({ stock, onRefresh }: StormStockTabProps) {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-card p-6 rounded-3xl border border-border/60 shadow-sm gap-4">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-card p-6 rounded-2xl border border-border/60 shadow-sm gap-4">
         <div>
-          <h3 className="text-base font-black text-foreground flex items-center gap-2">
+          <h3 className="text-base font-bold text-foreground flex items-center gap-2">
             <Package className="h-5 w-5 text-primary" />
             Balance Comparativo: Depósito vs. Demanda de Planilla
           </h3>
@@ -138,7 +138,7 @@ export function StormStockTab({ stock, onRefresh }: StormStockTabProps) {
         <div className="flex flex-wrap items-center gap-2 shrink-0">
           <Button
             onClick={() => setAddSupplyOpen(true)}
-            className="rounded-xl font-black text-xs bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm"
+            className="rounded-xl font-bold text-xs bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm"
           >
             <Plus className="mr-1.5 h-3.5 w-3.5" /> Agregar Insumo
           </Button>
@@ -163,11 +163,11 @@ export function StormStockTab({ stock, onRefresh }: StormStockTabProps) {
             const isEditingThisCard = editingCardId === item.id;
 
             return (
-              <Card key={item.id} className="rounded-3xl border-border/60 shadow-sm bg-card p-5 space-y-3">
+              <Card key={item.id} className="rounded-2xl border-border/60 shadow-sm bg-card p-5 space-y-3">
                 <div className="flex justify-between items-center">
                   <Badge
                     variant="outline"
-                    className={`text-[10px] font-black uppercase ${
+                    className={`text-[10px] font-bold uppercase ${
                       item.status === "CRITICO"
                         ? "bg-rose-500/10 text-rose-600 border-rose-500/30"
                         : "bg-emerald-500/10 text-emerald-600 border-emerald-500/30"
@@ -179,13 +179,13 @@ export function StormStockTab({ stock, onRefresh }: StormStockTabProps) {
                 </div>
 
                 <div>
-                  <h4 className="text-sm font-black text-foreground">{item.name}</h4>
+                  <h4 className="text-sm font-bold text-foreground">{item.name}</h4>
                   <p className="text-xs text-muted-foreground mt-0.5">{item.areaName}</p>
                 </div>
 
                 <div className="grid grid-cols-2 gap-2 pt-2 border-t border-border/40 text-xs">
                   <div>
-                    <span className="text-[10px] text-muted-foreground uppercase font-black">Stock Disponible</span>
+                    <span className="text-[10px] text-muted-foreground uppercase font-bold">Stock Disponible</span>
                     {isEditingThisCard ? (
                       <div className="flex items-center gap-1 mt-1">
                         <Input
@@ -193,16 +193,16 @@ export function StormStockTab({ stock, onRefresh }: StormStockTabProps) {
                           min="0"
                           value={editingStockVal}
                           onChange={(e) => setEditingStockVal(parseInt(e.target.value) || 0)}
-                          className="h-8 rounded-lg text-sm font-black w-20 px-2"
+                          className="h-8 rounded-lg text-sm font-bold w-20 px-2"
                         />
                       </div>
                     ) : (
-                      <p className="text-lg font-black text-foreground">{item.availableStock}</p>
+                      <p className="text-lg font-bold text-foreground">{item.availableStock}</p>
                     )}
                   </div>
                   <div>
-                    <span className="text-[10px] text-muted-foreground uppercase font-black">Requerido Planilla</span>
-                    <p className="text-lg font-black text-amber-600">{item.demandedQuantity}</p>
+                    <span className="text-[10px] text-muted-foreground uppercase font-bold">Requerido Planilla</span>
+                    <p className="text-lg font-bold text-amber-600">{item.demandedQuantity}</p>
                   </div>
                 </div>
 
@@ -248,9 +248,9 @@ export function StormStockTab({ stock, onRefresh }: StormStockTabProps) {
       </div>
 
       {/* INSUMOS GENERALES Y ADICIONALES (CHAPAS, TIRANTES, NYLON, BIDONES, ETC.) */}
-      <Card className="rounded-3xl border-border/60 shadow-sm bg-card p-6 space-y-4">
+      <Card className="rounded-2xl border-border/60 shadow-sm bg-card p-6 space-y-4">
         <div className="flex justify-between items-center">
-          <h4 className="text-sm font-black uppercase tracking-wider text-muted-foreground">
+          <h4 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">
             Otros Insumos Generales de Depósito y Materiales de Contingencia
           </h4>
           <Button
@@ -276,12 +276,12 @@ export function StormStockTab({ stock, onRefresh }: StormStockTabProps) {
                 >
                   <div className="flex justify-between items-start gap-2">
                     <div>
-                      <h5 className="text-xs font-black text-foreground">{item.name}</h5>
+                      <h5 className="text-xs font-bold text-foreground">{item.name}</h5>
                       <p className="text-[11px] text-muted-foreground mt-0.5">{item.description}</p>
                     </div>
                     <Badge
                       variant="outline"
-                      className={`text-[9px] font-black shrink-0 ${
+                      className={`text-[9px] font-bold shrink-0 ${
                         item.status === "CRITICO"
                           ? "bg-rose-500/10 text-rose-600 border-rose-500/30"
                           : "bg-emerald-500/10 text-emerald-600 border-emerald-500/30"
@@ -293,17 +293,17 @@ export function StormStockTab({ stock, onRefresh }: StormStockTabProps) {
 
                   <div className="flex items-center justify-between pt-2 border-t border-border/40">
                     <div>
-                      <span className="text-[10px] text-muted-foreground uppercase font-black">Disponible</span>
+                      <span className="text-[10px] text-muted-foreground uppercase font-bold">Disponible</span>
                       {isEditingThisCard ? (
                         <Input
                           type="number"
                           min="0"
                           value={editingStockVal}
                           onChange={(e) => setEditingStockVal(parseInt(e.target.value) || 0)}
-                          className="h-8 rounded-lg text-xs font-black w-20 px-2 mt-0.5"
+                          className="h-8 rounded-lg text-xs font-bold w-20 px-2 mt-0.5"
                         />
                       ) : (
-                        <p className="text-sm font-black text-foreground">
+                        <p className="text-sm font-bold text-foreground">
                           {item.availableStock} <span className="text-[10px] font-normal text-muted-foreground">{item.unit}</span>
                         </p>
                       )}
@@ -346,9 +346,9 @@ export function StormStockTab({ stock, onRefresh }: StormStockTabProps) {
 
       {/* MODAL CONFIGURACIÓN MASIVA DE STOCK EN DEPÓSITO */}
       <Dialog open={configOpen} onOpenChange={setConfigOpen}>
-        <DialogContent className="sm:max-w-md rounded-3xl p-6">
+        <DialogContent className="sm:max-w-md rounded-2xl p-6">
           <DialogHeader>
-            <DialogTitle className="text-lg font-black flex items-center gap-2">
+            <DialogTitle className="text-lg font-bold flex items-center gap-2">
               <Warehouse className="h-5 w-5 text-emerald-600" />
               Configuración de Stock Real en Depósito
             </DialogTitle>
@@ -415,9 +415,9 @@ export function StormStockTab({ stock, onRefresh }: StormStockTabProps) {
 
       {/* MODAL REGISTRO DE NUEVO INSUMO */}
       <Dialog open={addSupplyOpen} onOpenChange={setAddSupplyOpen}>
-        <DialogContent className="sm:max-w-md rounded-3xl p-6">
+        <DialogContent className="sm:max-w-md rounded-2xl p-6">
           <DialogHeader>
-            <DialogTitle className="text-base font-black flex items-center gap-2">
+            <DialogTitle className="text-base font-bold flex items-center gap-2">
               <Plus className="h-5 w-5 text-primary" />
               Agregar Nuevo Insumo de Contingencia
             </DialogTitle>

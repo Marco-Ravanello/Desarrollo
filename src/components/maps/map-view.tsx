@@ -127,7 +127,7 @@ export function MapView({
             <MapIcon className="h-4 w-4" />
           </div>
           <div className="pr-4">
-            <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground leading-none">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground leading-none">
               {localityName}
             </p>
             <p className="text-xs font-bold text-foreground mt-0.5">
@@ -150,7 +150,7 @@ export function MapView({
         <div className="bg-background/90 backdrop-blur-md p-3.5 rounded-2xl shadow-2xl border border-border/60 min-w-[240px]">
           <div className="flex items-center gap-2 mb-2">
             <Filter className="h-3.5 w-3.5 text-primary" />
-            <label className="text-[10px] font-black text-muted-foreground uppercase tracking-wider">
+            <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
               Filtrar por Área / Programa
             </label>
           </div>

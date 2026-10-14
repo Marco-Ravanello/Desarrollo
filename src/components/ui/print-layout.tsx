@@ -55,10 +55,10 @@ export function PrintHeader({
             <MunicipalCrest className="h-12 w-12 text-slate-900" forceDefault />
           </div>
           <div>
-            <p className="text-[10px] font-black tracking-[0.2em] uppercase text-slate-700">
+            <p className="text-[10px] font-bold tracking-[0.2em] uppercase text-slate-700">
               {settings.municipalityName.toUpperCase()} • {settings.provinceName.toUpperCase()}
             </p>
-            <h1 className="text-base font-black uppercase tracking-tight text-slate-900">
+            <h1 className="text-base font-bold uppercase tracking-tight text-slate-900">
               {settings.secretariatName}
             </h1>
             <p className="text-[11px] font-semibold text-slate-600">
@@ -81,7 +81,7 @@ export function PrintHeader({
         <div className="mt-4 pt-2 border-t border-slate-200 flex justify-between items-end">
           <div>
             {documentTitle && (
-              <h2 className="text-lg font-black uppercase tracking-tight text-slate-900">
+              <h2 className="text-lg font-bold uppercase tracking-tight text-slate-900">
                 {documentTitle}
               </h2>
             )}
@@ -127,12 +127,12 @@ export function PrintFooter() {
       <div className="grid grid-cols-2 gap-12 pt-8 pb-4">
         <div className="text-center space-y-1">
           <div className="border-t border-slate-400 w-48 mx-auto mb-1" />
-          <p className="text-xs font-black uppercase text-slate-900">Firma y Sello del Agente</p>
+          <p className="text-xs font-bold uppercase text-slate-900">Firma y Sello del Agente</p>
           <p className="text-[10px] text-slate-500">{settings.directionName}</p>
         </div>
         <div className="text-center space-y-1">
           <div className="border-t border-slate-400 w-48 mx-auto mb-1" />
-          <p className="text-xs font-black uppercase text-slate-900">Firma del Titular / Receptor</p>
+          <p className="text-xs font-bold uppercase text-slate-900">Firma del Titular / Receptor</p>
           <p className="text-[10px] text-slate-500">Conformidad de Trámite / Notificación</p>
         </div>
       </div>
@@ -156,7 +156,7 @@ export function PrintButton({
     <Button
       variant="outline"
       onClick={() => window.print()}
-      className={`print:hidden rounded-2xl h-11 px-5 font-bold text-xs border-border/60 hover:bg-accent shadow-xs flex items-center gap-2 ${className}`}
+      className={`print:hidden rounded-2xl h-11 px-5 font-bold text-xs border-border/60 hover:bg-muted shadow-xs flex items-center gap-2 ${className}`}
       title="Imprimir documento oficial en formato A4 (Ctrl + P)"
     >
       <Printer className="h-4 w-4 text-primary" />

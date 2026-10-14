@@ -86,22 +86,22 @@ export function RecordFulfillmentSheet({
 
         <form onSubmit={handleSubmit} className="space-y-6 py-6">
           <div className="space-y-1">
-            <Label className="text-xs uppercase font-bold text-slate-400">Renglón</Label>
-            <p className="font-medium text-slate-900 line-clamp-2">{item.description}</p>
+            <Label className="text-xs uppercase font-bold text-muted-foreground">Renglón</Label>
+            <p className="font-medium text-foreground line-clamp-2">{item.description}</p>
           </div>
 
-          <div className="grid grid-cols-3 gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-100">
+          <div className="grid grid-cols-3 gap-4 bg-muted/50 p-4 rounded-2xl border border-border/60">
             <div className="text-center">
-              <p className="text-[10px] uppercase font-bold text-slate-400">Total</p>
-              <p className="text-lg font-black">{item.quantity} <span className="text-[10px] text-slate-500 font-normal">{item.unitOfMeasure}</span></p>
+              <p className="text-[10px] uppercase font-bold text-muted-foreground">Total</p>
+              <p className="text-lg font-bold">{item.quantity} <span className="text-[10px] text-muted-foreground font-normal">{item.unitOfMeasure}</span></p>
             </div>
             <div className="text-center border-x">
-              <p className="text-[10px] uppercase font-bold text-slate-400">Recibido</p>
-              <p className="text-lg font-black text-blue-600">{item.fulfilledQuantity}</p>
+              <p className="text-[10px] uppercase font-bold text-muted-foreground">Recibido</p>
+              <p className="text-lg font-bold text-blue-600">{item.fulfilledQuantity}</p>
             </div>
             <div className="text-center">
-              <p className="text-[10px] uppercase font-bold text-slate-400">Pendiente</p>
-              <p className="text-lg font-black text-orange-600">{remaining}</p>
+              <p className="text-[10px] uppercase font-bold text-muted-foreground">Pendiente</p>
+              <p className="text-lg font-bold text-orange-600">{remaining}</p>
             </div>
           </div>
 
@@ -119,21 +119,21 @@ export function RecordFulfillmentSheet({
                   onChange={(e) => setNewFulfillment(e.target.value)}
                   className="pr-16 text-lg font-bold h-12"
                 />
-                <div className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 uppercase">
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-muted-foreground uppercase">
                   {item.unitOfMeasure}
                 </div>
               </div>
             </div>
 
             {parseFloat(newFulfillment) === remaining && (
-              <div className="flex items-center gap-2 text-blue-600 bg-blue-50 p-3 rounded-xl border border-blue-100 text-xs font-medium">
+              <div className="flex items-center gap-2 text-blue-600 bg-blue-500/10 p-3 rounded-xl border border-blue-500/30 text-xs font-medium">
                 <CheckCircle className="h-4 w-4 shrink-0" />
                 <span>Esta acción marcará el renglón como COMPLETADO.</span>
               </div>
             )}
 
             {parseFloat(newFulfillment) > remaining && (
-              <div className="flex items-center gap-2 text-red-600 bg-red-50 p-3 rounded-xl border border-red-100 text-xs font-medium">
+              <div className="flex items-center gap-2 text-red-600 bg-red-500/10 p-3 rounded-xl border border-red-500/30 text-xs font-medium">
                 <AlertTriangle className="h-4 w-4 shrink-0" />
                 <span>La cantidad no puede ser mayor al pendiente ({remaining}).</span>
               </div>

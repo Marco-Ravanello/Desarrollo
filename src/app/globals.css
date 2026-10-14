@@ -91,3 +91,54 @@
     background: #475569;
   }
 }
+
+/* Tablas como tarjetas en celulares (ver components/ui/table.tsx) */
+@media (max-width: 639px) {
+  .table-cards { overflow: visible; }
+  .table-cards > table,
+  .table-cards > table > tbody,
+  .table-cards > table > tbody > tr,
+  .table-cards > table > tbody > tr > td {
+    display: block;
+    width: 100%;
+  }
+  .table-cards > table > thead { display: none; }
+  .table-cards > table > tbody > tr {
+    margin: 0 0 0.75rem;
+    padding: 0.5rem 0.875rem;
+    border: 1px solid hsl(var(--border));
+    border-radius: 0.875rem;
+    background: hsl(var(--card));
+  }
+  .table-cards > table > tbody > tr:last-child { border: 1px solid hsl(var(--border)); margin-bottom: 0; }
+  .table-cards > table > tbody > tr > td {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.4rem 0 !important;
+    text-align: right;
+    border-bottom: 1px dashed hsl(var(--border) / 0.7);
+    min-width: 0 !important;
+    max-width: none !important;
+    white-space: normal;
+  }
+  .table-cards > table > tbody > tr > td:last-child { border-bottom: 0; }
+  .table-cards > table > tbody > tr > td.hidden { display: none; }
+  .table-cards > table > tbody > tr > td::before {
+    content: attr(data-label);
+    flex-shrink: 0;
+    max-width: 45%;
+    text-align: left;
+    font-family: var(--font-inter), sans-serif;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: hsl(var(--muted-foreground));
+  }
+  .table-cards > table > tbody > tr > td[data-label=""]::before,
+  .table-cards > table > tbody > tr > td:not([data-label])::before { display: none; }
+  .table-cards > table > tbody > tr > td[data-label=""] { justify-content: center; text-align: center; }
+  .table-cards > table > tbody > tr > td > * { min-width: 0; }
+}

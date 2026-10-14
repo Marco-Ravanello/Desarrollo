@@ -4,12 +4,13 @@ import { getTasks } from "@/services/system";
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { TaskList } from "./task-list";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
+import { PageHeader } from "@/components/layout/page-header";
+import { StatCard } from "@/components/ui/stat-card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import {
-  CheckCircle2, Clock, Calendar, AlertTriangle, ClipboardCheck, ArrowRight
+  CheckCircle2, Clock, Calendar, AlertTriangle, ArrowRight
 } from "lucide-react";
 import Link from "next/link";
 
@@ -35,26 +36,12 @@ export default async function TasksPage() {
 
   return (
     <div className="max-w-5xl mx-auto space-y-6 animate-in fade-in duration-500">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <div className="p-2.5 rounded-2xl bg-primary/10 text-primary border border-primary/20">
-              <ClipboardCheck className="h-6 w-6" />
-            </div>
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-black text-foreground tracking-tight flex items-center gap-2">
-                Mis Tareas & Pendientes
-                <Badge className="hidden sm:inline-flex bg-primary/20 text-primary border border-primary/30 text-[10px] font-bold uppercase py-0.5">
-                  Productividad Municipal
-                </Badge>
-              </h1>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                Panel de gestión personal de compromisos, trámites operativos y prioridades de trabajo.
-              </p>
-            </div>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
+      <PageHeader
+        title="Mis Tareas & Pendientes"
+        description="Panel de gestión personal de compromisos, trámites operativos y prioridades de trabajo."
+        icon={CheckCircle2}
+        badge="Productividad Municipal"
+        actions={
           <Button variant="outline" asChild className="rounded-xl border-border/60 text-xs font-bold gap-2">
             <Link href="/admin/calendar">
               <Calendar className="h-4 w-4 text-primary" />
@@ -62,55 +49,47 @@ export default async function TasksPage() {
               <ArrowRight className="h-3.5 w-3.5 text-muted-foreground ml-0.5" />
             </Link>
           </Button>
-        </div>
-      </div>
+        }
+      />
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Card className="bg-card text-card-foreground border border-border/60 rounded-3xl p-5 shadow-xs flex flex-col justify-between">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
+        <Card className="col-span-2 lg:col-span-1 bg-card text-card-foreground border border-border/60 rounded-2xl p-4 sm:p-5 shadow-sm flex flex-col justify-between">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-black uppercase tracking-wider text-muted-foreground">Progreso General</span>
+            <span className="text-xs font-medium text-muted-foreground sm:text-sm">Progreso General</span>
             <span className="text-xs font-bold font-mono text-primary">{progressPercentage}%</span>
           </div>
           <div className="my-3">
             <Progress value={progressPercentage} className="h-2 rounded-full" />
           </div>
-          <p className="text-[11px] text-muted-foreground font-medium">
+          <p className="text-xs text-muted-foreground">
             {completedTasks} de {totalTasks} tareas finalizadas
           </p>
         </Card>
 
-        <Card className="bg-card text-card-foreground border border-border/60 rounded-3xl p-5 shadow-xs flex items-center justify-between">
-          <div className="space-y-1">
-            <p className="text-[11px] font-black uppercase tracking-wider text-muted-foreground">Tareas Pendientes</p>
-            <h3 className="text-2xl font-black text-foreground">{pendingTasks.length}</h3>
-            {urgentOrOverdue.length > 0 ? (
-              <p className="text-[10px] font-bold text-amber-500 flex items-center gap-1">
+        <StatCard
+          label="Tareas Pendientes"
+          value={pendingTasks.length}
+          hint={
+            urgentOrOverdue.length > 0 ? (
+              <span className="font-bold text-amber-500 flex items-center gap-1">
                 <AlertTriangle className="h-3 w-3 shrink-0" />
                 {urgentOrOverdue.length} con prioridad o vencidas
-              </p>
+              </span>
             ) : (
-              <p className="text-[10px] text-muted-foreground font-medium">
-                Sin urgencias ni atrasos
-              </p>
-            )}
-          </div>
-          <div className="p-3 rounded-2xl bg-amber-500/10 text-amber-500">
-            <Clock className="h-6 w-6" />
-          </div>
-        </Card>
+              "Sin urgencias ni atrasos"
+            )
+          }
+          icon={Clock}
+          tone="orange"
+        />
 
-        <Card className="bg-card text-card-foreground border border-border/60 rounded-3xl p-5 shadow-xs flex items-center justify-between">
-          <div className="space-y-1">
-            <p className="text-[11px] font-black uppercase tracking-wider text-muted-foreground">Tareas Realizadas</p>
-            <h3 className="text-2xl font-black text-foreground">{completedTasks}</h3>
-            <p className="text-[10px] text-muted-foreground font-medium">
-              Completadas exitosamente
-            </p>
-          </div>
-          <div className="p-3 rounded-2xl bg-emerald-500/10 text-emerald-500">
-            <CheckCircle2 className="h-6 w-6" />
-          </div>
-        </Card>
+        <StatCard
+          label="Tareas Realizadas"
+          value={completedTasks}
+          hint="Completadas exitosamente"
+          icon={CheckCircle2}
+          tone="green"
+        />
       </div>
 
       <TaskList initialTasks={tasks as any} userId={session.user.id} />

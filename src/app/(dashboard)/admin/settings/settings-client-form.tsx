@@ -10,8 +10,9 @@ import { toast } from "sonner";
 import {
   Building2, Shield, Phone, Globe, MapPin, Save,
   RotateCcw, Database, Upload, Image as ImageIcon, Trash2, Link as LinkIcon,
-  FileText, ExternalLink
+  FileText, ExternalLink, Settings
 } from "lucide-react";
+import { PageHeader } from "@/components/layout/page-header";
 import { MunicipalCrest } from "@/components/ui/municipal-crest";
 import { MunicipalLetterhead } from "@/components/ui/municipal-letterhead";
 import { PrintButton } from "@/components/ui/print-layout";
@@ -105,16 +106,12 @@ export function MunicipalSettingsClient({
 
   return (
     <div className="space-y-6 pb-20 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-3xl sm:text-4xl font-black tracking-tight text-foreground">
-            Configuración Municipal
-          </h2>
-          <p className="text-muted-foreground text-sm sm:text-base mt-1">
-            Personalización de identidad institucional, logotipo/escudo, autoridades y contactos oficiales.
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
+      <PageHeader
+        title="Configuración Municipal"
+        description="Personalización de identidad institucional, logotipo/escudo, autoridades y contactos oficiales."
+        icon={Settings}
+        actions={
+          <>
           <Button
             variant="outline"
             onClick={handleReset}
@@ -130,8 +127,9 @@ export function MunicipalSettingsClient({
           >
             <Save className="mr-2 h-4 w-4" /> {loading ? "Guardando..." : "Guardar Cambios"}
           </Button>
-        </div>
-      </div>
+          </>
+        }
+      />
 
       <div className="flex flex-wrap items-center gap-2 p-1.5 bg-muted/40 rounded-2xl border border-border/50 max-w-2xl">
         <button
@@ -183,10 +181,10 @@ export function MunicipalSettingsClient({
       {activeTab === "identity" && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-in fade-in duration-300">
           <div className="lg:col-span-2 space-y-6">
-            <Card className="rounded-3xl border-border/60 shadow-sm bg-card p-6 space-y-5">
+            <Card className="rounded-2xl border-border/60 shadow-sm bg-card p-6 space-y-5">
               <div className="flex items-start justify-between">
                 <div>
-                  <h3 className="text-base font-black text-foreground flex items-center gap-2">
+                  <h3 className="text-base font-bold text-foreground flex items-center gap-2">
                     <ImageIcon className="h-4 w-4 text-primary" /> Escudo o Logotipo Municipal
                   </h3>
                   <p className="text-xs text-muted-foreground font-medium mt-0.5">
@@ -257,9 +255,9 @@ export function MunicipalSettingsClient({
               </div>
             </Card>
 
-            <Card className="rounded-3xl border-border/60 shadow-sm bg-card p-6 space-y-6">
+            <Card className="rounded-2xl border-border/60 shadow-sm bg-card p-6 space-y-6">
               <div>
-                <h3 className="text-base font-black text-foreground">Datos del Distrito y Dependencia</h3>
+                <h3 className="text-base font-bold text-foreground">Datos del Distrito y Dependencia</h3>
                 <p className="text-xs text-muted-foreground font-medium">
                   Esta información figurará en el encabezado oficial, login y documentos PDF descargables.
                 </p>
@@ -333,8 +331,8 @@ export function MunicipalSettingsClient({
           </div>
 
           <div className="space-y-4">
-            <h3 className="text-sm font-black text-foreground uppercase tracking-wider">Vista Previa Institucional</h3>
-            <Card className="rounded-3xl border-border/60 shadow-sm bg-muted/20 p-6 space-y-4 text-center sticky top-24">
+            <h3 className="text-sm font-bold text-foreground uppercase tracking-wider">Vista Previa Institucional</h3>
+            <Card className="rounded-2xl border-border/60 shadow-sm bg-muted/20 p-6 space-y-4 text-center sticky top-24">
               <div className="mx-auto p-3 bg-card rounded-2xl border border-border/80 w-24 h-24 flex items-center justify-center shadow-sm">
                 {settings.customLogoUrl ? (
                   <img
@@ -347,10 +345,10 @@ export function MunicipalSettingsClient({
                 )}
               </div>
               <div>
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">
+                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary">
                   {settings.provinceName}
                 </p>
-                <h4 className="text-lg font-black text-foreground tracking-tight mt-1">
+                <h4 className="text-lg font-bold text-foreground tracking-tight mt-1">
                   {settings.municipalityName}
                 </h4>
                 <p className="text-xs text-muted-foreground font-semibold mt-0.5">
@@ -374,9 +372,9 @@ export function MunicipalSettingsClient({
       )}
 
       {activeTab === "contact" && (
-        <Card className="rounded-3xl border-border/60 shadow-sm bg-card p-6 space-y-6 max-w-3xl animate-in fade-in duration-300">
+        <Card className="rounded-2xl border-border/60 shadow-sm bg-card p-6 space-y-6 max-w-3xl animate-in fade-in duration-300">
           <div>
-            <h3 className="text-base font-black text-foreground">Canales Oficiales y Mesa de Entradas</h3>
+            <h3 className="text-base font-bold text-foreground">Canales Oficiales y Mesa de Entradas</h3>
             <p className="text-xs text-muted-foreground font-medium">
               Teléfonos de contacto y sedes oficiales de la Municipalidad de Tres de Febrero.
             </p>
@@ -467,10 +465,10 @@ export function MunicipalSettingsClient({
       )}
 
       {activeTab === "preview" && (
-        <Card className="rounded-3xl border-border/60 shadow-sm bg-card p-6 sm:p-8 space-y-6 max-w-4xl animate-in fade-in duration-300">
+        <Card className="rounded-2xl border-border/60 shadow-sm bg-card p-6 sm:p-8 space-y-6 max-w-4xl animate-in fade-in duration-300">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border/40 pb-4">
             <div>
-              <h3 className="text-lg font-black text-foreground flex items-center gap-2">
+              <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
                 <FileText className="h-5 w-5 text-primary" /> Previsualización de Membrete Oficial
               </h3>
               <p className="text-xs text-muted-foreground mt-0.5">
@@ -480,7 +478,7 @@ export function MunicipalSettingsClient({
             <PrintButton label="Probar Impresión Oficial" />
           </div>
 
-          <div className="p-6 sm:p-8 rounded-3xl border border-border/60 bg-background shadow-inner space-y-6 relative overflow-hidden">
+          <div className="p-6 sm:p-8 rounded-2xl border border-border/60 bg-background shadow-inner space-y-6 relative overflow-hidden">
             <MunicipalLetterhead showWatermark={true} />
 
             <div className="space-y-4 py-4 text-xs leading-relaxed text-foreground/90">
@@ -496,11 +494,11 @@ export function MunicipalSettingsClient({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs pt-2">
                 <div className="p-3 rounded-xl bg-card border border-border/60 space-y-1">
                   <span className="text-[10px] uppercase font-bold text-muted-foreground">Intendente Municipal</span>
-                  <p className="font-black text-foreground">{settings.mayorName}</p>
+                  <p className="font-bold text-foreground">{settings.mayorName}</p>
                 </div>
                 <div className="p-3 rounded-xl bg-card border border-border/60 space-y-1">
                   <span className="text-[10px] uppercase font-bold text-muted-foreground">Secretaría General</span>
-                  <p className="font-black text-foreground">{settings.secretaryName}</p>
+                  <p className="font-bold text-foreground">{settings.secretaryName}</p>
                 </div>
               </div>
             </div>
@@ -508,12 +506,12 @@ export function MunicipalSettingsClient({
             <div className="pt-6 border-t border-border/60 grid grid-cols-2 gap-8 text-center text-xs">
               <div className="space-y-1">
                 <div className="border-t border-foreground/40 w-36 mx-auto mb-1" />
-                <p className="font-black uppercase text-[11px]">Firma Autorizada</p>
+                <p className="font-bold uppercase text-[11px]">Firma Autorizada</p>
                 <p className="text-[10px] text-muted-foreground">{settings.directionName}</p>
               </div>
               <div className="space-y-1">
                 <div className="border-t border-foreground/40 w-36 mx-auto mb-1" />
-                <p className="font-black uppercase text-[11px]">Sello de Mesa de Entradas</p>
+                <p className="font-bold uppercase text-[11px]">Sello de Mesa de Entradas</p>
                 <p className="text-[10px] text-muted-foreground">{settings.municipalityName}</p>
               </div>
             </div>
@@ -523,8 +521,8 @@ export function MunicipalSettingsClient({
 
       {activeTab === "security" && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in duration-300">
-          <Card className="rounded-3xl border-border/60 shadow-sm bg-card p-6 space-y-4">
-            <h3 className="text-base font-black text-foreground flex items-center gap-2">
+          <Card className="rounded-2xl border-border/60 shadow-sm bg-card p-6 space-y-4">
+            <h3 className="text-base font-bold text-foreground flex items-center gap-2">
               <Database className="h-5 w-5 text-emerald-500" /> Estado del Servidor y Base de Datos
             </h3>
             <div className="space-y-3 text-xs">
@@ -554,8 +552,8 @@ export function MunicipalSettingsClient({
             </div>
           </Card>
 
-          <Card className="rounded-3xl border-border/60 shadow-sm bg-card p-6 space-y-4">
-            <h3 className="text-base font-black text-foreground flex items-center gap-2">
+          <Card className="rounded-2xl border-border/60 shadow-sm bg-card p-6 space-y-4">
+            <h3 className="text-base font-bold text-foreground flex items-center gap-2">
               <Shield className="h-5 w-5 text-primary" /> Políticas de Privacidad y Parámetros
             </h3>
             <div className="space-y-3">

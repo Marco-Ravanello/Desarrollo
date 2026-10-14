@@ -8,9 +8,9 @@ import prisma from "@/lib/prisma";
 import { NewCaseForm } from "./new-case-form";
 import { FolderPlus, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { PageBreadcrumbs } from "@/components/layout/breadcrumbs-context";
+import { PageHeader } from "@/components/layout/page-header";
 
 export default async function NewCasePage({
   searchParams
@@ -54,28 +54,19 @@ export default async function NewCasePage({
     <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in duration-500 pb-20">
       <PageBreadcrumbs items={breadcrumbs} />
 
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
+      <PageHeader
+        title="Creación Centralizada de Expediente"
+        description="Registro asistido de actuaciones sociales, asignación de área y carátula oficial."
+        icon={FolderPlus}
+        badge="Nuevo Legajo 3F"
+        actions={
           <Button variant="ghost" size="icon" asChild className="rounded-xl h-10 w-10 shrink-0">
-            <Link href="/areas/social">
+            <Link href="/areas/social" aria-label="Volver">
               <ArrowLeft className="h-5 w-5 text-muted-foreground" />
             </Link>
           </Button>
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-2xl sm:text-3xl font-black text-foreground tracking-tight">
-                Creación Centralizada de Expediente
-              </h1>
-              <Badge className="hidden sm:inline-flex bg-primary/20 text-primary border border-primary/30 text-[10px] font-bold uppercase py-0.5">
-                Nuevo Legajo 3F
-              </Badge>
-            </div>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              Registro asistido de actuaciones sociales, asignación de área y carátula oficial.
-            </p>
-          </div>
-        </div>
-      </div>
+        }
+      />
 
       <NewCaseForm
         areas={areas as any}

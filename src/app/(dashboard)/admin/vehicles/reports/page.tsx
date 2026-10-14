@@ -2,7 +2,8 @@ export const dynamic = "force-dynamic";
 import { getVehicles } from "@/services/admin";
 import { FuelReportView } from "./report-view";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Fuel } from "lucide-react";
+import { PageHeader } from "@/components/layout/page-header";
 import Link from "next/link";
 
 export default async function ReportsPage() {
@@ -10,15 +11,17 @@ export default async function ReportsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4 print:hidden">
-        <Button variant="ghost" size="icon" asChild>
-          <Link href="/admin/vehicles"><ArrowLeft className="h-4 w-4" /></Link>
-        </Button>
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight">Reportes de Combustible</h2>
-          <p className="text-slate-500 text-sm">Resumen mensual de gastos por vehículo.</p>
-        </div>
-      </div>
+      <PageHeader
+        className="print:hidden"
+        title="Reportes de Combustible"
+        description="Resumen mensual de gastos por vehículo."
+        icon={Fuel}
+        actions={
+          <Button variant="ghost" size="icon" asChild>
+            <Link href="/admin/vehicles"><ArrowLeft className="h-4 w-4" /></Link>
+          </Button>
+        }
+      />
 
       <FuelReportView vehicles={vehicles} />
     </div>

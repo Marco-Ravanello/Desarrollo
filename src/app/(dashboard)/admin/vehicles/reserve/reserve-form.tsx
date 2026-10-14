@@ -75,9 +75,9 @@ export function ReserveVehicleForm({ vehicleId, vehicles }: { vehicleId: string,
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
       <div className="lg:col-span-2">
-        <Card className="bg-card text-card-foreground shadow-xs border border-border/60 rounded-3xl overflow-hidden">
+        <Card className="bg-card text-card-foreground shadow-xs border border-border/60 rounded-2xl overflow-hidden">
           <CardHeader className="bg-muted/20 border-b border-border/40 p-6">
-            <CardTitle className="text-2xl font-black text-foreground">Solicitar Vehículo</CardTitle>
+            <CardTitle className="text-2xl font-bold text-foreground">Solicitar Vehículo</CardTitle>
             <CardDescription className="text-muted-foreground text-xs font-medium">
               Complete los datos para que el área de Logística apruebe su solicitud de traslado.
             </CardDescription>
@@ -192,13 +192,13 @@ export function ReserveVehicleForm({ vehicleId, vehicles }: { vehicleId: string,
       </div>
 
       <div className="lg:col-span-1 space-y-4">
-        <Card className="bg-card text-card-foreground shadow-xs border border-border/60 rounded-3xl p-6 space-y-4">
+        <Card className="bg-card text-card-foreground shadow-xs border border-border/60 rounded-2xl p-6 space-y-4">
           <div className="flex items-center gap-2 border-b border-border/40 pb-3">
             <div className="p-2 bg-primary/10 text-primary rounded-xl">
               <Calendar className="h-5 w-5" />
             </div>
             <div>
-              <h3 className="text-xs font-black uppercase tracking-wider text-foreground">Horarios Ocupados</h3>
+              <h3 className="text-xs font-bold uppercase tracking-wider text-foreground">Horarios Ocupados</h3>
               <p className="text-[10px] text-muted-foreground">Reservas activas para la unidad elegida</p>
             </div>
           </div>
@@ -206,7 +206,7 @@ export function ReserveVehicleForm({ vehicleId, vehicles }: { vehicleId: string,
           {selectedVehicle ? (
             <div className="space-y-3">
               <div className="p-3 rounded-2xl bg-muted/40 border border-border/40 space-y-1">
-                <p className="text-xs font-black text-foreground">{selectedVehicle.brand} {selectedVehicle.model}</p>
+                <p className="text-xs font-bold text-foreground">{selectedVehicle.brand} {selectedVehicle.model}</p>
                 <Badge variant="outline" className="font-mono text-[10px] font-bold uppercase text-foreground border-border">{selectedVehicle.plate}</Badge>
               </div>
 
@@ -237,7 +237,7 @@ export function ReserveVehicleForm({ vehicleId, vehicles }: { vehicleId: string,
                             <Clock className="h-3 w-3" />
                             {isOngoing ? "En Curso" : isApproved ? "Aprobada" : "Pendiente"}
                           </span>
-                          <Badge variant="secondary" className="text-[9px] font-black uppercase">
+                          <Badge variant="secondary" className="text-[9px] font-bold uppercase">
                             {r.status}
                           </Badge>
                         </div>

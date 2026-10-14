@@ -656,7 +656,7 @@ export async function getPeopleStats() {
           maxLocName = loc.name.replace(/\(.*?\)/g, "").trim();
         }
       }
-      topArea = maxLocName || (total > 0 ? "Caseros" : "Sin datos");
+      topArea = maxLocName || "Sin datos";
     }
     return {
       total,
