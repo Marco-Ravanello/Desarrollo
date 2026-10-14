@@ -161,7 +161,7 @@ export function ReserveVehicleForm({ vehicleId, vehicles }: { vehicleId: string,
                 <Input
                   id="reason"
                   name="reason"
-                  placeholder="Ej: Traslado de insumos a Centro de Evacuados B° San Martín"
+                  placeholder="Ej: Traslado de insumos de emergencia a B° San Martín"
                   required
                   className="rounded-xl bg-background text-foreground border-border/60 text-xs"
                 />

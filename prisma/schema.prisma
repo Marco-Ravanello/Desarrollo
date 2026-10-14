@@ -466,19 +466,6 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
-model Shelter {
-  id               String   @id @default(cuid())
-  name             String
-  address          String
-  coordinator      String
-  capacity         Int      @default(50)
-  occupied         Int      @default(0)
-  rationsDelivered Int      @default(0)
-  status           String   @default("HABILITADO")
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-}
-
 model SystemSetting {
   key       String   @id
   value     String   @db.Text
@@ -590,10 +577,29 @@ model StormVictimRecord {
   // Identificador que genera el teléfono o la compu al guardar; evita duplicar
   // una ficha cargada sin conexión si se envía dos veces.
   clientId                String?              @unique
+  entregas                StormDelivery[]
   createdAt               DateTime             @default(now())
   updatedAt               DateTime             @updatedAt
 
   @@index([dni])
   @@index([sheetId])
   @@index([createdById])
+}
+
+// Entrega de elementos de una ficha de tormenta (puede haber varias entregas parciales).
+// Cada entrega descuenta del stock del depósito.
+model StormDelivery {
+  id            String            @id @default(cuid())
+  recordId      String
+  record        StormVictimRecord @relation(fields: [recordId], references: [id], onDelete: Cascade)
+  colchones     Int               @default(0)
+  camas         Int               @default(0)
+  cuchetas      Int               @default(0)
+  frazadas      Int               @default(0)
+  observaciones String?
+  userId        String?
+  userName      String
+  createdAt     DateTime          @default(now())
+
+  @@index([recordId])
 }

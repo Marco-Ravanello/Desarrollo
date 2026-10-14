@@ -7,13 +7,17 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   FileSpreadsheet, FileText, Package, Plus,
-  Download, RefreshCw, UserCheck, ShieldAlert, Users, Baby, CloudRain
+  Download, RefreshCw, UserCheck, ShieldAlert, Users, Baby, CloudRain, BarChart3, PackageCheck
 } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
 import { StatCard } from "@/components/ui/stat-card";
 import { StormSheetTable } from "@/components/emergency/storm-sheet-table";
 import { StormFichaDialog } from "@/components/emergency/storm-ficha-dialog";
 import { StormStockTab } from "@/components/emergency/storm-stock-tab";
+import { StormSummaryTab } from "@/components/emergency/storm-summary-tab";
+import { StormDeliveryDialog } from "@/components/emergency/storm-delivery-dialog";
+import { DeliveryBadge } from "@/components/emergency/storm-sheet-table";
+import { deliveryStatus } from "@/lib/emergency-categories";
 import { OfflineFichasPanel, useOfflineFichas } from "@/components/emergency/offline-fichas-panel";
 import { exportStormSheetToExcel } from "@/lib/export-storm-excel";
 import { useRouter } from "next/navigation";
@@ -48,7 +52,8 @@ function useCacheForOffline() {
 
 export function EmergencyView({ initialData, deniedAccess }: EmergencyViewProps) {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<"sheet" | "fichas" | "stock">("sheet");
+  const [activeTab, setActiveTab] = useState<"sheet" | "fichas" | "summary" | "stock">("sheet");
+  const [deliveryRecord, setDeliveryRecord] = useState<StormVictimItem | null>(null);
   const [isFichaOpen, setIsFichaOpen] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<StormVictimItem | null>(null);
 
@@ -208,8 +213,8 @@ export function EmergencyView({ initialData, deniedAccess }: EmergencyViewProps)
         </div>
       )}
 
-      {/* Navegación por 3 Pestañas Principal */}
-      <div className="flex items-center gap-2 p-1.5 bg-muted/40 rounded-2xl border border-border/50 max-w-2xl">
+      {/* Navegación por pestañas */}
+      <div className="flex items-center gap-2 p-1.5 bg-muted/40 rounded-2xl border border-border/50 max-w-3xl overflow-x-auto">
         <button
           onClick={() => setActiveTab("sheet")}
           className={`flex items-center gap-2 py-2.5 px-4 rounded-xl text-xs font-bold transition-all shrink-0 ${
@@ -233,6 +238,18 @@ export function EmergencyView({ initialData, deniedAccess }: EmergencyViewProps)
           <FileText className="h-4 w-4" />
           <span>Fichas Tormenta</span>
         </button>
+
+        {!surveyor && <button
+          onClick={() => setActiveTab("summary")}
+          className={`flex items-center gap-2 py-2.5 px-4 rounded-xl text-xs font-bold transition-all shrink-0 ${
+            activeTab === "summary"
+              ? "bg-primary text-primary-foreground shadow-sm"
+              : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <BarChart3 className="h-4 w-4" />
+          <span>Resumen y entregas</span>
+        </button>}
 
         {viewer.canViewStock && <button
           onClick={() => setActiveTab("stock")}
@@ -258,6 +275,7 @@ export function EmergencyView({ initialData, deniedAccess }: EmergencyViewProps)
             onRefresh={handleRefresh}
             userId={operator.userId}
             canEdit={viewer.canEdit}
+            onDeliver={viewer.canDeliver ? setDeliveryRecord : undefined}
           />
         </div>
       )}
@@ -303,7 +321,17 @@ export function EmergencyView({ initialData, deniedAccess }: EmergencyViewProps)
                     {r.cantidadCucheta > 0 && <Badge variant="secondary" className="text-[9px]">{r.cantidadCucheta} Cuchetas</Badge>}
                     {r.cantidadFrazada > 0 && <Badge variant="secondary" className="text-[9px]">{r.cantidadFrazada} Frazadas</Badge>}
                   </div>
+                  <DeliveryBadge record={r} />
                 </div>
+
+                {viewer.canDeliver && r.fromTable && ["PENDIENTE", "PARCIAL"].includes(deliveryStatus(r)) && (
+                  <Button
+                    onClick={() => setDeliveryRecord(r)}
+                    className="w-full rounded-xl text-xs font-bold h-9 bg-emerald-600 hover:bg-emerald-700 text-white"
+                  >
+                    <PackageCheck className="mr-2 h-3.5 w-3.5" /> Registrar entrega
+                  </Button>
+                )}
 
                 <Button
                   onClick={() => handleOpenEditFicha(r)}
@@ -318,7 +346,14 @@ export function EmergencyView({ initialData, deniedAccess }: EmergencyViewProps)
         </div>
       )}
 
-      {/* Pestaña 3: Stock de Contingencia */}
+      {/* Resumen para la conducción y entregas pendientes */}
+      {activeTab === "summary" && !surveyor && (
+        <div className="animate-in fade-in duration-300">
+          <StormSummaryTab records={records} stock={stock} onDeliver={viewer.canDeliver ? setDeliveryRecord : undefined} />
+        </div>
+      )}
+
+      {/* Stock de Contingencia */}
       {activeTab === "stock" && viewer.canViewStock && (
         <div className="animate-in fade-in duration-300">
           <StormStockTab stock={stock} onRefresh={handleRefresh} />
@@ -335,6 +370,13 @@ export function EmergencyView({ initialData, deniedAccess }: EmergencyViewProps)
         onSaved={handleRefresh}
         userId={operator.userId}
         canEdit={viewer.canEdit}
+      />
+
+      <StormDeliveryDialog
+        record={deliveryRecord}
+        stock={stock}
+        onOpenChange={(open) => !open && setDeliveryRecord(null)}
+        onDelivered={() => router.refresh()}
       />
     </div>
   );

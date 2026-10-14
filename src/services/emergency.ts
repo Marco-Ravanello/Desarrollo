@@ -1,6 +1,10 @@
 import { prisma } from "@/lib/prisma";
 import { canEditSocialRecords, canManageEmergencyStock, isEmergencySurveyor } from "@/lib/permissions";
-import { stormRecordOmit } from "@/services/emergency-db-status";
+import { isDeliveryTableReady, stormRecordOmit } from "@/services/emergency-db-status";
+import { EMERGENCY_CATEGORIES, EmergencyCategoryKey, findCategorySupply, pendingByCategory } from "@/lib/emergency-categories";
+
+export { EMERGENCY_CATEGORIES, findCategorySupply, pendingByCategory };
+export type { EmergencyCategoryKey };
 import {
   EmergencyPriority,
   EmergencyOperatorInfo,
@@ -53,12 +57,12 @@ export async function getEmergencyStock(): Promise<EmergencyStockItem[]> {
 
     const records = await getStormVictimRecords();
 
-    const demandMap = {
-      COLCHON: records.reduce((acc, r) => acc + (r.cantidadColchon || 0), 0),
-      CAMA: records.reduce((acc, r) => acc + (r.cantidadCama || 0), 0),
-      CUCHETA: records.reduce((acc, r) => acc + (r.cantidadCucheta || 0), 0),
-      FRAZADA: records.reduce((acc, r) => acc + (r.cantidadFrazada || 0), 0),
-    };
+    // Demanda = lo que falta entregar de las fichas.
+    const demandMap: Record<EmergencyCategoryKey, number> = { COLCHON: 0, CAMA: 0, CUCHETA: 0, FRAZADA: 0 };
+    for (const r of records) {
+      const pending = pendingByCategory(r);
+      for (const key of Object.keys(demandMap) as EmergencyCategoryKey[]) demandMap[key] += pending[key];
+    }
 
     const categorizedItems: EmergencyStockItem[] = [];
 
@@ -74,21 +78,16 @@ export async function getEmergencyStock(): Promise<EmergencyStockItem[]> {
       console.warn("Could not read stock overrides setting:", e);
     }
 
-    const keyCategories: Array<{ key: "COLCHON" | "CAMA" | "CUCHETA" | "FRAZADA"; searchNames: string[]; defaultName: string; unit: string; minStock: number }> = [
-      { key: "COLCHON", searchNames: ["colchon", "colchón"], defaultName: "Colchones de Contingencia (1 plaza)", unit: "Unidades", minStock: 20 },
-      { key: "CAMA", searchNames: ["cama"], defaultName: "Camas / Elasticos de Emergencia", unit: "Unidades", minStock: 10 },
-      { key: "CUCHETA", searchNames: ["cucheta"], defaultName: "Cuchetas Superpuestas Reforzadas", unit: "Unidades", minStock: 10 },
-      { key: "FRAZADA", searchNames: ["frazada", "manta"], defaultName: "Frazadas Térmicas Antialérgicas", unit: "Unidades", minStock: 30 },
-    ];
+    for (const cat of EMERGENCY_CATEGORIES) {
+      const match = findCategorySupply(supplies, cat.key);
 
-    for (const cat of keyCategories) {
-      const match = supplies.find(s => cat.searchNames.some(sn => s.name.toLowerCase().includes(sn)));
-
+      // El stock real es el del insumo del depósito (lo que descuentan las entregas).
+      // El ajuste manual guardado aparte solo se usa si todavía no existe el insumo.
       let available = 0;
-      if (overrides[cat.key] !== undefined) {
-        available = Number(overrides[cat.key]) || 0;
-      } else if (match) {
+      if (match) {
         available = match.stock;
+      } else if (overrides[cat.key] !== undefined) {
+        available = Number(overrides[cat.key]) || 0;
       }
 
       const minStock = match ? match.minStock : cat.minStock;
@@ -195,13 +194,17 @@ export async function getStormVictimRecords(): Promise<StormVictimItem[]> {
 
   // 1. Cargar desde StormVictimRecord si existe la tabla
   try {
+    const withDeliveries = await isDeliveryTableReady();
     const records = await prisma.stormVictimRecord.findMany({
       orderBy: { createdAt: "desc" },
       omit: await stormRecordOmit(),
+      include: withDeliveries ? { entregas: true } : undefined,
     });
 
     for (const r of records) {
       const item: StormVictimItem = {
+        ...deliveryTotals((r as any).entregas),
+        fromTable: true,
         id: r.id,
         itemNumber: r.itemNumber,
         personId: r.personId,
@@ -346,14 +349,30 @@ export async function getStormVictimRecords(): Promise<StormVictimItem[]> {
   return Array.from(mergedMap.values());
 }
 
+/** Totales entregados de una ficha a partir de sus entregas. */
+function deliveryTotals(entregas?: { colchones: number; camas: number; cuchetas: number; frazadas: number; createdAt: Date }[]) {
+  if (!entregas?.length) return { entregadoColchon: 0, entregadoCama: 0, entregadoCucheta: 0, entregadoFrazada: 0, ultimaEntrega: null };
+  return {
+    entregadoColchon: entregas.reduce((a, e) => a + e.colchones, 0),
+    entregadoCama: entregas.reduce((a, e) => a + e.camas, 0),
+    entregadoCucheta: entregas.reduce((a, e) => a + e.cuchetas, 0),
+    entregadoFrazada: entregas.reduce((a, e) => a + e.frazadas, 0),
+    ultimaEntrega: entregas.reduce((last, e) => (e.createdAt > last ? e.createdAt : last), entregas[0].createdAt),
+  };
+}
+
 /** Fichas cargadas por un usuario (lo único que ve el relevador de emergencia). */
 export async function getStormVictimRecordsByUser(userId: string): Promise<StormVictimItem[]> {
+  const withDeliveries = await isDeliveryTableReady();
   const records = await prisma.stormVictimRecord.findMany({
     where: { createdById: userId },
     orderBy: { createdAt: "desc" },
+    include: withDeliveries ? { entregas: true } : undefined,
   });
-  return records.map((r) => ({
+  return records.map(({ entregas, ...r }: any) => ({
     ...r,
+    ...deliveryTotals(entregas),
+    fromTable: true,
     prioridad: (r.prioridad as EmergencyPriority) || "MEDIA",
   }));
 }
@@ -380,6 +399,7 @@ export async function getEmergencyOperationsData(sessionUser: any): Promise<Emer
     viewer: {
       onlyOwnRecords: surveyor,
       canViewStock: canManageEmergencyStock(sessionUser?.role),
+      canDeliver: canManageEmergencyStock(sessionUser?.role),
       canEdit: canEditSocialRecords(sessionUser?.role),
     },
     stock,

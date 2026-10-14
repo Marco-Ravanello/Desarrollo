@@ -26,6 +26,9 @@ npx prisma db execute --file prisma/migrations/20261014000000_add_emergency_surv
 ```
 (con `DATABASE_URL` apuntando a esa base), o pegando el contenido del archivo en la consola SQL del proveedor de la base. Mientras no se aplique, la app sigue funcionando como antes, pero no deja asignar el rol nuevo.
 
+### Entregas de emergencia y refugios (octubre 2026)
+`prisma/migrations/20261014100000_storm_deliveries/migration.sql` crea la tabla de entregas de las fichas de tormenta (`StormDelivery`) y borra la tabla `Shelter` (refugios), que ya no se usa. También se puede correr más de una vez. Mientras no se aplique, la app funciona pero no deja registrar entregas.
+
 ## Modo sin conexión (Emergencia Climática)
 `public/sw.js` guarda en el dispositivo la pantalla `/admin/emergency` y sus archivos (solo en producción). Las fichas cargadas sin internet quedan en el navegador (`src/lib/emergency-offline.ts`) y se envían a `/api/emergency/fichas` cuando vuelve la conexión; cada una lleva un `clientId`, así que reenviarla no la duplica. Al cerrar sesión se borra la pantalla guardada, pero no las fichas pendientes de envío.
 

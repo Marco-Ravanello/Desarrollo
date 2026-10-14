@@ -36,3 +36,21 @@ export const EMERGENCY_DB_PENDING_MESSAGE =
 export async function stormRecordOmit() {
   return (await isEmergencyDbUpdated()) ? undefined : { createdById: true, clientId: true } as const;
 }
+
+let deliveriesReady = false;
+
+/** ¿Existe la tabla de entregas de fichas (StormDelivery)? (solo lectura) */
+export async function isDeliveryTableReady(): Promise<boolean> {
+  if (deliveriesReady) return true;
+  try {
+    const rows = await prisma.$queryRawUnsafe<{ t: string | null }[]>(`SELECT to_regclass('"StormDelivery"')::text AS t`);
+    deliveriesReady = Boolean(rows[0]?.t);
+    return deliveriesReady;
+  } catch (err) {
+    console.error("No se pudo revisar si existe la tabla de entregas:", err);
+    return false;
+  }
+}
+
+export const DELIVERY_DB_PENDING_MESSAGE =
+  "Falta actualizar la base de datos para registrar entregas. Pedile al equipo de sistemas que aplique la actualización.";

@@ -3,7 +3,15 @@
 import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
-import { searchPeopleForEmergency, getStormVictimRecords } from "@/services/emergency";
+import {
+  searchPeopleForEmergency,
+  getStormVictimRecords,
+  EMERGENCY_CATEGORIES,
+  EmergencyCategoryKey,
+  findCategorySupply,
+} from "@/services/emergency";
+import { quantityText } from "@/lib/emergency-categories";
+import { DELIVERY_DB_PENDING_MESSAGE, isDeliveryTableReady, stormRecordOmit } from "@/services/emergency-db-status";
 import { saveStormVictimRecord } from "@/services/emergency-save";
 import { StormVictimItem } from "@/types/emergency";
 import { actionErrorMessage } from "@/lib/action-error";
@@ -314,21 +322,8 @@ export async function dispatchEmergencyStockAction(
     let item = await prisma.supplyItem.findUnique({ where: { id: supplyId } });
 
     if (!item) {
-      let itemName = "Insumo de Contingencia";
-      if (supplyId.includes("colchon")) itemName = "Colchones de Contingencia (1 plaza)";
-      else if (supplyId.includes("cama")) itemName = "Camas / Elásticos de Emergencia";
-      else if (supplyId.includes("cucheta")) itemName = "Cuchetas Superpuestas Reforzadas";
-      else if (supplyId.includes("frazada")) itemName = "Frazadas Térmicas Antialérgicas";
-
-      item = await prisma.supplyItem.create({
-        data: {
-          id: supplyId,
-          name: itemName,
-          description: "Mobiliario e insumos de emergencia climática",
-          stock: 100,
-          minStock: 20,
-        },
-      });
+      // Sin insumo cargado no hay de dónde despachar (no se inventa stock).
+      return { success: false, error: "Ese insumo no tiene stock cargado. Cargá primero la cantidad disponible." };
     }
 
     if (item.stock < quantity) {
@@ -406,5 +401,151 @@ export async function toggleEmergencyStatusAction(active: boolean) {
     return { success: true, active };
   } catch (err: any) {
     return { success: false, error: actionErrorMessage(err, "No se pudo actualizar estado de emergencia") };
+  }
+}
+
+/** Error con un mensaje pensado para mostrar tal cual. */
+class DeliveryError extends Error {}
+
+export type DeliveryQuantities = Partial<Record<EmergencyCategoryKey, number>>;
+
+/**
+ * Registra una entrega de elementos de una ficha de tormenta: descuenta del
+ * stock del depósito, deja constancia en la ficha y en su expediente. Puede
+ * ser parcial (lo que falta queda pendiente).
+ */
+export async function deliverStormItemsAction(recordId: string, quantities: DeliveryQuantities, observaciones?: string) {
+  const session = await auth();
+  if (!session?.user?.id) return { success: false, error: "No tenés permiso para hacer esto o tu sesión expiró. Si sigue pasando, volvé a iniciar sesión." };
+  if (!canManageEmergencyStock(session.user.role)) return { success: false, error: "Tu usuario no puede registrar entregas." };
+  if (!(await isDeliveryTableReady())) return { success: false, error: DELIVERY_DB_PENDING_MESSAGE };
+
+  const qty = Object.fromEntries(
+    EMERGENCY_CATEGORIES.map((c) => [c.key, Math.max(0, Math.floor(Number(quantities?.[c.key]) || 0))])
+  ) as Record<EmergencyCategoryKey, number>;
+  if (Object.values(qty).every((q) => q === 0)) {
+    return { success: false, error: "Indicá al menos un elemento entregado." };
+  }
+
+  const userId = session.user.id;
+  const userName = session.user.name || session.user.email || "Usuario";
+
+  try {
+    const omit = await stormRecordOmit();
+    const result = await prisma.$transaction(async (tx) => {
+      const record = await tx.stormVictimRecord.findUnique({ where: { id: recordId }, include: { entregas: true }, omit });
+      if (!record) throw new DeliveryError("Esta ficha es de un respaldo anterior y no admite entregas.");
+
+      const delivered = {
+        COLCHON: record.entregas.reduce((a, e) => a + e.colchones, 0),
+        CAMA: record.entregas.reduce((a, e) => a + e.camas, 0),
+        CUCHETA: record.entregas.reduce((a, e) => a + e.cuchetas, 0),
+        FRAZADA: record.entregas.reduce((a, e) => a + e.frazadas, 0),
+      };
+      const requested = {
+        COLCHON: record.cantidadColchon,
+        CAMA: record.cantidadCama,
+        CUCHETA: record.cantidadCucheta,
+        FRAZADA: record.cantidadFrazada,
+      };
+
+      const supplies = await tx.supplyItem.findMany();
+      let overrides: Record<string, number> = {};
+      try {
+        const setting = await tx.systemSetting.findUnique({ where: { key: "muni-emergency-stock-overrides" } });
+        if (setting?.value) overrides = JSON.parse(setting.value);
+      } catch {}
+
+      for (const cat of EMERGENCY_CATEGORIES) {
+        const q = qty[cat.key];
+        if (q === 0) continue;
+        const pending = Math.max(0, requested[cat.key] - delivered[cat.key]);
+        if (q > pending) {
+          throw new DeliveryError(
+            pending === 0
+              ? `En esta ficha no quedan ${cat.label} por entregar`
+              : `En esta ficha quedan ${pending} ${cat.label} por entregar, no ${q}`
+          );
+        }
+
+        let item = findCategorySupply(supplies, cat.key);
+        if (!item && overrides[cat.key] !== undefined) {
+          // El stock se había cargado a mano antes de existir el insumo: se crea con esa cantidad.
+          item = await tx.supplyItem.create({
+            data: { name: cat.defaultName, description: "Stock de contingencia", stock: Number(overrides[cat.key]) || 0, minStock: cat.minStock },
+          });
+          supplies.push(item);
+        }
+        if (!item) throw new DeliveryError(`No hay stock de ${cat.label} cargado en el depósito de contingencia`);
+
+        const updated = await tx.supplyItem.updateMany({
+          where: { id: item.id, stock: { gte: q } },
+          data: { stock: { decrement: q } },
+        });
+        if (updated.count === 0) {
+          const fresh = await tx.supplyItem.findUnique({ where: { id: item.id } });
+          throw new DeliveryError(`No alcanza el stock de ${cat.label}: quedan ${fresh?.stock ?? 0}`);
+        }
+        await tx.supplyRequest.create({ data: { supplyId: item.id, quantity: q, userId, status: "ENTREGADO" } });
+      }
+
+      await tx.stormDelivery.create({
+        data: {
+          recordId,
+          colchones: qty.COLCHON,
+          camas: qty.CAMA,
+          cuchetas: qty.CUCHETA,
+          frazadas: qty.FRAZADA,
+          observaciones: observaciones?.trim() || null,
+          userId,
+          userName,
+        },
+      });
+
+      const complete = EMERGENCY_CATEGORIES.every((c) => requested[c.key] - delivered[c.key] - qty[c.key] <= 0);
+      const estado = complete ? "ENTREGADO" : "ENTREGA_PARCIAL";
+      await tx.stormVictimRecord.update({ where: { id: recordId }, data: { estado }, omit });
+
+      return { estado, caseId: record.caseId, personId: record.personId, nombre: record.nombreApellido };
+    });
+
+    const summary = EMERGENCY_CATEGORIES.filter((c) => qty[c.key] > 0)
+      .map((c) => quantityText(c.key, qty[c.key]))
+      .join(", ");
+
+    if (result.caseId && result.personId) {
+      await prisma.intervention
+        .create({
+          data: {
+            caseId: result.caseId,
+            personId: result.personId!,
+            userId,
+            description: `Entrega de elementos de emergencia: ${summary}.${observaciones?.trim() ? ` ${observaciones.trim()}` : ""}`,
+          },
+        })
+        .catch((e) => console.warn("No se pudo registrar la entrega en el expediente:", e));
+    }
+    await prisma.auditLog
+      .create({
+        data: {
+          userId,
+          action: "STORM_DELIVERY",
+          entity: "StormVictimRecord",
+          entityId: recordId,
+          details: `Entrega a ${result.nombre}: ${summary}. Registrada por ${userName}.`,
+        },
+      })
+      .catch((e) => console.warn("AuditLog skipped:", e));
+
+    revalidatePath("/admin/emergency");
+    revalidatePath("/admin/stock");
+    revalidatePath("/cases");
+    return { success: true, estado: result.estado, summary };
+  } catch (err) {
+    if (err instanceof DeliveryError) {
+      return { success: false, error: `No se pudo registrar la entrega: ${err.message.charAt(0).toLowerCase()}${err.message.slice(1)}.` };
+    }
+    console.error("Error registrando entrega de emergencia:", err);
+    return { success: false, error: actionErrorMessage(err, "No se pudo registrar la entrega") };
   }
 }
