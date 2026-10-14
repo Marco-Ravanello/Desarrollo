@@ -24,11 +24,15 @@ export function BudgetEditDialog({ areaId, areaName, currentBudget }: { areaId: 
   const handleSave = async () => {
     setLoading(true);
     try {
-      await updateAreaBudget(areaId, parseFloat(amount));
+      const result = await updateAreaBudget(areaId, parseFloat(amount));
+      if (!result.success) {
+        toast.error(result.error);
+        return;
+      }
       toast.success("Presupuesto actualizado");
       setOpen(false);
-    } catch (e) {
-      toast.error("Error al actualizar");
+    } catch {
+      toast.error("No se pudo actualizar el presupuesto. Revisá la conexión y probá de nuevo.");
     } finally {
       setLoading(false);
     }

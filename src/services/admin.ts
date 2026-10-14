@@ -270,7 +270,7 @@ export async function getSupplies() {
   });
 }
 
-export async function createSupply(rawData: z.infer<typeof CreateSupplySchema>) {
+export async function createSupply(rawData: z.input<typeof CreateSupplySchema>) {
   const data = CreateSupplySchema.parse(rawData);
 
   return await prisma.supplyItem.create({

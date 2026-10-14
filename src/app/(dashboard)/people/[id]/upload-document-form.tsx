@@ -33,7 +33,7 @@ export function UploadDocumentForm({ personId, caseId }: { personId?: string, ca
         toast.error(res.error || "Fallo en la subida");
       }
     } catch (err) {
-      toast.error("Error de conexión");
+      toast.error("No se pudo subir el documento. Revisá la conexión y probá de nuevo.");
     } finally {
       setUploading(false);
     }

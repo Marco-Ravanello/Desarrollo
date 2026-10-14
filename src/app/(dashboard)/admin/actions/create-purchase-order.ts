@@ -4,11 +4,12 @@ import { createPurchaseOrder } from "@/services/admin";
 import { createAuditLog } from "@/services/system";
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
+import { actionErrorMessage } from "@/lib/action-error";
 
 export async function createPurchaseOrderAction(formData: FormData) {
   const session = await auth();
   if (!session?.user?.id) {
-    return { success: false, error: "No autorizado" };
+    return { success: false, error: "No tenés permiso para hacer esto o tu sesión expiró. Si sigue pasando, volvé a iniciar sesión." };
   }
 
   const number = formData.get("number") as string;
@@ -59,6 +60,6 @@ export async function createPurchaseOrderAction(formData: FormData) {
     if (error.code === 'P2002') {
       return { success: false, error: "Ya existe una orden con ese número" };
     }
-    return { success: false, error: "Ocurrió un error al guardar la orden" };
+    return { success: false, error: actionErrorMessage(error, "No se pudo guardar la orden") };
   }
 }

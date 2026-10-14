@@ -58,7 +58,7 @@ export function EditPersonDialog({ person }: EditPersonDialogProps) {
         toast.error(result.error || "Error al actualizar");
       }
     } catch (error) {
-      toast.error("Ocurrió un error inesperado");
+      toast.error("No se pudieron guardar los cambios. Revisá la conexión y probá de nuevo.");
     } finally {
       setLoading(false);
     }

@@ -6,10 +6,11 @@ import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
 import prisma from "@/lib/prisma";
 import { createNotification } from "@/app/(dashboard)/actions/notifications";
+import { actionErrorMessage } from "@/lib/action-error";
 
 export async function createCaseAction(formData: FormData) {
   const session = await auth();
-  if (!session?.user) return { error: "No autorizado" };
+  if (!session?.user) return { error: "No tenés permiso para hacer esto o tu sesión expiró. Si sigue pasando, volvé a iniciar sesión." };
 
   const personId = formData.get("personId") as string;
   const areaId = formData.get("areaId") as string;
@@ -53,6 +54,6 @@ export async function createCaseAction(formData: FormData) {
     return { success: true };
   } catch (error) {
     console.error(error);
-    return { error: "Error al crear el caso" };
+    return { error: actionErrorMessage(error, "No se pudo crear el caso") };
   }
 }

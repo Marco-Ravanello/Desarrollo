@@ -3,6 +3,7 @@
 import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
+import { actionErrorMessage } from "@/lib/action-error";
 
 const parseLocalDate = (dateStr: string | null) => {
   if (!dateStr) return null;
@@ -14,7 +15,7 @@ const parseLocalDate = (dateStr: string | null) => {
 
 export async function rescheduleTaskAction(id: string, dueDateStr: string, viewerIds?: string) {
   const session = await auth();
-  if (!session?.user?.id) return { success: false, error: "No autorizado" };
+  if (!session?.user?.id) return { success: false, error: "No tenés permiso para hacer esto o tu sesión expiró. Si sigue pasando, volvé a iniciar sesión." };
 
   try {
     const task = await prisma.task.findUnique({ where: { id } });
@@ -32,13 +33,13 @@ export async function rescheduleTaskAction(id: string, dueDateStr: string, viewe
     revalidatePath("/tasks");
     return { success: true };
   } catch (error: any) {
-    return { success: false, error: error.message || "Error al reprogramar la tarea" };
+    return { success: false, error: actionErrorMessage(error, "No se pudo reprogramar la tarea") };
   }
 }
 
 export async function rescheduleReservationAction(id: string, startDateStr: string, endDateStr: string) {
   const session = await auth();
-  if (!session?.user?.id) return { success: false, error: "No autorizado" };
+  if (!session?.user?.id) return { success: false, error: "No tenés permiso para hacer esto o tu sesión expiró. Si sigue pasando, volvé a iniciar sesión." };
 
   try {
     const reservation = await prisma.vehicleReservation.findUnique({ where: { id } });
@@ -59,13 +60,13 @@ export async function rescheduleReservationAction(id: string, startDateStr: stri
     revalidatePath("/admin/vehicles/requests");
     return { success: true };
   } catch (error: any) {
-    return { success: false, error: error.message || "Error al reprogramar la reserva" };
+    return { success: false, error: actionErrorMessage(error, "No se pudo reprogramar la reserva") };
   }
 }
 
 export async function reschedulePurchaseOrderAction(id: string, deliveryDateStr: string) {
   const session = await auth();
-  if (!session?.user?.id) return { success: false, error: "No autorizado" };
+  if (!session?.user?.id) return { success: false, error: "No tenés permiso para hacer esto o tu sesión expiró. Si sigue pasando, volvé a iniciar sesión." };
 
   try {
     const order = await prisma.purchaseOrder.findUnique({ where: { id } });
@@ -81,13 +82,13 @@ export async function reschedulePurchaseOrderAction(id: string, deliveryDateStr:
     revalidatePath(`/admin/purchase-orders/${id}`);
     return { success: true };
   } catch (error: any) {
-    return { success: false, error: error.message || "Error al reprogramar la entrega de la orden" };
+    return { success: false, error: actionErrorMessage(error, "No se pudo reprogramar la entrega de la orden") };
   }
 }
 
 export async function createSharedTaskAction(title: string, description: string, dueDateStr: string, viewerIds: string) {
   const session = await auth();
-  if (!session?.user?.id) return { success: false, error: "No autorizado" };
+  if (!session?.user?.id) return { success: false, error: "No tenés permiso para hacer esto o tu sesión expiró. Si sigue pasando, volvé a iniciar sesión." };
 
   try {
     await prisma.task.create({
@@ -105,6 +106,6 @@ export async function createSharedTaskAction(title: string, description: string,
     revalidatePath("/tasks");
     return { success: true };
   } catch (error: any) {
-    return { success: false, error: error.message || "Error al crear la tarea" };
+    return { success: false, error: actionErrorMessage(error, "No se pudo crear la tarea") };
   }
 }

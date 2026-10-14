@@ -206,10 +206,8 @@ export function StormFichaDialog({
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto rounded-2xl p-6 sm:p-8 print:p-0 print:max-w-full print:border-none print:shadow-none">
         {/* Printable Letterhead - Visible only in print or formatted modal header */}
         <div className="hidden print:block mb-6">
-          <MunicipalLetterhead
-            title="FICHA INDIVIDUAL DE CONTINGENCIA CLIMÁTICA"
-            subtitle={`Secretaría de Desarrollo Humano • Área: ${areaName}`}
-          />
+          <MunicipalLetterhead direction={`Área: ${areaName}`} />
+          <h1 className="text-lg font-bold text-center">FICHA INDIVIDUAL DE CONTINGENCIA CLIMÁTICA</h1>
         </div>
 
         <DialogHeader className="print:hidden border-b border-border/40 pb-4">

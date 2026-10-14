@@ -17,12 +17,17 @@ export function CreateSupplyForm({ areas }: { areas: any[] }) {
     setLoading(true);
     const formData = new FormData(e.currentTarget);
 
+    const form = e.currentTarget;
     try {
-      await addSupplyAction(formData);
+      const result = await addSupplyAction(formData);
+      if (!result.success) {
+        toast.error(result.error);
+        return;
+      }
       toast.success("Insumo registrado correctamente");
-      (e.target as HTMLFormElement).reset();
-    } catch (error) {
-      toast.error("Error al registrar insumo");
+      form.reset();
+    } catch {
+      toast.error("No se pudo registrar el insumo. Revisá la conexión y probá de nuevo.");
     } finally {
       setLoading(false);
     }

@@ -1,452 +1,191 @@
 import prisma from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 import { getPeopleStats, getPeopleForMap } from "@/services/people";
 
-export function parseDateRange(range?: string, fromStr?: string, toStr?: string) {
-  const now = new Date();
-  let from = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 30);
-  let to = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
-
-  if (range === "today") {
-    from = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
-  } else if (range === "7days") {
-    from = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7, 0, 0, 0, 0);
-  } else if (range === "30days") {
-    from = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 30, 0, 0, 0, 0);
-  } else if (range === "thismonth") {
-    from = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
-  } else if (range === "year") {
-    from = new Date(now.getFullYear(), 0, 1, 0, 0, 0, 0);
-  } else if (range === "custom" && fromStr && toStr) {
-    from = new Date(fromStr);
-    from.setHours(0, 0, 0, 0);
-    to = new Date(toStr);
-    to.setHours(23, 59, 59, 999);
-  }
-
-  return { from, to };
+/**
+ * Qué parte de la gestión ve quien abre el dashboard.
+ * - areaId: si viene, casos y presupuesto se limitan a esa área.
+ * - canViewSensitive: si es false, los casos de Violencia de Género no se cuentan ni se listan
+ *   (mismo criterio que el listado de Casos).
+ */
+export interface DashboardScope {
+  areaId?: string | null;
+  canViewSensitive: boolean;
 }
 
-let dashboardCache: { data: any; timestamp: number; key: string } | null = null;
+export const ACTIVE_CASE_STATUSES = ["ABIERTO", "EN_PROCESO"] as const;
+
+export function dashboardCaseWhere(scope: DashboardScope): Prisma.CaseWhereInput {
+  const where: Prisma.CaseWhereInput = {};
+  if (scope.areaId) where.areaId = scope.areaId;
+  if (!scope.canViewSensitive) {
+    where.NOT = { area: { name: { contains: "violencia", mode: "insensitive" } } };
+  }
+  return where;
+}
+
+const cache = new Map<string, { data: DashboardStats; timestamp: number }>();
 const DASHBOARD_CACHE_TTL = 45 * 1000; // 45 segundos
 
-export async function getDashboardStats(filters?: { from: Date; to: Date }) {
-  const { from, to } = filters || parseDateRange("30days");
-  const cacheKey = `${from.toISOString()}_${to.toISOString()}`;
+export type DashboardStats = Awaited<ReturnType<typeof loadDashboardStats>>;
 
-  if (dashboardCache && dashboardCache.key === cacheKey && (Date.now() - dashboardCache.timestamp < DASHBOARD_CACHE_TTL)) {
-    return dashboardCache.data;
+export async function getDashboardStats(scope: DashboardScope): Promise<DashboardStats> {
+  const key = `${scope.areaId || "all"}_${scope.canViewSensitive ? "s" : "ns"}`;
+  const cached = cache.get(key);
+  if (cached && Date.now() - cached.timestamp < DASHBOARD_CACHE_TTL) {
+    return cached.data;
   }
 
-  const dateFilter = { gte: from, lte: to };
+  const data = await loadDashboardStats(scope);
+  cache.set(key, { data, timestamp: Date.now() });
+  return data;
+}
 
-  try {
-    let realPeopleCount = 0;
-    try {
-      const padronCountRes: any[] = await prisma.$queryRawUnsafe(
-        `SELECT COUNT(*)::int as total FROM padron_unificado;`
-      );
-      realPeopleCount = padronCountRes[0]?.total || 0;
-    } catch (e) {}
+async function loadDashboardStats(scope: DashboardScope) {
+  const caseWhere = dashboardCaseWhere(scope);
+  const activeWhere: Prisma.CaseWhereInput = { ...caseWhere, status: { in: [...ACTIVE_CASE_STATUSES] } };
+  const urgentWhere: Prisma.CaseWhereInput = { ...activeWhere, priority: "URGENTE" };
+  const orderWhere: Prisma.PurchaseOrderWhereInput = scope.areaId ? { areaId: scope.areaId } : {};
 
-    const [
-      peopleStats,
-      mapLocations,
-      legacyPeopleCount,
-      activeCases,
-      resolvedCasesCount,
-      totalCasesCount,
-      pendingDerivations,
-      pendingPurchaseOrders,
-      pendingInvoices,
-      lowStockItems,
-      vehicleCount,
-      todayTasks,
-      criticalCases
-    ] = await Promise.all([
-      getPeopleStats().catch(() => ({ total: 0, avgAge: 0, topArea: "Sin datos", localityTotals: {} })),
-      getPeopleForMap(200).catch(() => []),
-      prisma.person.count().catch(() => 0),
-      prisma.case.count({ where: { status: { in: ['ABIERTO', 'EN_PROCESO'] } } }).catch(() => 0),
-      prisma.case.count({ where: { status: 'CERRADO' } }).catch(() => 0),
-      prisma.case.count().catch(() => 0),
-      prisma.derivation.count({ where: { status: 'PENDIENTE' } }).catch(() => 0),
-      prisma.purchaseOrder.count({ where: { status: 'PENDIENTE_APROBACION' } }).catch(() => 0),
-      prisma.invoice.count({ where: { status: 'PENDIENTE' } }).catch(() => 0),
-      prisma.$queryRawUnsafe(`SELECT COUNT(*)::int as total FROM "SupplyItem" WHERE stock <= "minStock" OR stock <= 0;`).then((res: any) => res[0]?.total || 0).catch(() => 0),
-      prisma.vehicle.count().catch(() => 0),
-      prisma.task.count({ where: { status: 'PENDIENTE', dueDate: { gte: from, lte: to } } }).catch(() => 0),
-      prisma.case.count({ where: { priority: 'URGENTE', status: { in: ['ABIERTO', 'EN_PROCESO'] } } }).catch(() => 0)
-    ]);
+  const [
+    peopleStats,
+    peopleLocations,
+    legacyPeopleCount,
+    activeCases,
+    criticalCases,
+    closedCases,
+    pendingPurchaseOrders,
+    lowStockItems,
+    executedOrders,
+    budgetAreas,
+    recentCasesDb,
+    urgentCasesDb,
+    pendingOrdersDb,
+    vehiclesDb,
+  ] = await Promise.all([
+    getPeopleStats().catch(() => ({ total: 0, avgAge: 0, topArea: "Sin datos", localityTotals: {} })),
+    getPeopleForMap(200).catch(() => []),
+    prisma.person.count().catch(() => 0),
+    prisma.case.count({ where: activeWhere }).catch(() => 0),
+    prisma.case.count({ where: urgentWhere }).catch(() => 0),
+    prisma.case.count({ where: { ...caseWhere, status: "CERRADO" } }).catch(() => 0),
+    prisma.purchaseOrder.count({ where: { ...orderWhere, status: "PENDIENTE_APROBACION" } }).catch(() => 0),
+    prisma.$queryRawUnsafe<{ total: number }[]>(
+      `SELECT COUNT(*)::int as total FROM "SupplyItem" WHERE stock <= "minStock" OR stock <= 0;`
+    ).then((res) => res[0]?.total || 0).catch(() => 0),
+    prisma.purchaseOrder.aggregate({
+      where: { ...orderWhere, status: { in: ["APROBADA", "CUMPLIDA"] } },
+      _sum: { amount: true },
+    }).then((r) => Number(r._sum.amount || 0)).catch(() => 0),
+    prisma.area.findMany({
+      where: scope.areaId ? { id: scope.areaId } : undefined,
+      orderBy: { name: "asc" },
+    }).catch(() => []),
+    prisma.case.findMany({
+      where: caseWhere,
+      take: 5,
+      orderBy: { createdAt: "desc" },
+      include: { person: true, area: true },
+    }).catch(() => []),
+    prisma.case.findMany({
+      where: urgentWhere,
+      orderBy: { createdAt: "desc" },
+      take: 3,
+      include: { area: true },
+    }).catch(() => []),
+    prisma.purchaseOrder.findMany({
+      where: { ...orderWhere, status: "PENDIENTE_APROBACION" },
+      orderBy: { createdAt: "desc" },
+      take: 2,
+    }).catch(() => []),
+    prisma.vehicle.findMany({ take: 5, orderBy: { plate: "asc" } }).catch(() => []),
+  ]);
 
-    const peopleCount = (peopleStats?.total && peopleStats.total > 0)
-      ? peopleStats.total
-      : (realPeopleCount > 0 ? realPeopleCount : legacyPeopleCount);
+  const peopleCount = peopleStats?.total && peopleStats.total > 0 ? peopleStats.total : legacyPeopleCount;
 
-    const peopleLocations = (mapLocations && mapLocations.length > 0)
-      ? mapLocations
-      : [];
-
-    const topArea = (peopleStats?.topArea && peopleStats.topArea !== "Sin datos" && !peopleStats.topArea.toLowerCase().includes("partido"))
+  const topArea =
+    peopleStats?.topArea && peopleStats.topArea !== "Sin datos" && !peopleStats.topArea.toLowerCase().includes("partido")
       ? peopleStats.topArea
       : null;
 
-    let occupiedVehicles = 0;
-    try {
-      occupiedVehicles = await prisma.vehicleReservation.count({
-        where: {
-          status: { in: ['APROBADA', 'EN_CURSO'] },
-          startDate: { lte: to },
-          endDate: { gte: from }
-        }
-      });
-    } catch (e) {}
+  // Presupuesto: total de las áreas visibles y lo ejecutado por cada una.
+  const totalBudget = budgetAreas.reduce((sum, a) => sum + Number(a.annualBudget || 0), 0);
+  const executedByArea = new Map<string, number>();
+  if (budgetAreas.length > 0) {
+    const perArea = await prisma.purchaseOrder.groupBy({
+      by: ["areaId"],
+      where: { ...orderWhere, status: { in: ["APROBADA", "CUMPLIDA"] } },
+      _sum: { amount: true },
+    }).catch(() => []);
+    perArea.forEach((o) => {
+      if (o.areaId) executedByArea.set(o.areaId, Number(o._sum.amount || 0));
+    });
+  }
 
-    let recentActivity: any[] = [];
-    try {
-      recentActivity = await prisma.auditLog.findMany({
-        where: { createdAt: dateFilter },
-        take: 5,
-        orderBy: { createdAt: 'desc' },
-        include: { user: true }
-      });
-    } catch (e) {}
-
-    let casesByAreaData: any[] = [];
-    let areas: any[] = [];
-    try {
-      const casesByArea = await prisma.case.groupBy({
-        by: ['areaId'],
-        where: { createdAt: dateFilter },
-        _count: { _all: true },
-      });
-      areas = await prisma.area.findMany();
-
-      const areaOrders = await prisma.purchaseOrder.groupBy({
-        by: ['areaId'],
-        where: { status: { in: ['APROBADA', 'CUMPLIDA'] } },
-        _sum: { amount: true }
-      }).catch(() => []);
-
-      const orderMap = new Map<string, number>();
-      areaOrders.forEach(o => {
-        if (o.areaId) orderMap.set(o.areaId, Number(o._sum.amount || 0));
-      });
-
-      casesByAreaData = areas.map(area => {
-        const caseCount = casesByArea.find(c => c.areaId === area.id)?._count._all || 0;
-        return { name: area.name, value: caseCount };
-      });
-
-      areas = areas.map((a) => {
-        const annual = Number(a.annualBudget || 0);
-        const executed = orderMap.get(a.id) || 0;
-        return {
-          ...a,
-          annualBudget: annual,
-          executedBudget: executed
-        };
-      });
-    } catch (e) {}
-
-    let poStatusData: any[] = [];
-    try {
-      const poByStatus = await prisma.purchaseOrder.groupBy({
-        by: ['status'],
-        _count: { _all: true },
-        _sum: { amount: true }
-      });
-
-      const statusMap: Record<string, { name: string; color: string }> = {
-        CUMPLIDA: { name: "Entregadas / Cumplidas", color: "#10b981" },
-        APROBADA: { name: "Aprobadas en Curso", color: "#3b82f6" },
-        PENDIENTE_APROBACION: { name: "Pendientes de Firma", color: "#f59e0b" },
-        RECHAZADA: { name: "Rechazadas / Canceladas", color: "#ef4444" }
-      };
-
-      poStatusData = poByStatus.map(s => {
-        const meta = statusMap[s.status] || { name: s.status.replace('_', ' '), color: '#8b5cf6' };
-        return {
-          name: meta.name,
-          rawStatus: s.status,
-          value: s._count._all,
-          amount: Number(s._sum.amount || 0),
-          fill: meta.color
-        };
-      });
-    } catch (e) {}
-
-    let executedAmount = 0;
-    try {
-      const executedOrders = await prisma.purchaseOrder.aggregate({
-        where: {
-          status: { in: ['APROBADA', 'CUMPLIDA'] }
-        },
-        _sum: { amount: true }
-      });
-      executedAmount = Number(executedOrders._sum.amount || 0);
-    } catch (e) {}
-
-    let totalBudget = 0;
-    try {
-      const totalBudgetAgg = await prisma.area.aggregate({
-        _sum: { annualBudget: true }
-      });
-      totalBudget = Number(totalBudgetAgg._sum.annualBudget || 0);
-    } catch (e) {}
-
-    let trends: any[] = [];
-    try {
-      trends = await getTrendData();
-    } catch (e) {
-      trends = getFallbackTrendData();
-    }
-
-    // Recent cases
-    let recentCases: any[] = [];
-    try {
-      const casesDb = await prisma.case.findMany({
-        take: 5,
-        orderBy: { createdAt: 'desc' },
-        include: { person: true, area: true }
-      });
-      recentCases = casesDb.map((c) => ({
-        id: `#${c.id.substring(0, 6)}`,
-        citizenName: c.person ? `${c.person.lastName}, ${c.person.firstName}` : "S/D",
-        type: c.area?.name || "General",
-        status: c.status === "CERRADO" ? "Resuelto" : c.status === "EN_PROCESO" ? "En Proceso" : "Abierto",
-        statusVariant: c.status === "CERRADO" ? "resolved" : c.status === "EN_PROCESO" ? "in_progress" : "pending"
-      }));
-    } catch (e) {}
-
-    // Upcoming tasks
-    let upcomingTasks: any[] = [];
-    try {
-      const tasksDb = await prisma.task.findMany({
-        where: { status: 'PENDIENTE' },
-        take: 5,
-        orderBy: { dueDate: 'asc' }
-      });
-      upcomingTasks = tasksDb.map((t) => ({
-        id: t.id,
-        description: t.title,
-        priority: t.priority || "MEDIA",
-        priorityVariant: t.priority === "URGENTE" || t.priority === "ALTA" ? "high" : t.priority === "MEDIA" ? "medium" : "low",
-        dueDate: t.dueDate ? new Date(t.dueDate).toLocaleDateString("es-AR", { day: '2-digit', month: '2-digit' }) : "S/D"
-      }));
-    } catch (e) {}
-
-    // Vehicles list
-    let vehiclesList: any[] = [];
-    try {
-      const vehiclesDb = await prisma.vehicle.findMany({
-        take: 5,
-        orderBy: { plate: 'asc' }
-      });
-      vehiclesList = vehiclesDb.map((v) => ({
-        id: v.id,
-        name: `${v.brand} ${v.model} (${v.plate})`,
-        status: v.status === "DISPONIBLE" ? "Disponible" : v.status === "EN_TALLER" ? "En Taller" : "Fuera de Servicio",
-        statusVariant: v.status === "DISPONIBLE" ? "active" : v.status === "EN_TALLER" ? "maintenance" : "inactive",
-        nextExpiry: v.vtvExpiry ? `VTV: ${new Date(v.vtvExpiry).toLocaleDateString("es-AR", { month: '2-digit', year: '2-digit' })}` : "Al día"
-      }));
-    } catch (e) {}
-
-    // Attention items
-    let attentionItems: any[] = [];
-    try {
-      const urgentCases = await prisma.case.findMany({
-        where: { priority: 'URGENTE', status: { in: ['ABIERTO', 'EN_PROCESO'] } },
-        orderBy: { createdAt: 'desc' },
-        take: 3,
-        include: { area: true }
-      });
-      const pendingOrders = await prisma.purchaseOrder.findMany({
-        where: { status: 'PENDIENTE_APROBACION' },
-        orderBy: { createdAt: 'desc' },
-        take: 2
-      });
-
-      urgentCases.forEach((c) => {
-        attentionItems.push({
-          id: c.id,
-          type: "case",
-          title: c.title,
-          subtitle: `Área: ${c.area?.name || "General"}`,
-          actionText: "Ver caso",
-          href: `/cases/${c.id}`
-        });
-      });
-
-      pendingOrders.forEach((po) => {
-        attentionItems.push({
-          id: po.id,
-          type: "po",
-          title: `Orden de Compra #${po.number}`,
-          subtitle: `$ ${Number(po.amount).toLocaleString("es-AR")} - Pendiente de Firma`,
-          actionText: "Aprobar",
-          href: `/admin/purchase-orders/${po.id}`
-        });
-      });
-    } catch (e) {}
-
-    // Area budget progress
-    const areaColors = ["bg-blue-600", "bg-amber-500", "bg-emerald-500", "bg-purple-600", "bg-rose-500"];
-    const areaBudgetProgress = areas.slice(0, 4).map((a, idx) => {
+  const areaColors = ["bg-blue-600", "bg-amber-500", "bg-emerald-500", "bg-purple-600", "bg-rose-500"];
+  const areaBudgetProgress = budgetAreas
+    .filter((a) => Number(a.annualBudget || 0) > 0)
+    .slice(0, 4)
+    .map((a, idx) => {
       const annual = Number(a.annualBudget || 0);
-      const executed = Number(a.executedBudget || 0);
-      const pct = annual > 0 ? Math.round((executed / annual) * 100) : 0;
+      const executed = executedByArea.get(a.id) || 0;
       return {
         name: a.name.replace("Dirección de ", "").replace("Coordinación de ", "").trim(),
-        percentage: pct,
-        color: areaColors[idx % areaColors.length]
+        percentage: annual > 0 ? Math.round((executed / annual) * 100) : 0,
+        color: areaColors[idx % areaColors.length],
       };
     });
 
-    const statsResult = {
-      peopleCount,
-      activeCases,
-      resolvedCasesCount,
-      totalCasesCount,
-      pendingDerivations,
-      pendingPurchaseOrders,
-      pendingInvoices,
-      lowStockItems,
-      recentActivity,
-      casesByAreaData,
-      poStatusData,
-      todayTasks,
-      criticalCases,
-      peopleLocations,
-      executedAmount,
-      totalBudget,
-      areas,
-      vehicleStats: {
-        total: vehicleCount,
-        occupied: occupiedVehicles,
-        available: Math.max(0, vehicleCount - occupiedVehicles)
-      },
-      trends,
-      recentCases,
-      upcomingTasks,
-      vehiclesList,
-      attentionItems,
-      areaBudgetProgress,
-      topArea
-    };
-
-    dashboardCache = {
-      data: statsResult,
-      timestamp: Date.now(),
-      key: cacheKey
-    };
-
-    return statsResult;
-  } catch (error) {
-    console.error("Dashboard Stats Fetch Error:", error);
-    return {
-      peopleCount: 0,
-      activeCases: 0,
-      resolvedCasesCount: 0,
-      totalCasesCount: 0,
-      pendingDerivations: 0,
-      pendingPurchaseOrders: 0,
-      pendingInvoices: 0,
-      lowStockItems: 0,
-      recentActivity: [],
-      casesByAreaData: [],
-      poStatusData: [],
-      todayTasks: 0,
-      criticalCases: 0,
-      peopleLocations: [],
-      executedAmount: 0,
-      totalBudget: 0,
-      areas: [],
-      vehicleStats: { total: 0, occupied: 0, available: 0 },
-      trends: getFallbackTrendData(),
-      recentCases: [],
-      upcomingTasks: [],
-      vehiclesList: [],
-      attentionItems: [],
-      areaBudgetProgress: [],
-      topArea: null
-    };
-  }
-}
-
-function getFallbackTrendData() {
-  const monthNames = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
-  const currentMonthIdx = new Date().getMonth();
-  const last6Months = [];
-
-  for (let i = 5; i >= 0; i--) {
-    const idx = (currentMonthIdx - i + 12) % 12;
-    last6Months.push(monthNames[idx]);
-  }
-
-  return last6Months.map((m) => ({
-    month: m,
-    ingresados: 0,
-    resueltos: 0,
-    casos: 0
+  const recentCases = recentCasesDb.map((c) => ({
+    id: c.id,
+    shortId: `#${c.id.substring(0, 6)}`,
+    citizenName: c.person ? `${c.person.lastName}, ${c.person.firstName}` : "S/D",
+    type: c.area?.name || "General",
+    status: c.status === "CERRADO" ? "Resuelto" : c.status === "EN_PROCESO" ? "En Proceso" : "Abierto",
+    statusVariant: c.status === "CERRADO" ? "resolved" : c.status === "EN_PROCESO" ? "in_progress" : "pending",
   }));
-}
 
-async function getTrendData() {
-  try {
-    const sixMonthsAgo = new Date();
-    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 5);
-    sixMonthsAgo.setDate(1);
-    sixMonthsAgo.setHours(0, 0, 0, 0);
+  const attentionItems = [
+    ...urgentCasesDb.map((c) => ({
+      id: c.id,
+      type: "case" as const,
+      title: c.title,
+      subtitle: `Urgente · ${c.area?.name || "General"}`,
+      href: `/cases/${c.id}`,
+    })),
+    ...pendingOrdersDb.map((po) => ({
+      id: po.id,
+      type: "po" as const,
+      title: `Orden de compra #${po.number}`,
+      subtitle: `$ ${Number(po.amount).toLocaleString("es-AR")} · Pendiente de firma`,
+      href: `/admin/purchase-orders/${po.id}`,
+    })),
+  ];
 
-    const monthlyCounts = await prisma.$queryRaw<{ year: number; month: number; status: string; count: number }[]>`
-      SELECT
-        EXTRACT(YEAR FROM "createdAt")::integer as year,
-        EXTRACT(MONTH FROM "createdAt")::integer as month,
-        "status",
-        COUNT(*)::integer as count
-      FROM "Case"
-      WHERE "createdAt" >= ${sixMonthsAgo}
-      GROUP BY 1, 2, 3
-    `.catch(() => []);
+  const vehiclesList = vehiclesDb.map((v) => ({
+    id: v.id,
+    name: `${v.brand} ${v.model} (${v.plate})`,
+    status: v.status === "DISPONIBLE" ? "Disponible" : v.status === "EN_TALLER" ? "En Taller" : "Fuera de Servicio",
+    statusVariant: v.status === "DISPONIBLE" ? "active" : v.status === "EN_TALLER" ? "maintenance" : "inactive",
+    nextExpiry: v.vtvExpiry
+      ? `VTV: ${new Date(v.vtvExpiry).toLocaleDateString("es-AR", { month: "2-digit", year: "2-digit" })}`
+      : "Al día",
+  }));
 
-    if (!monthlyCounts || monthlyCounts.length === 0) {
-      return getFallbackTrendData();
-    }
-
-    const monthMap = new Map<string, { ingresados: number; resueltos: number }>();
-
-    monthlyCounts.forEach((row) => {
-      const key = `${row.year}-${row.month}`;
-      const existing = monthMap.get(key) || { ingresados: 0, resueltos: 0 };
-      existing.ingresados += row.count;
-      if (row.status === "CERRADO") {
-        existing.resueltos += row.count;
-      }
-      monthMap.set(key, existing);
-    });
-
-    const result = [];
-    const tempDate = new Date(sixMonthsAgo);
-    const now = new Date();
-
-    while (tempDate <= now || result.length < 6) {
-      const monthLabel = tempDate.toLocaleDateString('es-AR', { month: 'short' });
-      const key = `${tempDate.getFullYear()}-${tempDate.getMonth() + 1}`;
-      const data = monthMap.get(key) || { ingresados: 0, resueltos: 0 };
-
-      result.push({
-        month: monthLabel.charAt(0).toUpperCase() + monthLabel.slice(1),
-        ingresados: data.ingresados,
-        resueltos: data.resueltos,
-        casos: data.ingresados
-      });
-
-      tempDate.setMonth(tempDate.getMonth() + 1);
-      if (result.length === 6) break;
-    }
-
-    return result;
-  } catch (err) {
-    return getFallbackTrendData();
-  }
+  return {
+    peopleCount,
+    peopleLocations,
+    topArea,
+    activeCases,
+    criticalCases,
+    closedCases,
+    pendingPurchaseOrders,
+    lowStockItems,
+    totalBudget,
+    executedAmount: executedOrders,
+    areaBudgetProgress,
+    recentCases,
+    attentionItems,
+    vehiclesList,
+  };
 }

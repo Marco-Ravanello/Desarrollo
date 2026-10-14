@@ -5,6 +5,7 @@ import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
 import { OrderStatus } from "@prisma/client";
 import { hasPermission, PERMISSIONS } from "@/lib/permissions";
+import { actionErrorMessage } from "@/lib/action-error";
 
 const ALLOWED_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
   BORRADOR: ["PENDIENTE_APROBACION", "CANCELADA"],
@@ -18,7 +19,7 @@ const ALLOWED_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
 export async function updatePurchaseOrderStatusAction(id: string, newStatus: string, reason?: string) {
   const session = await auth();
   if (!session?.user?.role) {
-    return { success: false, error: "No autorizado" };
+    return { success: false, error: "No tenés permiso para hacer esto o tu sesión expiró. Si sigue pasando, volvé a iniciar sesión." };
   }
 
   const userRole = session.user.role as any;
@@ -74,6 +75,6 @@ export async function updatePurchaseOrderStatusAction(id: string, newStatus: str
     revalidatePath(`/admin/purchase-orders/${id}`);
     return { success: true, status: targetStatus };
   } catch (error: any) {
-    return { success: false, error: error.message || "Error al actualizar el estado de la orden" };
+    return { success: false, error: actionErrorMessage(error, "No se pudo actualizar el estado de la orden") };
   }
 }

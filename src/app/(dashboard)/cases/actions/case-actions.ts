@@ -4,11 +4,12 @@ import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
 import { getPeople, ensurePersonInPrisma } from "@/services/people";
+import { actionErrorMessage } from "@/lib/action-error";
 
 export async function addCaseInterventionAction(caseId: string, description: string) {
   const session = await auth();
   if (!session?.user?.id) {
-    return { success: false, error: "No autorizado" };
+    return { success: false, error: "No tenés permiso para hacer esto o tu sesión expiró. Si sigue pasando, volvé a iniciar sesión." };
   }
 
   const cleanDesc = description?.trim();
@@ -69,14 +70,14 @@ export async function addCaseInterventionAction(caseId: string, description: str
 
     return { success: true, intervention };
   } catch (error: any) {
-    return { success: false, error: error.message || "Error al registrar la intervención" };
+    return { success: false, error: actionErrorMessage(error, "No se pudo registrar la intervención") };
   }
 }
 
 export async function searchCitizensAction(query: string) {
   const session = await auth();
   if (!session?.user?.id) {
-    return { success: false, error: "No autorizado", items: [] };
+    return { success: false, error: "No tenés permiso para hacer esto o tu sesión expiró. Si sigue pasando, volvé a iniciar sesión.", items: [] };
   }
 
   const cleanQuery = query?.trim();
@@ -100,7 +101,7 @@ export async function searchCitizensAction(query: string) {
 
     return { success: true, items: sanitized };
   } catch (error: any) {
-    return { success: false, error: error.message || "Error al buscar ciudadanos", items: [] };
+    return { success: false, error: actionErrorMessage(error, "No se pudo buscar ciudadanos"), items: [] };
   }
 }
 
@@ -120,7 +121,7 @@ export interface CreateCentralizedCaseInput {
 export async function createCentralizedCaseAction(input: CreateCentralizedCaseInput) {
   const session = await auth();
   if (!session?.user?.id) {
-    return { success: false, error: "No autorizado" };
+    return { success: false, error: "No tenés permiso para hacer esto o tu sesión expiró. Si sigue pasando, volvé a iniciar sesión." };
   }
 
   const cleanTitle = input.title?.trim();
@@ -194,7 +195,7 @@ export async function createCentralizedCaseAction(input: CreateCentralizedCaseIn
       personId: person.id
     };
   } catch (error: any) {
-    return { success: false, error: error.message || "Error al crear el expediente centralizado" };
+    return { success: false, error: actionErrorMessage(error, "No se pudo crear el expediente centralizado") };
   }
 }
 
@@ -205,7 +206,7 @@ export async function createDerivationAction(
   observations?: string
 ) {
   const session = await auth();
-  if (!session?.user?.id) return { success: false, error: "No autorizado" };
+  if (!session?.user?.id) return { success: false, error: "No tenés permiso para hacer esto o tu sesión expiró. Si sigue pasando, volvé a iniciar sesión." };
   try {
     const caseItem = await prisma.case.findUnique({
       where: { id: caseId },
@@ -259,6 +260,6 @@ export async function createDerivationAction(
     revalidatePath("/cases");
     return { success: true };
   } catch (error: any) {
-    return { success: false, error: error.message || "Error al registrar derivación" };
+    return { success: false, error: actionErrorMessage(error, "No se pudo registrar derivación") };
   }
 }

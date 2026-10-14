@@ -3,49 +3,60 @@
 import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
+import { actionErrorMessage } from "@/lib/action-error";
 
 export async function exportInterventionsAction() {
   const session = await auth();
-  if (!session?.user?.id) throw new Error("No autorizado");
+  if (!session?.user?.id) {
+    return { success: false as const, error: "Tu sesión expiró. Volvé a iniciar sesión." };
+  }
 
   const role = session.user.role;
   if (role !== "SUPERADMIN" && role !== "ADMIN_GENERAL" && role !== "DIRECCION_GENERAL") {
-    throw new Error("No tiene permisos para exportar datos sociales de intervenciones");
+    return { success: false as const, error: "No se pudo exportar: tu rol no tiene permiso para exportar intervenciones." };
   }
 
-  const interventions = await prisma.intervention.findMany({
-    include: {
-      person: true,
-      case: {
-        include: { area: true }
+  try {
+    const interventions = await prisma.intervention.findMany({
+      include: {
+        person: true,
+        case: {
+          include: { area: true }
+        }
+      },
+      orderBy: { date: 'desc' }
+    });
+
+    await prisma.auditLog.create({
+      data: {
+        userId: session.user.id,
+        action: 'EXPORT_INTERVENTIONS',
+        entity: 'Intervention',
+        entityId: 'ALL',
+        details: `Exportación masiva de ${interventions.length} registros de intervenciones sociales`
       }
-    },
-    orderBy: { date: 'desc' }
-  });
+    });
 
-  await prisma.auditLog.create({
-    data: {
-      userId: session.user.id,
-      action: 'EXPORT_INTERVENTIONS',
-      entity: 'Intervention',
-      entityId: 'ALL',
-      details: `Exportación masiva de ${interventions.length} registros de intervenciones sociales`
-    }
-  });
-
-  return interventions.map(i => ({
-    Fecha: i.date.toLocaleDateString('es-AR'),
-    Ciudadano: `${i.person.lastName}, ${i.person.firstName}`,
-    DNI: i.person.dni,
-    Area: i.case.area.name,
-    Caso: i.case.title,
-    Descripcion: i.description
-  }));
+    const rows = interventions.map(i => ({
+      Fecha: i.date.toLocaleDateString('es-AR'),
+      Ciudadano: `${i.person.lastName}, ${i.person.firstName}`,
+      DNI: i.person.dni,
+      Area: i.case.area.name,
+      Caso: i.case.title,
+      Descripcion: i.description
+    }));
+    return { success: true as const, rows };
+  } catch (error) {
+    console.error("Error en exportInterventionsAction:", error);
+    return { success: false as const, error: actionErrorMessage(error, "No se pudo exportar") };
+  }
 }
 
 export async function importInterventionsAction(data: any[]) {
   const session = await auth();
-  if (!session?.user) throw new Error("No autorizado");
+  if (!session?.user) {
+    return { success: false, createdCount: 0, errors: ["Tu sesión expiró. Volvé a iniciar sesión."] };
+  }
 
   let createdCount = 0;
   let errors: string[] = [];
@@ -163,7 +174,7 @@ export async function importInterventionsAction(data: any[]) {
 
       createdCount++;
     } catch (e: any) {
-      errors.push(`Error en fila: ${e.message}`);
+      errors.push(actionErrorMessage(e, `No se pudo importar la fila del DNI ${row.DNI || row.dni || row.Documento || "sin DNI"}`));
     }
   }
 

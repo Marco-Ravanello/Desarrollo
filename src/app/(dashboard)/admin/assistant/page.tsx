@@ -513,7 +513,7 @@ export default function AssistantPage() {
                   </div>
                   <div className="space-y-0.5 min-w-0 flex-1">
                     <p className="text-xs font-bold text-foreground leading-tight">{s.label}</p>
-                    <p className="text-[10px] text-muted-foreground line-clamp-2 leading-relaxed">Ej: "{s.query.substring(0, 40)}..."</p>
+                    <p className="text-[10px] text-muted-foreground line-clamp-2 leading-relaxed">Ej: &ldquo;{s.query.substring(0, 40)}...&rdquo;</p>
                   </div>
                 </button>
               ))}

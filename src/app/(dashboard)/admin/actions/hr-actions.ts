@@ -6,6 +6,7 @@ import { auth } from "@/auth";
 import prisma from "@/lib/prisma";
 import { HRStatus, HRRecord } from "@prisma/client";
 import { ActionResult } from "@/types/actions";
+import { actionErrorMessage } from "@/lib/action-error";
 
 function buildTasksPayload(formData: FormData) {
   const tasksRaw = formData.get("tasks") as string || "";
@@ -22,7 +23,7 @@ function buildTasksPayload(formData: FormData) {
 export async function createHRRecordAction(formData: FormData): Promise<ActionResult<HRRecord>> {
   const session = await auth();
   if (!session?.user || (session.user.role !== 'SUPERADMIN' && session.user.role !== 'ADMIN_GENERAL')) {
-    return { success: false, error: "No autorizado" };
+    return { success: false, error: "No tenés permiso para hacer esto o tu sesión expiró. Si sigue pasando, volvé a iniciar sesión." };
   }
 
   const tasksPayload = buildTasksPayload(formData);
@@ -51,14 +52,14 @@ export async function createHRRecordAction(formData: FormData): Promise<ActionRe
     return { success: true, data: newRecord };
   } catch (error) {
     console.error(error);
-    return { success: false, error: "Error al crear el legajo" };
+    return { success: false, error: actionErrorMessage(error, "No se pudo crear el legajo") };
   }
 }
 
 export async function updateHRRecordAction(id: string, formData: FormData): Promise<ActionResult<HRRecord>> {
   const session = await auth();
   if (!session?.user || (session.user.role !== 'SUPERADMIN' && session.user.role !== 'ADMIN_GENERAL')) {
-    return { success: false, error: "No autorizado" };
+    return { success: false, error: "No tenés permiso para hacer esto o tu sesión expiró. Si sigue pasando, volvé a iniciar sesión." };
   }
 
   const tasksPayload = buildTasksPayload(formData);
@@ -87,14 +88,14 @@ export async function updateHRRecordAction(id: string, formData: FormData): Prom
     return { success: true, data: updatedRecord };
   } catch (error) {
     console.error(error);
-    return { success: false, error: "Error al actualizar el legajo" };
+    return { success: false, error: actionErrorMessage(error, "No se pudo actualizar el legajo") };
   }
 }
 
 export async function deleteHRRecordAction(id: string): Promise<ActionResult<void>> {
   const session = await auth();
   if (!session?.user || (session.user.role !== 'SUPERADMIN' && session.user.role !== 'ADMIN_GENERAL')) {
-    return { success: false, error: "No autorizado" };
+    return { success: false, error: "No tenés permiso para hacer esto o tu sesión expiró. Si sigue pasando, volvé a iniciar sesión." };
   }
 
   try {
@@ -103,6 +104,6 @@ export async function deleteHRRecordAction(id: string): Promise<ActionResult<voi
     return { success: true };
   } catch (error) {
     console.error(error);
-    return { success: false, error: "Error al dar de baja el agente" };
+    return { success: false, error: actionErrorMessage(error, "No se pudo dar de baja el agente") };
   }
 }

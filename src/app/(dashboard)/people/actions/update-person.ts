@@ -3,11 +3,12 @@
 import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
+import { actionErrorMessage } from "@/lib/action-error";
 
 export async function updatePersonAction(id: string, formData: FormData) {
   const session = await auth();
   if (!session?.user?.id) {
-    return { success: false, error: "No autorizado" };
+    return { success: false, error: "No tenés permiso para hacer esto o tu sesión expiró. Si sigue pasando, volvé a iniciar sesión." };
   }
 
   const dni = (formData.get("dni") as string)?.trim();
@@ -91,6 +92,6 @@ export async function updatePersonAction(id: string, formData: FormData) {
     if (error?.code === "P2002") {
       return { success: false, error: "El DNI ingresado ya existe en la base de datos." };
     }
-    return { success: false, error: error.message || "Error al actualizar ciudadano" };
+    return { success: false, error: actionErrorMessage(error, "No se pudo actualizar ciudadano") };
   }
 }

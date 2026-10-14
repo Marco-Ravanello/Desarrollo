@@ -4,6 +4,7 @@ import { createPerson } from "@/services/people";
 import { createAuditLog } from "@/services/system";
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
+import { actionErrorMessage } from "@/lib/action-error";
 
 export async function createPersonAction(formData: FormData) {
   const session = await auth();
@@ -40,6 +41,6 @@ export async function createPersonAction(formData: FormData) {
     if (error.code === 'P2002') {
       return { success: false, error: "Ya existe una persona registrada con ese DNI" };
     }
-    return { success: false, error: "Ocurrió un error al guardar en la base de datos" };
+    return { success: false, error: actionErrorMessage(error, "No se pudo guardar la persona") };
   }
 }

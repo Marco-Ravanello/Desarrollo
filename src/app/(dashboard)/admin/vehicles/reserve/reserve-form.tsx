@@ -96,7 +96,7 @@ export function ReserveVehicleForm({ vehicleId, vehicles }: { vehicleId: string,
                     .filter(v => v.status === 'DISPONIBLE')
                     .map(v => ({ value: v.id, label: `${v.plate} - ${v.brand} ${v.model}` }))
                   }
-                  onChange={(val: string) => setSelectedVehicleId(val)}
+                  onValueChange={(val: string) => setSelectedVehicleId(val)}
                   required
                 />
                 <p className="text-[10px] text-muted-foreground italic">Solo se muestran unidades disponibles y fuera de taller.</p>
