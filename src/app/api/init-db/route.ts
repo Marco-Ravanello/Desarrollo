@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import bcrypt from "bcryptjs";
+import { randomBytes } from "crypto";
 import { auth } from "@/auth";
 
 export const dynamic = "force-dynamic";
@@ -54,7 +55,9 @@ export async function GET(request: Request) {
       where: { name: 'Dirección General de Desarrollo Humano y Hábitat' }
     });
 
-    const hashedPassword = await bcrypt.hash('admin123', 10);
+    // Clave inicial aleatoria (o la de INIT_ADMIN_PASSWORD): nunca una clave fija conocida.
+    const initialPassword = process.env.INIT_ADMIN_PASSWORD || randomBytes(9).toString("base64url");
+    const hashedPassword = await bcrypt.hash(initialPassword, 10);
 
     const adminUser = await prisma.user.create({
       data: {
@@ -66,24 +69,12 @@ export async function GET(request: Request) {
       },
     });
 
-    const providers = [
-      { name: 'Distribuidora Alimentos S.A.', cuit: '30-12345678-9', bank: 'Banco Nación', cbu: '0110123456789012345678' },
-      { name: 'Papelera Municipal', cuit: '20-87654321-0', bank: 'Banco Provincia', cbu: '0140123456789012345678' },
-      { name: 'Insumos Médicos S.R.L.', cuit: '33-11223344-5', bank: 'Banco Galicia', cbu: '0070123456789012345678' },
-    ];
-
-    for (const provider of providers) {
-      await prisma.provider.upsert({
-        where: { cuit: provider.cuit },
-        update: {},
-        create: provider,
-      });
-    }
-
     return NextResponse.json({
       success: true,
       message: "¡Base de datos inicializada con éxito!",
       adminUser: adminUser.email,
+      // Se muestra una sola vez; hay que cambiarla al entrar.
+      ...(process.env.INIT_ADMIN_PASSWORD ? {} : { initialPassword }),
       areasCount: areas.length,
     });
   } catch (error: any) {

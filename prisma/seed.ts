@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
+import { randomBytes } from 'crypto';
 
 const prisma = new PrismaClient();
 
@@ -26,22 +27,28 @@ async function main() {
 
   const adminArea = await prisma.area.findUnique({ where: { name: 'Dirección General de Desarrollo Humano y Hábitat' } });
 
-  // Create Admin User
-  const hashedPassword = await bcrypt.hash('admin123', 10);
-  await prisma.user.upsert({
-    where: { email: 'admin@municipio.gob.ar' },
-    update: {
-      password: hashedPassword,
-      role: 'SUPERADMIN',
-    },
-    create: {
-      email: 'admin@municipio.gob.ar',
-      name: 'Administrador General',
-      password: hashedPassword,
-      role: 'SUPERADMIN',
-      areaId: adminArea?.id,
-    },
-  });
+  // Usuario administrador inicial. Solo se crea si no existe: si ya está,
+  // el seed no le toca la clave ni el rol (antes la reseteaba a una clave conocida).
+  const existingAdmin = await prisma.user.findUnique({ where: { email: 'admin@municipio.gob.ar' } });
+  if (!existingAdmin) {
+    const initialPassword = process.env.SEED_ADMIN_PASSWORD || randomBytes(9).toString('base64url');
+    await prisma.user.create({
+      data: {
+        email: 'admin@municipio.gob.ar',
+        name: 'Administrador General',
+        password: await bcrypt.hash(initialPassword, 10),
+        role: 'SUPERADMIN',
+        areaId: adminArea?.id,
+      },
+    });
+    if (process.env.SEED_ADMIN_PASSWORD) {
+      console.log('👤 Admin creado: admin@municipio.gob.ar (clave tomada de SEED_ADMIN_PASSWORD)');
+    } else {
+      console.log(`👤 Admin creado: admin@municipio.gob.ar · clave inicial: ${initialPassword} (cambiala al entrar)`);
+    }
+  } else {
+    console.log('👤 El admin ya existe: no se modifica su clave.');
+  }
 
   console.log('✅ Seed completed successfully');
 }
