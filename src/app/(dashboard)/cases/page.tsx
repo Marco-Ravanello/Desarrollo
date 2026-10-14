@@ -30,6 +30,13 @@ interface CasesPageProps {
   }>;
 }
 
+const STATUS_LABELS: Record<string, string> = {
+  ACTIVOS: "Activos",
+  ABIERTO: "Abierto",
+  EN_PROCESO: "En proceso",
+  CERRADO: "Cerrado",
+};
+
 export default async function CasesPage({ searchParams }: CasesPageProps) {
   const session = await auth();
   if (!session?.user?.id) redirect("/login");
@@ -141,6 +148,7 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
               className="w-full h-10 px-3 rounded-xl bg-muted/30 border border-border/60 text-xs font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
             >
               <option value="all">Todos los Estados</option>
+              <option value="ACTIVOS">Activos (abiertos y en proceso)</option>
               <option value="ABIERTO">Abierto</option>
               <option value="EN_PROCESO">En Proceso</option>
               <option value="CERRADO">Cerrado / Resuelto</option>
@@ -169,7 +177,8 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
           <div className="flex items-center gap-2 mt-3 pt-3 border-t border-border/40 text-xs">
             <span className="text-[11px] font-bold text-muted-foreground">Filtros activos:</span>
             {q && <Badge variant="secondary" className="text-[10px]">Texto: {q}</Badge>}
-            {status && status !== "all" && <Badge variant="secondary" className="text-[10px]">Estado: {status}</Badge>}
+            {area && area !== "all" && <Badge variant="secondary" className="text-[10px]">Área: {areasList.find((a) => a.id === area)?.name || area}</Badge>}
+            {status && status !== "all" && <Badge variant="secondary" className="text-[10px]">Estado: {STATUS_LABELS[status] || status}</Badge>}
             {priority && priority !== "all" && <Badge variant="secondary" className="text-[10px]">Prioridad: {priority}</Badge>}
             <Button variant="ghost" size="sm" asChild className="h-6 text-[10px] text-muted-foreground hover:text-foreground">
               <Link href="/cases">Limpiar Filtros</Link>

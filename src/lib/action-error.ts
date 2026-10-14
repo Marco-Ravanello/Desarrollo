@@ -110,7 +110,10 @@ export function actionErrorMessage(error: unknown, fallback: string): string {
   }
 
   if (error instanceof Error && error.message && !looksTechnical(error.message)) {
-    return `${fallback}: ${error.message}`;
+    const msg = error.message.trim();
+    // "No se pudo X: la cantidad…" (en minúscula, salvo siglas como "DNI").
+    const reason = /^[A-ZÁÉÍÓÚÑ][a-záéíóúñ]/.test(msg) ? msg[0].toLowerCase() + msg.slice(1) : msg;
+    return `${fallback}: ${reason.replace(/\.$/, "")}.`;
   }
 
   return `${fallback}. Probá de nuevo y, si sigue pasando, avisá al equipo de sistemas.`;

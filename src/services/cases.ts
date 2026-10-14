@@ -163,20 +163,17 @@ export async function getAllCases(filters: GetCasesFilters = {}) {
   const where: any = {};
 
   if (!filters.canViewSensitive) {
-    where.area = {
-      name: {
-        not: {
-          contains: "violencia",
-          mode: "insensitive"
-        }
-      }
-    };
+    // Prisma no acepta `mode` dentro de `not`; se excluye el área con NOT.
+    where.NOT = { area: { name: { contains: "violencia", mode: "insensitive" } } };
   }
 
   if (filters.areaId && filters.areaId !== "all") {
     where.areaId = filters.areaId;
   }
-  if (filters.status && filters.status !== "all") {
+  if (filters.status === "ACTIVOS") {
+    // Abiertos y en proceso: lo mismo que cuenta "Casos activos" en el Dashboard.
+    where.status = { in: ["ABIERTO", "EN_PROCESO"] };
+  } else if (filters.status && filters.status !== "all") {
     where.status = filters.status;
   }
   if (filters.priority && filters.priority !== "all") {
