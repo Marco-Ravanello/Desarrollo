@@ -45,6 +45,14 @@ npx prisma db execute --file prisma/migrations/20261014000000_add_emergency_surv
 ## Modo sin conexión (Emergencia Climática)
 `public/sw.js` guarda en el dispositivo la pantalla `/admin/emergency` y sus archivos (solo en producción). Las fichas cargadas sin internet quedan en el navegador (`src/lib/emergency-offline.ts`) y se envían a `/api/emergency/fichas` cuando vuelve la conexión; cada una lleva un `clientId`, así que reenviarla no la duplica. Al cerrar sesión se borra la pantalla guardada, pero no las fichas pendientes de envío.
 
+## Ubicar en el mapa (Mapa Social)
+El Mapa Social muestra solo personas del padrón con un punto real (`padron_unificado.latitude/longitude`). Desde **Mapa Social > Ubicar en el mapa** (Superadmin, Admin General y Dirección General) se buscan las direcciones:
+1. Georef (`apis.datos.gob.ar/georef`, servicio oficial de direcciones), de a 100 por tanda, limitado al partido (código 06840).
+2. Las que Georef no encuentra se prueban con OpenStreetMap (Nominatim), de a una por segundo como pide su política de uso. Solo se acepta un resultado con la altura exacta y dentro de Tres de Febrero.
+3. Las que no aparecen quedan en la lista para corregir la dirección o marcar el punto a mano.
+
+El avance queda en `geo_estado` (`SIN_GEOREF`, `UBICADA`, `NO_ENCONTRADA`, `SIN_DIRECCION`, `MANUAL`) y `geo_fuente` (`GEOREF`, `OSM`, `MANUAL`), así que se puede pausar y seguir otro día. Cada corrección o punto marcado a mano queda en Auditoría (`PADRON_GEO_UPDATE`).
+
 ## .env
 ```
 DATABASE_URL="postgresql://user:password@localhost:5432/munidb?schema=public"

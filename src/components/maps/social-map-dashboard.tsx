@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import dynamic from "next/dynamic";
+import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,7 +11,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { StatCard } from "@/components/ui/stat-card";
 import {
   MapPin, Users, Filter, Search, RotateCcw, Map as MapIcon,
-  Flame, Layers, Building2, Sparkles, HeartHandshake
+  Flame, Layers, Building2, Sparkles, HeartHandshake, MapPinned, Info
 } from "lucide-react";
 import {
   MUNICIPAL_LOCALITIES,
@@ -42,6 +43,10 @@ interface SocialMapDashboardProps {
     topArea: string;
     localityTotals?: Record<string, number>;
   };
+  /** Personas del padrón que todavía no tienen un punto en el mapa. */
+  unlocated?: number;
+  /** Puede abrir "Ubicar en el mapa" (conducción). */
+  canLocate?: boolean;
 }
 
 function calculateHaversineDistance(
@@ -63,7 +68,7 @@ function calculateHaversineDistance(
   return R * c;
 }
 
-export function SocialMapDashboard({ initialPeople, stats }: SocialMapDashboardProps) {
+export function SocialMapDashboard({ initialPeople, stats, unlocated = 0, canLocate = false }: SocialMapDashboardProps) {
   const [selectedLocalityId, setSelectedLocalityId] = useState<string>("all");
   const [selectedProgram, setSelectedProgram] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
@@ -260,6 +265,14 @@ export function SocialMapDashboard({ initialPeople, stats }: SocialMapDashboardP
         icon={MapPin}
         badge="Georreferenciación Localidades"
         actions={
+          <>
+          {canLocate && (
+            <Button asChild variant="outline" className="rounded-xl">
+              <Link href="/maps/ubicar">
+                <MapPinned className="h-4 w-4" /> Ubicar en el mapa
+              </Link>
+            </Button>
+          )}
           <UniversalExportMenu
             data={exportData}
             columns={exportColumns}
@@ -268,8 +281,32 @@ export function SocialMapDashboard({ initialPeople, stats }: SocialMapDashboardP
             subtitle="MUNICIPALIDAD DE TRES DE FEBRERO"
             label="Exportar Padrón Zona"
           />
+          </>
         }
       />
+
+      {unlocated > 0 && (
+        <div className="flex flex-col gap-3 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-3">
+            <Info className="mt-0.5 h-5 w-5 shrink-0 text-amber-600 dark:text-amber-400" />
+            <p className="text-sm text-foreground">
+              <span className="font-bold">
+                {unlocated === 1
+                  ? "Falta ubicar 1 persona del padrón."
+                  : `Faltan ubicar ${unlocated.toLocaleString("es-AR")} personas del padrón.`}
+              </span>{" "}
+              El mapa muestra solo los puntos reales: {unlocated === 1 ? "esa persona aparece" : "esas personas aparecen"} cuando se ubica su dirección.
+            </p>
+          </div>
+          {canLocate && (
+            <Button asChild size="sm" className="shrink-0 rounded-xl">
+              <Link href="/maps/ubicar">
+                <MapPinned className="h-4 w-4" /> Ir a ubicar
+              </Link>
+            </Button>
+          )}
+        </div>
+      )}
 
       <Card className="bg-card text-card-foreground border border-border/60 shadow-xs rounded-2xl p-5">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
@@ -355,9 +392,9 @@ export function SocialMapDashboard({ initialPeople, stats }: SocialMapDashboardP
           value={georeferencedFiltered.length}
           hint={
             <span className="font-bold text-emerald-500">
-              {filteredPeople.length > 0
-                ? `${Math.round((georeferencedFiltered.length / filteredPeople.length) * 100)}% georreferenciados`
-                : "0%"}
+              {initialPeople.length + unlocated > 0
+                ? `${Math.round((initialPeople.length / (initialPeople.length + unlocated)) * 100)}% del padrón ubicado`
+                : "Sin personas ubicadas"}
             </span>
           }
           icon={MapPin}
