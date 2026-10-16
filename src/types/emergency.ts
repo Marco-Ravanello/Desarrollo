@@ -31,11 +31,14 @@ export interface StormVictimItem {
   createdById?: string | null;
   /** Identificador generado en el dispositivo (evita duplicados al reenviar fichas sin conexión). */
   clientId?: string | null;
+  /** Otros insumos pedidos (agregados desde Stock de Contingencia): { idInsumo: cantidad }. */
+  otrosElementos?: Record<string, number> | null;
   /** Lo entregado hasta ahora (suma de las entregas registradas). */
   entregadoColchon?: number;
   entregadoCama?: number;
   entregadoCucheta?: number;
   entregadoFrazada?: number;
+  entregadoOtros?: Record<string, number>;
   ultimaEntrega?: Date | string | null;
   /** Ficha guardada en la tabla de fichas (las de respaldo viejas no admiten entregas). */
   fromTable?: boolean;
@@ -54,6 +57,12 @@ export interface EmergencyStockItem {
   unit: string;
   status: "CRITICO" | "CORRECTO" | "EXCESO";
   areaName?: string;
+}
+
+export interface EmergencyExtraItem {
+  id: string;
+  name: string;
+  unit: string;
 }
 
 export interface EmergencyOperatorInfo {
@@ -75,6 +84,8 @@ export interface EmergencyOperationsData {
     canDeliver: boolean;
   };
   stock: EmergencyStockItem[];
+  /** Insumos agregados que se pueden pedir en las fichas (sin stock: lo ve también el relevador). */
+  extraItems: EmergencyExtraItem[];
   records: StormVictimItem[];
   metrics: {
     totalVictims: number;

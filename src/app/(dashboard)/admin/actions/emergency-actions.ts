@@ -10,7 +10,7 @@ import {
   EmergencyCategoryKey,
   findCategorySupply,
 } from "@/services/emergency";
-import { quantityText } from "@/lib/emergency-categories";
+import { cleanItemQuantities, extraQuantityText, quantityText } from "@/lib/emergency-categories";
 import { DELIVERY_DB_PENDING_MESSAGE, isDeliveryTableReady, stormRecordOmit } from "@/services/emergency-db-status";
 import { saveStormVictimRecord } from "@/services/emergency-save";
 import { getCategoryLinks, getEmergencyExtraItems, linkCategorySupply, saveEmergencyExtraItems } from "@/services/emergency-stock-links";
@@ -489,7 +489,13 @@ export type DeliveryQuantities = Partial<Record<EmergencyCategoryKey, number>>;
  * stock del depósito, deja constancia en la ficha y en su expediente. Puede
  * ser parcial (lo que falta queda pendiente).
  */
-export async function deliverStormItemsAction(recordId: string, quantities: DeliveryQuantities, observaciones?: string) {
+export async function deliverStormItemsAction(
+  recordId: string,
+  quantities: DeliveryQuantities,
+  observaciones?: string,
+  /** Otros insumos entregados (chapas, nylon...): { idInsumo: cantidad }. */
+  otros?: Record<string, number>
+) {
   const session = await auth();
   if (!session?.user?.id) return { success: false, error: "No tenés permiso para hacer esto o tu sesión expiró. Si sigue pasando, volvé a iniciar sesión." };
   if (!canManageEmergencyStock(session.user.role)) return { success: false, error: "Tu usuario no puede registrar entregas." };
@@ -498,7 +504,8 @@ export async function deliverStormItemsAction(recordId: string, quantities: Deli
   const qty = Object.fromEntries(
     EMERGENCY_CATEGORIES.map((c) => [c.key, Math.max(0, Math.floor(Number(quantities?.[c.key]) || 0))])
   ) as Record<EmergencyCategoryKey, number>;
-  if (Object.values(qty).every((q) => q === 0)) {
+  const otrosQty = cleanItemQuantities(otros);
+  if (Object.values(qty).every((q) => q === 0) && Object.keys(otrosQty).length === 0) {
     return { success: false, error: "Indicá al menos un elemento entregado." };
   }
 
@@ -567,6 +574,36 @@ export async function deliverStormItemsAction(recordId: string, quantities: Deli
         await tx.supplyRequest.create({ data: { supplyId: item.id, quantity: q, userId, status: "ENTREGADO" } });
       }
 
+      // Otros insumos pedidos en la ficha.
+      const requestedOtros = cleanItemQuantities(record.otrosElementos);
+      const deliveredOtros: Record<string, number> = {};
+      for (const e of record.entregas) {
+        for (const [id, n] of Object.entries(cleanItemQuantities(e.otrosElementos))) deliveredOtros[id] = (deliveredOtros[id] || 0) + n;
+      }
+      const otrosNames = new Map<string, string>();
+      for (const [id, q] of Object.entries(otrosQty)) {
+        const item = supplies.find((s) => s.id === id);
+        if (!item) throw new DeliveryError("Uno de los insumos ya no existe en el depósito");
+        otrosNames.set(id, item.name);
+        const pending = Math.max(0, (requestedOtros[id] || 0) - (deliveredOtros[id] || 0));
+        if (q > pending) {
+          throw new DeliveryError(
+            pending === 0
+              ? `En esta ficha no quedan ${item.name} por entregar`
+              : `En esta ficha quedan ${pending} ${item.name} por entregar, no ${q}`
+          );
+        }
+        const updated = await tx.supplyItem.updateMany({
+          where: { id, stock: { gte: q } },
+          data: { stock: { decrement: q } },
+        });
+        if (updated.count === 0) {
+          const fresh = await tx.supplyItem.findUnique({ where: { id } });
+          throw new DeliveryError(`No alcanza el stock de ${item.name}: quedan ${fresh?.stock ?? 0}`);
+        }
+        await tx.supplyRequest.create({ data: { supplyId: id, quantity: q, userId, status: "ENTREGADO" } });
+      }
+
       await tx.stormDelivery.create({
         data: {
           recordId,
@@ -574,22 +611,26 @@ export async function deliverStormItemsAction(recordId: string, quantities: Deli
           camas: qty.CAMA,
           cuchetas: qty.CUCHETA,
           frazadas: qty.FRAZADA,
+          ...(Object.keys(otrosQty).length > 0 ? { otrosElementos: otrosQty } : {}),
           observaciones: observaciones?.trim() || null,
           userId,
           userName,
         },
       });
 
-      const complete = EMERGENCY_CATEGORIES.every((c) => requested[c.key] - delivered[c.key] - qty[c.key] <= 0);
+      const complete =
+        EMERGENCY_CATEGORIES.every((c) => requested[c.key] - delivered[c.key] - qty[c.key] <= 0) &&
+        Object.entries(requestedOtros).every(([id, n]) => n - (deliveredOtros[id] || 0) - (otrosQty[id] || 0) <= 0);
       const estado = complete ? "ENTREGADO" : "ENTREGA_PARCIAL";
       await tx.stormVictimRecord.update({ where: { id: recordId }, data: { estado }, omit });
 
-      return { estado, caseId: record.caseId, personId: record.personId, nombre: record.nombreApellido };
+      return { estado, caseId: record.caseId, personId: record.personId, nombre: record.nombreApellido, otrosNames };
     });
 
-    const summary = EMERGENCY_CATEGORIES.filter((c) => qty[c.key] > 0)
-      .map((c) => quantityText(c.key, qty[c.key]))
-      .join(", ");
+    const summary = [
+      ...EMERGENCY_CATEGORIES.filter((c) => qty[c.key] > 0).map((c) => quantityText(c.key, qty[c.key])),
+      ...Object.entries(otrosQty).map(([id, n]) => extraQuantityText(id, n, result.otrosNames)),
+    ].join(", ");
 
     if (result.caseId && result.personId) {
       await prisma.intervention

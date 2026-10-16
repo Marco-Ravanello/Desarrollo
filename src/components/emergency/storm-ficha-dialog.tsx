@@ -15,7 +15,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Printer, Save, UserCheck, ShieldAlert, Sparkles, MapPin, Phone, Home } from "lucide-react";
 import { toast } from "sonner";
-import { StormVictimItem, EmergencyPriority, SearchPersonSuggestion } from "@/types/emergency";
+import { StormVictimItem, EmergencyPriority, SearchPersonSuggestion, EmergencyExtraItem } from "@/types/emergency";
 import { searchPeopleForEmergencyAction } from "@/app/(dashboard)/admin/actions/emergency-actions";
 import { saveFichaOrQueue } from "@/lib/emergency-offline";
 import { MunicipalLetterhead } from "@/components/ui/municipal-letterhead";
@@ -31,6 +31,8 @@ interface StormFichaDialogProps {
   userId: string;
   /** Auditoría consulta e imprime pero no guarda. */
   canEdit?: boolean;
+  /** Otros insumos que se pueden pedir (agregados desde Stock de Contingencia). */
+  extraItems?: EmergencyExtraItem[];
 }
 
 export function StormFichaDialog({
@@ -42,6 +44,7 @@ export function StormFichaDialog({
   onSaved,
   userId,
   canEdit = true,
+  extraItems = [],
 }: StormFichaDialogProps) {
   const [nombreApellido, setNombreApellido] = useState("");
   const [dni, setDni] = useState("");
@@ -62,6 +65,8 @@ export function StormFichaDialog({
   const [cantidadCucheta, setCantidadCucheta] = useState(0);
   const [requiereFrazada, setRequiereFrazada] = useState(false);
   const [cantidadFrazada, setCantidadFrazada] = useState(0);
+  // Otros insumos pedidos: { idInsumo: cantidad }.
+  const [otros, setOtros] = useState<Record<string, number>>({});
 
   const [prioridad, setPrioridad] = useState<EmergencyPriority>("MEDIA");
   const [descripcionIntervencion, setDescripcionIntervencion] = useState("");
@@ -93,6 +98,7 @@ export function StormFichaDialog({
       setCantidadCucheta(initialRecord.cantidadCucheta || 0);
       setRequiereFrazada(Boolean(initialRecord.requiereFrazada));
       setCantidadFrazada(initialRecord.cantidadFrazada || 0);
+      setOtros({ ...(initialRecord.otrosElementos || {}) });
 
       setPrioridad((initialRecord.prioridad as EmergencyPriority) || "MEDIA");
       setDescripcionIntervencion(initialRecord.descripcionIntervencion || "");
@@ -122,6 +128,7 @@ export function StormFichaDialog({
     setCantidadCucheta(0);
     setRequiereFrazada(false);
     setCantidadFrazada(0);
+    setOtros({});
 
     setPrioridad("MEDIA");
     setDescripcionIntervencion("");
@@ -191,6 +198,7 @@ export function StormFichaDialog({
       cantidadCucheta: requiereCucheta ? Math.max(1, cantidadCucheta) : 0,
       requiereFrazada,
       cantidadFrazada: requiereFrazada ? Math.max(1, cantidadFrazada) : 0,
+      otrosElementos: Object.fromEntries(Object.entries(otros).filter(([, n]) => n > 0).map(([id, n]) => [id, Math.floor(n)])),
       prioridad,
       descripcionIntervencion,
       observaciones,
@@ -581,6 +589,45 @@ export function StormFichaDialog({
                 )}
               </div>
             </div>
+
+            {extraItems.length > 0 && (
+              <div className="space-y-2">
+                <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Otros insumos</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 bg-muted/20 p-4 rounded-2xl border border-border/50">
+                  {extraItems.map((item) => {
+                    const qty = otros[item.id] || 0;
+                    const inputId = `reqOtro-${item.id}`;
+                    return (
+                      <div key={item.id} className="space-y-2 p-3 bg-background rounded-xl border border-border/60">
+                        <div className="flex items-center gap-2">
+                          <Checkbox
+                            id={inputId}
+                            checked={qty > 0}
+                            onCheckedChange={(c) => setOtros((o) => ({ ...o, [item.id]: c ? Math.max(1, o[item.id] || 0) : 0 }))}
+                          />
+                          <Label htmlFor={inputId} className="text-xs font-bold cursor-pointer min-w-0 break-words">
+                            {item.name}
+                          </Label>
+                        </div>
+                        {qty > 0 && (
+                          <div className="pt-1">
+                            <Label className="text-[10px] text-muted-foreground font-bold">Cantidad ({item.unit.toLowerCase()})</Label>
+                            <Input
+                              type="number"
+                              value={qty}
+                              onChange={(e) => setOtros((o) => ({ ...o, [item.id]: Math.max(1, Math.floor(Number(e.target.value)) || 1) }))}
+                              min="1"
+                              aria-label={`Cantidad de ${item.name}`}
+                              className="h-8 rounded-lg text-xs font-bold mt-0.5"
+                            />
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
 
           <DialogFooter className="print:hidden border-t border-border/40 pt-4 gap-2">

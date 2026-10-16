@@ -1,6 +1,7 @@
 import prisma from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
-import { syncPersonInDatabase, getEmergencyOperator, getStormVictimRecords } from "@/services/emergency";
+import { syncPersonInDatabase, getEmergencyOperator, getStormVictimRecords, getEmergencyExtraItemOptions } from "@/services/emergency";
+import { cleanItemQuantities } from "@/lib/emergency-categories";
 import { StormVictimItem } from "@/types/emergency";
 import { actionErrorMessage } from "@/lib/action-error";
 import { canEditSocialRecords, isEmergencySurveyor } from "@/lib/permissions";
@@ -87,6 +88,13 @@ export async function saveStormVictimRecord(
     if (recordData.requiereCucheta && recordData.cantidadCucheta) itemElements.push(`${recordData.cantidadCucheta} Cucheta(s)`);
     if (recordData.requiereFrazada && recordData.cantidadFrazada) itemElements.push(`${recordData.cantidadFrazada} Frazada(s)`);
 
+    // Otros insumos (chapas, nylon...): solo los que existen en Stock de Contingencia.
+    const extraOptions = await getEmergencyExtraItemOptions();
+    const otrosElementos = cleanItemQuantities(recordData.otrosElementos, new Set(extraOptions.map((o) => o.id)));
+    for (const o of extraOptions) {
+      if (otrosElementos[o.id]) itemElements.push(`${otrosElementos[o.id]} ${o.name}`);
+    }
+
     const elementsSummary = itemElements.length > 0 ? itemElements.join(", ") : "Sin solicitud inmediata de mobiliario";
 
     const caseTitle = `[CONTINGENCIA TORMENTA] Asistencia a ${recordData.nombreApellido} - ${recordData.barrio || recordData.domicilio}`;
@@ -154,6 +162,8 @@ export async function saveStormVictimRecord(
             cantidadCucheta: Number(recordData.cantidadCucheta) || 0,
             requiereFrazada: recordData.requiereFrazada || false,
             cantidadFrazada: Number(recordData.cantidadFrazada) || 0,
+            // Si el formulario no los manda, se dejan como estaban.
+            ...(recordData.otrosElementos !== undefined ? { otrosElementos } : {}),
             observaciones: recordData.observaciones || null,
             contacto: recordData.contacto || null,
             agentes: recordData.agentes || operator.name,
@@ -236,6 +246,7 @@ export async function saveStormVictimRecord(
       cantidadCucheta: Number(recordData.cantidadCucheta) || 0,
       requiereFrazada: recordData.requiereFrazada || false,
       cantidadFrazada: Number(recordData.cantidadFrazada) || 0,
+      otrosElementos,
       observaciones: recordData.observaciones || null,
       contacto: recordData.contacto || null,
       agentes: recordData.agentes || operator.name,

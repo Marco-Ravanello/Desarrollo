@@ -74,15 +74,54 @@ export function pendingByCategory(r: StormVictimItem): Record<EmergencyCategoryK
   };
 }
 
+/**
+ * Deja solo cantidades enteras positivas: { idInsumo: cantidad }. Si se pasa
+ * `allowedIds`, descarta los insumos que no estén en la lista.
+ */
+export function cleanItemQuantities(value: unknown, allowedIds?: Set<string>): Record<string, number> {
+  const out: Record<string, number> = {};
+  if (!value || typeof value !== "object" || Array.isArray(value)) return out;
+  for (const [id, raw] of Object.entries(value as Record<string, unknown>)) {
+    const n = Math.floor(Number(raw));
+    if (!id || !Number.isFinite(n) || n <= 0) continue;
+    if (allowedIds && !allowedIds.has(id)) continue;
+    out[id] = Math.min(n, 100000);
+  }
+  return out;
+}
+
+/** Otros insumos pedidos en la ficha (chapas, nylon...). */
+export function requestedExtras(r: StormVictimItem): Record<string, number> {
+  return cleanItemQuantities(r.otrosElementos);
+}
+
+/** Lo que falta entregar de los otros insumos de la ficha. */
+export function pendingExtras(r: StormVictimItem): Record<string, number> {
+  const delivered = r.entregadoOtros || {};
+  const out: Record<string, number> = {};
+  for (const [id, n] of Object.entries(requestedExtras(r))) {
+    const left = n - (delivered[id] || 0);
+    if (left > 0) out[id] = left;
+  }
+  return out;
+}
+
+const total = (values: Record<string, number>) => Object.values(values).reduce((a, b) => a + b, 0);
+
 export type DeliveryStatus = "SIN_PEDIDO" | "PENDIENTE" | "PARCIAL" | "ENTREGADO";
 
 export function deliveryStatus(r: StormVictimItem): DeliveryStatus {
-  const requested = Object.values(requestedByCategory(r)).reduce((a, b) => a + b, 0);
+  const requested = total(requestedByCategory(r)) + total(requestedExtras(r));
   if (requested === 0) return "SIN_PEDIDO";
-  const pending = Object.values(pendingByCategory(r)).reduce((a, b) => a + b, 0);
+  const pending = total(pendingByCategory(r)) + total(pendingExtras(r));
   if (pending === 0) return "ENTREGADO";
-  const delivered = Object.values(deliveredByCategory(r)).reduce((a, b) => a + b, 0);
+  const delivered = total(deliveredByCategory(r)) + total(r.entregadoOtros || {});
   return delivered > 0 ? "PARCIAL" : "PENDIENTE";
+}
+
+/** "3 Chapas" (o "3 insumo eliminado" si ya no existe). */
+export function extraQuantityText(id: string, n: number, names: Map<string, string>): string {
+  return `${n} ${names.get(id) || "insumo eliminado"}`;
 }
 
 export const DELIVERY_STATUS_LABEL: Record<DeliveryStatus, string> = {

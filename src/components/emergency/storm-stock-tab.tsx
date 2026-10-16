@@ -204,7 +204,7 @@ export function StormStockTab({ stock, onRefresh }: StormStockTabProps) {
                   <div>
                     <h4 className="text-sm font-bold text-foreground">{item.name}</h4>
                     <p className="text-xs text-muted-foreground mt-0.5">
-                      {fromSheets ? `Se pide en las fichas como "${categoryTitle(item.category)}"` : item.description || item.areaName}
+                      {fromSheets ? `Se pide en las fichas como "${categoryTitle(item.category)}"` : "Se pide en las fichas en \"Otros insumos\""}
                     </p>
                   </div>
                 )}
@@ -227,21 +227,13 @@ export function StormStockTab({ stock, onRefresh }: StormStockTabProps) {
                       <p className="text-lg font-bold text-foreground">{item.availableStock}</p>
                     )}
                   </div>
-                  {fromSheets ? (
-                    <div>
-                      <span className="text-[10px] text-muted-foreground uppercase font-bold">Falta entregar</span>
-                      <p className="text-lg font-bold text-amber-600">{item.demandedQuantity}</p>
-                    </div>
-                  ) : (
-                    <div>
-                      <span className="text-[10px] text-muted-foreground uppercase font-bold">Mínimo de alerta</span>
-                      <p className="text-lg font-bold text-foreground">{item.minStock}</p>
-                    </div>
-                  )}
+                  <div>
+                    <span className="text-[10px] text-muted-foreground uppercase font-bold">Falta entregar</span>
+                    <p className="text-lg font-bold text-amber-600">{item.demandedQuantity}</p>
+                  </div>
                 </div>
 
-                {fromSheets ? (
-                  <div className="space-y-1">
+                <div className="space-y-1">
                     <div className="flex justify-between text-[10px] font-bold text-muted-foreground">
                       <span>Cobertura de lo que falta entregar</span>
                       <span>{percentage}%</span>
@@ -250,10 +242,7 @@ export function StormStockTab({ stock, onRefresh }: StormStockTabProps) {
                       value={percentage}
                       className={`h-2 ${percentage < 100 ? "[&>div]:bg-rose-500" : "[&>div]:bg-primary"}`}
                     />
-                  </div>
-                ) : (
-                  <p className="text-[11px] text-muted-foreground">No se pide en las fichas: se entrega desde el depósito.</p>
-                )}
+                </div>
 
                 <div className="mt-auto">
                   {isEditingThisCard ? (

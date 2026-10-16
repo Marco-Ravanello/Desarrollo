@@ -17,7 +17,7 @@ import { StormStockTab } from "@/components/emergency/storm-stock-tab";
 import { StormSummaryTab } from "@/components/emergency/storm-summary-tab";
 import { StormDeliveryDialog } from "@/components/emergency/storm-delivery-dialog";
 import { DeliveryBadge } from "@/components/emergency/storm-sheet-table";
-import { deliveryStatus } from "@/lib/emergency-categories";
+import { deliveryStatus, extraQuantityText } from "@/lib/emergency-categories";
 import { OfflineFichasPanel, useOfflineFichas } from "@/components/emergency/offline-fichas-panel";
 import { exportStormSheetToExcel } from "@/lib/export-storm-excel";
 import { useRouter } from "next/navigation";
@@ -57,7 +57,8 @@ export function EmergencyView({ initialData, deniedAccess }: EmergencyViewProps)
   const [isFichaOpen, setIsFichaOpen] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<StormVictimItem | null>(null);
 
-  const { operator, viewer, stock, records, metrics } = initialData;
+  const { operator, viewer, stock, records, metrics, extraItems } = initialData;
+  const extraNames = new Map(extraItems.map((i) => [i.id, i.name]));
   const surveyor = viewer.onlyOwnRecords;
 
   useCacheForOffline();
@@ -80,7 +81,7 @@ export function EmergencyView({ initialData, deniedAccess }: EmergencyViewProps)
       toast.error("No hay registros en la planilla para exportar.");
       return;
     }
-    exportStormSheetToExcel(records, operator);
+    exportStormSheetToExcel(records, operator, undefined, extraItems);
     toast.success("Planilla Oficial descargada en formato Excel (.xlsx)");
   };
 
@@ -269,6 +270,7 @@ export function EmergencyView({ initialData, deniedAccess }: EmergencyViewProps)
         <div className="space-y-4 animate-in fade-in duration-300">
           <StormSheetTable
             records={records}
+            extraItems={extraItems}
             operatorName={operator.name}
             areaName={operator.areaName}
             onOpenFicha={handleOpenEditFicha}
@@ -320,6 +322,9 @@ export function EmergencyView({ initialData, deniedAccess }: EmergencyViewProps)
                     {r.cantidadCama > 0 && <Badge variant="secondary" className="text-[9px]">{r.cantidadCama} Camas</Badge>}
                     {r.cantidadCucheta > 0 && <Badge variant="secondary" className="text-[9px]">{r.cantidadCucheta} Cuchetas</Badge>}
                     {r.cantidadFrazada > 0 && <Badge variant="secondary" className="text-[9px]">{r.cantidadFrazada} Frazadas</Badge>}
+                    {Object.entries(r.otrosElementos || {}).map(([id, n]) => (
+                      <Badge key={id} variant="secondary" className="text-[9px]">{extraQuantityText(id, n, extraNames)}</Badge>
+                    ))}
                   </div>
                   <DeliveryBadge record={r} />
                 </div>
@@ -370,6 +375,7 @@ export function EmergencyView({ initialData, deniedAccess }: EmergencyViewProps)
         onSaved={handleRefresh}
         userId={operator.userId}
         canEdit={viewer.canEdit}
+        extraItems={extraItems}
       />
 
       <StormDeliveryDialog

@@ -1,14 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { StormVictimItem, SearchPersonSuggestion } from "@/types/emergency";
+import { StormVictimItem, SearchPersonSuggestion, EmergencyExtraItem } from "@/types/emergency";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { FileText, Trash2, Plus, Search, Filter, Sparkles, UserCheck, PackageCheck } from "lucide-react";
-import { DELIVERY_STATUS_LABEL, deliveryStatus } from "@/lib/emergency-categories";
+import { DELIVERY_STATUS_LABEL, deliveryStatus, extraQuantityText } from "@/lib/emergency-categories";
 import { toast } from "sonner";
 import {
   searchPeopleForEmergencyAction,
@@ -28,6 +28,8 @@ interface StormSheetTableProps {
   canEdit?: boolean;
   /** Abre el registro de entrega (solo para quien puede mover stock). */
   onDeliver?: (record: StormVictimItem) => void;
+  /** Nombres de los otros insumos que se pueden pedir. */
+  extraItems?: EmergencyExtraItem[];
 }
 
 export function StormSheetTable({
@@ -39,7 +41,9 @@ export function StormSheetTable({
   userId,
   canEdit = true,
   onDeliver,
+  extraItems = [],
 }: StormSheetTableProps) {
+  const extraNames = new Map(extraItems.map((i) => [i.id, i.name]));
   const [searchTerm, setSearchTerm] = useState("");
   const [priorityFilter, setPriorityFilter] = useState<string>("ALL");
 
@@ -274,6 +278,11 @@ export function StormSheetTable({
                 <TableCell className="text-center font-bold border-r border-border/40">{r.cantidadFrazada || 0}</TableCell>
 
                 <TableCell className="border-r border-border/40 text-[11px]">
+                  {Object.keys(r.otrosElementos || {}).length > 0 && (
+                    <div className="font-bold text-amber-600">
+                      Otros: {Object.entries(r.otrosElementos || {}).map(([id, n]) => extraQuantityText(id, n, extraNames)).join(", ")}
+                    </div>
+                  )}
                   {r.observaciones && <div>{r.observaciones}</div>}
                   {r.contacto && <div className="text-muted-foreground font-semibold">Tel: {r.contacto}</div>}
                   <Badge variant="outline" className={`mt-1 text-[9px] font-bold ${
