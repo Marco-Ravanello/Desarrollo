@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
+import { canUseAiAssistant } from "@/lib/permissions";
 import { queryAIAssistantStream } from "@/services/ai-assistant";
 
 export const dynamic = "force-dynamic";
@@ -8,6 +9,9 @@ export async function POST(req: NextRequest) {
   const session = await auth();
   if (!session || !session.user) {
     return NextResponse.json({ error: "No autorizado. Inicie sesión para continuar." }, { status: 401 });
+  }
+  if (!canUseAiAssistant(session.user.role)) {
+    return NextResponse.json({ error: "Tu rol no tiene acceso al Asistente de IA." }, { status: 403 });
   }
 
   try {
