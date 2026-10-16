@@ -26,17 +26,25 @@ const MAX_ZOOM = 18;
 /** Cuántas personas se listan al tocar un grupo que ya no se puede separar. */
 const GROUP_LIST_LIMIT = 50;
 
-const svgMarkerHtml = `
+/** Azul: dirección exacta. Ámbar: punto aproximado (la dirección solo tiene el barrio). */
+const EXACT_COLOR = "#2563EB";
+const APPROX_COLOR = "#D97706";
+
+const svgMarkerHtml = (color: string) => `
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 36" width="26" height="36">
-    <path fill="#2563EB" stroke="#FFFFFF" stroke-width="1.5" d="M12 0C5.37 0 0 5.37 0 12c0 9 12 24 12 24s12-15 12-24c0-6.63-5.37-12-12-12z"/>
+    <path fill="${color}" stroke="#FFFFFF" stroke-width="1.5" d="M12 0C5.37 0 0 5.37 0 12c0 9 12 24 12 24s12-15 12-24c0-6.63-5.37-12-12-12z"/>
     <circle cx="12" cy="11" r="5" fill="#FFFFFF"/>
-    <circle cx="12" cy="11" r="3" fill="#2563EB"/>
+    <circle cx="12" cy="11" r="3" fill="${color}"/>
   </svg>
 `;
+
+type Variant = "exact" | "approx";
 
 interface MapViewProps {
   /** DNI de cada punto, en el mismo orden que `coords`. */
   dnis: string[];
+  /** Los primeros `exactCount` puntos son exactos; el resto, aproximados (solo barrio). */
+  exactCount: number;
   /** Coordenadas planas: [lat0, lon0, lat1, lon1, ...]. */
   coords: number[];
   loading?: boolean;
@@ -64,18 +72,19 @@ function shortCount(n: number) {
 }
 
 const clusterIcons = new Map<string, L.DivIcon>();
-function clusterIcon(count: number) {
+function clusterIcon(count: number, variant: Variant) {
   const label = shortCount(count);
-  const cached = clusterIcons.get(label);
+  const key = `${variant}:${label}`;
+  const cached = clusterIcons.get(key);
   if (cached) return cached;
   const size = count < 10 ? 32 : count < 100 ? 38 : count < 1000 ? 46 : count < 10000 ? 54 : 62;
   const icon = L.divIcon({
-    html: `<div class="map-cluster" style="width:${size}px;height:${size}px">${label}</div>`,
+    html: `<div class="map-cluster${variant === "approx" ? " map-cluster-approx" : ""}" style="width:${size}px;height:${size}px">${label}</div>`,
     className: "map-cluster-wrapper",
     iconSize: [size, size],
     iconAnchor: [size / 2, size / 2],
   });
-  clusterIcons.set(label, icon);
+  clusterIcons.set(key, icon);
   return icon;
 }
 
@@ -98,12 +107,14 @@ function ClusterLayer({
   dnis,
   coords,
   icon,
+  variant,
   onSelect,
 }: {
   index: Supercluster<PointProps>;
   dnis: string[];
   coords: number[];
   icon: L.DivIcon;
+  variant: Variant;
   onSelect: (s: Selection) => void;
 }) {
   const map = useMap();
@@ -126,8 +137,8 @@ function ClusterLayer({
             <Marker
               key={`c${clusterId}`}
               position={[lat, lon]}
-              icon={clusterIcon(props.point_count)}
-              title={`${props.point_count.toLocaleString("es-AR")} personas`}
+              icon={clusterIcon(props.point_count, variant)}
+              title={`${props.point_count.toLocaleString("es-AR")} personas${variant === "approx" ? " con ubicación aproximada (solo barrio)" : ""}`}
               eventHandlers={{
                 click: () => {
                   const next = index.getClusterExpansionZoom(clusterId);
@@ -157,6 +168,14 @@ function ClusterLayer({
   );
 }
 
+/** Dirección y barrio, sin repetir el barrio si la dirección ya lo nombra. */
+function addressLine(person: MapPerson): string {
+  const direccion = person.direccion?.trim() || "";
+  const barrio = person.barrio?.trim() || "";
+  const place = barrio && !direccion.toLowerCase().includes(barrio.toLowerCase()) ? `Barrio ${barrio}` : barrio ? "" : person.localidad;
+  return [direccion, place].filter(Boolean).join(" · ") || "Tres de Febrero";
+}
+
 function PersonCard({ person }: { person: MapPerson }) {
   return (
     <div className="space-y-2">
@@ -172,11 +191,17 @@ function PersonCard({ person }: { person: MapPerson }) {
         </div>
       </div>
 
+      {person.aproximada && (
+        <p className="rounded-lg bg-amber-500/10 px-2 py-1 text-[10px] font-semibold text-amber-700 dark:text-amber-300">
+          Ubicación aproximada: la dirección cargada solo tiene el barrio.
+        </p>
+      )}
+
       <div className="space-y-1 text-xs text-muted-foreground pt-1 border-t border-border/30">
         <div className="flex items-center gap-1.5">
           <MapPin className="h-3.5 w-3.5 text-primary shrink-0" />
           <span className="font-semibold">
-            {[person.direccion, person.barrio ? `Barrio ${person.barrio}` : person.localidad].filter(Boolean).join(" · ") || "Tres de Febrero"}
+            {addressLine(person)}
           </span>
         </div>
         {person.telefono && (
@@ -259,6 +284,7 @@ function SelectionContent({ selection }: { selection: Selection }) {
               <span className="block text-[10px] text-muted-foreground">
                 DNI {p.dni}
                 {p.direccion ? ` · ${p.direccion}` : ""}
+                {p.aproximada ? " · ubicación aproximada" : ""}
               </span>
             </Link>
           </li>
@@ -270,6 +296,7 @@ function SelectionContent({ selection }: { selection: Selection }) {
 
 export function MapView({
   dnis,
+  exactCount,
   coords,
   loading = false,
   center = TRES_DE_FEBRERO_CENTER,
@@ -281,6 +308,8 @@ export function MapView({
   const [internalViewMode, setInternalViewMode] = useState<string>(viewMode);
   const [isExporting, setIsExporting] = useState(false);
   const [selection, setSelection] = useState<Selection | null>(null);
+  const [showApprox, setShowApprox] = useState(true);
+  const approxCount = dnis.length - exactCount;
 
   useEffect(() => {
     setInternalViewMode(viewMode);
@@ -296,23 +325,35 @@ export function MapView({
     if (onViewModeChange) onViewModeChange(mode);
   };
 
-  const index = useMemo(() => {
-    const features: Supercluster.PointFeature<PointProps>[] = new Array(dnis.length);
-    for (let i = 0; i < dnis.length; i++) {
-      features[i] = { type: "Feature", properties: { i }, geometry: { type: "Point", coordinates: [coords[i * 2 + 1], coords[i * 2]] } };
-    }
-    const sc = new Supercluster<PointProps>({ radius: 80, maxZoom: MAX_ZOOM });
-    sc.load(features);
-    return sc;
-  }, [dnis, coords]);
+  // Un agrupamiento para las direcciones exactas y otro para las aproximadas, así no se mezclan.
+  const [exactIndex, approxIndex] = useMemo(() => {
+    const build = (from: number, to: number) => {
+      const features: Supercluster.PointFeature<PointProps>[] = [];
+      for (let i = from; i < to; i++) {
+        features.push({ type: "Feature", properties: { i }, geometry: { type: "Point", coordinates: [coords[i * 2 + 1], coords[i * 2]] } });
+      }
+      const sc = new Supercluster<PointProps>({ radius: 80, maxZoom: MAX_ZOOM });
+      sc.load(features);
+      return sc;
+    };
+    return [build(0, exactCount), build(exactCount, dnis.length)];
+  }, [dnis, coords, exactCount]);
 
-  const pointIcon = useMemo(() => L.divIcon({
-    html: svgMarkerHtml,
-    className: "custom-municipal-marker",
-    iconSize: [26, 36],
-    iconAnchor: [13, 36],
-    popupAnchor: [0, -32]
-  }), []);
+  const heatCoords = useMemo(() => (showApprox ? coords : coords.slice(0, exactCount * 2)), [coords, exactCount, showApprox]);
+
+  const [exactIcon, approxIcon] = useMemo(
+    () =>
+      [EXACT_COLOR, APPROX_COLOR].map((color, k) =>
+        L.divIcon({
+          html: svgMarkerHtml(color),
+          className: k === 0 ? "custom-municipal-marker" : "custom-municipal-marker marker-approx",
+          iconSize: [26, 36],
+          iconAnchor: [13, 36],
+          popupAnchor: [0, -32],
+        })
+      ),
+    []
+  );
 
   const exportMap = async () => {
     const mapElement = document.getElementById("social-map-container");
@@ -344,6 +385,11 @@ export function MapView({
     <div className="relative group/map" id="social-map-container">
       <style>{`
         .map-cluster-wrapper { background: transparent; border: none; }
+        .map-cluster.map-cluster-approx {
+          background: rgba(217, 119, 6, 0.85);
+          box-shadow: 0 0 0 4px rgba(217, 119, 6, 0.25), 0 2px 6px rgba(0, 0, 0, 0.25);
+          border-style: dashed;
+        }
         .map-cluster {
           display: flex; align-items: center; justify-content: center;
           border-radius: 9999px; background: rgba(37, 99, 235, 0.88); color: #fff;
@@ -370,6 +416,26 @@ export function MapView({
             )}
           </div>
         </div>
+
+        {approxCount > 0 && (
+          <div className="bg-background/90 backdrop-blur-md px-3 py-2 rounded-2xl shadow-2xl border border-border/60 pointer-events-auto space-y-1.5 text-[11px] font-semibold text-foreground">
+            <p className="flex items-center gap-2">
+              <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: EXACT_COLOR }} />
+              Dirección exacta: {exactCount.toLocaleString("es-AR")}
+            </p>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={showApprox}
+                onChange={(e) => setShowApprox(e.target.checked)}
+                className="h-3.5 w-3.5 accent-amber-600"
+                aria-label="Mostrar las ubicaciones aproximadas (solo barrio)"
+              />
+              <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: APPROX_COLOR }} />
+              Aproximadas, solo barrio: {approxCount.toLocaleString("es-AR")}
+            </label>
+          </div>
+        )}
       </div>
 
       <div className="absolute bottom-4 right-4 sm:bottom-auto sm:top-6 sm:right-6 z-[1000] flex flex-col gap-3">
@@ -419,7 +485,10 @@ export function MapView({
 
           <ZoomControl position="bottomleft" />
 
-          <ClusterLayer index={index} dnis={dnis} coords={coords} icon={pointIcon} onSelect={setSelection} />
+          {showApprox && approxCount > 0 && (
+            <ClusterLayer index={approxIndex} dnis={dnis} coords={coords} icon={approxIcon} variant="approx" onSelect={setSelection} />
+          )}
+          <ClusterLayer index={exactIndex} dnis={dnis} coords={coords} icon={exactIcon} variant="exact" onSelect={setSelection} />
 
           {selection && (
             <Popup
@@ -437,7 +506,7 @@ export function MapView({
           <ChangeView center={center} zoom={zoom} />
         </MapContainer>
       ) : (
-        <HeatmapView coords={coords} center={center} zoom={zoom} />
+        <HeatmapView coords={heatCoords} center={center} zoom={zoom} />
       )}
     </div>
   );

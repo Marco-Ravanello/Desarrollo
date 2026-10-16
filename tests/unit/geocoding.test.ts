@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildOsmQuery, cleanAddressForSearch, insideTresDeFebreroBounds } from "@/lib/geocoding";
+import { buildOsmQuery, cleanAddressForSearch, insideTresDeFebreroBounds, isApproximatePoint } from "@/lib/geocoding";
 
 describe("limpiar la dirección antes de buscarla", () => {
   it("saca N°, piso, departamento y aclaraciones", () => {
@@ -40,5 +40,24 @@ describe("¿cae dentro del partido?", () => {
     expect(insideTresDeFebreroBounds(-34.6037, -58.3816)).toBe(false); // Obelisco
     expect(insideTresDeFebreroBounds(-34.92, -57.95)).toBe(false); // La Plata
     expect(insideTresDeFebreroBounds(NaN, -58.55)).toBe(false);
+  });
+});
+
+describe("direcciones que son solo el nombre del barrio", () => {
+  it("no se buscan como si fueran una calle", () => {
+    expect(cleanAddressForSearch("Barrio Puerta 8")).toBeNull();
+    expect(cleanAddressForSearch("Bº Libertador 2")).toBeNull();
+    expect(cleanAddressForSearch("Puerta 8")).toBeNull();
+    expect(cleanAddressForSearch("Boulogne Sur Mer 300")).toBe("Boulogne Sur Mer 300");
+  });
+
+  it("el punto es aproximado si vino de la planilla sin calle y altura", () => {
+    const base = { latitude: -34.6, geo_estado: null, geo_fuente: null };
+    expect(isApproximatePoint({ ...base, direccion_con_altura: false })).toBe(true);
+    expect(isApproximatePoint({ ...base, direccion_con_altura: null })).toBe(true);
+    expect(isApproximatePoint({ ...base, direccion_con_altura: true })).toBe(false);
+    expect(isApproximatePoint({ ...base, direccion_con_altura: false, geo_estado: "MANUAL", geo_fuente: "MANUAL" })).toBe(false);
+    expect(isApproximatePoint({ ...base, direccion_con_altura: true, geo_estado: "APROXIMADA" })).toBe(true);
+    expect(isApproximatePoint({ ...base, latitude: null, direccion_con_altura: false })).toBe(false);
   });
 });

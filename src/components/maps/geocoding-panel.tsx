@@ -56,7 +56,7 @@ export function GeocodingPanel({ initialStatus }: { initialStatus: GeocodingStat
   const [picked, setPicked] = useState<[number, number] | null>(null);
 
   const toSearch = status.pending + status.pendingOsm;
-  const toReview = status.notFound + status.unusableAddress;
+  const toReview = status.notFound + status.unusableAddress + status.approximate;
 
   const refreshStatus = useCallback(async () => {
     const res = await getGeocodingStatusAction();
@@ -151,7 +151,17 @@ export function GeocodingPanel({ initialStatus }: { initialStatus: GeocodingStat
       <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         <StatCard label="Ubicadas en el mapa" value={fmt(status.located)} icon={MapPin} tone="green" />
         <StatCard label="Por buscar" value={fmt(toSearch)} icon={Search} tone="blue" hint={status.pendingOsm > 0 ? `${fmt(status.pendingOsm)} se prueban con OpenStreetMap` : undefined} />
-        <StatCard label="Para revisar" value={fmt(toReview)} icon={SearchX} tone="orange" hint="No se encontraron o la dirección está incompleta" />
+        <StatCard
+          label="Para revisar"
+          value={fmt(toReview)}
+          icon={SearchX}
+          tone="orange"
+          hint={
+            status.approximate > 0
+              ? `${fmt(status.approximate)} con punto aproximado (solo barrio); el resto no se encontró o está incompleta`
+              : "No se encontraron o la dirección está incompleta"
+          }
+        />
         <StatCard label="Sin dirección cargada" value={fmt(status.withoutAddress)} icon={MapPinOff} tone="slate" />
       </div>
 
@@ -206,7 +216,10 @@ export function GeocodingPanel({ initialStatus }: { initialStatus: GeocodingStat
       <div className="rounded-2xl border border-border/60 bg-card p-4 sm:p-5 space-y-4">
         <div className="space-y-1">
           <h2 className="font-heading text-lg font-bold">Para revisar</h2>
-          <p className="text-sm text-muted-foreground">Corregí la dirección y volvé a buscarla, o marcá el punto a mano en el mapa.</p>
+          <p className="text-sm text-muted-foreground">
+            Corregí la dirección y volvé a buscarla, o marcá el punto a mano en el mapa. Las que tienen un punto aproximado lo conservan
+            hasta que se corrijan.
+          </p>
         </div>
         <form
           className="flex gap-2"
@@ -238,7 +251,11 @@ export function GeocodingPanel({ initialStatus }: { initialStatus: GeocodingStat
                     {row.barrio ? ` · ${row.barrio}` : ""}
                   </p>
                   <p className="text-xs text-amber-700 dark:text-amber-400">
-                    {row.motivo === "SIN_DIRECCION" ? "La dirección no tiene calle y altura" : "No se encontró la dirección"}
+                    {row.motivo === "SOLO_BARRIO"
+                      ? "Ubicación aproximada: la dirección solo tiene el barrio (se ve en el mapa en ámbar)"
+                      : row.motivo === "SIN_DIRECCION"
+                        ? "La dirección no tiene calle y altura"
+                        : "No se encontró la dirección"}
                   </p>
                 </div>
                 <div className="flex gap-2">

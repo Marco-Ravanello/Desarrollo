@@ -110,7 +110,8 @@ export function SocialMapDashboard({ initialData, programs, unlocated = 0, canLo
     { header: "Dirección", accessorKey: "address" },
     { header: "Programas Activos", accessorKey: "programasStr" },
     { header: "Latitud", accessorKey: "latitude" },
-    { header: "Longitud", accessorKey: "longitude" }
+    { header: "Longitud", accessorKey: "longitude" },
+    { header: "Ubicación", accessorKey: "ubicacion" }
   ];
 
   const loadExportRows = async () => {
@@ -254,7 +255,20 @@ export function SocialMapDashboard({ initialData, programs, unlocated = 0, canLo
         <StatCard
           label="Puntos GPS Activos"
           value={<span className="font-mono">{fmt(stats.located)}</span>}
-          hint={<span className="font-bold text-emerald-500">{stats.total > 0 ? `${locatedPct}% ubicadas en el mapa` : "Sin personas"}</span>}
+          hint={
+            stats.total > 0 ? (
+              <span className="block">
+                <span className="font-bold text-emerald-500">{locatedPct}% ubicadas en el mapa</span>
+                {stats.approximate > 0 && (
+                  <span className="block font-semibold text-amber-600 dark:text-amber-400">
+                    {fmt(stats.approximate)} aproximadas (solo barrio)
+                  </span>
+                )}
+              </span>
+            ) : (
+              "Sin personas"
+            )
+          }
           icon={MapPin}
           tone="green"
         />
@@ -279,6 +293,7 @@ export function SocialMapDashboard({ initialData, programs, unlocated = 0, canLo
       <Card className="bg-card text-card-foreground border border-border/60 shadow-xs rounded-2xl overflow-hidden p-2">
         <DynamicMapView
           dnis={data.dnis}
+          exactCount={data.exactCount}
           coords={data.coords}
           loading={loading}
           center={selectedLocality.coordinates}

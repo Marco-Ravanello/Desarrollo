@@ -1,6 +1,7 @@
 import prisma from "@/lib/prisma";
 import type { Prisma } from "@prisma/client";
 import {
+  APPROXIMATE_POINT_SQL,
   TRES_DE_FEBRERO_GEOREF_ID,
   buildOsmQuery,
   cleanAddressForSearch,
@@ -30,15 +31,18 @@ type Point = { lat: number; lon: number };
 const hasAddress: Prisma.PadronUnificadoWhereInput = { AND: [{ direccion: { not: null } }, { direccion: { not: "" } }] };
 
 export async function getGeocodingStatus(): Promise<GeocodingStatus> {
-  const [located, pending, pendingOsm, notFound, unusableAddress, withoutAddress] = await Promise.all([
+  const [located, pending, pendingOsm, notFound, unusableAddress, withoutAddress, approximate] = await Promise.all([
     prisma.padronUnificado.count({ where: { latitude: { not: null } } }),
     prisma.padronUnificado.count({ where: { latitude: null, geo_estado: null, ...hasAddress } }),
     prisma.padronUnificado.count({ where: { latitude: null, geo_estado: "SIN_GEOREF" } }),
     prisma.padronUnificado.count({ where: { latitude: null, geo_estado: "NO_ENCONTRADA" } }),
     prisma.padronUnificado.count({ where: { latitude: null, geo_estado: "SIN_DIRECCION" } }),
     prisma.padronUnificado.count({ where: { latitude: null, OR: [{ direccion: null }, { direccion: "" }] } }),
+    prisma.$queryRawUnsafe<{ total: number }[]>(`SELECT COUNT(*)::int AS total FROM padron_unificado WHERE ${APPROXIMATE_POINT_SQL}`).then(
+      (r) => r[0]?.total ?? 0
+    ),
   ]);
-  return { located, pending, pendingOsm, notFound, unusableAddress, withoutAddress };
+  return { located, pending, pendingOsm, notFound, unusableAddress, withoutAddress, approximate };
 }
 
 async function fetchJson(url: string, init: RequestInit, service: string) {
@@ -203,13 +207,18 @@ export async function geocodeNextOsmBatch(limit = OSM_BATCH): Promise<GeocodeBat
   return { processed: rows.length, located, notFound };
 }
 
-/** Corrige la dirección de una persona y la vuelve a buscar (Georef y, si hace falta, OpenStreetMap). */
+/**
+ * Corrige la dirección de una persona y la vuelve a buscar (Georef y, si hace falta, OpenStreetMap).
+ * Si tenía un punto (aproximado) y la nueva dirección tampoco aparece, conserva ese punto.
+ */
 export async function retryWithAddress(dni: string, direccion: string): Promise<{ located: boolean; fuente?: GeoFuente }> {
   const text = direccion.replace(/\s+/g, " ").trim().slice(0, 200);
-  await prisma.padronUnificado.update({ where: { dni }, data: { direccion: text, latitude: null, longitude: null, geo_estado: null } });
+  const before = await prisma.padronUnificado.findUnique({ where: { dni }, select: { latitude: true, localidad: true, barrio: true } });
+  const keepsPoint = before?.latitude != null;
+  await prisma.padronUnificado.update({ where: { dni }, data: { direccion: text } });
   const address = cleanAddressForSearch(text);
   if (!address) {
-    await markState([dni], "SIN_DIRECCION");
+    await markState([dni], keepsPoint ? "APROXIMADA" : "SIN_DIRECCION");
     return { located: false };
   }
   const [georef] = await georefLookup([address]);
@@ -217,13 +226,12 @@ export async function retryWithAddress(dni: string, direccion: string): Promise<
     await saveLocation(dni, georef, "GEOREF");
     return { located: true, fuente: "GEOREF" };
   }
-  const row = await prisma.padronUnificado.findUnique({ where: { dni }, select: { localidad: true, barrio: true } });
-  const osm = await osmLookup(address, row?.localidad, row?.barrio);
+  const osm = await osmLookup(address, before?.localidad, before?.barrio);
   if (osm) {
     await saveLocation(dni, osm, "OSM");
     return { located: true, fuente: "OSM" };
   }
-  await markState([dni], "NO_ENCONTRADA");
+  await markState([dni], keepsPoint ? "APROXIMADA" : "NO_ENCONTRADA");
   return { located: false };
 }
 
@@ -240,37 +248,39 @@ export interface GeocodingReviewRow {
   direccion: string | null;
   barrio: string | null;
   localidad: string | null;
-  motivo: "NO_ENCONTRADA" | "SIN_DIRECCION";
+  /** NO_ENCONTRADA y SIN_DIRECCION no están en el mapa; SOLO_BARRIO está con un punto aproximado. */
+  motivo: "NO_ENCONTRADA" | "SIN_DIRECCION" | "SOLO_BARRIO";
 }
 
-/** Personas a revisar: la dirección no se encontró o no tiene calle y altura. */
+/** Personas a revisar: no se encontró la dirección, no tiene calle y altura, o su punto es aproximado (solo barrio). */
 export async function listGeocodingReview(query = "", page = 1, pageSize = 20) {
   const q = query.trim();
-  const where: Prisma.PadronUnificadoWhereInput = {
-    latitude: null,
-    geo_estado: { in: ["NO_ENCONTRADA", "SIN_DIRECCION"] },
-    ...(q
-      ? {
-          OR: [
-            { dni: { contains: q.replace(/\D/g, "") || q } },
-            { nombre_completo: { contains: q, mode: "insensitive" } },
-            { direccion: { contains: q, mode: "insensitive" } },
-          ],
-        }
-      : {}),
-  };
-  const [total, rows] = await Promise.all([
-    prisma.padronUnificado.count({ where }),
-    prisma.padronUnificado.findMany({
-      where,
-      select: { dni: true, nombre_completo: true, direccion: true, barrio: true, localidad: true, geo_estado: true },
-      orderBy: [{ nombre_completo: "asc" }, { dni: "asc" }],
-      skip: (Math.max(1, page) - 1) * pageSize,
-      take: pageSize,
-    }),
+  const params: unknown[] = [];
+  let search = "";
+  if (q) {
+    params.push(`%${q.toLowerCase()}%`);
+    const parts = [`LOWER(COALESCE(nombre_completo, '')) LIKE $1`, `LOWER(COALESCE(direccion, '')) LIKE $1`];
+    const digits = q.replace(/\D/g, "");
+    if (digits) {
+      params.push(`%${digits}%`);
+      parts.push(`dni LIKE $2`);
+    }
+    search = ` AND (${parts.join(" OR ")})`;
+  }
+  const where = `((latitude IS NULL AND geo_estado IN ('NO_ENCONTRADA', 'SIN_DIRECCION')) OR ${APPROXIMATE_POINT_SQL})${search}`;
+  const offset = (Math.max(1, page) - 1) * pageSize;
+  const [count, rows] = await Promise.all([
+    prisma.$queryRawUnsafe<{ total: number }[]>(`SELECT COUNT(*)::int AS total FROM padron_unificado WHERE ${where}`, ...params),
+    prisma.$queryRawUnsafe<
+      { dni: string; nombre_completo: string | null; direccion: string | null; barrio: string | null; localidad: string | null; geo_estado: string | null; latitude: number | null }[]
+    >(
+      `SELECT dni, nombre_completo, direccion, barrio, localidad, geo_estado, latitude FROM padron_unificado
+       WHERE ${where} ORDER BY nombre_completo ASC NULLS LAST, dni ASC LIMIT ${Math.floor(pageSize)} OFFSET ${Math.floor(offset)}`,
+      ...params
+    ),
   ]);
   return {
-    total,
+    total: count[0]?.total ?? 0,
     rows: rows.map(
       (r): GeocodingReviewRow => ({
         dni: r.dni,
@@ -278,7 +288,7 @@ export async function listGeocodingReview(query = "", page = 1, pageSize = 20) {
         direccion: r.direccion,
         barrio: r.barrio,
         localidad: r.localidad,
-        motivo: r.geo_estado === "SIN_DIRECCION" ? "SIN_DIRECCION" : "NO_ENCONTRADA",
+        motivo: r.latitude != null ? "SOLO_BARRIO" : r.geo_estado === "SIN_DIRECCION" ? "SIN_DIRECCION" : "NO_ENCONTRADA",
       })
     ),
   };
