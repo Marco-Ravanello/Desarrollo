@@ -1,6 +1,7 @@
 "use server";
 
 import { auth } from "@/auth";
+import { canUseAiAssistant } from "@/lib/permissions";
 import { queryAIAssistant, AIResponse } from "@/services/ai-assistant";
 
 export async function queryAssistantAction(
@@ -11,6 +12,9 @@ export async function queryAssistantAction(
 
   if (!session || !session.user) {
     throw new Error("No autorizado. Debe iniciar sesión.");
+  }
+  if (!canUseAiAssistant(session.user.role)) {
+    return { intent: "error", answer: "Tu rol no tiene acceso al Asistente de IA." };
   }
 
   try {

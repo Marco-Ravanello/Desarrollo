@@ -63,6 +63,12 @@ export const PURCHASING_VIEW_ROLES: Role[] = [...MANAGEMENT_ROLES, "DIRECTOR_ARE
 export const PURCHASING_EDIT_ROLES: Role[] = [...MANAGEMENT_ROLES, "DIRECTOR_AREA"];
 /** Administran la flota (altas de vehículos, aprobación de reservas). */
 export const FLEET_ADMIN_ROLES: Role[] = ["SUPERADMIN", "ADMIN_GENERAL"];
+/** Usan el Asistente de IA (consulta toda la base, incluidos casos sensibles). */
+export const AI_ASSISTANT_ROLES: Role[] = [...MANAGEMENT_ROLES, "DIRECTOR_AREA"];
+
+export function canUseAiAssistant(role?: Role | string | null): boolean {
+  return AI_ASSISTANT_ROLES.includes(role as Role);
+}
 
 /**
  * Relevamiento de emergencia climática: solo carga fichas de emergencia y ve
@@ -106,6 +112,7 @@ const ROUTE_ACCESS: { prefix: string; allowed: (role: Role) => boolean }[] = [
   { prefix: "/admin/vehicles/requests", allowed: (r) => FLEET_ADMIN_ROLES.includes(r) },
   { prefix: "/admin/vehicles/reports", allowed: (r) => [...MANAGEMENT_ROLES, "AUDITOR"].includes(r) },
   // Sistema
+  { prefix: "/admin/assistant", allowed: (r) => canUseAiAssistant(r) },
   { prefix: "/admin/settings", allowed: (r) => MANAGEMENT_ROLES.includes(r) },
   { prefix: "/admin/users", allowed: (r) => MANAGEMENT_ROLES.includes(r) || hasPermission(r, PERMISSIONS.MANAGE_USERS) },
   { prefix: "/admin/interventions", allowed: (r) => MANAGEMENT_ROLES.includes(r) },
