@@ -16,6 +16,14 @@ Antes de publicar, `npx tsc --noEmit` y `npm run lint` deben pasar sin errores: 
 
 Desde ahora, cada cambio de `schema.prisma` va con su migración (`npx prisma migrate dev --name descripcion`) y ya no hace falta correr SQL a mano en la base publicada.
 
+## Pruebas automáticas
+- `npm test`: pruebas rápidas sin base (`tests/unit`): qué pantallas abre cada rol, quién usa el Asistente de IA, cálculos de pendientes de entrega y el filtro de datos personales del asistente. Corren también dentro de `npm run build`, así que si alguna falla Vercel no publica la versión nueva.
+- `npm run test:db`: pruebas contra una base de prueba vacía (`tests/db`): fichas de emergencia, entregas y stock, permisos de usuarios, Asistente de IA por rol, casos de Violencia de Género y que las migraciones dejen la base igual a `schema.prisma`. Necesitan `TEST_DATABASE_URL` apuntando a una base local (solo acepta `localhost`), porque cargan datos de prueba y vacían las tablas:
+  ```
+  TEST_DATABASE_URL="postgresql://usuario:clave@localhost:5432/muni_test" npm run test:db
+  ```
+- En GitHub, `.github/workflows/pruebas.yml` corre la revisión de tipos y las dos tandas de pruebas en cada PR y en cada cambio de la rama publicada, con una base Postgres descartable.
+
 ## Migraciones en una base que ya existe (manual)
 La base publicada se creó con `prisma db push`, sin historial de migraciones. El paso automático de arriba ya resuelve esto; si alguna vez hiciera falta hacerlo a mano, hay que marcar como aplicadas las migraciones que ya están reflejadas en la base (una sola vez):
 ```
