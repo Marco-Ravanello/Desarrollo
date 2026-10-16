@@ -22,10 +22,26 @@ export const EMERGENCY_CATEGORIES: Array<{
   { key: "FRAZADA", label: "frazadas", singular: "frazada", title: "Frazadas", searchNames: ["frazada", "manta"], defaultName: "Frazadas Térmicas Antialérgicas", unit: "Unidades", minStock: 30 },
 ];
 
-/** El insumo del depósito que corresponde a un elemento de las fichas (por nombre). */
-export function findCategorySupply<T extends { name: string }>(supplies: T[], key: EmergencyCategoryKey): T | undefined {
+/** Qué insumo del depósito corresponde a cada elemento de las fichas (se guarda al crearlo o renombrarlo). */
+export type CategoryLinks = Partial<Record<EmergencyCategoryKey, string>>;
+
+/**
+ * El insumo del depósito que corresponde a un elemento de las fichas: el vinculado
+ * si hay uno (así se puede renombrar) y si no, el primero que lo nombre.
+ */
+export function findCategorySupply<T extends { id: string; name: string }>(
+  supplies: T[],
+  key: EmergencyCategoryKey,
+  links: CategoryLinks = {}
+): T | undefined {
+  const linkedId = links[key];
+  const linked = linkedId ? supplies.find((s) => s.id === linkedId) : undefined;
+  if (linked) return linked;
   const cat = EMERGENCY_CATEGORIES.find((c) => c.key === key);
-  return cat ? supplies.find((s) => cat.searchNames.some((sn) => s.name.toLowerCase().includes(sn))) : undefined;
+  const linkedElsewhere = new Set(Object.values(links));
+  return cat
+    ? supplies.find((s) => !linkedElsewhere.has(s.id) && cat.searchNames.some((sn) => s.name.toLowerCase().includes(sn)))
+    : undefined;
 }
 
 export function requestedByCategory(r: StormVictimItem): Record<EmergencyCategoryKey, number> {

@@ -47,7 +47,7 @@ export interface EmergencyStockItem {
   id: string;
   name: string;
   description?: string | null;
-  category: "COLCHON" | "CAMA" | "CUCHETA" | "FRAZADA" | "GENERAL";
+  category: "COLCHON" | "CAMA" | "CUCHETA" | "FRAZADA" | "ADICIONAL" | "GENERAL";
   availableStock: number;
   minStock: number;
   demandedQuantity: number;

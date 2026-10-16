@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { canEditSocialRecords, canManageEmergencyStock, isEmergencySurveyor } from "@/lib/permissions";
 import { isDeliveryTableReady, stormRecordOmit } from "@/services/emergency-db-status";
+import { getCategoryLinks, getEmergencyExtraItems } from "@/services/emergency-stock-links";
 import { EMERGENCY_CATEGORIES, EmergencyCategoryKey, findCategorySupply, pendingByCategory } from "@/lib/emergency-categories";
 
 export { EMERGENCY_CATEGORIES, findCategorySupply, pendingByCategory };
@@ -51,11 +52,12 @@ export async function getEmergencyOperator(sessionUser: any): Promise<EmergencyO
 
 export async function getEmergencyStock(): Promise<EmergencyStockItem[]> {
   try {
-    const supplies = await prisma.supplyItem.findMany({
-      include: { area: true }
-    });
-
-    const records = await getStormVictimRecords();
+    const [supplies, records, links, extraItems] = await Promise.all([
+      prisma.supplyItem.findMany({ include: { area: true } }),
+      getStormVictimRecords(),
+      getCategoryLinks(),
+      getEmergencyExtraItems(),
+    ]);
 
     // Demanda = lo que falta entregar de las fichas.
     const demandMap: Record<EmergencyCategoryKey, number> = { COLCHON: 0, CAMA: 0, CUCHETA: 0, FRAZADA: 0 };
@@ -78,8 +80,10 @@ export async function getEmergencyStock(): Promise<EmergencyStockItem[]> {
       console.warn("Could not read stock overrides setting:", e);
     }
 
+    const categoryItemIds = new Set<string>();
     for (const cat of EMERGENCY_CATEGORIES) {
-      const match = findCategorySupply(supplies, cat.key);
+      const match = findCategorySupply(supplies, cat.key, links);
+      if (match) categoryItemIds.add(match.id);
 
       // El stock real es el del insumo del depósito (lo que descuentan las entregas).
       // El ajuste manual guardado aparte solo se usa si todavía no existe el insumo.
@@ -116,60 +120,52 @@ export async function getEmergencyStock(): Promise<EmergencyStockItem[]> {
       });
     }
 
-    const generalSupplies = supplies.filter(s => {
+    // Insumos agregados desde Emergencia (chapas, nylon...): van junto a los de las fichas.
+    const extraById = new Map(extraItems.filter((ci) => ci?.id).map((ci) => [String(ci.id), ci]));
+
+    const otherSupplies = supplies.filter(s => {
+      if (categoryItemIds.has(s.id)) return false;
+      if (extraById.has(s.id)) return true;
       const lower = s.name.toLowerCase();
       return !["colchon", "colchón", "cama", "cucheta", "frazada", "manta"].some(kw => lower.includes(kw));
     });
 
-    for (const gs of generalSupplies) {
+    for (const gs of otherSupplies) {
       let status: "CRITICO" | "CORRECTO" | "EXCESO" = "CORRECTO";
       if (gs.stock <= gs.minStock) status = "CRITICO";
+      const extra = extraById.get(gs.id);
 
       categorizedItems.push({
         id: gs.id,
         name: gs.name,
         description: gs.description,
-        category: "GENERAL",
+        category: extra ? "ADICIONAL" : "GENERAL",
         availableStock: gs.stock,
         minStock: gs.minStock,
         demandedQuantity: 0,
-        unit: "Unidades",
+        unit: extra?.unit || "Unidades",
         status,
-        areaName: gs.area?.name || "Depósito Central",
+        areaName: gs.area?.name || (extra ? "Depósito Desarrollo Humano" : "Depósito Central"),
       });
     }
 
-    // Load custom registered emergency stock items from SystemSetting if any
-    try {
-      const customSetting = await prisma.systemSetting.findUnique({
-        where: { key: "custom-emergency-stock-items" },
+    // Insumos agregados desde Emergencia que no llegaron a guardarse en el depósito.
+    for (const ci of extraItems) {
+      if (!ci?.id || categorizedItems.some(i => i.id === ci.id)) continue;
+      const availableStock = Number(ci.availableStock) || 0;
+      const minStock = Number(ci.minStock) || 5;
+      categorizedItems.push({
+        id: ci.id,
+        name: ci.name,
+        description: ci.description || "Insumo de contingencia",
+        category: "ADICIONAL",
+        availableStock,
+        minStock,
+        demandedQuantity: 0,
+        unit: ci.unit || "Unidades",
+        status: availableStock <= minStock ? "CRITICO" : "CORRECTO",
+        areaName: "Depósito Desarrollo Humano",
       });
-      if (customSetting?.value) {
-        const customItems = JSON.parse(customSetting.value);
-        if (Array.isArray(customItems)) {
-          for (const ci of customItems) {
-            if (!categorizedItems.some(i => i.id === ci.id)) {
-              let status: "CRITICO" | "CORRECTO" | "EXCESO" = "CORRECTO";
-              if (ci.availableStock <= (ci.minStock || 5)) status = "CRITICO";
-
-              categorizedItems.push({
-                id: ci.id,
-                name: ci.name,
-                description: ci.description || "Insumo de contingencia",
-                category: "GENERAL",
-                availableStock: ci.availableStock,
-                minStock: ci.minStock || 5,
-                demandedQuantity: 0,
-                unit: ci.unit || "Unidades",
-                status,
-                areaName: "Depósito Desarrollo Humano",
-              });
-            }
-          }
-        }
-      }
-    } catch (e) {
-      console.warn("Could not read custom emergency stock items setting:", e);
     }
 
     return categorizedItems;
