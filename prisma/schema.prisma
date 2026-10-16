@@ -490,6 +490,11 @@ model PadronUnificado {
   genero                String?
   latitude              Float?
   longitude             Float?
+  /// Ubicación en el mapa: null = sin buscar, SIN_GEOREF = falta probar con OpenStreetMap, UBICADA, NO_ENCONTRADA, MANUAL
+  geo_estado            String?
+  /// Quién dio el punto: GEOREF, OSM o MANUAL
+  geo_fuente            String?
+  geo_actualizado       DateTime?
   prog_centro_de_familia                                         Int @default(0)
   prog_tarjeta_alimentar                                         Int @default(0)
   prog_jardines_municipales                                      Int @default(0)

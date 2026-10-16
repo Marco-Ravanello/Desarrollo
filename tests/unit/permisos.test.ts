@@ -40,6 +40,8 @@ const PANTALLAS: Record<string, Role[]> = {
   "/dashboard": ["SUPERADMIN", "DIRECCION_GENERAL", "ADMIN_GENERAL", "DIRECTOR_AREA", "OPERATIVO", "AUDITOR", "VIOLENCIA_GENERO"],
   "/cases": ["SUPERADMIN", "DIRECCION_GENERAL", "ADMIN_GENERAL", "DIRECTOR_AREA", "OPERATIVO", "AUDITOR", "VIOLENCIA_GENERO"],
   "/admin/emergency": ROLES,
+  "/maps": ["SUPERADMIN", "DIRECCION_GENERAL", "ADMIN_GENERAL", "DIRECTOR_AREA", "OPERATIVO", "AUDITOR", "VIOLENCIA_GENERO"],
+  "/maps/ubicar": ["SUPERADMIN", "DIRECCION_GENERAL", "ADMIN_GENERAL"],
 };
 
 describe("acceso a pantallas por rol", () => {

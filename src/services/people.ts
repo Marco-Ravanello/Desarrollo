@@ -1,6 +1,6 @@
 import prisma from "@/lib/prisma";
 import { z } from "zod";
-import { MUNICIPAL_LOCALITIES, TRES_DE_FEBRERO_CENTER } from "@/lib/constants/localities";
+import { MUNICIPAL_LOCALITIES } from "@/lib/constants/localities";
 
 export const CreatePersonSchema = z.object({
   dni: z.string().min(1),
@@ -26,6 +26,8 @@ export interface GetPeopleOptions {
   programa?: string;
   page?: number;
   limit?: number;
+  /** Solo personas con un punto real en el mapa (latitud y longitud cargadas). */
+  withLocation?: boolean;
 }
 
 export interface PaginatedPeopleResult {
@@ -135,6 +137,10 @@ export async function getPaginatedPeople(options: GetPeopleOptions = {}): Promis
     paramIdx += 1;
   }
 
+  if (options.withLocation) {
+    whereConditions.push("latitude IS NOT NULL AND longitude IS NOT NULL");
+  }
+
   const whereClause = whereConditions.join(" AND ");
 
   try {
@@ -154,7 +160,8 @@ export async function getPaginatedPeople(options: GetPeopleOptions = {}): Promis
       ...queryParams
     );
 
-    if (rows && rows.length > 0) {
+    // Para el mapa no se cae al Registro Único: si nadie del padrón está ubicado, no hay puntos.
+    if ((rows && rows.length > 0) || options.withLocation) {
       const mappedPeople = rows.map((r: any) => {
         let lastName = "";
         let firstName = "";
@@ -219,6 +226,10 @@ export async function getPaginatedPeople(options: GetPeopleOptions = {}): Promis
       ...(numericQuery ? [{ dni: { contains: numericQuery } }] : []),
     ]
   } : {};
+  if (options.withLocation) {
+    wherePrisma.latitude = { not: null };
+    wherePrisma.longitude = { not: null };
+  }
 
   const totalPrisma = await prisma.person.count({ where: wherePrisma });
 
@@ -678,40 +689,12 @@ export async function getPeopleStats() {
 }
 
 /**
- * Obtiene personas para el mapa social asignando coordenadas según centroides de localidades cuando no hay GPS explícito
+ * Personas para el mapa social: solo las que tienen un punto real (Georef, OpenStreetMap o marcado a mano).
+ * Las que todavía no se ubicaron no se dibujan; se ubican desde Mapa Social > Ubicar en el mapa.
  */
 export async function getPeopleForMap(limit = 1500) {
-  const people = await getPeople(undefined, limit);
-
-  return people.map((p, idx) => {
-    if (p.latitude && p.longitude) {
-      return p;
-    }
-
-    const locKey = `${p.barrio} ${p.localidad} ${p.address}`.toLowerCase();
-    let centroid: [number, number] = TRES_DE_FEBRERO_CENTER;
-
-    for (const loc of MUNICIPAL_LOCALITIES) {
-      if (loc.id === "all") continue;
-      const cleanId = loc.id.replace(/[-_]/g, " ");
-      const cleanName = loc.name.toLowerCase().replace(/\(.*?\)/g, "").trim();
-      if (locKey.includes(cleanId) || locKey.includes(cleanName)) {
-        centroid = loc.coordinates;
-        break;
-      }
-    }
-
-    // Pseudo-random offset determinístico dentro de ~1.2 km basado en DNI
-    const dniNum = Number(String(p.dni).replace(/[^0-9]/g, "")) || (idx * 12345);
-    const latOffset = (((dniNum * 9301 + 49297) % 233280) / 233280 - 0.5) * 0.022;
-    const lngOffset = (((dniNum * 49297 + 9301) % 233280) / 233280 - 0.5) * 0.022;
-
-    return {
-      ...p,
-      latitude: centroid[0] + latOffset,
-      longitude: centroid[1] + lngOffset
-    };
-  });
+  const result = await getPaginatedPeople({ limit, page: 1, withLocation: true });
+  return result.people.filter((p) => p.latitude != null && p.longitude != null);
 }
 
 /**

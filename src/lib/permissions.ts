@@ -122,6 +122,8 @@ const ROUTE_ACCESS: { prefix: string; allowed: (role: Role) => boolean }[] = [
   // Carga de datos sociales (Auditoría solo consulta)
   { prefix: "/people/new", allowed: (r) => canEditSocialRecords(r) },
   { prefix: "/cases/new", allowed: (r) => canEditSocialRecords(r) },
+  // Ubicar en el mapa las direcciones del padrón
+  { prefix: "/maps/ubicar", allowed: (r) => MANAGEMENT_ROLES.includes(r) },
 ];
 
 /** ¿Puede este rol abrir esta pantalla? Las rutas que no figuran arriba son de uso general. */
