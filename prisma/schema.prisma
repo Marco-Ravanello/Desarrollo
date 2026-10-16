@@ -577,6 +577,8 @@ model StormVictimRecord {
   // Identificador que genera el teléfono o la compu al guardar; evita duplicar
   // una ficha cargada sin conexión si se envía dos veces.
   clientId                String?              @unique
+  // Otros insumos pedidos (agregados desde Stock de Contingencia): { idInsumo: cantidad }.
+  otrosElementos          Json?
   entregas                StormDelivery[]
   createdAt               DateTime             @default(now())
   updatedAt               DateTime             @updatedAt
@@ -596,6 +598,8 @@ model StormDelivery {
   camas         Int               @default(0)
   cuchetas      Int               @default(0)
   frazadas      Int               @default(0)
+  // Otros insumos entregados: { idInsumo: cantidad }.
+  otrosElementos Json?
   observaciones String?
   userId        String?
   userName      String

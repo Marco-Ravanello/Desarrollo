@@ -12,9 +12,12 @@ import {
   EMERGENCY_CATEGORIES,
   deliveredByCategory,
   deliveryStatus,
+  extraQuantityText,
   pendingByCategory,
+  pendingExtras,
   quantityText,
   requestedByCategory,
+  requestedExtras,
 } from "@/lib/emergency-categories";
 
 interface StormSummaryTabProps {
@@ -27,26 +30,40 @@ const PRIORITY_ORDER: Record<string, number> = { ALTA: 0, MEDIA: 1, BAJA: 2 };
 const sum = (values: number[]) => values.reduce((a, b) => a + b, 0);
 const children = (r: StormVictimItem) => parseInt(r.ninos || "0") || 0;
 
-function missingText(r: StormVictimItem) {
+function missingText(r: StormVictimItem, extraNames: Map<string, string>) {
   const pending = pendingByCategory(r);
-  return EMERGENCY_CATEGORIES.filter((c) => pending[c.key] > 0)
-    .map((c) => quantityText(c.key, pending[c.key]))
-    .join(", ");
+  return [
+    ...EMERGENCY_CATEGORIES.filter((c) => pending[c.key] > 0).map((c) => quantityText(c.key, pending[c.key])),
+    ...Object.entries(pendingExtras(r)).map(([id, n]) => extraQuantityText(id, n, extraNames)),
+  ].join(", ");
 }
+
+const pendingTotal = (r: StormVictimItem) => sum(Object.values(pendingByCategory(r))) + sum(Object.values(pendingExtras(r)));
 
 /** Resumen de la emergencia para la conducción: qué se pidió, qué se entregó y qué falta. */
 export function StormSummaryTab({ records, stock, onDeliver }: StormSummaryTabProps) {
-  const byItem = useMemo(
-    () =>
-      EMERGENCY_CATEGORIES.map((c) => {
-        const pedido = sum(records.map((r) => requestedByCategory(r)[c.key]));
-        const entregado = sum(records.map((r) => deliveredByCategory(r)[c.key]));
-        const falta = sum(records.map((r) => pendingByCategory(r)[c.key]));
-        const deposito = stock.find((s) => s.category === c.key)?.availableStock ?? 0;
-        return { key: c.key, title: c.title, pedido, entregado, falta, deposito };
-      }),
-    [records, stock]
-  );
+  const extraNames = useMemo(() => new Map(stock.filter((s) => s.category === "ADICIONAL").map((s) => [s.id, s.name])), [stock]);
+
+  const byItem = useMemo(() => {
+    const fixed = EMERGENCY_CATEGORIES.map((c) => {
+      const pedido = sum(records.map((r) => requestedByCategory(r)[c.key]));
+      const entregado = sum(records.map((r) => deliveredByCategory(r)[c.key]));
+      const falta = sum(records.map((r) => pendingByCategory(r)[c.key]));
+      const deposito = stock.find((s) => s.category === c.key)?.availableStock ?? 0;
+      return { key: c.key as string, title: c.title, pedido, entregado, falta, deposito };
+    });
+    // Otros insumos que se pidieron en alguna ficha.
+    const extraIds = Array.from(new Set(records.flatMap((r) => Object.keys(requestedExtras(r)))));
+    const extras = extraIds.map((id) => ({
+      key: id,
+      title: extraNames.get(id) || "Insumo eliminado",
+      pedido: sum(records.map((r) => requestedExtras(r)[id] || 0)),
+      entregado: sum(records.map((r) => r.entregadoOtros?.[id] || 0)),
+      falta: sum(records.map((r) => pendingExtras(r)[id] || 0)),
+      deposito: stock.find((s) => s.id === id)?.availableStock ?? 0,
+    }));
+    return [...fixed, ...extras];
+  }, [records, stock, extraNames]);
 
   const byBarrio = useMemo(() => {
     const map = new Map<string, StormVictimItem[]>();
@@ -60,7 +77,7 @@ export function StormSummaryTab({ records, stock, onDeliver }: StormSummaryTabPr
         fichas: rs.length,
         alta: rs.filter((r) => r.prioridad === "ALTA").length,
         ninos: sum(rs.map(children)),
-        falta: sum(rs.map((r) => sum(Object.values(pendingByCategory(r))))),
+        falta: sum(rs.map(pendingTotal)),
         completas: rs.filter((r) => deliveryStatus(r) === "ENTREGADO").length,
       }))
       .sort((a, b) => b.falta - a.falta || b.fichas - a.fichas);
@@ -133,7 +150,7 @@ export function StormSummaryTab({ records, stock, onDeliver }: StormSummaryTabPr
           Barrio: r.barrio || "",
           Domicilio: r.domicilio,
           Contacto: r.contacto || "",
-          "Falta entregar": missingText(r),
+          "Falta entregar": missingText(r, extraNames),
           "Cargada el": r.createdAt ? new Date(r.createdAt).toLocaleDateString("es-AR") : "",
         }))
       ),
@@ -287,7 +304,7 @@ export function StormSummaryTab({ records, stock, onDeliver }: StormSummaryTabPr
                     {r.barrio && <span className="font-bold">{r.barrio} · </span>}
                     {r.domicilio}
                   </TableCell>
-                  <TableCell className="text-xs">{missingText(r)}</TableCell>
+                  <TableCell className="text-xs">{missingText(r, extraNames)}</TableCell>
                   {onDeliver && (
                     <TableCell className="text-right">
                       {r.fromTable && (

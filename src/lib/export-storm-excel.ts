@@ -1,11 +1,18 @@
 import * as XLSX from "xlsx";
-import { StormVictimItem, EmergencyOperatorInfo } from "@/types/emergency";
+import { StormVictimItem, EmergencyOperatorInfo, EmergencyExtraItem } from "@/types/emergency";
+import { extraQuantityText } from "@/lib/emergency-categories";
 
 export function exportStormSheetToExcel(
   records: StormVictimItem[],
   operator: EmergencyOperatorInfo,
-  filename: string = "Relevamiento_Territorial_Tormenta_3F.xlsx"
+  filename: string = "Relevamiento_Territorial_Tormenta_3F.xlsx",
+  extraItems: EmergencyExtraItem[] = []
 ) {
+  const extraNames = new Map(extraItems.map((i) => [i.id, i.name]));
+  const otrosText = (r: StormVictimItem) =>
+    Object.entries(r.otrosElementos || {})
+      .map(([id, n]) => extraQuantityText(id, n, extraNames))
+      .join(", ");
   const wb = XLSX.utils.book_new();
 
   const data: any[][] = [];
@@ -29,7 +36,8 @@ export function exportStormSheetToExcel(
     "Frazada", "",
     "Observaciones / Contacto",
     "Prioridad",
-    "Agentes / Intervención"
+    "Agentes / Intervención",
+    "Otros insumos"
   ]);
 
   data.push([
@@ -38,7 +46,7 @@ export function exportStormSheetToExcel(
     "Requiere", "Cant.",
     "Requiere", "Cant.",
     "Requiere", "Cant.",
-    "", "", ""
+    "", "", "", ""
   ]);
 
   records.forEach((r, idx) => {
@@ -67,7 +75,8 @@ export function exportStormSheetToExcel(
       r.cantidadFrazada || 0,
       obsContact,
       r.prioridad || "MEDIA",
-      r.descripcionIntervencion || r.agentes || ""
+      r.descripcionIntervencion || r.agentes || "",
+      otrosText(r)
     ]);
   });
 
@@ -94,7 +103,7 @@ export function exportStormSheetToExcel(
     data.push([`Barrio: ${r.barrio || "-"} | Domicilio: ${r.domicilio} ${r.referencia ? `(Ref: ${r.referencia})` : ""}`]);
     data.push([`Edad: ${r.edad || "-"} | Contacto: ${r.contacto || "-"} | Grupo Fam: ${r.grupoFamiliar ? "Sí" : "No"} | Niños: ${r.ninos || "0"}`]);
     data.push([`Prioridad: ${r.prioridad} | Agentes: ${r.agentes || operator.name}`]);
-    data.push([`Elementos: Colchones: ${r.cantidadColchon}, Camas: ${r.cantidadCama}, Cuchetas: ${r.cantidadCucheta}, Frazadas: ${r.cantidadFrazada}`]);
+    data.push([`Elementos: Colchones: ${r.cantidadColchon}, Camas: ${r.cantidadCama}, Cuchetas: ${r.cantidadCucheta}, Frazadas: ${r.cantidadFrazada}${otrosText(r) ? `. Otros: ${otrosText(r)}` : ""}`]);
     data.push([`Descripción de Intervención: ${r.descripcionIntervencion || "Sin detalle"}`]);
     data.push([]);
   });

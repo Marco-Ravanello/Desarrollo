@@ -13,7 +13,9 @@ import {
   EmergencyCategoryKey,
   deliveredByCategory,
   pendingByCategory,
+  pendingExtras,
   requestedByCategory,
+  requestedExtras,
 } from "@/lib/emergency-categories";
 import { deliverStormItemsAction } from "@/app/(dashboard)/admin/actions/emergency-actions";
 
@@ -27,10 +29,12 @@ interface StormDeliveryDialogProps {
 /** Registrar lo que se le entregó a una familia (descuenta del stock). */
 export function StormDeliveryDialog({ record, stock, onOpenChange, onDelivered }: StormDeliveryDialogProps) {
   const [quantities, setQuantities] = useState<Record<EmergencyCategoryKey, number>>({ COLCHON: 0, CAMA: 0, CUCHETA: 0, FRAZADA: 0 });
+  const [otros, setOtros] = useState<Record<string, number>>({});
   const [observaciones, setObservaciones] = useState("");
   const [saving, setSaving] = useState(false);
 
   const available = (key: EmergencyCategoryKey) => stock.find((s) => s.category === key)?.availableStock ?? 0;
+  const extraStock = (id: string) => stock.find((s) => s.id === id);
 
   // Por defecto se propone entregar todo lo pendiente que haya en el depósito.
   useEffect(() => {
@@ -42,6 +46,11 @@ export function StormDeliveryDialog({ record, stock, onOpenChange, onDelivered }
       CUCHETA: Math.min(pending.CUCHETA, available("CUCHETA")),
       FRAZADA: Math.min(pending.FRAZADA, available("FRAZADA")),
     });
+    setOtros(
+      Object.fromEntries(
+        Object.entries(pendingExtras(record)).map(([id, n]) => [id, Math.min(n, extraStock(id)?.availableStock ?? 0)])
+      )
+    );
     setObservaciones("");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [record]);
@@ -51,11 +60,35 @@ export function StormDeliveryDialog({ record, stock, onOpenChange, onDelivered }
   const requested = requestedByCategory(record);
   const delivered = deliveredByCategory(record);
   const pending = pendingByCategory(record);
-  const rows = EMERGENCY_CATEGORIES.filter((c) => requested[c.key] > 0);
+  // Una fila por elemento pedido: los de siempre y los otros insumos de la ficha.
+  const otrosRequested = requestedExtras(record);
+  const otrosPending = pendingExtras(record);
+  const rows = [
+    ...EMERGENCY_CATEGORIES.filter((c) => requested[c.key] > 0).map((c) => ({
+      id: c.key as string,
+      title: c.title,
+      requested: requested[c.key],
+      delivered: delivered[c.key],
+      pending: pending[c.key],
+      stock: available(c.key),
+      value: quantities[c.key],
+      set: (n: number) => setQuantities((q) => ({ ...q, [c.key]: n })),
+    })),
+    ...Object.entries(otrosRequested).map(([id, n]) => ({
+      id,
+      title: extraStock(id)?.name || "Insumo eliminado",
+      requested: n,
+      delivered: record.entregadoOtros?.[id] || 0,
+      pending: otrosPending[id] || 0,
+      stock: extraStock(id)?.availableStock ?? 0,
+      value: otros[id] || 0,
+      set: (v: number) => setOtros((o) => ({ ...o, [id]: v })),
+    })),
+  ];
 
   const handleSave = async () => {
     setSaving(true);
-    const res = await deliverStormItemsAction(record.id, quantities, observaciones);
+    const res = await deliverStormItemsAction(record.id, quantities, observaciones, otros);
     setSaving(false);
     if (res.success) {
       toast.success(
@@ -92,22 +125,22 @@ export function StormDeliveryDialog({ record, stock, onOpenChange, onDelivered }
             <span className="text-center">Entregar</span>
           </div>
           {rows.map((c) => (
-            <div key={c.key} className="grid grid-cols-[minmax(0,1fr)_repeat(3,2.75rem)_4rem] sm:grid-cols-[minmax(0,1fr)_repeat(3,3.5rem)_5rem] items-center gap-2 rounded-xl border border-border/60 px-3 py-2 text-sm">
-              <span className="font-semibold min-w-0 truncate">
+            <div key={c.id} className="grid grid-cols-[minmax(0,1fr)_repeat(3,2.75rem)_4rem] sm:grid-cols-[minmax(0,1fr)_repeat(3,3.5rem)_5rem] items-center gap-2 rounded-xl border border-border/60 px-3 py-2 text-sm">
+              <span className="font-semibold min-w-0 break-words">
                 {c.title}
-                {delivered[c.key] > 0 && <span className="block text-[11px] font-normal text-muted-foreground">ya entregados: {delivered[c.key]}</span>}
+                {c.delivered > 0 && <span className="block text-[11px] font-normal text-muted-foreground">ya entregados: {c.delivered}</span>}
               </span>
-              <span className="text-center">{requested[c.key]}</span>
-              <span className="text-center font-bold">{pending[c.key]}</span>
-              <span className={`text-center ${available(c.key) < pending[c.key] ? "text-rose-600 font-bold" : ""}`}>{available(c.key)}</span>
+              <span className="text-center">{c.requested}</span>
+              <span className="text-center font-bold">{c.pending}</span>
+              <span className={`text-center ${c.stock < c.pending ? "text-rose-600 font-bold" : ""}`}>{c.stock}</span>
               <Input
                 type="number"
                 min={0}
-                max={pending[c.key]}
-                value={quantities[c.key]}
-                disabled={pending[c.key] === 0}
+                max={c.pending}
+                value={c.value}
+                disabled={c.pending === 0}
                 aria-label={`${c.title} a entregar`}
-                onChange={(e) => setQuantities((q) => ({ ...q, [c.key]: Math.max(0, Math.floor(Number(e.target.value) || 0)) }))}
+                onChange={(e) => c.set(Math.max(0, Math.floor(Number(e.target.value) || 0)))}
                 className="h-9 min-w-0 rounded-lg text-center font-bold px-1"
               />
             </div>

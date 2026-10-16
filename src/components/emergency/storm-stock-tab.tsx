@@ -13,9 +13,14 @@ import { Package, Plus, ArrowUpRight, Settings, Edit2, Save, X, Warehouse, Check
 import { toast } from "sonner";
 import {
   updateEmergencyStockAction,
-  createEmergencyStockItemAction
+  createEmergencyStockItemAction,
+  editEmergencyStockItemAction
 } from "@/app/(dashboard)/admin/actions/emergency-actions";
+import { EMERGENCY_CATEGORIES } from "@/lib/emergency-categories";
 import Link from "next/link";
+
+const FICHA_CATEGORIES: EmergencyStockItem["category"][] = EMERGENCY_CATEGORIES.map((c) => c.key);
+const categoryTitle = (key: EmergencyStockItem["category"]) => EMERGENCY_CATEGORIES.find((c) => c.key === key)?.title || key;
 
 interface StormStockTabProps {
   stock: EmergencyStockItem[];
@@ -29,6 +34,8 @@ export function StormStockTab({ stock, onRefresh }: StormStockTabProps) {
   // Inline editing state per card
   const [editingCardId, setEditingCardId] = useState<string | null>(null);
   const [editingStockVal, setEditingStockVal] = useState<number>(0);
+  const [editingName, setEditingName] = useState("");
+  const [savingEdit, setSavingEdit] = useState(false);
 
   // New supply form state
   const [newSupplyName, setNewSupplyName] = useState("");
@@ -74,6 +81,7 @@ export function StormStockTab({ stock, onRefresh }: StormStockTabProps) {
 
   const handleStartEditing = (item: EmergencyStockItem) => {
     setEditingCardId(item.id);
+    setEditingName(item.name);
     setEditingStockVal(item.availableStock);
   };
 
@@ -81,16 +89,20 @@ export function StormStockTab({ stock, onRefresh }: StormStockTabProps) {
     setEditingCardId(null);
   };
 
-  const handleSaveInlineStock = async (item: EmergencyStockItem) => {
-    const toastId = toast.loading(`Actualizando stock de ${item.name}...`);
-
-    const res = await updateEmergencyStockAction(item.id, editingStockVal, item.name);
+  const handleSaveEdit = async (item: EmergencyStockItem) => {
+    if (!editingName.trim()) {
+      toast.error("El nombre del insumo no puede quedar vacío");
+      return;
+    }
+    setSavingEdit(true);
+    const res = await editEmergencyStockItemAction({ id: item.id, category: item.category, name: editingName, stock: editingStockVal });
+    setSavingEdit(false);
     if (res.success) {
-      toast.success(`Stock actualizado a ${res.newStock} unidades`, { id: toastId });
+      toast.success(`Guardado: ${res.name} (${res.stock} ${item.unit.toLowerCase()})`);
       setEditingCardId(null);
       onRefresh();
     } else {
-      toast.error(res.error || "Error al actualizar stock", { id: toastId });
+      toast.error(res.error || "No se pudo guardar el insumo");
     }
   };
 
@@ -132,7 +144,7 @@ export function StormStockTab({ stock, onRefresh }: StormStockTabProps) {
             Balance Comparativo: Depósito vs. Demanda de Planilla
           </h3>
           <p className="text-xs text-muted-foreground mt-1">
-            Gestión de stock de contingencia. Modifica directamente existencias o registra nuevos insumos.
+            Stock de contingencia. Podés corregir el nombre o la cantidad de cada insumo, o agregar uno nuevo.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2 shrink-0">
@@ -150,20 +162,20 @@ export function StormStockTab({ stock, onRefresh }: StormStockTabProps) {
         </div>
       </div>
 
-      {/* TARJETAS PRINCIPALES DE ELEMENTOS CLAVE (COLCHÓN, CAMA, CUCHETA, FRAZADA) */}
+      {/* INSUMOS DE EMERGENCIA: LOS QUE SE PIDEN EN LAS FICHAS Y LOS AGREGADOS DESDE ACÁ */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {stock
-          .filter((s) => ["COLCHON", "CAMA", "CUCHETA", "FRAZADA"].includes(s.category))
+          .filter((s) => FICHA_CATEGORIES.includes(s.category) || s.category === "ADICIONAL")
           .map((item) => {
-            const percentage = Math.min(
-              100,
-              Math.round((item.demandedQuantity / (item.availableStock || 1)) * 100)
-            );
+            const fromSheets = FICHA_CATEGORIES.includes(item.category);
+            // Qué parte de lo que falta entregar se puede cubrir con lo que hay.
+            const percentage =
+              item.demandedQuantity === 0 ? 100 : Math.min(100, Math.round((item.availableStock / item.demandedQuantity) * 100));
 
             const isEditingThisCard = editingCardId === item.id;
 
             return (
-              <Card key={item.id} className="rounded-2xl border-border/60 shadow-sm bg-card p-5 space-y-3">
+              <Card key={item.id} className="rounded-2xl border-border/60 shadow-sm bg-card p-5 space-y-3 flex flex-col">
                 <div className="flex justify-between items-center">
                   <Badge
                     variant="outline"
@@ -178,10 +190,24 @@ export function StormStockTab({ stock, onRefresh }: StormStockTabProps) {
                   <span className="text-[11px] font-bold text-muted-foreground">{item.unit}</span>
                 </div>
 
-                <div>
-                  <h4 className="text-sm font-bold text-foreground">{item.name}</h4>
-                  <p className="text-xs text-muted-foreground mt-0.5">{item.areaName}</p>
-                </div>
+                {isEditingThisCard ? (
+                  <div className="space-y-1">
+                    <Label className="text-[10px] text-muted-foreground uppercase font-bold">Nombre del insumo</Label>
+                    <Input
+                      value={editingName}
+                      onChange={(e) => setEditingName(e.target.value)}
+                      aria-label="Nombre del insumo"
+                      className="h-9 rounded-lg text-sm font-bold"
+                    />
+                  </div>
+                ) : (
+                  <div>
+                    <h4 className="text-sm font-bold text-foreground">{item.name}</h4>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {fromSheets ? `Se pide en las fichas como "${categoryTitle(item.category)}"` : "Se pide en las fichas en \"Otros insumos\""}
+                    </p>
+                  </div>
+                )}
 
                 <div className="grid grid-cols-2 gap-2 pt-2 border-t border-border/40 text-xs">
                   <div>
@@ -193,6 +219,7 @@ export function StormStockTab({ stock, onRefresh }: StormStockTabProps) {
                           min="0"
                           value={editingStockVal}
                           onChange={(e) => setEditingStockVal(parseInt(e.target.value) || 0)}
+                          aria-label="Stock disponible"
                           className="h-8 rounded-lg text-sm font-bold w-20 px-2"
                         />
                       </div>
@@ -207,142 +234,152 @@ export function StormStockTab({ stock, onRefresh }: StormStockTabProps) {
                 </div>
 
                 <div className="space-y-1">
-                  <div className="flex justify-between text-[10px] font-bold text-muted-foreground">
-                    <span>Cobertura de Demanda</span>
-                    <span>{percentage}%</span>
-                  </div>
-                  <Progress
-                    value={percentage}
-                    className={`h-2 ${item.status === "CRITICO" ? "[&>div]:bg-rose-500" : "[&>div]:bg-primary"}`}
-                  />
+                    <div className="flex justify-between text-[10px] font-bold text-muted-foreground">
+                      <span>Cobertura de lo que falta entregar</span>
+                      <span>{percentage}%</span>
+                    </div>
+                    <Progress
+                      value={percentage}
+                      className={`h-2 ${percentage < 100 ? "[&>div]:bg-rose-500" : "[&>div]:bg-primary"}`}
+                    />
                 </div>
 
-                {isEditingThisCard ? (
-                  <div className="flex items-center gap-2 pt-1">
+                <div className="mt-auto">
+                  {isEditingThisCard ? (
+                    <div className="flex items-center gap-2 pt-1">
+                      <Button
+                        onClick={() => handleSaveEdit(item)}
+                        disabled={savingEdit}
+                        className="flex-1 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white h-9"
+                      >
+                        <Check className="mr-1 h-4 w-4" /> {savingEdit ? "Guardando..." : "Guardar"}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={handleCancelEditing}
+                        aria-label="Cancelar"
+                        className="rounded-xl text-xs font-bold h-9 px-3"
+                      >
+                        <X className="h-4 w-4 text-muted-foreground" />
+                      </Button>
+                    </div>
+                  ) : (
                     <Button
-                      onClick={() => handleSaveInlineStock(item)}
-                      className="flex-1 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white h-9"
-                    >
-                      <Check className="mr-1 h-4 w-4" /> Guardar
-                    </Button>
-                    <Button
+                      onClick={() => handleStartEditing(item)}
                       variant="outline"
-                      onClick={handleCancelEditing}
-                      className="rounded-xl text-xs font-bold h-9 px-3"
+                      className="w-full rounded-xl text-xs font-bold border-primary/30 text-primary hover:bg-primary/10 h-9 mt-2"
                     >
-                      <X className="h-4 w-4 text-muted-foreground" />
+                      <Edit2 className="mr-1.5 h-3.5 w-3.5" /> Modificar nombre o stock
                     </Button>
-                  </div>
-                ) : (
-                  <Button
-                    onClick={() => handleStartEditing(item)}
-                    variant="outline"
-                    className="w-full rounded-xl text-xs font-bold border-primary/30 text-primary hover:bg-primary/10 h-9 mt-2"
-                  >
-                    <Edit2 className="mr-1.5 h-3.5 w-3.5" /> Modificar Stock
-                  </Button>
-                )}
+                  )}
+                </div>
               </Card>
             );
           })}
       </div>
 
-      {/* INSUMOS GENERALES Y ADICIONALES (CHAPAS, TIRANTES, NYLON, BIDONES, ETC.) */}
-      <Card className="rounded-2xl border-border/60 shadow-sm bg-card p-6 space-y-4">
-        <div className="flex justify-between items-center">
-          <h4 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">
-            Otros Insumos Generales de Depósito y Materiales de Contingencia
-          </h4>
-          <Button
-            size="sm"
-            onClick={() => setAddSupplyOpen(true)}
-            variant="outline"
-            className="rounded-xl text-xs font-bold h-8"
-          >
-            <Plus className="mr-1 h-3.5 w-3.5" /> Nuevo Insumo
-          </Button>
-        </div>
+      {/* OTROS INSUMOS DEL DEPÓSITO (CARGADOS DESDE LA PANTALLA DE DEPÓSITO) */}
+      {stock.some((s) => s.category === "GENERAL") && (
+        <Card className="rounded-2xl border-border/60 shadow-sm bg-card p-6 space-y-4">
+          <div>
+            <h4 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Otros insumos del depósito</h4>
+            <p className="text-xs text-muted-foreground mt-1">Cargados desde la pantalla de Depósito. Los que agregues acá arriba van con los de emergencia.</p>
+          </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {stock
-            .filter((s) => s.category === "GENERAL")
-            .map((item) => {
-              const isEditingThisCard = editingCardId === item.id;
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {stock
+              .filter((s) => s.category === "GENERAL")
+              .map((item) => {
+                const isEditingThisCard = editingCardId === item.id;
 
-              return (
-                <div
-                  key={item.id}
-                  className="p-4 rounded-2xl bg-muted/30 border border-border/50 flex flex-col justify-between gap-3"
-                >
-                  <div className="flex justify-between items-start gap-2">
-                    <div>
-                      <h5 className="text-xs font-bold text-foreground">{item.name}</h5>
-                      <p className="text-[11px] text-muted-foreground mt-0.5">{item.description}</p>
-                    </div>
-                    <Badge
-                      variant="outline"
-                      className={`text-[9px] font-bold shrink-0 ${
-                        item.status === "CRITICO"
-                          ? "bg-rose-500/10 text-rose-600 border-rose-500/30"
-                          : "bg-emerald-500/10 text-emerald-600 border-emerald-500/30"
-                      }`}
-                    >
-                      {item.status}
-                    </Badge>
-                  </div>
-
-                  <div className="flex items-center justify-between pt-2 border-t border-border/40">
-                    <div>
-                      <span className="text-[10px] text-muted-foreground uppercase font-bold">Disponible</span>
+                return (
+                  <div
+                    key={item.id}
+                    className="p-4 rounded-2xl bg-muted/30 border border-border/50 flex flex-col justify-between gap-3"
+                  >
+                    <div className="flex justify-between items-start gap-2">
                       {isEditingThisCard ? (
                         <Input
-                          type="number"
-                          min="0"
-                          value={editingStockVal}
-                          onChange={(e) => setEditingStockVal(parseInt(e.target.value) || 0)}
-                          className="h-8 rounded-lg text-xs font-bold w-20 px-2 mt-0.5"
+                          value={editingName}
+                          onChange={(e) => setEditingName(e.target.value)}
+                          aria-label="Nombre del insumo"
+                          className="h-8 rounded-lg text-xs font-bold"
                         />
                       ) : (
-                        <p className="text-sm font-bold text-foreground">
-                          {item.availableStock} <span className="text-[10px] font-normal text-muted-foreground">{item.unit}</span>
-                        </p>
+                        <div>
+                          <h5 className="text-xs font-bold text-foreground">{item.name}</h5>
+                          <p className="text-[11px] text-muted-foreground mt-0.5">{item.description}</p>
+                        </div>
                       )}
+                      <Badge
+                        variant="outline"
+                        className={`text-[9px] font-bold shrink-0 ${
+                          item.status === "CRITICO"
+                            ? "bg-rose-500/10 text-rose-600 border-rose-500/30"
+                            : "bg-emerald-500/10 text-emerald-600 border-emerald-500/30"
+                        }`}
+                      >
+                        {item.status}
+                      </Badge>
                     </div>
 
-                    {isEditingThisCard ? (
-                      <div className="flex items-center gap-1">
-                        <Button
-                          size="sm"
-                          onClick={() => handleSaveInlineStock(item)}
-                          className="rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white h-7 px-2"
-                        >
-                          <Check className="h-3.5 w-3.5" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={handleCancelEditing}
-                          className="rounded-lg text-xs h-7 px-1.5"
-                        >
-                          <X className="h-3.5 w-3.5 text-muted-foreground" />
-                        </Button>
+                    <div className="flex items-center justify-between pt-2 border-t border-border/40">
+                      <div>
+                        <span className="text-[10px] text-muted-foreground uppercase font-bold">Disponible</span>
+                        {isEditingThisCard ? (
+                          <Input
+                            type="number"
+                            min="0"
+                            value={editingStockVal}
+                            onChange={(e) => setEditingStockVal(parseInt(e.target.value) || 0)}
+                            aria-label="Stock disponible"
+                            className="h-8 rounded-lg text-xs font-bold w-20 px-2 mt-0.5"
+                          />
+                        ) : (
+                          <p className="text-sm font-bold text-foreground">
+                            {item.availableStock} <span className="text-[10px] font-normal text-muted-foreground">{item.unit}</span>
+                          </p>
+                        )}
                       </div>
-                    ) : (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleStartEditing(item)}
-                        className="rounded-xl font-bold text-xs h-8 px-2.5 border-primary/30 text-primary hover:bg-primary/10"
-                      >
-                        <Edit2 className="mr-1 h-3 w-3" /> Modificar Stock
-                      </Button>
-                    )}
+
+                      {isEditingThisCard ? (
+                        <div className="flex items-center gap-1">
+                          <Button
+                            size="sm"
+                            onClick={() => handleSaveEdit(item)}
+                            disabled={savingEdit}
+                            aria-label="Guardar"
+                            className="rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white h-7 px-2"
+                          >
+                            <Check className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={handleCancelEditing}
+                            aria-label="Cancelar"
+                            className="rounded-lg text-xs h-7 px-1.5"
+                          >
+                            <X className="h-3.5 w-3.5 text-muted-foreground" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleStartEditing(item)}
+                          className="rounded-xl font-bold text-xs h-8 px-2.5 border-primary/30 text-primary hover:bg-primary/10"
+                        >
+                          <Edit2 className="mr-1 h-3 w-3" /> Modificar
+                        </Button>
+                      )}
+                    </div>
                   </div>
-                </div>
-              );
-            })}
-        </div>
-      </Card>
+                );
+              })}
+          </div>
+        </Card>
+      )}
 
       {/* MODAL CONFIGURACIÓN MASIVA DE STOCK EN DEPÓSITO */}
       <Dialog open={configOpen} onOpenChange={setConfigOpen}>

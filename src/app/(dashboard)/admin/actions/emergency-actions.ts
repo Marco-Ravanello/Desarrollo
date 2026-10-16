@@ -10,10 +10,11 @@ import {
   EmergencyCategoryKey,
   findCategorySupply,
 } from "@/services/emergency";
-import { quantityText } from "@/lib/emergency-categories";
+import { cleanItemQuantities, extraQuantityText, quantityText } from "@/lib/emergency-categories";
 import { DELIVERY_DB_PENDING_MESSAGE, isDeliveryTableReady, stormRecordOmit } from "@/services/emergency-db-status";
 import { saveStormVictimRecord } from "@/services/emergency-save";
-import { StormVictimItem } from "@/types/emergency";
+import { getCategoryLinks, getEmergencyExtraItems, linkCategorySupply, saveEmergencyExtraItems } from "@/services/emergency-stock-links";
+import { EmergencyStockItem, StormVictimItem } from "@/types/emergency";
 import { actionErrorMessage } from "@/lib/action-error";
 import { MANAGEMENT_ROLES, canEditSocialRecords, canManageEmergencyStock, isEmergencySurveyor } from "@/lib/permissions";
 
@@ -183,7 +184,7 @@ export async function updateEmergencyStockAction(
         else if (catKey === "CUCHETA") nameToUse = "Cuchetas Superpuestas Reforzadas";
         else if (catKey === "FRAZADA") nameToUse = "Frazadas Térmicas Antialérgicas";
 
-        await prisma.supplyItem.create({
+        const created = await prisma.supplyItem.create({
           data: {
             id: supplyId.startsWith("stock-cat-") ? undefined : supplyId,
             name: nameToUse,
@@ -192,6 +193,9 @@ export async function updateEmergencyStockAction(
             minStock: 10,
           },
         });
+        if (["COLCHON", "CAMA", "CUCHETA", "FRAZADA"].includes(catKey)) {
+          await linkCategorySupply(catKey as EmergencyCategoryKey, created.id);
+        }
       }
     } catch (dbErr) {
       console.warn("Notice: SupplyItem update skipped or handled via SystemSetting:", dbErr);
@@ -309,6 +313,77 @@ export async function createEmergencyStockItemAction(data: {
   }
 }
 
+/**
+ * Cambia el nombre y el stock de un insumo de emergencia. Los insumos de las
+ * fichas (colchones, camas...) quedan vinculados por id, así que se pueden
+ * renombrar sin perder la relación con lo que piden las fichas.
+ */
+export async function editEmergencyStockItemAction(data: {
+  id: string;
+  category: EmergencyStockItem["category"];
+  name: string;
+  stock: number;
+}) {
+  const session = await auth();
+  if (session?.user && !canManageEmergencyStock(session.user.role)) return { success: false, error: STOCK_DENIED };
+  if (!session?.user?.id) return { success: false, error: "No tenés permiso para hacer esto o tu sesión expiró. Si sigue pasando, volvé a iniciar sesión." };
+
+  const name = (data.name || "").trim().slice(0, 120);
+  if (!name) return { success: false, error: "El nombre del insumo es obligatorio" };
+  const stock = Math.max(0, Math.floor(Number(data.stock) || 0));
+  const cat = EMERGENCY_CATEGORIES.find((c) => c.key === data.category);
+
+  try {
+    const existing = await prisma.supplyItem.findUnique({ where: { id: data.id } });
+    let item;
+    if (existing) {
+      item = await prisma.supplyItem.update({ where: { id: existing.id }, data: { name, stock } });
+    } else if (cat && data.id.startsWith("stock-cat-")) {
+      // Todavía no había insumo cargado para este elemento de las fichas.
+      item = await prisma.supplyItem.create({
+        data: { name, description: "Stock de contingencia", stock, minStock: cat.minStock },
+      });
+    } else {
+      const extras = await getEmergencyExtraItems();
+      const extra = extras.find((ci) => ci?.id === data.id);
+      if (!extra) return { success: false, error: "No se encontró el insumo. Actualizá la página y probá de nuevo." };
+      item = await prisma.supplyItem.create({
+        data: { id: extra.id, name, description: extra.description || "Insumo de contingencia climática", stock, minStock: Number(extra.minStock) || 5 },
+      });
+    }
+
+    if (cat) await linkCategorySupply(cat.key, item.id);
+
+    const extras = await getEmergencyExtraItems();
+    if (extras.some((ci) => ci?.id === item.id)) {
+      await saveEmergencyExtraItems(extras.map((ci) => (ci?.id === item.id ? { ...ci, name, availableStock: stock } : ci)));
+    }
+
+    const changes = [
+      existing && existing.name !== name ? `nombre "${existing.name}" → "${name}"` : null,
+      !existing || existing.stock !== stock ? `stock ${existing ? `${existing.stock} → ` : ""}${stock}` : null,
+    ].filter(Boolean);
+    await prisma.auditLog
+      .create({
+        data: {
+          userId: session.user.id,
+          action: "EMERGENCY_STOCK_UPDATE",
+          entity: "SupplyItem",
+          entityId: item.id,
+          details: `Insumo de emergencia ${name}: ${changes.join(", ") || "sin cambios"} (${session.user.name || session.user.email})`,
+        },
+      })
+      .catch((err) => console.warn("AuditLog skipped:", err));
+
+    revalidatePath("/admin/emergency");
+    revalidatePath("/admin/stock");
+    return { success: true, name: item.name, stock: item.stock };
+  } catch (error: any) {
+    console.error("Error editing emergency stock item:", error);
+    return { success: false, error: actionErrorMessage(error, "No se pudo guardar el insumo") };
+  }
+}
+
 export async function dispatchEmergencyStockAction(
   supplyId: string,
   quantity: number = 10,
@@ -414,7 +489,13 @@ export type DeliveryQuantities = Partial<Record<EmergencyCategoryKey, number>>;
  * stock del depósito, deja constancia en la ficha y en su expediente. Puede
  * ser parcial (lo que falta queda pendiente).
  */
-export async function deliverStormItemsAction(recordId: string, quantities: DeliveryQuantities, observaciones?: string) {
+export async function deliverStormItemsAction(
+  recordId: string,
+  quantities: DeliveryQuantities,
+  observaciones?: string,
+  /** Otros insumos entregados (chapas, nylon...): { idInsumo: cantidad }. */
+  otros?: Record<string, number>
+) {
   const session = await auth();
   if (!session?.user?.id) return { success: false, error: "No tenés permiso para hacer esto o tu sesión expiró. Si sigue pasando, volvé a iniciar sesión." };
   if (!canManageEmergencyStock(session.user.role)) return { success: false, error: "Tu usuario no puede registrar entregas." };
@@ -423,7 +504,8 @@ export async function deliverStormItemsAction(recordId: string, quantities: Deli
   const qty = Object.fromEntries(
     EMERGENCY_CATEGORIES.map((c) => [c.key, Math.max(0, Math.floor(Number(quantities?.[c.key]) || 0))])
   ) as Record<EmergencyCategoryKey, number>;
-  if (Object.values(qty).every((q) => q === 0)) {
+  const otrosQty = cleanItemQuantities(otros);
+  if (Object.values(qty).every((q) => q === 0) && Object.keys(otrosQty).length === 0) {
     return { success: false, error: "Indicá al menos un elemento entregado." };
   }
 
@@ -450,6 +532,7 @@ export async function deliverStormItemsAction(recordId: string, quantities: Deli
       };
 
       const supplies = await tx.supplyItem.findMany();
+      const links = await getCategoryLinks(tx);
       let overrides: Record<string, number> = {};
       try {
         const setting = await tx.systemSetting.findUnique({ where: { key: "muni-emergency-stock-overrides" } });
@@ -468,13 +551,15 @@ export async function deliverStormItemsAction(recordId: string, quantities: Deli
           );
         }
 
-        let item = findCategorySupply(supplies, cat.key);
+        let item = findCategorySupply(supplies, cat.key, links);
         if (!item && overrides[cat.key] !== undefined) {
           // El stock se había cargado a mano antes de existir el insumo: se crea con esa cantidad.
           item = await tx.supplyItem.create({
             data: { name: cat.defaultName, description: "Stock de contingencia", stock: Number(overrides[cat.key]) || 0, minStock: cat.minStock },
           });
           supplies.push(item);
+          await linkCategorySupply(cat.key, item.id, tx);
+          links[cat.key] = item.id;
         }
         if (!item) throw new DeliveryError(`No hay stock de ${cat.label} cargado en el depósito de contingencia`);
 
@@ -489,6 +574,36 @@ export async function deliverStormItemsAction(recordId: string, quantities: Deli
         await tx.supplyRequest.create({ data: { supplyId: item.id, quantity: q, userId, status: "ENTREGADO" } });
       }
 
+      // Otros insumos pedidos en la ficha.
+      const requestedOtros = cleanItemQuantities(record.otrosElementos);
+      const deliveredOtros: Record<string, number> = {};
+      for (const e of record.entregas) {
+        for (const [id, n] of Object.entries(cleanItemQuantities(e.otrosElementos))) deliveredOtros[id] = (deliveredOtros[id] || 0) + n;
+      }
+      const otrosNames = new Map<string, string>();
+      for (const [id, q] of Object.entries(otrosQty)) {
+        const item = supplies.find((s) => s.id === id);
+        if (!item) throw new DeliveryError("Uno de los insumos ya no existe en el depósito");
+        otrosNames.set(id, item.name);
+        const pending = Math.max(0, (requestedOtros[id] || 0) - (deliveredOtros[id] || 0));
+        if (q > pending) {
+          throw new DeliveryError(
+            pending === 0
+              ? `En esta ficha no quedan ${item.name} por entregar`
+              : `En esta ficha quedan ${pending} ${item.name} por entregar, no ${q}`
+          );
+        }
+        const updated = await tx.supplyItem.updateMany({
+          where: { id, stock: { gte: q } },
+          data: { stock: { decrement: q } },
+        });
+        if (updated.count === 0) {
+          const fresh = await tx.supplyItem.findUnique({ where: { id } });
+          throw new DeliveryError(`No alcanza el stock de ${item.name}: quedan ${fresh?.stock ?? 0}`);
+        }
+        await tx.supplyRequest.create({ data: { supplyId: id, quantity: q, userId, status: "ENTREGADO" } });
+      }
+
       await tx.stormDelivery.create({
         data: {
           recordId,
@@ -496,22 +611,26 @@ export async function deliverStormItemsAction(recordId: string, quantities: Deli
           camas: qty.CAMA,
           cuchetas: qty.CUCHETA,
           frazadas: qty.FRAZADA,
+          ...(Object.keys(otrosQty).length > 0 ? { otrosElementos: otrosQty } : {}),
           observaciones: observaciones?.trim() || null,
           userId,
           userName,
         },
       });
 
-      const complete = EMERGENCY_CATEGORIES.every((c) => requested[c.key] - delivered[c.key] - qty[c.key] <= 0);
+      const complete =
+        EMERGENCY_CATEGORIES.every((c) => requested[c.key] - delivered[c.key] - qty[c.key] <= 0) &&
+        Object.entries(requestedOtros).every(([id, n]) => n - (deliveredOtros[id] || 0) - (otrosQty[id] || 0) <= 0);
       const estado = complete ? "ENTREGADO" : "ENTREGA_PARCIAL";
       await tx.stormVictimRecord.update({ where: { id: recordId }, data: { estado }, omit });
 
-      return { estado, caseId: record.caseId, personId: record.personId, nombre: record.nombreApellido };
+      return { estado, caseId: record.caseId, personId: record.personId, nombre: record.nombreApellido, otrosNames };
     });
 
-    const summary = EMERGENCY_CATEGORIES.filter((c) => qty[c.key] > 0)
-      .map((c) => quantityText(c.key, qty[c.key]))
-      .join(", ");
+    const summary = [
+      ...EMERGENCY_CATEGORIES.filter((c) => qty[c.key] > 0).map((c) => quantityText(c.key, qty[c.key])),
+      ...Object.entries(otrosQty).map(([id, n]) => extraQuantityText(id, n, result.otrosNames)),
+    ].join(", ");
 
     if (result.caseId && result.personId) {
       await prisma.intervention

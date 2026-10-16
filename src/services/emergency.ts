@@ -1,7 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { canEditSocialRecords, canManageEmergencyStock, isEmergencySurveyor } from "@/lib/permissions";
 import { isDeliveryTableReady, stormRecordOmit } from "@/services/emergency-db-status";
-import { EMERGENCY_CATEGORIES, EmergencyCategoryKey, findCategorySupply, pendingByCategory } from "@/lib/emergency-categories";
+import { getCategoryLinks, getEmergencyExtraItems } from "@/services/emergency-stock-links";
+import { EMERGENCY_CATEGORIES, EmergencyCategoryKey, cleanItemQuantities, findCategorySupply, pendingByCategory, pendingExtras } from "@/lib/emergency-categories";
 
 export { EMERGENCY_CATEGORIES, findCategorySupply, pendingByCategory };
 export type { EmergencyCategoryKey };
@@ -11,6 +12,7 @@ import {
   EmergencyStockItem,
   StormVictimItem,
   EmergencyOperationsData,
+  EmergencyExtraItem,
   SearchPersonSuggestion
 } from "@/types/emergency";
 
@@ -51,17 +53,20 @@ export async function getEmergencyOperator(sessionUser: any): Promise<EmergencyO
 
 export async function getEmergencyStock(): Promise<EmergencyStockItem[]> {
   try {
-    const supplies = await prisma.supplyItem.findMany({
-      include: { area: true }
-    });
-
-    const records = await getStormVictimRecords();
+    const [supplies, records, links, extraItems] = await Promise.all([
+      prisma.supplyItem.findMany({ include: { area: true } }),
+      getStormVictimRecords(),
+      getCategoryLinks(),
+      getEmergencyExtraItems(),
+    ]);
 
     // Demanda = lo que falta entregar de las fichas.
     const demandMap: Record<EmergencyCategoryKey, number> = { COLCHON: 0, CAMA: 0, CUCHETA: 0, FRAZADA: 0 };
+    const extraDemand = new Map<string, number>();
     for (const r of records) {
       const pending = pendingByCategory(r);
       for (const key of Object.keys(demandMap) as EmergencyCategoryKey[]) demandMap[key] += pending[key];
+      for (const [id, n] of Object.entries(pendingExtras(r))) extraDemand.set(id, (extraDemand.get(id) || 0) + n);
     }
 
     const categorizedItems: EmergencyStockItem[] = [];
@@ -78,8 +83,10 @@ export async function getEmergencyStock(): Promise<EmergencyStockItem[]> {
       console.warn("Could not read stock overrides setting:", e);
     }
 
+    const categoryItemIds = new Set<string>();
     for (const cat of EMERGENCY_CATEGORIES) {
-      const match = findCategorySupply(supplies, cat.key);
+      const match = findCategorySupply(supplies, cat.key, links);
+      if (match) categoryItemIds.add(match.id);
 
       // El stock real es el del insumo del depósito (lo que descuentan las entregas).
       // El ajuste manual guardado aparte solo se usa si todavía no existe el insumo.
@@ -116,60 +123,54 @@ export async function getEmergencyStock(): Promise<EmergencyStockItem[]> {
       });
     }
 
-    const generalSupplies = supplies.filter(s => {
+    // Insumos agregados desde Emergencia (chapas, nylon...): van junto a los de las fichas.
+    const extraById = new Map(extraItems.filter((ci) => ci?.id).map((ci) => [String(ci.id), ci]));
+
+    const otherSupplies = supplies.filter(s => {
+      if (categoryItemIds.has(s.id)) return false;
+      if (extraById.has(s.id)) return true;
       const lower = s.name.toLowerCase();
       return !["colchon", "colchón", "cama", "cucheta", "frazada", "manta"].some(kw => lower.includes(kw));
     });
 
-    for (const gs of generalSupplies) {
+    for (const gs of otherSupplies) {
+      const extra = extraById.get(gs.id);
+      const demanded = extra ? extraDemand.get(gs.id) || 0 : 0;
       let status: "CRITICO" | "CORRECTO" | "EXCESO" = "CORRECTO";
-      if (gs.stock <= gs.minStock) status = "CRITICO";
+      if (gs.stock <= gs.minStock || gs.stock < demanded) status = "CRITICO";
 
       categorizedItems.push({
         id: gs.id,
         name: gs.name,
         description: gs.description,
-        category: "GENERAL",
+        category: extra ? "ADICIONAL" : "GENERAL",
         availableStock: gs.stock,
         minStock: gs.minStock,
-        demandedQuantity: 0,
-        unit: "Unidades",
+        demandedQuantity: demanded,
+        unit: extra?.unit || "Unidades",
         status,
-        areaName: gs.area?.name || "Depósito Central",
+        areaName: gs.area?.name || (extra ? "Depósito Desarrollo Humano" : "Depósito Central"),
       });
     }
 
-    // Load custom registered emergency stock items from SystemSetting if any
-    try {
-      const customSetting = await prisma.systemSetting.findUnique({
-        where: { key: "custom-emergency-stock-items" },
+    // Insumos agregados desde Emergencia que no llegaron a guardarse en el depósito.
+    for (const ci of extraItems) {
+      if (!ci?.id || categorizedItems.some(i => i.id === ci.id)) continue;
+      const availableStock = Number(ci.availableStock) || 0;
+      const minStock = Number(ci.minStock) || 5;
+      const demanded = extraDemand.get(ci.id) || 0;
+      categorizedItems.push({
+        id: ci.id,
+        name: ci.name,
+        description: ci.description || "Insumo de contingencia",
+        category: "ADICIONAL",
+        availableStock,
+        minStock,
+        demandedQuantity: demanded,
+        unit: ci.unit || "Unidades",
+        status: availableStock <= minStock || availableStock < demanded ? "CRITICO" : "CORRECTO",
+        areaName: "Depósito Desarrollo Humano",
       });
-      if (customSetting?.value) {
-        const customItems = JSON.parse(customSetting.value);
-        if (Array.isArray(customItems)) {
-          for (const ci of customItems) {
-            if (!categorizedItems.some(i => i.id === ci.id)) {
-              let status: "CRITICO" | "CORRECTO" | "EXCESO" = "CORRECTO";
-              if (ci.availableStock <= (ci.minStock || 5)) status = "CRITICO";
-
-              categorizedItems.push({
-                id: ci.id,
-                name: ci.name,
-                description: ci.description || "Insumo de contingencia",
-                category: "GENERAL",
-                availableStock: ci.availableStock,
-                minStock: ci.minStock || 5,
-                demandedQuantity: 0,
-                unit: ci.unit || "Unidades",
-                status,
-                areaName: "Depósito Desarrollo Humano",
-              });
-            }
-          }
-        }
-      }
-    } catch (e) {
-      console.warn("Could not read custom emergency stock items setting:", e);
     }
 
     return categorizedItems;
@@ -224,6 +225,7 @@ export async function getStormVictimRecords(): Promise<StormVictimItem[]> {
         cantidadCucheta: r.cantidadCucheta,
         requiereFrazada: r.requiereFrazada,
         cantidadFrazada: r.cantidadFrazada,
+        otrosElementos: cleanItemQuantities((r as any).otrosElementos),
         observaciones: r.observaciones,
         contacto: r.contacto,
         agentes: r.agentes,
@@ -350,9 +352,14 @@ export async function getStormVictimRecords(): Promise<StormVictimItem[]> {
 }
 
 /** Totales entregados de una ficha a partir de sus entregas. */
-function deliveryTotals(entregas?: { colchones: number; camas: number; cuchetas: number; frazadas: number; createdAt: Date }[]) {
-  if (!entregas?.length) return { entregadoColchon: 0, entregadoCama: 0, entregadoCucheta: 0, entregadoFrazada: 0, ultimaEntrega: null };
+function deliveryTotals(entregas?: { colchones: number; camas: number; cuchetas: number; frazadas: number; otrosElementos?: unknown; createdAt: Date }[]) {
+  if (!entregas?.length) return { entregadoColchon: 0, entregadoCama: 0, entregadoCucheta: 0, entregadoFrazada: 0, entregadoOtros: {}, ultimaEntrega: null };
+  const entregadoOtros: Record<string, number> = {};
+  for (const e of entregas) {
+    for (const [id, n] of Object.entries(cleanItemQuantities(e.otrosElementos))) entregadoOtros[id] = (entregadoOtros[id] || 0) + n;
+  }
   return {
+    entregadoOtros,
     entregadoColchon: entregas.reduce((a, e) => a + e.colchones, 0),
     entregadoCama: entregas.reduce((a, e) => a + e.camas, 0),
     entregadoCucheta: entregas.reduce((a, e) => a + e.cuchetas, 0),
@@ -371,10 +378,24 @@ export async function getStormVictimRecordsByUser(userId: string): Promise<Storm
   });
   return records.map(({ entregas, ...r }: any) => ({
     ...r,
+    otrosElementos: cleanItemQuantities(r.otrosElementos),
     ...deliveryTotals(entregas),
     fromTable: true,
     prioridad: (r.prioridad as EmergencyPriority) || "MEDIA",
   }));
+}
+
+/** Insumos agregados desde Emergencia que se pueden pedir en las fichas, con su nombre actual. */
+export async function getEmergencyExtraItemOptions(): Promise<EmergencyExtraItem[]> {
+  const extras = (await getEmergencyExtraItems()).filter((ci) => ci?.id && ci?.name);
+  if (extras.length === 0) return [];
+  const supplies = await prisma.supplyItem
+    .findMany({ where: { id: { in: extras.map((ci) => String(ci.id)) } }, select: { id: true, name: true } })
+    .catch(() => []);
+  const names = new Map(supplies.map((s) => [s.id, s.name]));
+  return extras
+    .map((ci) => ({ id: String(ci.id), name: names.get(String(ci.id)) || String(ci.name), unit: ci.unit || "Unidades" }))
+    .sort((a, b) => a.name.localeCompare(b.name, "es"));
 }
 
 export async function getEmergencyOperationsData(sessionUser: any): Promise<EmergencyOperationsData> {
@@ -382,9 +403,11 @@ export async function getEmergencyOperationsData(sessionUser: any): Promise<Emer
   const surveyor = isEmergencySurveyor(sessionUser?.role);
 
   // El relevador no ve el stock del depósito, solo lo que relevó.
-  const [stock, records] = surveyor
-    ? [[], sessionUser?.id ? await getStormVictimRecordsByUser(sessionUser.id) : []]
-    : await Promise.all([getEmergencyStock(), getStormVictimRecords()]);
+  const [stock, records, extraItems] = await Promise.all([
+    surveyor ? [] : getEmergencyStock(),
+    surveyor ? (sessionUser?.id ? getStormVictimRecordsByUser(sessionUser.id) : []) : getStormVictimRecords(),
+    getEmergencyExtraItemOptions(),
+  ]);
 
   const totalVictims = records.length;
   const totalChildren = records.reduce((acc, r) => acc + (parseInt(r.ninos || "0") || 0), 0);
@@ -403,6 +426,7 @@ export async function getEmergencyOperationsData(sessionUser: any): Promise<Emer
       canEdit: canEditSocialRecords(sessionUser?.role),
     },
     stock,
+    extraItems,
     records,
     metrics: {
       totalVictims,
