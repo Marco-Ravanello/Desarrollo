@@ -9,7 +9,8 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator
 } from "@/components/ui/dropdown-menu";
-import { Download, FileSpreadsheet, FileText } from "lucide-react";
+import { useState } from "react";
+import { Download, FileSpreadsheet, FileText, Loader2 } from "lucide-react";
 import { exportToExcel, exportToPdf, ExportColumn } from "@/lib/export-utils";
 import { toast } from "sonner";
 
@@ -21,6 +22,10 @@ interface UniversalExportMenuProps {
   subtitle?: string;
   orientation?: "portrait" | "landscape";
   label?: string;
+  /** Si está, los datos se piden recién al exportar (por ejemplo, al servidor). Devuelve null si no se pudo. */
+  loadData?: () => Promise<any[] | null>;
+  /** Más filas que esto no entran en un PDF legible: se sugiere Excel. */
+  pdfMaxRows?: number;
 }
 
 export function UniversalExportMenu({
@@ -30,10 +35,25 @@ export function UniversalExportMenu({
   title = "Reporte de Datos Municipales",
   subtitle = "SISTEMA INTEGRADO DE GESTIÓN MUNICIPAL",
   orientation = "portrait",
-  label = "Exportar Planilla"
+  label = "Exportar Planilla",
+  loadData,
+  pdfMaxRows
 }: UniversalExportMenuProps) {
+  const [loading, setLoading] = useState(false);
 
-  const handleExcelExport = () => {
+  const getRows = async () => {
+    if (!loadData) return data;
+    setLoading(true);
+    try {
+      return await loadData();
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleExcelExport = async () => {
+    const data = await getRows();
+    if (!data && loadData) return;
     if (!data || data.length === 0) {
       toast.error("No hay registros disponibles para exportar");
       return;
@@ -56,9 +76,15 @@ export function UniversalExportMenu({
     }
   };
 
-  const handlePdfExport = () => {
+  const handlePdfExport = async () => {
+    const data = await getRows();
+    if (!data && loadData) return;
     if (!data || data.length === 0) {
       toast.error("No hay registros disponibles para exportar");
+      return;
+    }
+    if (pdfMaxRows && data.length > pdfMaxRows) {
+      toast.error(`Son ${data.length.toLocaleString("es-AR")} registros: para más de ${pdfMaxRows.toLocaleString("es-AR")} usá la planilla Excel.`);
       return;
     }
 
@@ -84,8 +110,9 @@ export function UniversalExportMenu({
           variant="outline"
           size="sm"
           className="rounded-2xl border-border/60 hover:bg-muted font-bold text-xs gap-2 h-9"
+          disabled={loading}
         >
-          <Download className="h-3.5 w-3.5 text-primary" />
+          {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" /> : <Download className="h-3.5 w-3.5 text-primary" />}
           {label}
         </Button>
       </DropdownMenuTrigger>

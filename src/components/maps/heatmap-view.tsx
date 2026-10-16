@@ -1,15 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { MapContainer, TileLayer, useMap } from "react-leaflet";
+import { useEffect, useMemo, useState } from "react";
+import { MapContainer, TileLayer, ZoomControl, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import "leaflet.heat";
 import { TRES_DE_FEBRERO_CENTER, TRES_DE_FEBRERO_DEFAULT_ZOOM } from "@/lib/constants/localities";
 
 interface HeatmapViewProps {
-  people: any[];
-  filterArea: string;
+  /** Coordenadas planas: [lat0, lon0, lat1, lon1, ...]. */
+  coords: number[];
   center?: [number, number];
   zoom?: number;
 }
@@ -51,12 +51,17 @@ function ChangeView({ center, zoom }: { center: [number, number]; zoom: number }
 }
 
 export function HeatmapView({
-  people,
-  filterArea,
+  coords,
   center = TRES_DE_FEBRERO_CENTER,
   zoom = TRES_DE_FEBRERO_DEFAULT_ZOOM
 }: HeatmapViewProps) {
   const [isMounted, setIsMounted] = useState(false);
+
+  const heatPoints = useMemo(() => {
+    const points: [number, number, number][] = new Array(coords.length / 2);
+    for (let i = 0; i < points.length; i++) points[i] = [coords[i * 2], coords[i * 2 + 1], 0.6];
+    return points;
+  }, [coords]);
 
   useEffect(() => {
     setIsMounted(true);
@@ -70,25 +75,15 @@ export function HeatmapView({
     );
   }
 
-  const filteredPeople = people.filter((p) => {
-    if (!p.latitude || !p.longitude) return false;
-    if (filterArea === "all") return true;
-    return p.cases?.some((c: any) => c.areaId === filterArea);
-  });
-
-  const heatPoints: [number, number, number][] = filteredPeople.map((p) => [
-    p.latitude,
-    p.longitude,
-    0.6
-  ]);
-
   return (
     <MapContainer
       center={center}
       zoom={zoom}
+      zoomControl={false}
       style={{ height: "620px", width: "100%", borderRadius: "1.5rem" }}
       className="z-0 overflow-hidden"
     >
+      <ZoomControl position="bottomleft" />
       <TileLayer
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
