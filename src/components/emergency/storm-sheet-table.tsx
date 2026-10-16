@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { FileText, Trash2, Plus, Search, Filter, Sparkles, UserCheck } from "lucide-react";
+import { FileText, Trash2, Plus, Search, Filter, Sparkles, UserCheck, PackageCheck } from "lucide-react";
+import { DELIVERY_STATUS_LABEL, deliveryStatus } from "@/lib/emergency-categories";
 import { toast } from "sonner";
 import {
   searchPeopleForEmergencyAction,
@@ -25,6 +26,8 @@ interface StormSheetTableProps {
   userId: string;
   /** Auditoría consulta pero no carga ni borra. */
   canEdit?: boolean;
+  /** Abre el registro de entrega (solo para quien puede mover stock). */
+  onDeliver?: (record: StormVictimItem) => void;
 }
 
 export function StormSheetTable({
@@ -35,6 +38,7 @@ export function StormSheetTable({
   onRefresh,
   userId,
   canEdit = true,
+  onDeliver,
 }: StormSheetTableProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [priorityFilter, setPriorityFilter] = useState<string>("ALL");
@@ -277,6 +281,7 @@ export function StormSheetTable({
                   }`}>
                     {r.prioridad}
                   </Badge>
+                  <DeliveryBadge record={r} />
                 </TableCell>
 
                 <TableCell className="text-center">
@@ -290,6 +295,17 @@ export function StormSheetTable({
                     >
                       <FileText className="h-4 w-4" />
                     </Button>
+                    {onDeliver && r.fromTable && ["PENDIENTE", "PARCIAL"].includes(deliveryStatus(r)) && (
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={() => onDeliver(r)}
+                        title="Registrar entrega"
+                        className="h-8 w-8 rounded-lg hover:bg-emerald-500/10 hover:text-emerald-600"
+                      >
+                        <PackageCheck className="h-4 w-4" />
+                      </Button>
+                    )}
                     {canEdit && <Button
                       size="icon"
                       variant="ghost"
@@ -414,5 +430,22 @@ export function StormSheetTable({
         </Table>
       </div>
     </div>
+  );
+}
+
+/** Estado de la entrega de lo pedido en una ficha. */
+export function DeliveryBadge({ record }: { record: StormVictimItem }) {
+  const status = deliveryStatus(record);
+  if (status === "SIN_PEDIDO") return null;
+  const tone =
+    status === "ENTREGADO"
+      ? "bg-emerald-500/10 text-emerald-700 border-emerald-500/30"
+      : status === "PARCIAL"
+      ? "bg-sky-500/10 text-sky-700 border-sky-500/30"
+      : "bg-muted text-muted-foreground";
+  return (
+    <Badge variant="outline" className={`mt-1 ml-1 text-[9px] font-bold ${tone}`}>
+      {DELIVERY_STATUS_LABEL[status]}
+    </Badge>
   );
 }

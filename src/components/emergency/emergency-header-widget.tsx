@@ -71,7 +71,7 @@ export function EmergencyHeaderWidget() {
             </span>
             <span>🚨 PROTOCOLO DE EMERGENCIA CLIMÁTICA Y TEMPORAL ACTIVO</span>
             <span className="hidden md:inline text-white/80 font-normal">|</span>
-            <span className="hidden md:inline text-white/90 font-bold">Centros de Evacuados y Cuadrillas Operativas en Marcha</span>
+            <span className="hidden md:inline text-white/90 font-bold">Cuadrillas operativas en territorio</span>
             <Link
               href="/admin/emergency"
               className="bg-white/20 hover:bg-white text-white hover:text-slate-900 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest transition-all inline-flex items-center gap-1 shadow-sm"

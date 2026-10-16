@@ -201,7 +201,7 @@ export function StormStockTab({ stock, onRefresh }: StormStockTabProps) {
                     )}
                   </div>
                   <div>
-                    <span className="text-[10px] text-muted-foreground uppercase font-bold">Requerido Planilla</span>
+                    <span className="text-[10px] text-muted-foreground uppercase font-bold">Falta entregar</span>
                     <p className="text-lg font-bold text-amber-600">{item.demandedQuantity}</p>
                   </div>
                 </div>

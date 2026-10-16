@@ -31,6 +31,14 @@ export interface StormVictimItem {
   createdById?: string | null;
   /** Identificador generado en el dispositivo (evita duplicados al reenviar fichas sin conexión). */
   clientId?: string | null;
+  /** Lo entregado hasta ahora (suma de las entregas registradas). */
+  entregadoColchon?: number;
+  entregadoCama?: number;
+  entregadoCucheta?: number;
+  entregadoFrazada?: number;
+  ultimaEntrega?: Date | string | null;
+  /** Ficha guardada en la tabla de fichas (las de respaldo viejas no admiten entregas). */
+  fromTable?: boolean;
   createdAt?: Date | string;
   updatedAt?: Date | string;
 }
@@ -63,6 +71,8 @@ export interface EmergencyOperationsData {
     onlyOwnRecords: boolean;
     canViewStock: boolean;
     canEdit: boolean;
+    /** Puede registrar entregas (descuentan stock). */
+    canDeliver: boolean;
   };
   stock: EmergencyStockItem[];
   records: StormVictimItem[];
