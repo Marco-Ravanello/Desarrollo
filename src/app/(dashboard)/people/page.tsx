@@ -16,6 +16,10 @@ import {
   SheetTrigger
 } from "@/components/ui/sheet";
 import InterventionsAdminPage from "../admin/interventions/page";
+import { PadronImport } from "@/components/people/padron-import";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { auth } from "@/auth";
+import { MANAGEMENT_ROLES } from "@/lib/permissions";
 import { PeopleFilters } from "@/components/people/people-filters";
 import { PeoplePagination } from "@/components/people/people-pagination";
 import { PageHeader } from "@/components/layout/page-header";
@@ -38,7 +42,7 @@ export default async function PeoplePage({
   const pageNum = Math.max(1, Number(page) || 1);
   const limitNum = Math.max(1, Math.min(100, Number(limit) || 20));
 
-  const [paginatedData, filterOptions, stats] = await Promise.all([
+  const [paginatedData, filterOptions, stats, session] = await Promise.all([
     getPaginatedPeople({
       query: search,
       barrio,
@@ -47,8 +51,11 @@ export default async function PeoplePage({
       limit: limitNum
     }),
     getPeopleFilterOptions(),
-    getPeopleStats()
+    getPeopleStats(),
+    auth()
   ]);
+  // Importar personas e intervenciones es solo para la conducción.
+  const canImport = Boolean(session?.user && MANAGEMENT_ROLES.includes(session.user.role));
 
   const { people, total, totalPages, currentPage, pageSize } = paginatedData;
 
@@ -72,6 +79,7 @@ export default async function PeoplePage({
                 Matriz de Cruces
               </Link>
             </Button>
+            {canImport && (
             <Sheet>
               <SheetTrigger asChild>
                 <Button variant="outline" className="rounded-2xl h-11 px-4 text-xs font-bold transition-all hover:bg-accent border-border/60">
@@ -79,13 +87,25 @@ export default async function PeoplePage({
                 </Button>
               </SheetTrigger>
               <SheetContent side="right" className="sm:max-w-xl w-full bg-card text-card-foreground rounded-l-[2rem] shadow-2xl p-8 overflow-y-auto border-l border-border">
-                <SheetHeader className="mb-8">
+                <SheetHeader className="mb-6">
                   <SheetTitle className="text-2xl font-bold">Importación Masiva</SheetTitle>
-                  <SheetDescription>Suba su archivo Excel para migrar intervenciones y ciudadanos.</SheetDescription>
+                  <SheetDescription>Sumá personas al padrón o cargá intervenciones desde una planilla.</SheetDescription>
                 </SheetHeader>
-                <InterventionsAdminPage />
+                <Tabs defaultValue="padron">
+                  <TabsList className="mb-6 w-full">
+                    <TabsTrigger value="padron" className="flex-1">Personas al padrón</TabsTrigger>
+                    <TabsTrigger value="intervenciones" className="flex-1">Intervenciones</TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="padron">
+                    <PadronImport />
+                  </TabsContent>
+                  <TabsContent value="intervenciones">
+                    <InterventionsAdminPage />
+                  </TabsContent>
+                </Tabs>
               </SheetContent>
             </Sheet>
+            )}
             <Button asChild className="rounded-2xl h-11 px-5 shadow-lg shadow-primary/20 transition-all hover:scale-105 bg-primary text-primary-foreground font-bold text-xs">
               <Link href="/people/new"><Plus className="mr-2 h-4 w-4"/> Nueva Persona</Link>
             </Button>
