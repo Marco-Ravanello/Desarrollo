@@ -36,8 +36,47 @@ export interface RelacionFamiliar {
   direccion?: string;
 }
 
+/** Lo que la municipalidad hizo con la persona: expedientes, intervenciones y emergencia climática. */
+export interface FichaHistorial {
+  /** Persona en el Registro Único (para abrir su legajo). */
+  personaId: string | null;
+  nombre: string | null;
+  expedientes: {
+    id: string;
+    titulo: string;
+    estado: string;
+    prioridad: string;
+    area: string;
+    abierto: string;
+    actualizado: string;
+  }[];
+  /** Las más recientes primero (hasta 50); `intervencionesTotal` dice cuántas hay. */
+  intervenciones: {
+    id: string;
+    fecha: string;
+    descripcion: string;
+    expediente: string | null;
+    expedienteId: string;
+    area: string | null;
+    usuario: string | null;
+  }[];
+  intervencionesTotal: number;
+  fichasTormenta: {
+    id: string;
+    fecha: string;
+    domicilio: string;
+    prioridad: string;
+    pedido: string;
+    relevadoPor: string | null;
+    entregas: { id: string; fecha: string; elementos: string; entregadoPor: string; observaciones: string | null }[];
+  }[];
+}
+
 export interface FichaSocialPersonaResponse {
   encontrado: boolean;
+  /** false: no figura en el padrón de programas, pero la municipalidad tiene historial suyo. */
+  en_padron?: boolean;
+  historial?: FichaHistorial;
   dni?: string;
   nombre_detectado?: string;
   total_programas?: number;

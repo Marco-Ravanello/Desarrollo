@@ -18,10 +18,11 @@ import { EmptyMessage } from "@/components/ui/empty-message";
 import {
   Search, Users, User, MapPin, Phone,
   Layers, ArrowRight, Share2, Sparkles, AlertCircle, CheckCircle2,
-  ExternalLink, Network, HeartHandshake, Baby, Home, RefreshCw, BarChart2
+  ExternalLink, Network, HeartHandshake, Baby, Home, RefreshCw, BarChart2, FolderOpen
 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
+import { FichaHistorialView, historialCount } from "@/components/people/ficha-historial";
 
 function FichaSocialContent() {
   const searchParams = useSearchParams();
@@ -177,18 +178,34 @@ function FichaSocialContent() {
                       <Badge className="bg-emerald-500/15 text-emerald-500 border border-emerald-500/30 text-xs font-bold">
                         {ficha.total_programas} Programas Activos
                       </Badge>
+                      {ficha.historial && ficha.historial.expedientes.length > 0 && (
+                        <Badge className="bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/30 text-xs font-bold">
+                          {ficha.historial.expedientes.length} {ficha.historial.expedientes.length === 1 ? "Expediente" : "Expedientes"}
+                        </Badge>
+                      )}
+                      {ficha.historial && ficha.historial.fichasTormenta.length > 0 && (
+                        <Badge className="bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 text-xs font-bold">
+                          {ficha.historial.fichasTormenta.length === 1 ? "1 Ficha de tormenta" : `${ficha.historial.fichasTormenta.length} Fichas de tormenta`}
+                        </Badge>
+                      )}
                     </div>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <Button variant="outline" size="sm" asChild className="rounded-xl border-border/60 text-xs font-bold">
-                    <Link href={`/people`}>
+                    <Link href={ficha.historial?.personaId ? `/people/${ficha.historial.personaId}` : `/people`}>
                       <ExternalLink className="h-3.5 w-3.5 mr-1 text-primary" />
-                      Registro Único
+                      {ficha.historial?.personaId ? "Ver legajo en Registro Único" : "Registro Único"}
                     </Link>
                   </Button>
                 </div>
               </div>
+
+              {ficha.en_padron === false && (
+                <p className="mt-4 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-foreground">
+                  No figura en el padrón de programas sociales, pero tiene historial en la municipalidad.
+                </p>
+              )}
 
               <div className="mt-5 pt-4 border-t border-border/30 flex flex-wrap items-center gap-2">
                 <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mr-1">
@@ -206,12 +223,16 @@ function FichaSocialContent() {
               </div>
             </div>
 
-            <Tabs defaultValue="programas" className="w-full">
-              <div className="px-6 pt-3 border-b border-border/40 bg-muted/20">
+            <Tabs key={ficha.dni} defaultValue={ficha.total_programas ? "programas" : "historial"} className="w-full">
+              <div className="px-6 pt-3 border-b border-border/40 bg-muted/20 overflow-x-auto">
                 <TabsList className="bg-muted/40 p-1 border border-border/40 rounded-xl">
                   <TabsTrigger value="programas" className="text-xs font-bold gap-1.5">
                     <Layers className="h-3.5 w-3.5" />
                     Detalle de Programas ({ficha.total_programas})
+                  </TabsTrigger>
+                  <TabsTrigger value="historial" className="text-xs font-bold gap-1.5">
+                    <FolderOpen className="h-3.5 w-3.5" />
+                    Historial municipal ({historialCount(ficha.historial)})
                   </TabsTrigger>
                   <TabsTrigger value="familia" className="text-xs font-bold gap-1.5">
                     <Share2 className="h-3.5 w-3.5" />
@@ -219,6 +240,14 @@ function FichaSocialContent() {
                   </TabsTrigger>
                 </TabsList>
               </div>
+
+              <TabsContent value="historial" className="p-6 m-0">
+                {ficha.historial ? (
+                  <FichaHistorialView historial={ficha.historial} />
+                ) : (
+                  <EmptyMessage title="No se pudo cargar el historial." icon={FolderOpen} className="rounded-2xl border-2 border-dashed border-border/60" />
+                )}
+              </TabsContent>
 
               <TabsContent value="programas" className="p-6 space-y-4 m-0">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
