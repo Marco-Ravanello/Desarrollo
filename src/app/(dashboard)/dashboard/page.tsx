@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 
 import { getDashboardStats, type DashboardStats } from "@/services/dashboard";
 import { getTasks } from "@/services/system";
+import { countDerivationsToAnswer } from "@/services/derivations";
 import { auth } from "@/auth";
 import prisma from "@/lib/prisma";
 import { hasPermission, PERMISSIONS } from "@/lib/permissions";
@@ -9,7 +10,7 @@ import { Card } from "@/components/ui/card";
 import {
   Users, FileText, CheckCircle2, ShieldCheck,
   Plus, UserPlus, ChevronRight, AlertTriangle,
-  Car, Calendar, ArrowUpRight, LayoutDashboard, Wallet, FileSignature, Archive,
+  Car, Calendar, ArrowUpRight, LayoutDashboard, Wallet, FileSignature, Archive, ArrowRightLeft,
 } from "lucide-react";
 import type { Role } from "@prisma/client";
 import { PageHeader } from "@/components/layout/page-header";
@@ -79,10 +80,11 @@ export default async function DashboardPage({
   // Dirección y auditoría miran toda la gestión; el resto, su área (si tiene una asignada).
   const areaId = profile === "direccion" || profile === "auditor" ? null : session?.user?.areaId || null;
 
-  const [stats, myTasks, area] = await Promise.all([
+  const [stats, myTasks, area, derivationsToAnswer] = await Promise.all([
     getDashboardStats({ areaId, canViewSensitive }),
     session?.user?.id ? getTasks(session.user.id).catch(() => []) : Promise.resolve([]),
     areaId ? prisma.area.findUnique({ where: { id: areaId }, select: { name: true } }).catch(() => null) : null,
+    session?.user ? countDerivationsToAnswer(session.user).catch(() => 0) : 0,
   ]);
 
   // Mismas tareas que muestra "Mis Tareas": las del usuario que no están completadas.
@@ -185,6 +187,21 @@ export default async function DashboardPage({
         <div role="status" className="rounded-2xl border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-800 dark:text-amber-200">
           Tu rol no tiene acceso a esa sección, por eso volviste al inicio. Si la necesitás, pedíselo a quien administra los usuarios.
         </div>
+      )}
+
+      {derivationsToAnswer > 0 && (
+        <Link
+          href="/cases/derivaciones"
+          className="flex items-center justify-between gap-3 rounded-2xl border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-foreground transition-colors hover:border-amber-500/70"
+        >
+          <span className="flex items-center gap-2 font-semibold">
+            <ArrowRightLeft className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
+            {derivationsToAnswer === 1
+              ? "Hay 1 expediente derivado esperando que lo aceptes o lo rechaces."
+              : `Hay ${derivationsToAnswer} expedientes derivados esperando que los aceptes o los rechaces.`}
+          </span>
+          <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+        </Link>
       )}
 
       {/* Indicadores: cada uno abre el listado que cuenta */}

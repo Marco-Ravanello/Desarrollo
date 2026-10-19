@@ -2,12 +2,10 @@ import prisma from "@/lib/prisma";
 import { EMERGENCY_CATEGORIES, EmergencyCategoryKey, cleanItemQuantities, quantityText } from "@/lib/emergency-categories";
 import { getEmergencyExtraItemOptions } from "@/services/emergency";
 import type { FichaHistorial } from "@/services/ficha-social";
+import { isSensitiveArea } from "@/lib/sensitive-areas";
 
 // Lo que la municipalidad hizo con una persona (por DNI) para la Ficha Social 360°:
 // expedientes, intervenciones, fichas de tormenta y entregas recibidas.
-
-/** Expedientes del área de Violencia de Género: solo los ve quien tiene permiso (la misma regla que el listado de expedientes). */
-const isSensitiveArea = (areaName?: string | null) => Boolean(areaName && /violencia/i.test(areaName));
 
 const MAX_INTERVENTIONS = 50;
 

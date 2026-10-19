@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache";
 import { getPeople, ensurePersonInPrisma } from "@/services/people";
 import { actionErrorMessage } from "@/lib/action-error";
 import { canEditSocialRecords } from "@/lib/permissions";
+import { createDerivation, respondDerivation } from "@/services/derivations";
 
 export async function addCaseInterventionAction(caseId: string, description: string) {
   const session = await auth();
@@ -213,63 +214,35 @@ export async function createDerivationAction(
   observations?: string
 ) {
   const session = await auth();
-  if (session?.user && !canEditSocialRecords(session.user.role)) {
-    return { success: false, error: "Tu rol (Auditoría) puede consultar pero no cargar ni modificar datos." };
-  }
   if (!session?.user?.id) return { success: false, error: "No tenés permiso para hacer esto o tu sesión expiró. Si sigue pasando, volvé a iniciar sesión." };
   try {
-    const caseItem = await prisma.case.findUnique({
-      where: { id: caseId },
-      include: { area: true, person: true }
-    });
-    if (!caseItem) return { success: false, error: "Expediente no encontrado" };
-
-    const derivation = await prisma.derivation.create({
-      data: {
-        caseId,
-        fromAreaId: caseItem.areaId,
-        toAreaId,
-        reason: reason.trim(),
-        observations: observations?.trim() || null,
-        status: "PENDIENTE"
-      }
-    });
-
-    await prisma.case.update({
-      where: { id: caseId },
-      data: { status: "DERIVADO" }
-    });
-
-    const destinationUsers = await prisma.user.findMany({
-      where: { areaId: toAreaId, isActive: true },
-      select: { id: true }
-    });
-
-    if (destinationUsers.length > 0) {
-      await prisma.notification.createMany({
-        data: destinationUsers.map((u) => ({
-          userId: u.id,
-          title: "Expediente Derivado Urgente",
-          message: `El área ${caseItem.area.name} ha derivado el expediente '${caseItem.title}' para su intervención.`,
-          link: `/cases/${caseId}`
-        }))
-      });
-    }
-
-    await prisma.auditLog.create({
-      data: {
-        userId: session.user.id,
-        action: "CASE_DERIVATION_CREATED",
-        entity: "Derivation",
-        entityId: derivation.id,
-        details: `Caso derivado de ${caseItem.area.name} al área ID ${toAreaId}. Motivo: ${reason}`
-      }
-    });
-
-    revalidatePath(`/cases/${caseId}`);
-    revalidatePath("/cases");
-    return { success: true };
+    const result = await createDerivation(session.user, { caseId, toAreaId, reason, observations });
+    if (result.success) revalidateDerivation(caseId);
+    return result;
   } catch (error: any) {
-    return { success: false, error: actionErrorMessage(error, "No se pudo registrar derivación") };
+    return { success: false, error: actionErrorMessage(error, "No se pudo registrar la derivación") };
   }
+}
+
+/** El área que recibe la derivación la acepta (el expediente pasa a ser suyo) o la rechaza con un motivo. */
+export async function respondDerivationAction(derivationId: string, accept: boolean, response?: string) {
+  const session = await auth();
+  if (!session?.user?.id) return { success: false, error: "No tenés permiso para hacer esto o tu sesión expiró. Si sigue pasando, volvé a iniciar sesión." };
+  try {
+    const result = await respondDerivation(session.user, { derivationId, accept, response });
+    if (result.success) {
+      const d = await prisma.derivation.findUnique({ where: { id: derivationId }, select: { caseId: true } });
+      if (d) revalidateDerivation(d.caseId);
+    }
+    return result;
+  } catch (error: any) {
+    return { success: false, error: actionErrorMessage(error, "No se pudo responder la derivación") };
+  }
+}
+
+function revalidateDerivation(caseId: string) {
+  revalidatePath(`/cases/${caseId}`);
+  revalidatePath("/cases");
+  revalidatePath("/cases/derivaciones");
+  revalidatePath("/dashboard");
 }

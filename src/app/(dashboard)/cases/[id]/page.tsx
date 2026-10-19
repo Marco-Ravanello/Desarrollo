@@ -1,11 +1,13 @@
 export const dynamic = "force-dynamic";
 
-import { getCaseById } from "@/services/cases";
+import { getAreas, getCaseById } from "@/services/cases";
+import { canDeriveCases, canRespondDerivation, getCaseDerivations, hasPendingDerivationFor } from "@/services/derivations";
+import { DerivationCard, DeriveCaseButton } from "@/components/cases/derivations";
 import { ensurePersonInPrisma } from "@/services/people";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { notFound, redirect } from "next/navigation";
-import { Calendar, User, MapPin, Tag, ArrowLeft, ShieldAlert, History, ClipboardList } from "lucide-react";
+import { User, MapPin, Tag, ArrowLeft, ShieldAlert, ClipboardList, ArrowRightLeft } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { auth } from "@/auth";
@@ -41,7 +43,10 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
     areaName.toLowerCase().includes("violencia");
 
   if (isViolenceCase) {
-    const canView = hasPermission(session.user.role as any, PERMISSIONS.VIEW_SENSITIVE_CASES);
+    // También lo abre quien tiene que decidir si acepta una derivación a su área.
+    const canView =
+      hasPermission(session.user.role as any, PERMISSIONS.VIEW_SENSITIVE_CASES) ||
+      (await hasPendingDerivationFor(session.user, caseData.id));
     if (!canView) {
       return (
         <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
@@ -57,6 +62,10 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
   }
 
   const isClosed = caseData.status === "CERRADO";
+  const [derivations, areas] = await Promise.all([getCaseDerivations(caseData.id), getAreas()]);
+  const pendingDerivation = derivations.find((d) => d.status === "PENDIENTE");
+  const pastDerivations = derivations.filter((d) => d !== pendingDerivation);
+  const canDerive = canDeriveCases(session.user) && !isClosed && !pendingDerivation;
   const areaUrl = getAreaDashboardUrl(areaName);
   const areaLabel = getAreaShortName(areaName);
 
@@ -86,6 +95,10 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
 
       <div className="grid md:grid-cols-3 gap-6">
         <div className="md:col-span-2 space-y-6">
+          {pendingDerivation && (
+            <DerivationCard d={pendingDerivation} canRespond={canRespondDerivation(session.user, pendingDerivation.toAreaId)} />
+          )}
+
           <Card className="rounded-2xl border border-border/60 shadow-sm bg-card">
             <CardHeader>
               <CardTitle className="text-lg font-bold text-foreground">Descripción del Caso</CardTitle>
@@ -154,6 +167,22 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
               )}
             </CardContent>
           </Card>
+
+          {(canDerive || pastDerivations.length > 0) && (
+            <Card className="rounded-2xl border border-border/60 shadow-sm bg-card">
+              <CardHeader>
+                <CardTitle className="text-lg font-bold text-foreground flex items-center gap-2">
+                  <ArrowRightLeft className="h-4 w-4 text-primary" /> Derivaciones
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {canDerive && <DeriveCaseButton caseId={caseData.id} areas={areas.map((a) => ({ id: a.id, name: a.name }))} currentAreaId={caseData.areaId} />}
+                {pastDerivations.map((d) => (
+                  <DerivationCard key={d.id} d={d} canRespond={false} />
+                ))}
+              </CardContent>
+            </Card>
+          )}
 
           <Card className="rounded-2xl border border-border/60 shadow-sm bg-card">
              <CardHeader><CardTitle className="text-lg font-bold text-foreground">Fechas del Expediente</CardTitle></CardHeader>
