@@ -73,6 +73,7 @@ export function CreateUserForm({
             <div className="space-y-1.5">
               <Label htmlFor="password" className="text-xs font-bold text-foreground">Contraseña Temporal</Label>
               <Input id="password" name="password" type="password" required placeholder="Mínimo 6 caracteres..." className="h-10 rounded-xl bg-muted/30 border-border/60 text-xs" />
+              <p className="text-[10px] text-muted-foreground">La persona la cambia por una propia la primera vez que ingresa.</p>
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="role" className="text-xs font-bold text-foreground">Rol Institucional</Label>

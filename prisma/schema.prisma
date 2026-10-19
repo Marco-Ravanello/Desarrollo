@@ -16,6 +16,8 @@ model User {
   areaId        String?
   area          Area?     @relation(fields: [areaId], references: [id])
   isActive      Boolean   @default(true)
+  /// La contraseña la puso un administrador: hay que cambiarla al ingresar.
+  mustChangePassword Boolean @default(false)
   accounts      Account[]
   sessions      Session[]
   auditLogs     AuditLog[]

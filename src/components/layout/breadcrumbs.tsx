@@ -42,6 +42,7 @@ const PATH_DICTIONARY: Record<string, string> = {
   maps: "Mapa Social GIS",
   ubicar: "Ubicar en el mapa",
   "ficha-social": "Ficha Social 360°",
+  "cambiar-clave": "Cambiar mi contraseña",
   cruces: "Matriz de Cruces",
   tasks: "Mis Tareas & Pendientes",
   agreements: "Convenios",

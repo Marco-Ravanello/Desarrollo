@@ -1,6 +1,6 @@
 import type { NextAuthConfig } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
-import { canAccessPath, homePathFor, isEmergencySurveyor } from "@/lib/permissions";
+import { CHANGE_PASSWORD_PATH, canAccessPath, homePathFor, isEmergencySurveyor } from "@/lib/permissions";
 
 export const authConfig = {
   trustHost: true,
@@ -35,6 +35,11 @@ export const authConfig = {
 
       if (!isLoggedIn) return false;
 
+      // Contraseña puesta por un administrador: primero hay que cambiarla.
+      if ((auth?.user as any)?.mustChangePassword && nextUrl.pathname !== CHANGE_PASSWORD_PATH) {
+        return Response.redirect(new URL(CHANGE_PASSWORD_PATH, nextUrl.origin));
+      }
+
       // Pantallas restringidas por rol: aunque se escriba la URL a mano, se vuelve al inicio.
       if (!canAccessPath(role, nextUrl.pathname)) {
         const home = homePathFor(role);
@@ -51,6 +56,7 @@ export const authConfig = {
       if (user) {
         token.role = user.role;
         token.areaId = user.areaId;
+        token.mustChangePassword = Boolean(user.mustChangePassword);
       }
       return token;
     },
@@ -59,6 +65,7 @@ export const authConfig = {
         session.user.id = token.sub;
         session.user.role = token.role;
         session.user.areaId = token.areaId;
+        session.user.mustChangePassword = Boolean(token.mustChangePassword);
       }
       return session;
     },

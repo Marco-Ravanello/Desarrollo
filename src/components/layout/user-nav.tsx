@@ -13,7 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { UserCog, UserPlus, Settings, LogOut, ChevronDown } from "lucide-react";
+import { UserCog, UserPlus, Settings, LogOut, ChevronDown, KeyRound } from "lucide-react";
 import Link from "next/link";
 import { hasPermission, PERMISSIONS } from "@/lib/permissions";
 
@@ -100,6 +100,14 @@ export function UserNav({ variant = "header", isCollapsed = false }: UserNavProp
           <p className="text-[11px] text-muted-foreground font-mono truncate">{user.email || ""}</p>
         </DropdownMenuLabel>
 
+        <DropdownMenuSeparator className="my-1 bg-border/60" />
+
+        <DropdownMenuItem asChild className="rounded-xl text-xs font-semibold cursor-pointer py-2 focus:bg-primary/10 focus:text-primary">
+          <Link href="/cambiar-clave" className="flex items-center gap-2.5 w-full">
+            <KeyRound className="h-4 w-4 text-primary" />
+            <span>Cambiar mi contraseña</span>
+          </Link>
+        </DropdownMenuItem>
         <DropdownMenuSeparator className="my-1 bg-border/60" />
 
         {canManageUsers && (
