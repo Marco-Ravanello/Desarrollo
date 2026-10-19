@@ -15,6 +15,7 @@ import {
   deleteStormVictimAction
 } from "@/app/(dashboard)/admin/actions/emergency-actions";
 import { saveFichaOrQueue } from "@/lib/emergency-offline";
+import { STORM_BARRIOS, matchStormBarrio } from "@/lib/storm-barrios";
 
 interface StormSheetTableProps {
   records: StormVictimItem[];
@@ -54,6 +55,7 @@ export function StormSheetTable({
   const [fastNinos, setFastNinos] = useState("0");
   const [fastDomicilio, setFastDomicilio] = useState("");
   const [fastRef, setFastRef] = useState("");
+  const [fastBarrio, setFastBarrio] = useState("");
 
   const [fastReqColchon, setFastReqColchon] = useState(false);
   const [fastCantColchon, setFastCantColchon] = useState(0);
@@ -86,7 +88,10 @@ export function StormSheetTable({
     setFastNombre(s.nombreApellido);
     setFastDni(s.dni);
     if (s.domicilio) setFastDomicilio(s.domicilio);
-    if (s.barrio && !fastRef) setFastRef(`Barrio ${s.barrio}`);
+    // El barrio del padrón se elige en el desplegable si está en la lista; si no, queda como referencia.
+    const barrioPadron = matchStormBarrio(s.barrio);
+    if (barrioPadron) setFastBarrio(barrioPadron);
+    else if (s.barrio && !fastRef) setFastRef(`Barrio ${s.barrio}`);
     setFastGrupoFam(s.grupoFamiliar);
     if (s.ninos) setFastNinos(s.ninos);
     setShowSuggestions(false);
@@ -109,6 +114,7 @@ export function StormSheetTable({
       ninos: fastNinos,
       domicilio: fastDomicilio,
       referencia: fastRef,
+      barrio: fastBarrio,
       requiereColchon: fastReqColchon,
       cantidadColchon: fastReqColchon ? Math.max(1, fastCantColchon) : 0,
       requiereCama: fastReqCama,
@@ -137,6 +143,7 @@ export function StormSheetTable({
       setFastNinos("0");
       setFastDomicilio("");
       setFastRef("");
+      setFastBarrio("");
       setFastReqColchon(false);
       setFastCantColchon(0);
       setFastReqCama(false);
@@ -384,6 +391,17 @@ export function StormSheetTable({
                   placeholder="Domicilio / Referencia..."
                   className="h-8 text-xs rounded-lg"
                 />
+                <select
+                  aria-label="Barrio / Localidad"
+                  value={fastBarrio}
+                  onChange={(e) => setFastBarrio(e.target.value)}
+                  className="mt-1 h-8 w-full rounded-lg border border-input bg-background px-2 text-xs"
+                >
+                  <option value="">Barrio…</option>
+                  {STORM_BARRIOS.map((b) => (
+                    <option key={b} value={b}>{b}</option>
+                  ))}
+                </select>
               </TableCell>
 
               {/* Checkbox y Cantidades Rápidas */}
