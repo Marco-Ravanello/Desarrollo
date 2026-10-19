@@ -19,6 +19,7 @@ import { StormVictimItem, EmergencyPriority, SearchPersonSuggestion, EmergencyEx
 import { searchPeopleForEmergencyAction } from "@/app/(dashboard)/admin/actions/emergency-actions";
 import { saveFichaOrQueue } from "@/lib/emergency-offline";
 import { MunicipalLetterhead } from "@/components/ui/municipal-letterhead";
+import { STORM_BARRIOS, matchStormBarrio } from "@/lib/storm-barrios";
 
 interface StormFichaDialogProps {
   open: boolean;
@@ -86,7 +87,8 @@ export function StormFichaDialog({
       setNinos(initialRecord.ninos || "0");
       setDomicilio(initialRecord.domicilio || "");
       setReferencia(initialRecord.referencia || "");
-      setBarrio(initialRecord.barrio || "");
+      // Las fichas anteriores al desplegable conservan lo que se escribió a mano.
+      setBarrio(matchStormBarrio(initialRecord.barrio) ?? (initialRecord.barrio || ""));
       setContacto(initialRecord.contacto || "");
       setAgentes(initialRecord.agentes || operatorName);
 
@@ -155,7 +157,9 @@ export function StormFichaDialog({
     setNombreApellido(s.nombreApellido);
     setDni(s.dni);
     if (s.domicilio) setDomicilio(s.domicilio);
-    if (s.barrio) setBarrio(s.barrio);
+    // El barrio del padrón se usa solo si está en la lista; si no, se elige a mano.
+    const barrioPadron = matchStormBarrio(s.barrio);
+    if (barrioPadron) setBarrio(barrioPadron);
     if (s.edad) setEdad(s.edad);
     if (s.contacto) setContacto(s.contacto);
     setGrupoFamiliar(s.grupoFamiliar);
@@ -266,13 +270,19 @@ export function StormFichaDialog({
           {/* Encabezado Institucional Ficha */}
           <div className="bg-muted/30 border border-border/60 rounded-2xl p-4 grid grid-cols-1 md:grid-cols-3 gap-4 text-xs font-semibold">
             <div>
-              <Label className="text-[11px] text-muted-foreground uppercase font-bold">Barrio / Localidad</Label>
-              <Input
+              <Label htmlFor="storm-barrio" className="text-[11px] text-muted-foreground uppercase font-bold">Barrio / Localidad</Label>
+              <select
+                id="storm-barrio"
                 value={barrio}
                 onChange={(e) => setBarrio(e.target.value)}
-                placeholder="Ej: Barrio Derqui / Caseros"
-                className="h-9 rounded-xl text-xs mt-1"
-              />
+                className="flex h-9 w-full rounded-xl border border-input bg-background px-3 text-xs mt-1 focus:outline-none focus:ring-2 focus:ring-primary"
+              >
+                <option value="">Elegí el barrio…</option>
+                {barrio && !matchStormBarrio(barrio) && <option value={barrio}>{barrio} (cargado antes)</option>}
+                {STORM_BARRIOS.map((b) => (
+                  <option key={b} value={b}>{b}</option>
+                ))}
+              </select>
             </div>
             <div>
               <Label className="text-[11px] text-muted-foreground uppercase font-bold">Agente(s) Intervinientes</Label>
