@@ -4,36 +4,13 @@ import prisma from "@/lib/prisma";
 import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { authConfig } from "./auth.config";
+import { isAccountLocked, logLogin } from "@/services/login-security";
 
 // Cada cuánto se vuelve a consultar la base para confirmar que la cuenta sigue activa.
 const ACCOUNT_RECHECK_MS = 5 * 60 * 1000;
 
-// Después de MAX_FAILED_LOGINS contraseñas incorrectas en LOGIN_LOCK_MS, la cuenta queda bloqueada
-// hasta que esos intentos salgan de la ventana. Los intentos se guardan en la auditoría.
-const MAX_FAILED_LOGINS = 5;
-const LOGIN_LOCK_MS = 15 * 60 * 1000;
-
 class AccountLockedError extends CredentialsSignin {
   code = "bloqueada";
-}
-
-async function isAccountLocked(userId: string) {
-  const windowStart = new Date(Date.now() - LOGIN_LOCK_MS);
-  const lastLogin = await prisma.auditLog.findFirst({
-    where: { userId, action: "LOGIN", createdAt: { gt: windowStart } },
-    orderBy: { createdAt: "desc" },
-    select: { createdAt: true },
-  });
-  const failed = await prisma.auditLog.count({
-    where: { userId, action: "LOGIN_FAILED", createdAt: { gt: lastLogin?.createdAt ?? windowStart } },
-  });
-  return failed >= MAX_FAILED_LOGINS;
-}
-
-function logLogin(userId: string, action: "LOGIN" | "LOGIN_FAILED", details: string) {
-  return prisma.auditLog
-    .create({ data: { userId, action, entity: "User", entityId: userId, details } })
-    .catch((error) => console.error("No se pudo registrar el intento de ingreso:", error));
 }
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
@@ -50,18 +27,22 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       }
       if (!token?.sub) return token;
 
+      // Mientras tenga que cambiar la contraseña se consulta la base en cada pedido, así el cambio
+      // se nota enseguida. Después de cambiarla la pantalla también pide actualizar la sesión ("update").
       const checkedAt = typeof token.checkedAt === "number" ? token.checkedAt : 0;
-      if (Date.now() - checkedAt < ACCOUNT_RECHECK_MS) return token;
+      const recent = Date.now() - checkedAt < ACCOUNT_RECHECK_MS;
+      if (params.trigger !== "update" && !token.mustChangePassword && recent) return token;
 
       // Cierra la sesión de cuentas suspendidas o eliminadas y toma cambios de rol o área.
       const dbUser = await prisma.user.findUnique({
         where: { id: token.sub },
-        select: { isActive: true, role: true, areaId: true },
+        select: { isActive: true, role: true, areaId: true, mustChangePassword: true },
       });
       if (!dbUser || dbUser.isActive === false) return null;
 
       token.role = dbUser.role;
       token.areaId = dbUser.areaId;
+      token.mustChangePassword = dbUser.mustChangePassword;
       token.checkedAt = Date.now();
       return token;
     },
@@ -122,6 +103,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             name: user.name,
             role: user.role,
             areaId: user.areaId,
+            mustChangePassword: user.mustChangePassword,
           };
         } catch (error) {
           if (error instanceof AccountLockedError) throw error;

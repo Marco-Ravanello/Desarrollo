@@ -212,6 +212,7 @@ export function EditUserDialog({
               placeholder="Nueva clave opcional (mínimo 6 caracteres)..."
               className="h-10 rounded-xl bg-muted/30 border-border/60 text-xs"
             />
+            <p className="text-[10px] text-muted-foreground">La persona va a tener que cambiarla la próxima vez que ingrese.</p>
           </div>
 
           <div className="p-3.5 rounded-2xl bg-muted/30 border border-border/40 flex items-center justify-between gap-3">

@@ -78,8 +78,11 @@ export function isEmergencySurveyor(role?: Role | string | null): boolean {
   return role === "RELEVADOR_EMERGENCIA";
 }
 
+/** Pantalla para cambiar la propia contraseña (la usan todos los roles). */
+export const CHANGE_PASSWORD_PATH = "/cambiar-clave";
+
 /** Pantallas que puede abrir el relevador de emergencia. */
-const EMERGENCY_SURVEYOR_PATHS = ["/admin/emergency"];
+const EMERGENCY_SURVEYOR_PATHS = ["/admin/emergency", CHANGE_PASSWORD_PATH];
 
 /** Pantalla de inicio de cada rol (el relevador entra directo a sus fichas). */
 export function homePathFor(role?: Role | string | null): string {

@@ -59,6 +59,8 @@ export async function createUserAction(formData: FormData): Promise<ActionResult
         name,
         email,
         password: hashedPassword,
+        // La contraseña la eligió el administrador: la persona la cambia al ingresar.
+        mustChangePassword: true,
         role,
         areaId: areaId || null,
         isActive: true,
@@ -138,6 +140,8 @@ export async function updateUserAction(input: UpdateUserInput): Promise<ActionRe
 
     if (input.password && input.password.trim().length >= 6) {
       dataToUpdate.password = await bcrypt.hash(input.password.trim(), 10);
+      // Clave nueva puesta por otra persona: hay que cambiarla al ingresar.
+      if (input.id !== session.user.id) dataToUpdate.mustChangePassword = true;
     }
 
     const updatedUser = await prisma.user.update({
