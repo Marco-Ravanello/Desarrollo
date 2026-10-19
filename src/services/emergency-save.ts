@@ -6,6 +6,8 @@ import { StormVictimItem } from "@/types/emergency";
 import { actionErrorMessage } from "@/lib/action-error";
 import { canEditSocialRecords, isEmergencySurveyor } from "@/lib/permissions";
 import { isEmergencyDbUpdated, stormRecordOmit } from "@/services/emergency-db-status";
+import { addStormPersonToPadron } from "@/services/emergency-padron";
+import { normalizeDni } from "@/lib/padron-import";
 
 export interface EmergencySessionUser {
   id?: string;
@@ -60,12 +62,21 @@ export async function saveStormVictimRecord(
 
     const operator = await getEmergencyOperator(user);
 
+    // Al editar, se sigue usando la persona que ya tenía la ficha (y se une si ahora tiene DNI).
+    const previousPersonId = recordData.id
+      ? (await prisma.stormVictimRecord.findUnique({ where: { id: recordData.id }, select: { personId: true } }).catch(() => null))?.personId
+      : null;
+
     const personId = await syncPersonInDatabase({
       dni: recordData.dni || "",
       nombreApellido: recordData.nombreApellido || "Vecino Registrado",
       domicilio: recordData.domicilio,
       contacto: recordData.contacto || undefined,
+      previousPersonId,
     });
+
+    // Si todavía no está en el padrón, se suma con los datos de la ficha.
+    await addStormPersonToPadron(recordData, userId).catch((err) => console.warn("No se pudo sumar la persona al padrón:", err));
 
     const defaultArea = await prisma.area.findFirst({
       where: {
@@ -314,6 +325,80 @@ export async function saveStormVictimRecord(
   } catch (err: any) {
     console.error("Error saving storm victim record:", err);
     return { success: false, error: actionErrorMessage(err, "No se pudo registrar la ficha de tormenta") };
+  }
+}
+
+export type CompleteStormDniResult =
+  | { success: true; message: string; padron: "created" | "joined" | "existing" }
+  | { success: false; error: string };
+
+/**
+ * Completa el DNI de una ficha que se cargó sin DNI. La persona provisoria de la ficha
+ * se une con la que ya tiene ese DNI (con sus expedientes e intervenciones) y, si no
+ * está en el padrón, se suma con los datos de la ficha.
+ */
+export async function completeStormRecordDni(
+  user: EmergencySessionUser | undefined | null,
+  recordId: string,
+  rawDni: string
+): Promise<CompleteStormDniResult> {
+  if (user && !canEditSocialRecords(user.role)) {
+    return { success: false, error: "Tu rol (Auditoría) puede consultar pero no cargar ni modificar datos." };
+  }
+  if (!user?.id) return { success: false, error: "Sesión no válida o expirada" };
+
+  const dni = normalizeDni(rawDni);
+  if (!dni) return { success: false, error: "El DNI tiene que tener entre 6 y 8 números." };
+
+  try {
+    const record = await prisma.stormVictimRecord.findUnique({
+      where: { id: recordId },
+      select: { id: true, dni: true, personId: true, caseId: true, createdById: true, nombreApellido: true, domicilio: true, barrio: true, contacto: true, edad: true },
+    });
+    if (!record) return { success: false, error: "No se encontró la ficha. Actualizá la pantalla." };
+    if (isEmergencySurveyor(user.role) && record.createdById !== user.id) {
+      return { success: false, error: "Solo podés modificar las fichas que cargaste vos." };
+    }
+    if (normalizeDni(record.dni)) return { success: false, error: "Esta ficha ya tiene DNI." };
+
+    const personId = await syncPersonInDatabase({
+      dni,
+      nombreApellido: record.nombreApellido,
+      domicilio: record.domicilio,
+      contacto: record.contacto || undefined,
+      previousPersonId: record.personId,
+    });
+    const person = await prisma.person.findUnique({ where: { id: personId }, select: { id: true } });
+    if (!person) return { success: false, error: "No se pudo guardar la persona con ese DNI. Probá de nuevo." };
+
+    await prisma.stormVictimRecord.update({ where: { id: record.id }, data: { dni, personId } });
+    if (record.caseId) {
+      await prisma.case.update({ where: { id: record.caseId }, data: { personId } }).catch(() => {});
+    }
+
+    const padron = await addStormPersonToPadron({ ...record, dni }, user.id);
+
+    await prisma.auditLog
+      .create({
+        data: {
+          userId: user.id,
+          action: "STORM_RECORD_DNI_COMPLETED",
+          entity: "StormVictimRecord",
+          entityId: record.id,
+          details: `Se completó el DNI ${dni} en la ficha de ${record.nombreApellido}. ${padron === "created" ? "Se sumó al padrón." : "Ya estaba en el padrón."}`,
+        },
+      })
+      .catch((err) => console.warn("AuditLog creation skipped:", err));
+
+    revalidateEmergencyPaths();
+    return {
+      success: true,
+      padron: padron === "no-dni" ? "existing" : padron,
+      message: padron === "created" ? "DNI guardado. La persona se sumó al padrón." : "DNI guardado y unido con la persona del padrón.",
+    };
+  } catch (err: any) {
+    console.error("Error completing storm record DNI:", err);
+    return { success: false, error: actionErrorMessage(err, "No se pudo guardar el DNI") };
   }
 }
 

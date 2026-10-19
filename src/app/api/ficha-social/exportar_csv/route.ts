@@ -1,29 +1,12 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
+import { PADRON_PROGRAMS } from "@/lib/padron-programs";
 import { hasPermission, PERMISSIONS } from "@/lib/permissions";
 
 export const dynamic = "force-dynamic";
 
-const PROGRAM_TO_COLUMN: Record<string, string> = {
-  "Centro de Familia": "prog_centro_de_familia",
-  "Tarjeta Alimentar": "prog_tarjeta_alimentar",
-  "Jardines Municipales": "prog_jardines_municipales",
-  "Colonias Municipales 2026": "prog_colonias_municipales_2026",
-  "Colonias Barrios Populares 2026": "prog_colonias_barrios_populares_2026",
-  "Centro de Formación Profesional 3F": "prog_centro_de_formacion_profesional_3f",
-  "Intervenciones Desarrollo Humano": "prog_intervenciones_desarrollo_humano",
-  "Prestaciones Desarrollo Humano": "prog_prestaciones_desarrollo_humano",
-  "Tarjeta Más Familia": "prog_tarjeta_mas_familia",
-  "Escuelas Municipales (EMAC, EMMU, CAPACYT)": "prog_escuelas_municipales_emac_emmu_capacyt",
-  "Espacios de Educación No Formal (UDIs, Apoyos, Becas, Envión)": "prog_espacios_de_educacion_no_formal_udis_apoyos_becas_envion",
-  "Curso de Árbitros (Deportes)": "prog_curso_de_arbitros_deportes",
-  "Gimnasio Municipal (Deportes)": "prog_gimnasio_municipal_deportes",
-  "Natación Municipal (Deportes)": "prog_natacion_municipal_deportes",
-  "Servicios Locales de Niñez (Caseros, El Libertador, Derqui)": "prog_servicios_locales_de_ninez_caseros_el_libertador_derqui",
-  "Programa Envión (EDLA, Evita, El Libertador)": "prog_programa_envion_edla_evita_el_libertador",
-  "Comedores Comunitarios (Programa FOSC)": "prog_comedores_comunitarios_programa_fosc"
-};
+const PROGRAM_TO_COLUMN: Record<string, string> = Object.fromEntries(PADRON_PROGRAMS.map((p) => [p.label, p.column]));
 
 export async function GET(request: Request) {
   const session = await auth();

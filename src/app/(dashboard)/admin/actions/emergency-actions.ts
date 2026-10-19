@@ -12,7 +12,8 @@ import {
 } from "@/services/emergency";
 import { cleanItemQuantities, extraQuantityText, quantityText } from "@/lib/emergency-categories";
 import { DELIVERY_DB_PENDING_MESSAGE, isDeliveryTableReady, stormRecordOmit } from "@/services/emergency-db-status";
-import { saveStormVictimRecord } from "@/services/emergency-save";
+import { completeStormRecordDni, saveStormVictimRecord } from "@/services/emergency-save";
+import { lookupStormDni } from "@/services/emergency-padron";
 import { getCategoryLinks, getEmergencyExtraItems, linkCategorySupply, saveEmergencyExtraItems } from "@/services/emergency-stock-links";
 import { EmergencyStockItem, StormVictimItem } from "@/types/emergency";
 import { actionErrorMessage } from "@/lib/action-error";
@@ -29,6 +30,18 @@ export async function searchPeopleForEmergencyAction(query: string) {
 export async function saveStormVictimAction(recordData: Partial<StormVictimItem>) {
   const session = await auth();
   return await saveStormVictimRecord(session?.user, recordData);
+}
+
+/** Para la lista de fichas sin DNI: muestra quién está en el padrón con ese DNI antes de unir. */
+export async function lookupStormDniAction(dni: string) {
+  const session = await auth();
+  if (!session?.user?.id || !canEditSocialRecords(session.user.role)) return null;
+  return await lookupStormDni(dni);
+}
+
+export async function completeStormRecordDniAction(recordId: string, dni: string) {
+  const session = await auth();
+  return await completeStormRecordDni(session?.user, recordId, dni);
 }
 
 export async function deleteStormVictimAction(recordId: string) {

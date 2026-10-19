@@ -20,6 +20,8 @@ export const PADRON_PROGRAMS = [
   { label: "Servicios Locales de Niñez (Caseros, El Libertador, Derqui)", column: "prog_servicios_locales_de_ninez_caseros_el_libertador_derqui" },
   { label: "Programa Envión (EDLA, Evita, El Libertador)", column: "prog_programa_envion_edla_evita_el_libertador" },
   { label: "Comedores Comunitarios (Programa FOSC)", column: "prog_comedores_comunitarios_programa_fosc" },
+  // Se marca sola al cargar una ficha de tormenta (Emergencia climática).
+  { label: "Emergencia climática", column: "prog_emergencia_climatica" },
 ] as const;
 
 export type PadronProgramColumn = (typeof PADRON_PROGRAMS)[number]["column"];

@@ -19,7 +19,8 @@ const PROGRAMAS_CATALOGO = [
   { id: "prog_natacion_municipal_deportes", nombre: "Natación Municipal (Deportes)", area: "Deportes", descripcion: "Clases y pileta libre en natatorios municipales" },
   { id: "prog_servicios_locales_de_ninez_caseros_el_libertador_derqui", nombre: "Servicios Locales de Niñez (Caseros, El Libertador, Derqui)", area: "Protección de Derechos", descripcion: "Intervenciones de protección integral y seguimiento infanto-juvenil" },
   { id: "prog_programa_envion_edla_evita_el_libertador", nombre: "Programa Envión (EDLA, Evita, El Libertador)", area: "Juventud y Empleo", descripcion: "Inclusión formativa, laboral y becas para jóvenes de 12 a 21 años" },
-  { id: "prog_comedores_comunitarios_programa_fosc", nombre: "Comedores Comunitarios (Programa FOSC)", area: "Desarrollo Social", descripcion: "Asistencia y módulos a comedores y merenderos barriales" }
+  { id: "prog_comedores_comunitarios_programa_fosc", nombre: "Comedores Comunitarios (Programa FOSC)", area: "Desarrollo Social", descripcion: "Asistencia y módulos a comedores y merenderos barriales" },
+  { id: "prog_emergencia_climatica", nombre: "Emergencia climática", area: "Desarrollo Humano y Hábitat", descripcion: "Familias relevadas en las fichas de tormenta de la contingencia climática" }
 ];
 
 export async function GET() {

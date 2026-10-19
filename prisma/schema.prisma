@@ -514,6 +514,7 @@ model PadronUnificado {
   prog_servicios_locales_de_ninez_caseros_el_libertador_derqui   Int @default(0)
   prog_programa_envion_edla_evita_el_libertador                  Int @default(0)
   prog_comedores_comunitarios_programa_fosc                      Int @default(0)
+  prog_emergencia_climatica                                      Int @default(0)
 
   @@map("padron_unificado")
 }

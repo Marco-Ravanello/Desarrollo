@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { normalizeDni } from "@/lib/padron-import";
 import { canEditSocialRecords, canManageEmergencyStock, isEmergencySurveyor } from "@/lib/permissions";
 import { isDeliveryTableReady, stormRecordOmit } from "@/services/emergency-db-status";
 import { getCategoryLinks, getEmergencyExtraItems } from "@/services/emergency-stock-links";
@@ -500,31 +501,79 @@ export async function searchPeopleForEmergency(query: string): Promise<SearchPer
   return suggestions;
 }
 
+/** DNI provisorio de una persona cargada en una ficha sin DNI. */
+export const isTempPersonDni = (dni: string | null | undefined) => Boolean(dni?.startsWith("TEMP-"));
+
+/**
+ * Pasa a `toId` los expedientes, intervenciones, fichas y documentos de una persona
+ * cargada sin DNI (DNI provisorio) y la borra. No hace nada si `fromId` tiene un DNI real.
+ */
+export async function mergeTempPerson(fromId: string, toId: string): Promise<boolean> {
+  if (fromId === toId) return false;
+  const from = await prisma.person.findUnique({ where: { id: fromId }, select: { dni: true } });
+  if (!from || !isTempPersonDni(from.dni)) return false;
+  await prisma.$transaction([
+    prisma.case.updateMany({ where: { personId: fromId }, data: { personId: toId } }),
+    prisma.intervention.updateMany({ where: { personId: fromId }, data: { personId: toId } }),
+    prisma.stormVictimRecord.updateMany({ where: { personId: fromId }, data: { personId: toId } }),
+    prisma.document.updateMany({ where: { personId: fromId }, data: { personId: toId } }),
+    prisma.person.delete({ where: { id: fromId } }),
+  ]);
+  return true;
+}
+
+function splitFullName(fullName: string) {
+  let firstName = fullName;
+  let lastName = "";
+  if (fullName.includes(",")) {
+    const parts = fullName.split(",");
+    lastName = parts[0].trim();
+    firstName = parts[1].trim();
+  } else if (fullName.includes(" ")) {
+    const parts = fullName.trim().split(" ");
+    lastName = parts.pop() || "";
+    firstName = parts.join(" ");
+  }
+  return { firstName: firstName || "Vecino", lastName: lastName || "Registrado" };
+}
+
+/**
+ * Busca o crea la persona de una ficha de tormenta y devuelve su id.
+ * - Sin DNI válido: se usa la persona que ya tenía la ficha (`previousPersonId`) o se crea una con DNI provisorio.
+ * - Con DNI: si la ficha tenía una persona con DNI provisorio, se une con la de ese DNI
+ *   (o se le pone el DNI si todavía no existe), así no quedan personas repetidas.
+ */
 export async function syncPersonInDatabase(data: {
   dni: string;
   nombreApellido: string;
   domicilio?: string;
   contacto?: string;
+  previousPersonId?: string | null;
 }): Promise<string> {
-  const cleanDni = data.dni.replace(/\D/g, "") || `TEMP-${Date.now()}`;
-
-  let firstName = data.nombreApellido;
-  let lastName = "";
-
-  if (data.nombreApellido.includes(",")) {
-    const parts = data.nombreApellido.split(",");
-    lastName = parts[0].trim();
-    firstName = parts[1].trim();
-  } else if (data.nombreApellido.includes(" ")) {
-    const parts = data.nombreApellido.trim().split(" ");
-    lastName = parts.pop() || "";
-    firstName = parts.join(" ");
-  }
+  const dni = normalizeDni(data.dni);
+  const name = splitFullName(data.nombreApellido);
 
   try {
-    const existing = await prisma.person.findUnique({
-      where: { dni: cleanDni }
-    });
+    const previous = data.previousPersonId
+      ? await prisma.person.findUnique({ where: { id: data.previousPersonId } })
+      : null;
+    const previousTemp = previous && isTempPersonDni(previous.dni) ? previous : null;
+
+    if (!dni) {
+      if (previous) {
+        await prisma.person.update({
+          where: { id: previous.id },
+          data: { address: data.domicilio || previous.address, phone: data.contacto || previous.phone },
+        });
+        return previous.id;
+      }
+      const created = await prisma.person.create({
+        data: { dni: `TEMP-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, ...name, address: data.domicilio || "Tres de Febrero", phone: data.contacto || "" },
+      });
+      return created.id;
+    }
+
+    const existing = await prisma.person.findUnique({ where: { dni } });
 
     if (existing) {
       await prisma.person.update({
@@ -534,14 +583,22 @@ export async function syncPersonInDatabase(data: {
           phone: data.contacto || existing.phone,
         }
       });
+      if (previousTemp) await mergeTempPerson(previousTemp.id, existing.id);
       return existing.id;
+    }
+
+    if (previousTemp) {
+      await prisma.person.update({
+        where: { id: previousTemp.id },
+        data: { dni, ...name, address: data.domicilio || previousTemp.address, phone: data.contacto || previousTemp.phone },
+      });
+      return previousTemp.id;
     }
 
     const created = await prisma.person.create({
       data: {
-        dni: cleanDni,
-        firstName: firstName || "Vecino",
-        lastName: lastName || "Registrado",
+        dni,
+        ...name,
         address: data.domicilio || "Tres de Febrero",
         phone: data.contacto || "",
       }
@@ -550,6 +607,6 @@ export async function syncPersonInDatabase(data: {
     return created.id;
   } catch (err) {
     console.error("Error syncing person in DB:", err);
-    return cleanDni;
+    return dni || "";
   }
 }
