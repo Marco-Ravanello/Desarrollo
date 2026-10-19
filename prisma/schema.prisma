@@ -147,7 +147,20 @@ model Derivation {
   reason          String
   status          DerivationStatus @default(PENDIENTE)
   observations    String?
+  /// Quién derivó (se guarda el nombre para el historial aunque el usuario cambie).
+  createdById     String?
+  createdByName   String?
+  /// Estado que tenía el expediente antes de derivarlo: vuelve a ese si la derivación se rechaza.
+  previousStatus  CaseStatus?
+  /// Respuesta del área que la recibe (aceptar o rechazar).
+  respondedById   String?
+  respondedByName String?
+  respondedAt     DateTime?
+  response        String?
   createdAt       DateTime @default(now())
+
+  @@index([toAreaId, status])
+  @@index([caseId])
 }
 
 enum DerivationStatus {
@@ -519,6 +532,17 @@ model PadronUnificado {
   prog_emergencia_climatica                                      Int @default(0)
 
   @@map("padron_unificado")
+}
+
+/// Pares del padrón que alguien revisó y marcó como personas distintas: no vuelven a aparecer como posibles duplicados.
+model PadronDuplicadoDescartado {
+  dni_a     String
+  dni_b     String
+  userId    String?
+  createdAt DateTime @default(now())
+
+  @@id([dni_a, dni_b])
+  @@map("padron_duplicados_descartados")
 }
 
 model ParticipacionPrograma {

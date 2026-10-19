@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Menu } from "lucide-react";
 import { OfflineSupport, SituationRoomButton } from "@/components/layout/header-extras";
+import { InactivityLogout } from "@/components/layout/inactivity-logout";
 
 export default function DashboardLayout({
   children,
@@ -24,6 +25,7 @@ export default function DashboardLayout({
   return (
     <Providers>
       <OfflineSupport />
+      <InactivityLogout />
       <div className="flex min-h-screen bg-background relative transition-colors duration-300 print:bg-white print:text-black">
         {/* Sidebar escritorio */}
         <aside className="hidden md:block sticky top-0 h-screen shrink-0 self-start print:hidden z-30">

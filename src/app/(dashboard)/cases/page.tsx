@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { getAllCases, getAreas } from "@/services/cases";
+import { countDerivationsToAnswer } from "@/services/derivations";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -15,7 +16,7 @@ import { EmptyMessage } from "@/components/ui/empty-message";
 import { hasPermission, PERMISSIONS } from "@/lib/permissions";
 import {
   FileText, ShieldAlert, CheckCircle2, Clock, Plus, Search,
-  ArrowRight, ClipboardList
+  ArrowRight, ClipboardList, ArrowRightLeft
 } from "lucide-react";
 import Link from "next/link";
 
@@ -34,6 +35,7 @@ const STATUS_LABELS: Record<string, string> = {
   ACTIVOS: "Activos",
   ABIERTO: "Abierto",
   EN_PROCESO: "En proceso",
+  DERIVADO: "Derivado",
   CERRADO: "Cerrado",
 };
 
@@ -47,7 +49,7 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
 
   const canViewSensitive = hasPermission(session.user.role as any, PERMISSIONS.VIEW_SENSITIVE_CASES);
 
-  const [data, areasList] = await Promise.all([
+  const [data, areasList, derivationsToAnswer] = await Promise.all([
     getAllCases({
       query: q,
       areaId: area,
@@ -58,6 +60,7 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
       canViewSensitive,
     }),
     getAreas(),
+    countDerivationsToAnswer(session.user),
   ]);
 
   const getPriorityBadge = (p: string) => {
@@ -79,6 +82,8 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
         return <Badge className="bg-emerald-500/15 text-emerald-500 border-emerald-500/30 text-[10px] font-bold">ABIERTO</Badge>;
       case "EN_PROCESO":
         return <Badge className="bg-sky-500/15 text-sky-500 border-sky-500/30 text-[10px] font-bold">EN PROCESO</Badge>;
+      case "DERIVADO":
+        return <Badge className="bg-purple-500/15 text-purple-500 border-purple-500/30 text-[10px] font-bold">DERIVADO</Badge>;
       case "CERRADO":
         return <Badge className="bg-slate-500/15 text-slate-400 border-slate-500/30 text-[10px] font-medium">RESUELTO</Badge>;
       default:
@@ -101,11 +106,21 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
         icon={ClipboardList}
         badge="Gestión Integral"
         actions={
-          <Button asChild className="rounded-xl font-bold text-xs gap-1.5 shadow-sm">
-            <Link href="/cases/new">
-              <Plus className="h-4 w-4" /> Nuevo Expediente
-            </Link>
-          </Button>
+          <>
+            <Button asChild variant="outline" className="rounded-xl font-bold text-xs gap-1.5">
+              <Link href="/cases/derivaciones">
+                <ArrowRightLeft className="h-4 w-4" /> Derivaciones
+                {derivationsToAnswer > 0 && (
+                  <span className="ml-0.5 rounded-full bg-amber-500 px-1.5 py-0.5 text-[10px] font-bold text-white">{derivationsToAnswer}</span>
+                )}
+              </Link>
+            </Button>
+            <Button asChild className="rounded-xl font-bold text-xs gap-1.5 shadow-sm">
+              <Link href="/cases/new">
+                <Plus className="h-4 w-4" /> Nuevo Expediente
+              </Link>
+            </Button>
+          </>
         }
       />
 
@@ -151,6 +166,7 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
               <option value="ACTIVOS">Activos (abiertos y en proceso)</option>
               <option value="ABIERTO">Abierto</option>
               <option value="EN_PROCESO">En Proceso</option>
+              <option value="DERIVADO">Derivado (esperando respuesta)</option>
               <option value="CERRADO">Cerrado / Resuelto</option>
             </select>
           </div>
