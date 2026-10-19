@@ -5,7 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { Eye, Plus, Upload, Users, Calendar, Building2, MapPin, Phone, Network, RotateCcw, UserX } from "lucide-react";
+import { Eye, Plus, Upload, Users, Calendar, Building2, MapPin, Phone, Network, RotateCcw, UserX, CopyCheck } from "lucide-react";
 import Link from "next/link";
 import {
   Sheet,
@@ -79,6 +79,14 @@ export default async function PeoplePage({
                 Matriz de Cruces
               </Link>
             </Button>
+            {canImport && (
+              <Button variant="outline" asChild className="rounded-2xl h-11 px-4 text-xs font-bold transition-all hover:bg-accent border-border/60 gap-2">
+                <Link href="/people/duplicados">
+                  <CopyCheck className="h-4 w-4 text-amber-500" />
+                  Posibles duplicados
+                </Link>
+              </Button>
+            )}
             {canImport && (
             <Sheet>
               <SheetTrigger asChild>

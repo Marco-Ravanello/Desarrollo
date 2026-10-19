@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,11 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [closedByInactivity, setClosedByInactivity] = useState(false);
+
+  useEffect(() => {
+    setClosedByInactivity(new URLSearchParams(window.location.search).get("motivo") === "inactividad");
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -91,6 +96,12 @@ export default function LoginPage() {
             <h2 className="font-heading text-2xl font-bold tracking-tight text-foreground">Ingresar</h2>
             <p className="text-sm text-muted-foreground">Usá tu correo y contraseña de la plataforma.</p>
           </div>
+
+          {closedByInactivity && (
+            <p role="status" className="rounded-xl border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-foreground">
+              Cerramos tu sesión porque no se usó la app por un rato. Volvé a ingresar para seguir.
+            </p>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-2">

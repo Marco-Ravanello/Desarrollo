@@ -124,6 +124,8 @@ const ROUTE_ACCESS: { prefix: string; allowed: (role: Role) => boolean }[] = [
   { prefix: "/areas/violence", allowed: (r) => hasPermission(r, PERMISSIONS.VIEW_SENSITIVE_CASES) },
   // Carga de datos sociales (Auditoría solo consulta)
   { prefix: "/people/new", allowed: (r) => canEditSocialRecords(r) },
+  // Revisar y unir personas repetidas del padrón
+  { prefix: "/people/duplicados", allowed: (r) => MANAGEMENT_ROLES.includes(r) },
   { prefix: "/cases/new", allowed: (r) => canEditSocialRecords(r) },
   // Ubicar en el mapa las direcciones del padrón
   { prefix: "/maps/ubicar", allowed: (r) => MANAGEMENT_ROLES.includes(r) },

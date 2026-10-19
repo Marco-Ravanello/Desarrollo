@@ -44,6 +44,7 @@ const PATH_DICTIONARY: Record<string, string> = {
   "ficha-social": "Ficha Social 360°",
   "cambiar-clave": "Cambiar mi contraseña",
   derivaciones: "Derivaciones",
+  duplicados: "Posibles duplicados",
   cruces: "Matriz de Cruces",
   tasks: "Mis Tareas & Pendientes",
   agreements: "Convenios",

@@ -534,6 +534,17 @@ model PadronUnificado {
   @@map("padron_unificado")
 }
 
+/// Pares del padrón que alguien revisó y marcó como personas distintas: no vuelven a aparecer como posibles duplicados.
+model PadronDuplicadoDescartado {
+  dni_a     String
+  dni_b     String
+  userId    String?
+  createdAt DateTime @default(now())
+
+  @@id([dni_a, dni_b])
+  @@map("padron_duplicados_descartados")
+}
+
 model ParticipacionPrograma {
   id                 BigInt   @id @default(autoincrement())
   dni                String

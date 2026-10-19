@@ -43,6 +43,7 @@ const PANTALLAS: Record<string, Role[]> = {
   "/admin/emergency": ROLES,
   "/maps": ["SUPERADMIN", "DIRECCION_GENERAL", "ADMIN_GENERAL", "DIRECTOR_AREA", "OPERATIVO", "AUDITOR", "VIOLENCIA_GENERO"],
   "/maps/ubicar": ["SUPERADMIN", "DIRECCION_GENERAL", "ADMIN_GENERAL"],
+  "/people/duplicados": ["SUPERADMIN", "DIRECCION_GENERAL", "ADMIN_GENERAL"],
   "/cambiar-clave": ROLES,
 };
 
