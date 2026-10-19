@@ -90,6 +90,7 @@ export function FichaHistorialView({ historial }: { historial: FichaHistorial })
                   <span className="absolute -left-[25px] top-1 h-2.5 w-2.5 rounded-full bg-primary ring-4 ring-background" />
                   <p className="text-[11px] font-bold text-muted-foreground">
                     {fecha(i.fecha)}
+                    {i.tipo ? ` · ${i.tipo}` : ""}
                     {i.area ? ` · ${i.area}` : ""}
                     {i.usuario ? ` · ${i.usuario}` : ""}
                   </p>

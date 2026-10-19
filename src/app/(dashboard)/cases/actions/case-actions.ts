@@ -7,8 +7,10 @@ import { getPeople, ensurePersonInPrisma } from "@/services/people";
 import { actionErrorMessage } from "@/lib/action-error";
 import { canEditSocialRecords } from "@/lib/permissions";
 import { createDerivation, respondDerivation } from "@/services/derivations";
+import { editIntervention } from "@/services/interventions";
+import { isInterventionType } from "@/lib/intervention-types";
 
-export async function addCaseInterventionAction(caseId: string, description: string) {
+export async function addCaseInterventionAction(caseId: string, description: string, type?: string) {
   const session = await auth();
   if (session?.user && !canEditSocialRecords(session.user.role)) {
     return { success: false, error: "Tu rol (Auditoría) puede consultar pero no cargar ni modificar datos." };
@@ -20,6 +22,9 @@ export async function addCaseInterventionAction(caseId: string, description: str
   const cleanDesc = description?.trim();
   if (!cleanDesc) {
     return { success: false, error: "La descripción de la intervención no puede estar vacía" };
+  }
+  if (type !== undefined && !isInterventionType(type)) {
+    return { success: false, error: "Elegí el tipo de intervención." };
   }
 
   try {
@@ -45,6 +50,7 @@ export async function addCaseInterventionAction(caseId: string, description: str
         caseId,
         personId: validPerson.id,
         description: cleanDesc,
+        type: type && isInterventionType(type) ? type : null,
         userId: session.user.id,
         date: new Date()
       }
@@ -245,4 +251,23 @@ function revalidateDerivation(caseId: string) {
   revalidatePath("/cases");
   revalidatePath("/cases/derivaciones");
   revalidatePath("/dashboard");
+}
+
+/** Quien cargó una intervención la corrige el mismo día; la versión anterior queda guardada. */
+export async function editCaseInterventionAction(interventionId: string, description: string, type: string) {
+  const session = await auth();
+  if (!session?.user?.id) return { success: false, error: "Tu sesión expiró. Volvé a iniciar sesión." };
+  try {
+    const result = await editIntervention(session.user, { interventionId, description, type });
+    if (result.success) {
+      const i = await prisma.intervention.findUnique({ where: { id: interventionId }, select: { caseId: true, personId: true } });
+      if (i) {
+        revalidatePath(`/cases/${i.caseId}`);
+        revalidatePath(`/people/${i.personId}`);
+      }
+    }
+    return result;
+  } catch (error: any) {
+    return { success: false, error: actionErrorMessage(error, "No se pudo corregir la intervención") };
+  }
 }

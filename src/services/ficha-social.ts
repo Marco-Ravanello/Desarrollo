@@ -55,6 +55,7 @@ export interface FichaHistorial {
     id: string;
     fecha: string;
     descripcion: string;
+    tipo: string | null;
     expediente: string | null;
     expedienteId: string;
     area: string | null;

@@ -142,6 +142,7 @@ export async function saveStormVictimRecord(
               caseId: activeCaseId,
               personId: personId,
               userId,
+              type: "EMERGENCIA",
               description: `Actualización de Ficha Tormenta por ${operator.name}. Requerimientos: ${elementsSummary}.`,
             },
           });
@@ -230,6 +231,7 @@ export async function saveStormVictimRecord(
           caseId: createdCase.id,
           personId: personId,
           userId,
+          type: "EMERGENCIA",
           description: `Entrevista e inspección técnica de contingencia climática por ${operator.name}. Requerimientos: ${elementsSummary}. Detalle: ${recordData.descripcionIntervencion || "Sin observaciones adicionales"}`,
         },
       });

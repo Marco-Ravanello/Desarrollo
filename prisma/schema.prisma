@@ -132,8 +132,37 @@ model Intervention {
   person      Person   @relation(fields: [personId], references: [id])
   date        DateTime @default(now())
   description String
+  /// Qué se hizo. Las intervenciones viejas o importadas pueden no tenerlo.
+  type        InterventionType?
   userId      String
   createdAt   DateTime @default(now())
+  /// Última corrección (quien la cargó puede corregirla el mismo día).
+  editedAt    DateTime?
+  edits       InterventionEdit[]
+}
+
+enum InterventionType {
+  VISITA
+  ENTREVISTA
+  LLAMADA
+  ENTREGA
+  GESTION
+  EMERGENCIA
+  OTRA
+}
+
+/// Versión anterior de una intervención corregida: no se pierde lo que decía antes.
+model InterventionEdit {
+  id                  String            @id @default(cuid())
+  interventionId      String
+  intervention        Intervention      @relation(fields: [interventionId], references: [id], onDelete: Cascade)
+  previousDescription String
+  previousType        InterventionType?
+  editedById          String
+  editedByName        String?
+  createdAt           DateTime          @default(now())
+
+  @@index([interventionId])
 }
 
 model Derivation {

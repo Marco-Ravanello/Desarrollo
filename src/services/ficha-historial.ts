@@ -3,6 +3,7 @@ import { EMERGENCY_CATEGORIES, EmergencyCategoryKey, cleanItemQuantities, quanti
 import { getEmergencyExtraItemOptions } from "@/services/emergency";
 import type { FichaHistorial } from "@/services/ficha-social";
 import { isSensitiveArea } from "@/lib/sensitive-areas";
+import { interventionTypeLabel } from "@/lib/intervention-types";
 
 // Lo que la municipalidad hizo con una persona (por DNI) para la Ficha Social 360°:
 // expedientes, intervenciones, fichas de tormenta y entregas recibidas.
@@ -41,7 +42,7 @@ export async function getFichaHistorial(dni: string, opts: { canViewSensitive: b
         await prisma.intervention.findMany({
           where: { personId: person.id },
           orderBy: { date: "desc" },
-          select: { id: true, date: true, description: true, userId: true, caseId: true, case: { select: { title: true, area: { select: { name: true } } } } },
+          select: { id: true, date: true, description: true, type: true, userId: true, caseId: true, case: { select: { title: true, area: { select: { name: true } } } } },
         })
       ).filter((i) => opts.canViewSensitive || !isSensitiveArea(i.case?.area?.name))
     : [];
@@ -69,6 +70,7 @@ export async function getFichaHistorial(dni: string, opts: { canViewSensitive: b
       id: i.id,
       fecha: i.date.toISOString(),
       descripcion: i.description,
+      tipo: interventionTypeLabel(i.type),
       expediente: i.case?.title || null,
       expedienteId: i.caseId,
       area: i.case?.area?.name || null,

@@ -1,5 +1,6 @@
 export const dynamic = "force-dynamic";
 import { getPersonById } from "@/services/people";
+import { interventionTypeLabel } from "@/lib/intervention-types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Link from "next/link";
@@ -73,7 +74,7 @@ export default async function PersonDetailPage({ params }: { params: Promise<{ i
       id: i.id,
       type: 'INTERVENTION',
       date: typeof i.date === "string" ? i.date : (i.date instanceof Date ? i.date.toISOString() : String(i.date)),
-      title: i.title || "Intervención Social",
+      title: interventionTypeLabel(i.type) || "Intervención Social",
       area: i.area?.name,
       description: i.description
     })),
