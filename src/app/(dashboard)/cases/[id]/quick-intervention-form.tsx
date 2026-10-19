@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { PlusCircle, Loader2, Send } from "lucide-react";
 import { addCaseInterventionAction } from "@/app/(dashboard)/cases/actions/case-actions";
 import { toast } from "sonner";
+import { INTERVENTION_TYPES } from "@/lib/intervention-types";
 
 interface QuickInterventionFormProps {
   caseId: string;
@@ -15,10 +16,15 @@ interface QuickInterventionFormProps {
 export function QuickInterventionForm({ caseId, caseTitle }: QuickInterventionFormProps) {
   const [expanded, setExpanded] = useState(false);
   const [description, setDescription] = useState("");
+  const [type, setType] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!type) {
+      toast.error("Elegí el tipo de intervención");
+      return;
+    }
     if (!description.trim()) {
       toast.error("Ingrese una descripción para la intervención");
       return;
@@ -26,10 +32,11 @@ export function QuickInterventionForm({ caseId, caseTitle }: QuickInterventionFo
 
     setLoading(true);
     try {
-      const result = await addCaseInterventionAction(caseId, description);
+      const result = await addCaseInterventionAction(caseId, description, type);
       if (result.success) {
         toast.success("Intervención registrada correctamente");
         setDescription("");
+        setType("");
         setExpanded(false);
       } else {
         toast.error(result.error || "Error al registrar intervención");
@@ -61,6 +68,25 @@ export function QuickInterventionForm({ caseId, caseTitle }: QuickInterventionFo
         <span className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
           {caseTitle}
         </span>
+      </div>
+
+      <div role="radiogroup" aria-label="Tipo de intervención" className="flex flex-wrap gap-1.5">
+        {INTERVENTION_TYPES.filter((t) => t.value !== "EMERGENCIA").map((t) => (
+          <button
+            key={t.value}
+            type="button"
+            role="radio"
+            aria-checked={type === t.value}
+            onClick={() => setType(t.value)}
+            className={`rounded-full border px-3 py-1 text-xs font-semibold transition-colors ${
+              type === t.value
+                ? "border-primary bg-primary text-primary-foreground"
+                : "border-border/60 bg-muted/30 text-foreground hover:border-primary/40"
+            }`}
+          >
+            {t.label}
+          </button>
+        ))}
       </div>
 
       <Textarea

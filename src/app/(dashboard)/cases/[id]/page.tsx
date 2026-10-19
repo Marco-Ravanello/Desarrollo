@@ -3,6 +3,8 @@ export const dynamic = "force-dynamic";
 import { getAreas, getCaseById } from "@/services/cases";
 import { canDeriveCases, canRespondDerivation, getCaseDerivations, hasPendingDerivationFor } from "@/services/derivations";
 import { DerivationCard, DeriveCaseButton } from "@/components/cases/derivations";
+import { InterventionList } from "@/components/cases/intervention-list";
+import { getCaseInterventions } from "@/services/interventions";
 import { ensurePersonInPrisma } from "@/services/people";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -62,7 +64,11 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
   }
 
   const isClosed = caseData.status === "CERRADO";
-  const [derivations, areas] = await Promise.all([getCaseDerivations(caseData.id), getAreas()]);
+  const [derivations, areas, interventions] = await Promise.all([
+    getCaseDerivations(caseData.id),
+    getAreas(),
+    getCaseInterventions(caseData.id, session.user.id),
+  ]);
   const pendingDerivation = derivations.find((d) => d.status === "PENDIENTE");
   const pastDerivations = derivations.filter((d) => d !== pendingDerivation);
   const canDerive = canDeriveCases(session.user) && !isClosed && !pendingDerivation;
@@ -121,24 +127,7 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
             )}
 
             <CardContent className="px-0 pt-2">
-              {!caseData.interventions || caseData.interventions.length === 0 ? (
-                <EmptyMessage
-                  title="No hay intervenciones registradas en este expediente."
-                  className="rounded-2xl border border-dashed border-border/60"
-                />
-              ) : (
-                <div className="space-y-3">
-                  {caseData.interventions.map((int) => (
-                    <div key={int.id} className="flex gap-4 p-4 rounded-2xl border border-border/60 bg-muted/20 hover:border-border transition-colors">
-                       <div className="text-[11px] font-mono font-bold text-muted-foreground min-w-[120px] border-r border-border/40 pr-3 flex flex-col justify-center">
-                          <span>{new Date(int.date).toLocaleDateString('es-AR')}</span>
-                          <span className="text-[10px] opacity-70">{new Date(int.date).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}</span>
-                       </div>
-                       <div className="text-sm text-foreground font-medium whitespace-pre-wrap flex-1">{int.description}</div>
-                    </div>
-                  ))}
-                </div>
-              )}
+              <InterventionList rows={interventions} />
             </CardContent>
           </Card>
         </div>
