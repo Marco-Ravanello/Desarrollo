@@ -2,6 +2,7 @@
 // pendiente de entregar. Sin acceso a la base: se usa en el servidor y en pantalla.
 
 import type { StormVictimItem } from "@/types/emergency";
+import { normalizeDni } from "@/lib/padron-import";
 
 export type EmergencyCategoryKey = "COLCHON" | "CAMA" | "CUCHETA" | "FRAZADA";
 
@@ -135,4 +136,9 @@ export const DELIVERY_STATUS_LABEL: Record<DeliveryStatus, string> = {
 export function quantityText(key: EmergencyCategoryKey, n: number): string {
   const cat = EMERGENCY_CATEGORIES.find((c) => c.key === key)!;
   return `${n} ${n === 1 ? cat.singular : cat.label}`;
+}
+
+/** Fichas guardadas en la base que no tienen un DNI válido (para completarlo). */
+export function recordsWithoutDni(records: StormVictimItem[]) {
+  return records.filter((r) => r.fromTable && r.id && !normalizeDni(r.dni));
 }

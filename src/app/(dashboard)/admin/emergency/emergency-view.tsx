@@ -19,6 +19,7 @@ import { StormDeliveryDialog } from "@/components/emergency/storm-delivery-dialo
 import { DeliveryBadge } from "@/components/emergency/storm-sheet-table";
 import { deliveryStatus, extraQuantityText } from "@/lib/emergency-categories";
 import { OfflineFichasPanel, useOfflineFichas } from "@/components/emergency/offline-fichas-panel";
+import { StormMissingDni } from "@/components/emergency/storm-missing-dni";
 import { exportStormSheetToExcel } from "@/lib/export-storm-excel";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -148,6 +149,8 @@ export function EmergencyView({ initialData, deniedAccess }: EmergencyViewProps)
         onSyncNow={() => offline.sync(true)}
         onEdit={handleOpenEditFicha}
       />
+
+      {viewer.canEdit && <StormMissingDni records={records} onSaved={() => router.refresh()} />}
 
       {/* Tarjetas Resumen Métricas */}
       {surveyor ? (
