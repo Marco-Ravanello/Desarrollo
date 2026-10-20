@@ -73,6 +73,33 @@ export interface FichaHistorial {
   }[];
 }
 
+/** Más personas que esta en un domicilio suele ser un edificio o un complejo sin número de departamento: se muestran solo las primeras. */
+export const MAX_MISMO_DOMICILIO = 12;
+
+/** Un familiar o conviviente, con lo que la municipalidad hizo con esa persona. */
+export interface MiembroFamiliar {
+  dni: string | null;
+  nombre: string;
+  /** "Hijo", "Madre"… como figura en el programa, "Grupo familiar", o "Mismo domicilio". */
+  vinculo: string;
+  edad: number | null;
+  programas: string[];
+  enPadron: boolean;
+  atencion: { expedientes: number; expedientesAbiertos: number; intervenciones: number; fichasTormenta: number; entregas: number };
+}
+
+export interface GrupoFamiliar {
+  /** Familiares cargados en los programas o en el Registro Único. */
+  declarados: MiembroFamiliar[];
+  /** Otras personas del padrón con la misma dirección (hasta 12). */
+  mismoDomicilio: MiembroFamiliar[];
+  domicilio: string | null;
+  /** Por qué no se buscó por domicilio. */
+  sinDomicilio: "SIN_DIRECCION" | "SIN_ALTURA" | null;
+  /** Cuántas otras personas del padrón tienen esa misma dirección. */
+  personasEnDomicilio: number;
+}
+
 export interface FichaSocialPersonaResponse {
   encontrado: boolean;
   /** false: no figura en el padrón de programas, pero la municipalidad tiene historial suyo. */
@@ -84,6 +111,7 @@ export interface FichaSocialPersonaResponse {
   programas_activos?: string[];
   detalle_programas?: Record<string, FichaSocialProgramaDetalle>;
   relaciones_familiares?: RelacionFamiliar[];
+  grupo_familiar?: GrupoFamiliar;
   mensaje?: string;
   fuente_origen?: string;
 }

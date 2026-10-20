@@ -23,6 +23,8 @@ model User {
   auditLogs     AuditLog[]
   tasks         Task[]
   reservations  VehicleReservation[]
+  /// Expedientes de los que es profesional a cargo.
+  assignedCases Case[]
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 }
@@ -97,6 +99,10 @@ model Case {
   description   String?
   status        CaseStatus     @default(ABIERTO)
   priority      Priority       @default(MEDIA)
+  /// Profesional a cargo del expediente (puede no tener).
+  assignedToId  String?
+  assignedTo    User?          @relation(fields: [assignedToId], references: [id], onDelete: SetNull)
+  assignedAt    DateTime?
   interventions Intervention[]
   derivations   Derivation[]
   documents     Document[]
@@ -107,6 +113,7 @@ model Case {
   @@index([personId])
   @@index([areaId])
   @@index([status])
+  @@index([assignedToId])
 }
 
 enum CaseStatus {

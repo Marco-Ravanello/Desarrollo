@@ -46,7 +46,8 @@ export async function getCaseById(id: string) {
         interventions: {
           orderBy: { date: 'desc' }
         },
-        documents: true
+        documents: true,
+        assignedTo: { select: { id: true, name: true, email: true } }
       }
     });
   } catch (error) {
@@ -154,6 +155,9 @@ export interface GetCasesFilters {
   page?: number;
   limit?: number;
   canViewSensitive?: boolean;
+  /** "mine": a cargo de `userId`; "none": sin profesional a cargo. */
+  assigned?: "mine" | "none";
+  userId?: string;
 }
 
 export async function getAllCases(filters: GetCasesFilters = {}) {
@@ -179,6 +183,11 @@ export async function getAllCases(filters: GetCasesFilters = {}) {
   if (filters.priority && filters.priority !== "all") {
     where.priority = filters.priority;
   }
+  if (filters.assigned === "mine" && filters.userId) {
+    where.assignedToId = filters.userId;
+  } else if (filters.assigned === "none") {
+    where.assignedToId = null;
+  }
   if (filters.query && filters.query.trim()) {
     const q = filters.query.trim();
     where.OR = [
@@ -196,6 +205,7 @@ export async function getAllCases(filters: GetCasesFilters = {}) {
       include: {
         person: true,
         area: true,
+        assignedTo: { select: { id: true, name: true, email: true } },
         interventions: {
           orderBy: { date: "desc" },
           take: 1,

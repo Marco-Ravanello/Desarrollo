@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ArrowRightLeft, Check, FolderOpen, Lock, MessageSquareText, User, X, Clock } from "lucide-react";
+import { ArrowRightLeft, Check, FolderOpen, Lock, MessageSquareText, User, UserCheck, X, Clock } from "lucide-react";
 import { INTERVENTION_TYPES } from "@/lib/intervention-types";
 import type { InterventionRow } from "@/services/interventions";
 import type { CaseEvent } from "@/services/case-timeline";
@@ -15,16 +15,19 @@ type Item = { kind: "INTERVENCION"; date: string; row: InterventionRow } | { kin
 const NO_TYPE = "SIN_TIPO";
 const DERIVACIONES = "DERIVACIONES";
 const EXPEDIENTE = "EXPEDIENTE";
+const ASIGNACIONES = "ASIGNACIONES";
 
-/** Grupo de cada movimiento para el filtro: el tipo de intervención, derivaciones, o apertura y cierre. */
+/** Grupo de cada movimiento para el filtro: el tipo de intervención, derivaciones, profesional a cargo, o apertura y cierre. */
 function groupOf(item: Item) {
   if (item.kind === "INTERVENCION") return item.row.type ?? NO_TYPE;
+  if (item.event.kind === "ASIGNACION") return ASIGNACIONES;
   return item.event.kind === "DERIVACION" || item.event.kind === "RESPUESTA" ? DERIVACIONES : EXPEDIENTE;
 }
 
 function eventIcon(e: CaseEvent) {
   if (e.kind === "APERTURA") return { Icon: FolderOpen, className: "bg-blue-500/15 text-blue-600 dark:text-blue-400" };
   if (e.kind === "CIERRE") return { Icon: Lock, className: "bg-muted text-muted-foreground" };
+  if (e.kind === "ASIGNACION") return { Icon: UserCheck, className: "bg-teal-500/15 text-teal-700 dark:text-teal-300" };
   if (e.kind === "RESPUESTA")
     return e.outcome === "RECHAZADA"
       ? { Icon: X, className: "bg-rose-500/15 text-rose-600 dark:text-rose-400" }
@@ -80,6 +83,7 @@ export function CaseTimeline({ interventions, events }: { interventions: Interve
     ...INTERVENTION_TYPES.filter((t) => counts.has(t.value)).map((t) => ({ value: t.value as string, label: t.label })),
     ...(counts.has(NO_TYPE) ? [{ value: NO_TYPE, label: "Sin tipo" }] : []),
     ...(counts.has(DERIVACIONES) ? [{ value: DERIVACIONES, label: "Derivaciones" }] : []),
+    ...(counts.has(ASIGNACIONES) ? [{ value: ASIGNACIONES, label: "Profesional a cargo" }] : []),
     ...(counts.has(EXPEDIENTE) ? [{ value: EXPEDIENTE, label: "Apertura y cierre" }] : []),
   ];
   const visible = filter === "TODO" ? items : items.filter((item) => groupOf(item) === filter);

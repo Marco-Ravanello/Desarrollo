@@ -14,9 +14,14 @@ import { PageHeader } from "@/components/layout/page-header";
 import { StatCard } from "@/components/ui/stat-card";
 import { EmptyMessage } from "@/components/ui/empty-message";
 import { hasPermission, PERMISSIONS } from "@/lib/permissions";
+import { getCaseStatusConfig } from "@/lib/status-styles";
+import { getAreaShortName } from "@/lib/area-theme";
+import { interventionTypeLabel } from "@/lib/intervention-types";
+import { CASE_STATUS_LABEL, STALE_DAYS, agoText, daysText, fechaCorta, summarizeCase } from "@/lib/case-summary";
+import { countMyOpenCases } from "@/services/case-assignment";
 import {
   FileText, ShieldAlert, CheckCircle2, Clock, Plus, Search,
-  ArrowRight, ClipboardList, ArrowRightLeft
+  ArrowRight, ClipboardList, ArrowRightLeft, AlertTriangle, UserCheck
 } from "lucide-react";
 import Link from "next/link";
 
@@ -26,6 +31,7 @@ interface CasesPageProps {
     area?: string;
     status?: string;
     priority?: string;
+    assigned?: string;
     page?: string;
     limit?: string;
   }>;
@@ -33,10 +39,12 @@ interface CasesPageProps {
 
 const STATUS_LABELS: Record<string, string> = {
   ACTIVOS: "Activos",
-  ABIERTO: "Abierto",
-  EN_PROCESO: "En proceso",
-  DERIVADO: "Derivado",
-  CERRADO: "Cerrado",
+  ...CASE_STATUS_LABEL,
+};
+
+const ASSIGNED_LABELS: Record<string, string> = {
+  mine: "Mis expedientes",
+  none: "Sin profesional a cargo",
 };
 
 export default async function CasesPage({ searchParams }: CasesPageProps) {
@@ -44,51 +52,57 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
   if (!session?.user?.id) redirect("/login");
 
   const { q, area, status, priority, page, limit } = await searchParams;
+  const assignedRaw = (await searchParams).assigned;
+  const assigned = assignedRaw === "mine" || assignedRaw === "none" ? assignedRaw : undefined;
   const pageNum = Math.max(1, Number(page) || 1);
   const limitNum = Math.max(1, Math.min(100, Number(limit) || 20));
 
   const canViewSensitive = hasPermission(session.user.role as any, PERMISSIONS.VIEW_SENSITIVE_CASES);
 
-  const [data, areasList, derivationsToAnswer] = await Promise.all([
+  const [data, areasList, derivationsToAnswer, myOpenCases] = await Promise.all([
     getAllCases({
       query: q,
       areaId: area,
       status,
       priority,
+      assigned,
+      userId: session.user.id,
       page: pageNum,
       limit: limitNum,
       canViewSensitive,
     }),
     getAreas(),
     countDerivationsToAnswer(session.user),
+    countMyOpenCases(session.user.id),
   ]);
+  const now = new Date();
 
   const getPriorityBadge = (p: string) => {
     switch (p) {
       case "URGENTE":
-        return <Badge className="bg-rose-500/15 text-rose-500 border-rose-500/30 text-[10px] font-bold">URGENTE</Badge>;
+        return <Badge variant="outline" className="bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/30 text-[10px] font-bold">Urgente</Badge>;
       case "ALTA":
-        return <Badge className="bg-amber-500/15 text-amber-500 border-amber-500/30 text-[10px] font-bold">ALTA</Badge>;
-      case "MEDIA":
-        return <Badge className="bg-blue-500/15 text-blue-500 border-blue-500/30 text-[10px] font-medium">MEDIA</Badge>;
+        return <Badge variant="outline" className="bg-orange-500/10 text-orange-700 dark:text-orange-300 border-orange-500/30 text-[10px] font-bold">Prioridad alta</Badge>;
       default:
-        return <Badge variant="outline" className="text-slate-400 text-[10px]">BAJA</Badge>;
+        return null;
     }
   };
 
-  const getStatusBadge = (s: string) => {
-    switch (s) {
-      case "ABIERTO":
-        return <Badge className="bg-emerald-500/15 text-emerald-500 border-emerald-500/30 text-[10px] font-bold">ABIERTO</Badge>;
-      case "EN_PROCESO":
-        return <Badge className="bg-sky-500/15 text-sky-500 border-sky-500/30 text-[10px] font-bold">EN PROCESO</Badge>;
-      case "DERIVADO":
-        return <Badge className="bg-purple-500/15 text-purple-500 border-purple-500/30 text-[10px] font-bold">DERIVADO</Badge>;
-      case "CERRADO":
-        return <Badge className="bg-slate-500/15 text-slate-400 border-slate-500/30 text-[10px] font-medium">RESUELTO</Badge>;
-      default:
-        return <Badge variant="outline" className="text-[10px]">{s}</Badge>;
-    }
+  const getStatusBadge = (s: string) => (
+    <Badge variant="outline" className={`text-[11px] font-bold ${getCaseStatusConfig(s).badgeClass}`}>
+      {CASE_STATUS_LABEL[s] ?? s}
+    </Badge>
+  );
+
+  const pageHref = (n: number) => {
+    const params = new URLSearchParams();
+    if (q) params.set("q", q);
+    if (area) params.set("area", area);
+    if (status) params.set("status", status);
+    if (priority) params.set("priority", priority);
+    if (assigned) params.set("assigned", assigned);
+    params.set("page", String(n));
+    return `/cases?${params.toString()}`;
   };
 
   const breadcrumbs = [
@@ -107,6 +121,14 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
         badge="Gestión Integral"
         actions={
           <>
+            <Button asChild variant={assigned === "mine" ? "default" : "outline"} className="rounded-xl font-bold text-xs gap-1.5">
+              <Link href="/cases?assigned=mine">
+                <UserCheck className="h-4 w-4" /> Mis expedientes
+                {myOpenCases > 0 && (
+                  <span className="ml-0.5 rounded-full bg-primary/15 px-1.5 py-0.5 text-[10px] font-bold text-primary">{myOpenCases}</span>
+                )}
+              </Link>
+            </Button>
             <Button asChild variant="outline" className="rounded-xl font-bold text-xs gap-1.5">
               <Link href="/cases/derivaciones">
                 <ArrowRightLeft className="h-4 w-4" /> Derivaciones
@@ -135,7 +157,7 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
       {/* Filters Form */}
       <Card className="rounded-2xl border-border/60 bg-card p-4 shadow-xs">
         <form method="GET" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3 items-center">
-          <div className="lg:col-span-4 relative">
+          <div className="lg:col-span-3 relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               name="q"
@@ -144,7 +166,7 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
               className="pl-9 h-10 rounded-xl bg-muted/30 border-border/60 text-xs"
             />
           </div>
-          <div className="lg:col-span-3">
+          <div className="lg:col-span-2">
             <select
               name="area"
               defaultValue={area || "all"}
@@ -183,19 +205,32 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
               <option value="BAJA">Baja</option>
             </select>
           </div>
+          <div className="lg:col-span-2">
+            <select
+              name="assigned"
+              aria-label="Profesional a cargo"
+              defaultValue={assigned || "all"}
+              className="w-full h-10 px-3 rounded-xl bg-muted/30 border border-border/60 text-xs font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+            >
+              <option value="all">Cualquier profesional</option>
+              <option value="mine">Mis expedientes</option>
+              <option value="none">Sin profesional a cargo</option>
+            </select>
+          </div>
           <div className="lg:col-span-1 flex gap-1">
             <Button type="submit" size="sm" className="h-10 w-full rounded-xl text-xs font-bold">
               Filtrar
             </Button>
           </div>
         </form>
-        {(q || (area && area !== "all") || (status && status !== "all") || (priority && priority !== "all")) && (
-          <div className="flex items-center gap-2 mt-3 pt-3 border-t border-border/40 text-xs">
+        {(q || (area && area !== "all") || (status && status !== "all") || (priority && priority !== "all") || assigned) && (
+          <div className="flex flex-wrap items-center gap-2 mt-3 pt-3 border-t border-border/40 text-xs">
             <span className="text-[11px] font-bold text-muted-foreground">Filtros activos:</span>
             {q && <Badge variant="secondary" className="text-[10px]">Texto: {q}</Badge>}
             {area && area !== "all" && <Badge variant="secondary" className="text-[10px]">Área: {areasList.find((a) => a.id === area)?.name || area}</Badge>}
             {status && status !== "all" && <Badge variant="secondary" className="text-[10px]">Estado: {STATUS_LABELS[status] || status}</Badge>}
             {priority && priority !== "all" && <Badge variant="secondary" className="text-[10px]">Prioridad: {priority}</Badge>}
+            {assigned && <Badge variant="secondary" className="text-[10px]">{ASSIGNED_LABELS[assigned]}</Badge>}
             <Button variant="ghost" size="sm" asChild className="h-6 text-[10px] text-muted-foreground hover:text-foreground">
               <Link href="/cases">Limpiar Filtros</Link>
             </Button>
@@ -207,8 +242,12 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
       <Card className="rounded-2xl border-border/60 bg-card shadow-xs overflow-hidden">
         {data.cases.length === 0 ? (
           <EmptyMessage
-            title="No se encontraron expedientes"
-            description="No hay casos que coincidan con los criterios de búsqueda o filtros seleccionados."
+            title={assigned === "mine" ? "No tenés expedientes a cargo" : "No se encontraron expedientes"}
+            description={
+              assigned === "mine"
+                ? "Cuando te dejen a cargo de un expediente, te llega un aviso y aparece acá."
+                : "No hay casos que coincidan con los criterios de búsqueda o filtros seleccionados."
+            }
             icon={FileText}
             action={
               <Button asChild variant="outline" size="sm" className="rounded-xl text-xs">
@@ -220,12 +259,11 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
           <Table>
               <TableHeader>
                 <TableRow className="border-border/60 bg-muted/30">
-                  <TableHead className="text-[11px] font-bold uppercase text-muted-foreground">Carátula / Título</TableHead>
-                  <TableHead className="text-[11px] font-bold uppercase text-muted-foreground">Ciudadano</TableHead>
-                  <TableHead className="text-[11px] font-bold uppercase text-muted-foreground">Área</TableHead>
-                  <TableHead className="text-[11px] font-bold uppercase text-muted-foreground text-center">Prioridad</TableHead>
-                  <TableHead className="text-[11px] font-bold uppercase text-muted-foreground text-center">Estado</TableHead>
-                  <TableHead className="text-[11px] font-bold uppercase text-muted-foreground text-right">Actualizado</TableHead>
+                  <TableHead className="text-[11px] font-bold uppercase text-muted-foreground">Expediente</TableHead>
+                  <TableHead className="text-[11px] font-bold uppercase text-muted-foreground">A cargo</TableHead>
+                  <TableHead className="text-[11px] font-bold uppercase text-muted-foreground">Estado</TableHead>
+                  <TableHead className="text-[11px] font-bold uppercase text-muted-foreground">Abierto</TableHead>
+                  <TableHead className="text-[11px] font-bold uppercase text-muted-foreground">Última intervención</TableHead>
                   <TableHead className="text-[11px] font-bold uppercase text-muted-foreground text-center">Acción</TableHead>
                 </TableRow>
               </TableHeader>
@@ -235,54 +273,75 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
                     c.area.name === "Violencia de Género" ||
                     c.area.name.toLowerCase().includes("violencia");
                   const isRestricted = isViolence && !canViewSensitive;
+                  const last = c.interventions[0] ?? null;
+                  const summary = summarizeCase({
+                    status: c.status,
+                    createdAt: c.createdAt,
+                    closedAt: c.status === "CERRADO" ? c.updatedAt : null,
+                    lastInterventionAt: last?.date ?? null,
+                    now,
+                  });
+                  const assigneeName = c.assignedTo ? c.assignedTo.name || c.assignedTo.email || "Usuario" : null;
                   return (
-                    <TableRow key={c.id} className="border-border/60 hover:bg-muted/30 transition-colors">
-                      <TableCell className="font-medium max-w-xs">
+                    <TableRow key={c.id} className={`border-border/60 hover:bg-muted/30 transition-colors ${summary.stale ? "bg-amber-500/[0.04]" : ""}`}>
+                      <TableCell className="font-medium max-w-xs align-top">
                         {isRestricted ? (
                           <span className="italic text-muted-foreground text-xs font-semibold">Expediente Confidencial Reservado</span>
                         ) : (
+                          <div className="space-y-1">
+                            <Link href={`/cases/${c.id}`} className="block truncate font-bold text-xs text-foreground hover:underline">{c.title}</Link>
+                            {c.person ? (
+                              <div className="text-[11px] text-muted-foreground">
+                                <Link href={`/people/${c.person.dni || c.person.id}`} className="font-semibold text-primary hover:underline">
+                                  {c.person.lastName}, {c.person.firstName}
+                                </Link>
+                                <span className="font-mono"> · DNI {c.person.dni}</span>
+                              </div>
+                            ) : (
+                              <div className="text-[11px] text-muted-foreground">Sin titular</div>
+                            )}
+                          </div>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-xs align-top">
+                        <div className="font-semibold text-foreground" title={c.area.name}>{getAreaShortName(c.area.name)}</div>
+                        <div className={`mt-0.5 flex items-center gap-1 text-[11px] ${assigneeName ? "text-foreground" : "text-muted-foreground"}`}>
+                          <UserCheck className="h-3 w-3 shrink-0" />
+                          {isRestricted ? "Reservado" : assigneeName ?? "Sin profesional"}
+                        </div>
+                      </TableCell>
+                      <TableCell className="align-top">
+                        <div className="flex flex-wrap items-center gap-1">
+                          {getStatusBadge(c.status)}
+                          {getPriorityBadge(c.priority)}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-xs align-top">
+                        <div className="whitespace-nowrap font-semibold text-foreground">{daysText(summary.openDays)}</div>
+                        <div className="whitespace-nowrap text-[11px] text-muted-foreground">desde {fechaCorta(c.createdAt)}</div>
+                      </TableCell>
+                      <TableCell className="text-xs align-top">
+                        {isRestricted ? (
+                          <span className="text-[11px] text-muted-foreground">Reservado</span>
+                        ) : (
                           <>
-                            <div className="truncate font-bold text-xs text-foreground">{c.title}</div>
-                            {c.description && (
-                              <div className="truncate text-[11px] text-muted-foreground mt-0.5 max-w-sm">
-                                {c.description}
+                            <div className={`font-semibold ${summary.stale ? "text-amber-800 dark:text-amber-300" : "text-foreground"}`}>
+                              {last && summary.lastInterventionDays !== null ? agoText(summary.lastInterventionDays) : "Ninguna todavía"}
+                            </div>
+                            {last && (
+                              <div className="text-[11px] text-muted-foreground">
+                                {interventionTypeLabel(last.type) ?? "Sin tipo"}
+                              </div>
+                            )}
+                            {summary.stale && (
+                              <div className="mt-1 inline-flex items-center gap-1 rounded-full border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[10px] font-bold text-amber-800 dark:text-amber-300">
+                                <AlertTriangle className="h-3 w-3" /> Sin movimiento hace {STALE_DAYS}+ días
                               </div>
                             )}
                           </>
                         )}
                       </TableCell>
-                      <TableCell className="text-xs">
-                        {isRestricted ? (
-                          <span className="text-muted-foreground italic text-[11px]">Identidad Reservada</span>
-                        ) : c.person ? (
-                          <div>
-                            <Link href={`/people/${c.person.dni || c.person.id}`} className="font-bold hover:underline text-primary">
-                              {c.person.lastName}, {c.person.firstName}
-                            </Link>
-                            <div className="text-[10px] text-muted-foreground font-mono">DNI: {c.person.dni}</div>
-                          </div>
-                        ) : (
-                          <span className="text-muted-foreground text-[11px]">Sin titular asignado</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-xs">
-                        <Badge variant="outline" className="text-[10px] border-border/60">
-                          {c.area.name}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-center">
-                        {getPriorityBadge(c.priority)}
-                      </TableCell>
-                      <TableCell className="text-center">
-                        {getStatusBadge(c.status)}
-                      </TableCell>
-                      <TableCell className="text-right text-[11px] text-muted-foreground font-mono">
-                        {new Date(c.updatedAt).toLocaleDateString("es-AR", {
-                          day: "2-digit",
-                          month: "short",
-                        })}
-                      </TableCell>
-                      <TableCell className="text-center">
+                      <TableCell className="text-center align-top">
                         {isRestricted ? (
                           <Button disabled variant="ghost" size="sm" className="h-8 rounded-lg text-xs font-bold text-muted-foreground opacity-50 cursor-not-allowed">
                             Reservado
@@ -310,14 +369,14 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
           <div className="flex gap-1">
             {data.currentPage > 1 && (
               <Button asChild variant="outline" size="sm" className="rounded-xl text-xs">
-                <Link href={`/cases?page=${data.currentPage - 1}${q ? `&q=${q}` : ""}${area ? `&area=${area}` : ""}${status ? `&status=${status}` : ""}${priority ? `&priority=${priority}` : ""}`}>
+                <Link href={pageHref(data.currentPage - 1)}>
                   Anterior
                 </Link>
               </Button>
             )}
             {data.currentPage < data.totalPages && (
               <Button asChild variant="outline" size="sm" className="rounded-xl text-xs">
-                <Link href={`/cases?page=${data.currentPage + 1}${q ? `&q=${q}` : ""}${area ? `&area=${area}` : ""}${status ? `&status=${status}` : ""}${priority ? `&priority=${priority}` : ""}`}>
+                <Link href={pageHref(data.currentPage + 1)}>
                   Siguiente
                 </Link>
               </Button>

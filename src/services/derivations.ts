@@ -117,7 +117,8 @@ export async function respondDerivation(
   if (updated.count === 0) return fail("Esta derivación ya fue respondida.");
 
   const caseData: Prisma.CaseUncheckedUpdateInput = input.accept
-    ? { areaId: derivation.toAreaId, status: "EN_PROCESO" }
+    ? // El área que lo recibe elige a su profesional.
+      { areaId: derivation.toAreaId, status: "EN_PROCESO", assignedToId: null, assignedAt: null }
     : { status: rejectedStatus(derivation.previousStatus) };
   await prisma.case.update({ where: { id: derivation.caseId }, data: caseData });
 
