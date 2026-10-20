@@ -617,7 +617,7 @@ export async function deliverStormItemsAction(
         await tx.supplyRequest.create({ data: { supplyId: id, quantity: q, userId, status: "ENTREGADO" } });
       }
 
-      await tx.stormDelivery.create({
+      const delivery = await tx.stormDelivery.create({
         data: {
           recordId,
           colchones: qty.COLCHON,
@@ -637,7 +637,7 @@ export async function deliverStormItemsAction(
       const estado = complete ? "ENTREGADO" : "ENTREGA_PARCIAL";
       await tx.stormVictimRecord.update({ where: { id: recordId }, data: { estado }, omit });
 
-      return { estado, caseId: record.caseId, personId: record.personId, nombre: record.nombreApellido, otrosNames };
+      return { estado, caseId: record.caseId, personId: record.personId, nombre: record.nombreApellido, otrosNames, deliveryId: delivery.id };
     });
 
     const summary = [
@@ -672,7 +672,7 @@ export async function deliverStormItemsAction(
     revalidatePath("/admin/emergency");
     revalidatePath("/admin/stock");
     revalidatePath("/cases");
-    return { success: true, estado: result.estado, summary };
+    return { success: true, estado: result.estado, summary, deliveryId: result.deliveryId };
   } catch (err) {
     if (err instanceof DeliveryError) {
       return { success: false, error: `No se pudo registrar la entrega: ${err.message.charAt(0).toLowerCase()}${err.message.slice(1)}.` };

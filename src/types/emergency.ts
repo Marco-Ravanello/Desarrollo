@@ -65,6 +65,20 @@ export interface EmergencyExtraItem {
   unit: string;
 }
 
+/** Una entrega registrada, para la lista de entregas con su constancia. */
+export interface StormDeliveryListItem {
+  id: string;
+  /** Número que figura en la constancia impresa. */
+  number: string;
+  date: string;
+  nombre: string;
+  dni: string | null;
+  barrio: string | null;
+  domicilio: string;
+  summary: string;
+  deliveredBy: string;
+}
+
 export interface EmergencyOperatorInfo {
   userId: string;
   name: string;
@@ -87,6 +101,8 @@ export interface EmergencyOperationsData {
   /** Insumos agregados que se pueden pedir en las fichas (sin stock: lo ve también el relevador). */
   extraItems: EmergencyExtraItem[];
   records: StormVictimItem[];
+  /** Últimas entregas registradas (no las ve el relevador). */
+  deliveries: StormDeliveryListItem[];
   metrics: {
     totalVictims: number;
     totalChildren: number;

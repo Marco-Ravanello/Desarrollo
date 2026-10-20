@@ -1,8 +1,9 @@
 import { prisma } from "@/lib/prisma";
 import { normalizeDni } from "@/lib/padron-import";
-import { canEditSocialRecords, canManageEmergencyStock, isEmergencySurveyor } from "@/lib/permissions";
+import { canEditSocialRecords, canManageEmergencyStock, canViewStormDeliveries, isEmergencySurveyor } from "@/lib/permissions";
 import { isDeliveryTableReady, stormRecordOmit } from "@/services/emergency-db-status";
 import { getCategoryLinks, getEmergencyExtraItems } from "@/services/emergency-stock-links";
+import { getRecentDeliveries } from "@/services/storm-receipts";
 import { EMERGENCY_CATEGORIES, EmergencyCategoryKey, cleanItemQuantities, findCategorySupply, pendingByCategory, pendingExtras } from "@/lib/emergency-categories";
 
 export { EMERGENCY_CATEGORIES, findCategorySupply, pendingByCategory };
@@ -404,10 +405,11 @@ export async function getEmergencyOperationsData(sessionUser: any): Promise<Emer
   const surveyor = isEmergencySurveyor(sessionUser?.role);
 
   // El relevador no ve el stock del depósito, solo lo que relevó.
-  const [stock, records, extraItems] = await Promise.all([
+  const [stock, records, extraItems, deliveries] = await Promise.all([
     surveyor ? [] : getEmergencyStock(),
     surveyor ? (sessionUser?.id ? getStormVictimRecordsByUser(sessionUser.id) : []) : getStormVictimRecords(),
     getEmergencyExtraItemOptions(),
+    canViewStormDeliveries(sessionUser?.role) ? getRecentDeliveries().catch(() => []) : [],
   ]);
 
   const totalVictims = records.length;
@@ -429,6 +431,7 @@ export async function getEmergencyOperationsData(sessionUser: any): Promise<Emer
     stock,
     extraItems,
     records,
+    deliveries,
     metrics: {
       totalVictims,
       totalChildren,

@@ -149,6 +149,10 @@ export function FichaHistorialView({ historial }: { historial: FichaHistorial })
                           <b>{fecha(e.fecha)}:</b> recibió {e.elementos}
                           <span className="text-muted-foreground"> · entregó {e.entregadoPor}</span>
                           {e.observaciones ? <span className="text-muted-foreground"> · {e.observaciones}</span> : null}
+                          {" · "}
+                          <Link href={`/admin/emergency/constancia/${e.id}`} target="_blank" className="font-semibold text-primary hover:underline">
+                            Ver constancia
+                          </Link>
                         </span>
                       </li>
                     ))}

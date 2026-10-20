@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { PackageCheck } from "lucide-react";
+import Link from "next/link";
+import { CheckCircle2, PackageCheck, Printer } from "lucide-react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -32,6 +33,8 @@ export function StormDeliveryDialog({ record, stock, onOpenChange, onDelivered }
   const [otros, setOtros] = useState<Record<string, number>>({});
   const [observaciones, setObservaciones] = useState("");
   const [saving, setSaving] = useState(false);
+  // Entrega recién registrada: se ofrece imprimir la constancia para que firme quien recibe.
+  const [done, setDone] = useState<{ deliveryId: string; summary: string; complete: boolean } | null>(null);
 
   const available = (key: EmergencyCategoryKey) => stock.find((s) => s.category === key)?.availableStock ?? 0;
   const extraStock = (id: string) => stock.find((s) => s.id === id);
@@ -52,6 +55,7 @@ export function StormDeliveryDialog({ record, stock, onOpenChange, onDelivered }
       )
     );
     setObservaciones("");
+    setDone(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [record]);
 
@@ -91,17 +95,45 @@ export function StormDeliveryDialog({ record, stock, onOpenChange, onDelivered }
     const res = await deliverStormItemsAction(record.id, quantities, observaciones, otros);
     setSaving(false);
     if (res.success) {
-      toast.success(
-        res.estado === "ENTREGADO"
-          ? `Entrega registrada (${res.summary}). La ficha quedó completa.`
-          : `Entrega registrada (${res.summary}). Queda pendiente el resto.`
-      );
-      onOpenChange(false);
+      setDone({ deliveryId: res.deliveryId!, summary: res.summary!, complete: res.estado === "ENTREGADO" });
       onDelivered();
     } else {
       toast.error(res.error || "No se pudo registrar la entrega");
     }
   };
+
+  if (done) {
+    return (
+      <Dialog open={Boolean(record)} onOpenChange={onOpenChange}>
+        <DialogContent className="w-[calc(100vw-1.5rem)] max-w-md rounded-2xl p-4 sm:p-6">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-lg">
+              <CheckCircle2 className="h-5 w-5 text-emerald-600" /> Entrega registrada
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2 text-sm">
+            <p>
+              <span className="font-bold">{record.nombreApellido}</span> recibió {done.summary}.
+            </p>
+            <p className="text-muted-foreground">
+              {done.complete ? "La ficha quedó completa." : "Queda pendiente el resto de lo pedido."} Imprimí la constancia para que firme quien
+              recibe.
+            </p>
+          </div>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => onOpenChange(false)} className="rounded-xl text-xs font-bold">
+              Cerrar
+            </Button>
+            <Button asChild className="rounded-xl text-xs font-bold">
+              <Link href={`/admin/emergency/constancia/${done.deliveryId}`} target="_blank">
+                <Printer className="mr-2 h-4 w-4" /> Imprimir constancia
+              </Link>
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   return (
     <Dialog open={Boolean(record)} onOpenChange={onOpenChange}>

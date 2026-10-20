@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { StormVictimItem, SearchPersonSuggestion, EmergencyExtraItem } from "@/types/emergency";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
@@ -15,7 +15,7 @@ import {
   deleteStormVictimAction
 } from "@/app/(dashboard)/admin/actions/emergency-actions";
 import { saveFichaOrQueue } from "@/lib/emergency-offline";
-import { STORM_BARRIOS, matchStormBarrio } from "@/lib/storm-barrios";
+import { SIN_BARRIO, STORM_BARRIOS, matchStormBarrio, stormBarrioLabel } from "@/lib/storm-barrios";
 
 interface StormSheetTableProps {
   records: StormVictimItem[];
@@ -47,6 +47,7 @@ export function StormSheetTable({
   const extraNames = new Map(extraItems.map((i) => [i.id, i.name]));
   const [searchTerm, setSearchTerm] = useState("");
   const [priorityFilter, setPriorityFilter] = useState<string>("ALL");
+  const [barrioFilter, setBarrioFilter] = useState<string>("ALL");
 
   // State for fast-add row at the bottom
   const [fastNombre, setFastNombre] = useState("");
@@ -171,6 +172,16 @@ export function StormSheetTable({
     }
   };
 
+  // Barrios que aparecen en las fichas, en el orden de la lista y con cuántas fichas tiene cada uno.
+  const barrioOptions = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const r of records) counts.set(stormBarrioLabel(r.barrio), (counts.get(stormBarrioLabel(r.barrio)) || 0) + 1);
+    const order = (b: string) => (b === SIN_BARRIO ? 1000 : (STORM_BARRIOS as readonly string[]).indexOf(b) === -1 ? 500 : (STORM_BARRIOS as readonly string[]).indexOf(b));
+    return Array.from(counts.entries())
+      .map(([barrio, n]) => ({ barrio, n }))
+      .sort((a, b) => order(a.barrio) - order(b.barrio) || a.barrio.localeCompare(b.barrio, "es"));
+  }, [records]);
+
   const filteredRecords = records.filter((r) => {
     const matchesSearch =
       !searchTerm ||
@@ -179,8 +190,9 @@ export function StormSheetTable({
       (r.domicilio || "").toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesPriority = priorityFilter === "ALL" || r.prioridad === priorityFilter;
+    const matchesBarrio = barrioFilter === "ALL" || stormBarrioLabel(r.barrio) === barrioFilter;
 
-    return matchesSearch && matchesPriority;
+    return matchesSearch && matchesPriority && matchesBarrio;
   });
 
   return (
@@ -199,6 +211,19 @@ export function StormSheetTable({
 
         <div className="flex items-center gap-2 w-full sm:w-auto">
           <Filter className="h-4 w-4 text-muted-foreground shrink-0" />
+          <select
+            value={barrioFilter}
+            onChange={(e) => setBarrioFilter(e.target.value)}
+            aria-label="Filtrar por barrio"
+            className="h-9 max-w-[14rem] rounded-xl bg-background border border-border text-xs px-3 font-bold"
+          >
+            <option value="ALL">Todos los barrios</option>
+            {barrioOptions.map((o) => (
+              <option key={o.barrio} value={o.barrio}>
+                {o.barrio} ({o.n})
+              </option>
+            ))}
+          </select>
           <select
             value={priorityFilter}
             onChange={(e) => setPriorityFilter(e.target.value)}

@@ -357,7 +357,7 @@ export function EmergencyView({ initialData, deniedAccess }: EmergencyViewProps)
       {/* Resumen para la conducción y entregas pendientes */}
       {activeTab === "summary" && !surveyor && (
         <div className="animate-in fade-in duration-300">
-          <StormSummaryTab records={records} stock={stock} onDeliver={viewer.canDeliver ? setDeliveryRecord : undefined} />
+          <StormSummaryTab records={records} stock={stock} deliveries={initialData.deliveries} onDeliver={viewer.canDeliver ? setDeliveryRecord : undefined} />
         </div>
       )}
 
