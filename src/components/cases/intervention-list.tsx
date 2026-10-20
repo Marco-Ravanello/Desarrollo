@@ -1,26 +1,23 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { History, Loader2, Pencil, User } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { EmptyMessage } from "@/components/ui/empty-message";
 import { INTERVENTION_TYPES, interventionTypeLabel } from "@/lib/intervention-types";
 import { editCaseInterventionAction } from "@/app/(dashboard)/cases/actions/case-actions";
 import type { InterventionRow } from "@/services/interventions";
 
-const fechaHora = (iso: string) => {
+export const fechaHora = (iso: string) => {
   const d = new Date(iso);
   return {
     fecha: d.toLocaleDateString("es-AR"),
     hora: d.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" }),
   };
 };
-
-const NO_TYPE = "SIN_TIPO";
 
 function EditForm({ row, onDone }: { row: InterventionRow; onDone: () => void }) {
   const router = useRouter();
@@ -76,7 +73,7 @@ function EditForm({ row, onDone }: { row: InterventionRow; onDone: () => void })
   );
 }
 
-function InterventionItem({ row }: { row: InterventionRow }) {
+export function InterventionItem({ row }: { row: InterventionRow }) {
   const [editing, setEditing] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const { fecha, hora } = fechaHora(row.date);
@@ -140,49 +137,6 @@ function InterventionItem({ row }: { row: InterventionRow }) {
           </ul>
         )}
       </div>
-    </div>
-  );
-}
-
-export function InterventionList({ rows }: { rows: InterventionRow[] }) {
-  const [filter, setFilter] = useState<string>("TODAS");
-  const counts = useMemo(() => {
-    const c = new Map<string, number>();
-    for (const r of rows) c.set(r.type ?? NO_TYPE, (c.get(r.type ?? NO_TYPE) ?? 0) + 1);
-    return c;
-  }, [rows]);
-  const options = [
-    ...INTERVENTION_TYPES.filter((t) => counts.has(t.value)).map((t) => ({ value: t.value as string, label: t.label })),
-    ...(counts.has(NO_TYPE) ? [{ value: NO_TYPE, label: "Sin tipo" }] : []),
-  ];
-  const visible = filter === "TODAS" ? rows : rows.filter((r) => (r.type ?? NO_TYPE) === filter);
-
-  if (rows.length === 0) {
-    return <EmptyMessage title="No hay intervenciones registradas en este expediente." className="rounded-2xl border border-dashed border-border/60" />;
-  }
-
-  return (
-    <div className="space-y-3">
-      {options.length > 1 && (
-        <div className="flex flex-wrap gap-1.5" aria-label="Filtrar por tipo">
-          {[{ value: "TODAS", label: "Todas" }, ...options].map((o) => (
-            <button
-              key={o.value}
-              type="button"
-              aria-pressed={filter === o.value}
-              onClick={() => setFilter(o.value)}
-              className={`rounded-full border px-3 py-1 text-xs font-semibold transition-colors ${
-                filter === o.value ? "border-foreground bg-foreground text-background" : "border-border/60 text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              {o.label} ({o.value === "TODAS" ? rows.length : counts.get(o.value)})
-            </button>
-          ))}
-        </div>
-      )}
-      {visible.map((row) => (
-        <InterventionItem key={row.id} row={row} />
-      ))}
     </div>
   );
 }

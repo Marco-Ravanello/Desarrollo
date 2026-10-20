@@ -54,3 +54,10 @@ export function matchStormBarrio(value: string | null | undefined): string | nul
   if (!k) return null;
   return STORM_BARRIOS.find((b) => key(b) === k) ?? null;
 }
+
+export const SIN_BARRIO = "Sin barrio";
+
+/** Nombre con el que se agrupa una ficha por barrio: el de la lista, el texto viejo tal cual, o "Sin barrio". */
+export function stormBarrioLabel(value: string | null | undefined): string {
+  return matchStormBarrio(value) ?? ((value || "").trim() || SIN_BARRIO);
+}

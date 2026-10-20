@@ -123,7 +123,8 @@ export function PrintFooter() {
   }, []);
 
   return (
-    <div className="hidden print:flex flex-col w-full mt-12 pt-6 border-t-2 border-slate-900 text-slate-900 break-inside-avoid">
+    // print-default-footer: una página con sus propias firmas (por ejemplo, una constancia) puede ocultarlo.
+    <div className="print-default-footer hidden print:flex flex-col w-full mt-12 pt-6 border-t-2 border-slate-900 text-slate-900 break-inside-avoid">
       <div className="grid grid-cols-2 gap-12 pt-8 pb-4">
         <div className="text-center space-y-1">
           <div className="border-t border-slate-400 w-48 mx-auto mb-1" />

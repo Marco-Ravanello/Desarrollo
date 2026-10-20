@@ -94,6 +94,11 @@ export function canManageEmergencyStock(role?: Role | string | null): boolean {
   return canEditSocialRecords(role) && !isEmergencySurveyor(role);
 }
 
+/** Ver las entregas de emergencia y sus constancias: quien maneja el stock y Auditoría (no el relevador). */
+export function canViewStormDeliveries(role?: Role | string | null): boolean {
+  return canManageEmergencyStock(role) || role === "AUDITOR";
+}
+
 /** Auditoría consulta pero no carga ni modifica datos sociales. */
 export function canEditSocialRecords(role?: Role | string | null): boolean {
   return Boolean(role) && role !== "AUDITOR";

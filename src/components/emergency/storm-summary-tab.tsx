@@ -2,12 +2,14 @@
 
 import { useMemo } from "react";
 import * as XLSX from "xlsx";
-import { Download, PackageCheck } from "lucide-react";
+import Link from "next/link";
+import { Download, FileCheck2, PackageCheck } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { EmergencyStockItem, StormVictimItem } from "@/types/emergency";
+import { EmergencyStockItem, StormDeliveryListItem, StormVictimItem } from "@/types/emergency";
+import { stormBarrioLabel } from "@/lib/storm-barrios";
 import {
   EMERGENCY_CATEGORIES,
   deliveredByCategory,
@@ -24,6 +26,8 @@ interface StormSummaryTabProps {
   records: StormVictimItem[];
   stock: EmergencyStockItem[];
   onDeliver?: (record: StormVictimItem) => void;
+  /** Últimas entregas, con su constancia para imprimir. */
+  deliveries?: StormDeliveryListItem[];
 }
 
 const PRIORITY_ORDER: Record<string, number> = { ALTA: 0, MEDIA: 1, BAJA: 2 };
@@ -38,10 +42,57 @@ function missingText(r: StormVictimItem, extraNames: Map<string, string>) {
   ].join(", ");
 }
 
+const fechaHora = (iso: string) =>
+  new Date(iso).toLocaleString("es-AR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
+
+/** Barras por barrio: familias que esperan entrega y familias con todo entregado. */
+function BarrioChart({ rows }: { rows: { barrio: string; esperan: number; completas: number; falta: number }[] }) {
+  const visible = rows.filter((r) => r.esperan + r.completas > 0);
+  const max = Math.max(1, ...visible.map((r) => r.esperan + r.completas));
+  if (visible.length === 0) return null;
+  return (
+    <section className="space-y-3 rounded-2xl border border-border/60 bg-card p-4">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h4 className="text-xs font-bold uppercase text-muted-foreground">Falta entregar por barrio</h4>
+        <div className="flex items-center gap-3 text-[11px] font-semibold text-muted-foreground">
+          <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-amber-500" /> Esperan entrega</span>
+          <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-emerald-600" /> Entregadas completas</span>
+        </div>
+      </div>
+      <ul className="space-y-2" aria-label="Familias por barrio">
+        {visible.map((r) => (
+          <li key={r.barrio} className="grid grid-cols-[minmax(7rem,10rem)_minmax(0,1fr)] items-center gap-3 text-xs sm:grid-cols-[12rem_minmax(0,1fr)_9rem]">
+            <span className="truncate font-semibold text-foreground" title={r.barrio}>{r.barrio}</span>
+            <div className="flex h-4 gap-[2px]" role="img" aria-label={`${r.barrio}: ${r.esperan} esperan entrega, ${r.completas} entregadas completas`}>
+              {r.esperan > 0 && (
+                <div
+                  className="h-full rounded-[4px] bg-amber-500"
+                  style={{ width: `${(r.esperan / max) * 100}%` }}
+                  title={`${r.esperan} ${r.esperan === 1 ? "familia espera" : "familias esperan"} entrega (${r.falta} elementos)`}
+                />
+              )}
+              {r.completas > 0 && (
+                <div
+                  className="h-full rounded-[4px] bg-emerald-600"
+                  style={{ width: `${(r.completas / max) * 100}%` }}
+                  title={`${r.completas} ${r.completas === 1 ? "familia" : "familias"} con todo entregado`}
+                />
+              )}
+            </div>
+            <span className="col-start-2 text-[11px] text-muted-foreground sm:col-start-auto sm:text-right">
+              <b className="text-foreground">{r.esperan}</b> esperan · {r.completas} completas
+            </span>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
 const pendingTotal = (r: StormVictimItem) => sum(Object.values(pendingByCategory(r))) + sum(Object.values(pendingExtras(r)));
 
 /** Resumen de la emergencia para la conducción: qué se pidió, qué se entregó y qué falta. */
-export function StormSummaryTab({ records, stock, onDeliver }: StormSummaryTabProps) {
+export function StormSummaryTab({ records, stock, onDeliver, deliveries = [] }: StormSummaryTabProps) {
   const extraNames = useMemo(() => new Map(stock.filter((s) => s.category === "ADICIONAL").map((s) => [s.id, s.name])), [stock]);
 
   const byItem = useMemo(() => {
@@ -68,7 +119,7 @@ export function StormSummaryTab({ records, stock, onDeliver }: StormSummaryTabPr
   const byBarrio = useMemo(() => {
     const map = new Map<string, StormVictimItem[]>();
     for (const r of records) {
-      const barrio = (r.barrio || "").trim() || "Sin barrio";
+      const barrio = stormBarrioLabel(r.barrio);
       map.set(barrio, [...(map.get(barrio) || []), r]);
     }
     return Array.from(map.entries())
@@ -78,6 +129,7 @@ export function StormSummaryTab({ records, stock, onDeliver }: StormSummaryTabPr
         alta: rs.filter((r) => r.prioridad === "ALTA").length,
         ninos: sum(rs.map(children)),
         falta: sum(rs.map(pendingTotal)),
+        esperan: rs.filter((r) => ["PENDIENTE", "PARCIAL"].includes(deliveryStatus(r))).length,
         completas: rs.filter((r) => deliveryStatus(r) === "ENTREGADO").length,
       }))
       .sort((a, b) => b.falta - a.falta || b.fichas - a.fichas);
@@ -209,6 +261,8 @@ export function StormSummaryTab({ records, stock, onDeliver }: StormSummaryTabPr
         </div>
       </section>
 
+      <BarrioChart rows={byBarrio} />
+
       <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
         <section className="space-y-2">
           <h4 className="text-xs font-bold uppercase text-muted-foreground">Por barrio</h4>
@@ -320,6 +374,53 @@ export function StormSummaryTab({ records, stock, onDeliver }: StormSummaryTabPr
           </Table>
         </div>
       </section>
+
+      {deliveries.length > 0 && (
+        <section className="space-y-2">
+          <h4 className="text-xs font-bold uppercase text-muted-foreground">Entregas realizadas</h4>
+          <div className="rounded-2xl border border-border/60 bg-card overflow-x-auto">
+            <Table className="text-sm">
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Fecha</TableHead>
+                  <TableHead>Familia</TableHead>
+                  <TableHead>Barrio / Domicilio</TableHead>
+                  <TableHead>Se entregó</TableHead>
+                  <TableHead>Entregó</TableHead>
+                  <TableHead className="text-right">Constancia</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {deliveries.map((d) => (
+                  <TableRow key={d.id}>
+                    <TableCell className="text-xs whitespace-nowrap">{fechaHora(d.date)}</TableCell>
+                    <TableCell className="font-semibold uppercase">
+                      {d.nombre}
+                      {d.dni && <span className="block text-[11px] font-normal normal-case text-muted-foreground">DNI {d.dni}</span>}
+                    </TableCell>
+                    <TableCell className="text-xs">
+                      {d.barrio && <span className="font-bold">{d.barrio} · </span>}
+                      {d.domicilio}
+                    </TableCell>
+                    <TableCell className="text-xs">{d.summary}</TableCell>
+                    <TableCell className="text-xs">{d.deliveredBy}</TableCell>
+                    <TableCell className="text-right">
+                      <Button size="sm" variant="outline" asChild className="h-8 rounded-lg text-xs font-bold">
+                        <Link href={`/admin/emergency/constancia/${d.id}`} target="_blank">
+                          <FileCheck2 className="mr-1 h-3.5 w-3.5" /> Constancia
+                        </Link>
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+          {deliveries.length >= 100 && (
+            <p className="text-[11px] text-muted-foreground">Se muestran las últimas 100 entregas.</p>
+          )}
+        </section>
+      )}
     </div>
   );
 }

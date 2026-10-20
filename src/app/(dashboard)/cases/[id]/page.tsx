@@ -3,7 +3,8 @@ export const dynamic = "force-dynamic";
 import { getAreas, getCaseById } from "@/services/cases";
 import { canDeriveCases, canRespondDerivation, getCaseDerivations, hasPendingDerivationFor } from "@/services/derivations";
 import { DerivationCard, DeriveCaseButton } from "@/components/cases/derivations";
-import { InterventionList } from "@/components/cases/intervention-list";
+import { CaseTimeline } from "@/components/cases/case-timeline";
+import { getCaseEvents } from "@/services/case-timeline";
 import { getCaseInterventions } from "@/services/interventions";
 import { ensurePersonInPrisma } from "@/services/people";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -69,8 +70,8 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
     getAreas(),
     getCaseInterventions(caseData.id, session.user.id),
   ]);
+  const events = await getCaseEvents({ id: caseData.id, createdAt: caseData.createdAt, areaName }, derivations);
   const pendingDerivation = derivations.find((d) => d.status === "PENDIENTE");
-  const pastDerivations = derivations.filter((d) => d !== pendingDerivation);
   const canDerive = canDeriveCases(session.user) && !isClosed && !pendingDerivation;
   const areaUrl = getAreaDashboardUrl(areaName);
   const areaLabel = getAreaShortName(areaName);
@@ -117,8 +118,8 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
           <Card className="rounded-2xl border border-border/60 shadow-sm bg-card space-y-4 p-6">
             <div className="flex justify-between items-center pb-2 border-b border-border/40">
               <div>
-                <CardTitle className="text-lg font-bold text-foreground">Evolución e Intervenciones</CardTitle>
-                <CardDescription>Registro cronológico de acciones tomadas.</CardDescription>
+                <CardTitle className="text-lg font-bold text-foreground">Historia del expediente</CardTitle>
+                <CardDescription>Intervenciones, derivaciones, apertura y cierre, de lo más nuevo a lo más viejo.</CardDescription>
               </div>
             </div>
 
@@ -127,7 +128,7 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
             )}
 
             <CardContent className="px-0 pt-2">
-              <InterventionList rows={interventions} />
+              <CaseTimeline interventions={interventions} events={events} />
             </CardContent>
           </Card>
         </div>
@@ -157,7 +158,7 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
             </CardContent>
           </Card>
 
-          {(canDerive || pastDerivations.length > 0) && (
+          {canDerive && (
             <Card className="rounded-2xl border border-border/60 shadow-sm bg-card">
               <CardHeader>
                 <CardTitle className="text-lg font-bold text-foreground flex items-center gap-2">
@@ -165,10 +166,8 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                {canDerive && <DeriveCaseButton caseId={caseData.id} areas={areas.map((a) => ({ id: a.id, name: a.name }))} currentAreaId={caseData.areaId} />}
-                {pastDerivations.map((d) => (
-                  <DerivationCard key={d.id} d={d} canRespond={false} />
-                ))}
+                <DeriveCaseButton caseId={caseData.id} areas={areas.map((a) => ({ id: a.id, name: a.name }))} currentAreaId={caseData.areaId} />
+                <p className="text-[11px] text-muted-foreground">Las derivaciones anteriores figuran en la historia del expediente.</p>
               </CardContent>
             </Card>
           )}
