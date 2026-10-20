@@ -1,6 +1,7 @@
 import prisma from "@/lib/prisma";
 import { EMERGENCY_CATEGORIES, cleanItemQuantities, extraQuantityText, quantityText } from "@/lib/emergency-categories";
 import { isDeliveryTableReady } from "@/services/emergency-db-status";
+import { receiptNumber } from "@/lib/storm-receipts";
 import type { StormDeliveryListItem } from "@/types/emergency";
 
 // Constancias de entrega de las fichas de tormenta: lo que se le entregó a una
@@ -31,12 +32,6 @@ type DeliveryRow = {
   userName: string;
   createdAt: Date;
 };
-
-/** Número que se imprime en la constancia: fecha de la entrega y el final de su identificador. */
-export function receiptNumber(id: string, date: Date): string {
-  const day = date.toLocaleDateString("en-CA", { timeZone: "America/Argentina/Buenos_Aires" }).replace(/-/g, "");
-  return `ENT-${day}-${id.slice(-6).toUpperCase()}`;
-}
 
 async function supplyNames(deliveries: DeliveryRow[]): Promise<Map<string, string>> {
   const ids = Array.from(new Set(deliveries.flatMap((d) => Object.keys(cleanItemQuantities(d.otrosElementos)))));

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { stormBarrioLabel } from "@/lib/storm-barrios";
-import { receiptNumber } from "@/services/storm-receipts";
+import { receiptNumber } from "@/lib/storm-receipts";
 import { canViewStormDeliveries } from "@/lib/permissions";
 
 describe("barrio para agrupar y filtrar fichas", () => {
