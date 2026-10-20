@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/sheet";
 import { CreateUserForm } from "./create-user-form";
 import { EditUserDialog } from "./edit-user-dialog";
+import { TemporaryPasswordButton } from "./temporary-password-button";
 import { toggleUserStatusAction } from "../actions/user-actions";
 import { toast } from "sonner";
 import { Role } from "@prisma/client";
@@ -48,13 +49,16 @@ interface UsersManagementViewProps {
   areas: AreaItem[];
   currentUserId: string;
   autoOpenNew?: boolean;
+  /** Solo el Superadmin crea usuarios y restablece contraseñas de otras personas. */
+  isSuperadmin?: boolean;
 }
 
 export function UsersManagementView({
   users,
   areas,
   currentUserId,
-  autoOpenNew = false
+  autoOpenNew = false,
+  isSuperadmin = false
 }: UsersManagementViewProps) {
   const [isCreateOpen, setIsCreateOpen] = useState(Boolean(autoOpenNew));
   const [searchQuery, setSearchQuery] = useState("");
@@ -152,10 +156,15 @@ export function UsersManagementView({
     <div className="space-y-6 animate-in fade-in duration-500 pb-20">
       <PageHeader
         title="Gestión de Usuarios y Personal"
-        description="Administración de agentes, reasignación de áreas municipales, roles y conmutador de estados."
+        description={
+          isSuperadmin
+            ? "Administración de agentes, reasignación de áreas municipales, roles y conmutador de estados."
+            : "Reasignación de áreas, roles y estado de las cuentas. Crear usuarios y restablecer contraseñas lo hace el Superadmin."
+        }
         icon={UserCog}
         badge="Personal Tres de Febrero"
         actions={
+          isSuperadmin && (
           <Sheet open={isCreateOpen} onOpenChange={setIsCreateOpen}>
             <SheetTrigger asChild>
               <Button className="rounded-2xl h-11 px-5 font-bold text-xs uppercase tracking-wider bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20 gap-2 font-heading">
@@ -173,6 +182,7 @@ export function UsersManagementView({
               <CreateUserForm areas={areas} onSuccess={() => setIsCreateOpen(false)} />
             </SheetContent>
           </Sheet>
+          )
         }
       />
 
@@ -343,6 +353,10 @@ export function UsersManagementView({
                         </button>
                       </td>
                       <td className="px-4 py-3.5 text-right">
+                        <div className="flex flex-wrap items-center justify-end gap-1">
+                        {isSuperadmin && !isSelf && (
+                          <TemporaryPasswordButton userId={u.id} userName={u.name || u.email || "esta persona"} isActive={u.isActive} />
+                        )}
                         <Button
                           variant="ghost"
                           size="sm"
@@ -355,6 +369,7 @@ export function UsersManagementView({
                           <Edit2 className="h-3.5 w-3.5" />
                           <span>Editar</span>
                         </Button>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -372,9 +387,12 @@ export function UsersManagementView({
       </Card>
 
       <EditUserDialog
+        // Se rearma con cada usuario: el formulario toma sus datos al abrirse.
+        key={editingUser?.id ?? "ninguno"}
         user={editingUser}
         areas={areas}
         currentUserId={currentUserId}
+        isSuperadmin={isSuperadmin}
         open={isEditDialogOpen}
         onOpenChange={setIsEditDialogOpen}
       />

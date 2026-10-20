@@ -8,8 +8,12 @@ export const LOGIN_LOCK_MS = 15 * 60 * 1000;
 
 export async function isAccountLocked(userId: string) {
   const windowStart = new Date(Date.now() - LOGIN_LOCK_MS);
+  // Un ingreso correcto o una clave temporal nueva (la registra el Superadmin, sobre la cuenta) reinician la cuenta.
   const lastLogin = await prisma.auditLog.findFirst({
-    where: { userId, action: "LOGIN", createdAt: { gt: windowStart } },
+    where: {
+      createdAt: { gt: windowStart },
+      OR: [{ userId, action: "LOGIN" }, { entity: "User", entityId: userId, action: "PASSWORD_RESET" }],
+    },
     orderBy: { createdAt: "desc" },
     select: { createdAt: true },
   });

@@ -1,14 +1,14 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ArrowRightLeft, Check, FolderOpen, Lock, MessageSquareText, User, UserCheck, X, Clock } from "lucide-react";
+import { ArrowRightLeft, Check, FolderOpen, Lock, RotateCcw, MessageSquareText, User, UserCheck, X, Clock } from "lucide-react";
 import { INTERVENTION_TYPES } from "@/lib/intervention-types";
 import type { InterventionRow } from "@/services/interventions";
 import type { CaseEvent } from "@/services/case-timeline";
 import { InterventionItem, fechaHora } from "@/components/cases/intervention-list";
 
 // Historia completa del expediente: intervenciones, derivaciones con su
-// respuesta, apertura y cierre, de lo más nuevo a lo más viejo.
+// respuesta, apertura, cierre y reapertura, de lo más nuevo a lo más viejo.
 
 type Item = { kind: "INTERVENCION"; date: string; row: InterventionRow } | { kind: "EVENTO"; date: string; event: CaseEvent };
 
@@ -27,6 +27,7 @@ function groupOf(item: Item) {
 function eventIcon(e: CaseEvent) {
   if (e.kind === "APERTURA") return { Icon: FolderOpen, className: "bg-blue-500/15 text-blue-600 dark:text-blue-400" };
   if (e.kind === "CIERRE") return { Icon: Lock, className: "bg-muted text-muted-foreground" };
+  if (e.kind === "REAPERTURA") return { Icon: RotateCcw, className: "bg-blue-500/15 text-blue-600 dark:text-blue-400" };
   if (e.kind === "ASIGNACION") return { Icon: UserCheck, className: "bg-teal-500/15 text-teal-700 dark:text-teal-300" };
   if (e.kind === "RESPUESTA")
     return e.outcome === "RECHAZADA"

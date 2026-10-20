@@ -37,6 +37,7 @@ interface EditUserDialogProps {
   user: UserItem | null;
   areas: AreaItem[];
   currentUserId?: string;
+  isSuperadmin?: boolean;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
@@ -80,6 +81,7 @@ export function EditUserDialog({
   user,
   areas,
   currentUserId,
+  isSuperadmin = false,
   open,
   onOpenChange
 }: EditUserDialogProps) {
@@ -89,7 +91,6 @@ export function EditUserDialog({
   const [email, setEmail] = useState(user?.email || "");
   const [role, setRole] = useState<Role>(user?.role || "OPERATIVO");
   const [areaId, setAreaId] = useState<string>(user?.areaId || "");
-  const [password, setPassword] = useState("");
   const [isActive, setIsActive] = useState<boolean>(user?.isActive ?? true);
 
   const isSelf = currentUserId === user?.id;
@@ -110,7 +111,6 @@ export function EditUserDialog({
         email: email.trim(),
         role,
         areaId: areaId || null,
-        password: password.trim() || undefined,
         isActive
       });
 
@@ -132,7 +132,7 @@ export function EditUserDialog({
             Editar Perfil de Agente Municipal
           </DialogTitle>
           <DialogDescription className="text-xs text-muted-foreground">
-            Modifique los permisos institucionales, reasigne áreas o restablezca contraseñas.
+            Modifique los permisos institucionales, reasigne áreas o cambie el estado de la cuenta.
           </DialogDescription>
         </DialogHeader>
 
@@ -200,19 +200,15 @@ export function EditUserDialog({
             </p>
           </div>
 
-          <div className="space-y-1.5 pt-1">
-            <Label className="text-xs font-bold text-foreground flex items-center justify-between">
-              <span>Restablecer Contraseña Temporal</span>
-              <span className="text-[10px] text-muted-foreground font-normal">(Dejar en blanco para conservar)</span>
-            </Label>
-            <Input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Nueva clave opcional (mínimo 6 caracteres)..."
-              className="h-10 rounded-xl bg-muted/30 border-border/60 text-xs"
-            />
-            <p className="text-[10px] text-muted-foreground">La persona va a tener que cambiarla la próxima vez que ingrese.</p>
+          <div className="p-3 rounded-2xl bg-muted/30 border border-border/40 flex items-center gap-2 text-[11px] text-muted-foreground">
+            <Lock className="h-3.5 w-3.5 shrink-0" />
+            <span>
+              {isSuperadmin && !isSelf
+                ? "Para darle una clave nueva, usá “Clave temporal” en la lista."
+                : isSelf
+                  ? "Tu contraseña la cambiás en “Cambiar mi contraseña”, en el menú de tu usuario."
+                  : "Las contraseñas de otras personas las restablece el Superadmin."}
+            </span>
           </div>
 
           <div className="p-3.5 rounded-2xl bg-muted/30 border border-border/40 flex items-center justify-between gap-3">

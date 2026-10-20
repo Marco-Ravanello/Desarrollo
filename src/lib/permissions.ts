@@ -145,3 +145,8 @@ export function canAccessPath(role: Role | string | null | undefined, pathname: 
   if (!rule) return true;
   return Boolean(role) && rule.allowed(role as Role);
 }
+
+/** Crear usuarios y restablecer contraseñas de otras personas: solo el Superadmin. */
+export function canCreateUsersAndResetPasswords(role?: Role | string | null): boolean {
+  return role === "SUPERADMIN";
+}

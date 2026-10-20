@@ -16,7 +16,7 @@ describe("cambiar la propia contraseña", () => {
   let admin: Awaited<ReturnType<typeof createUser>>;
 
   beforeAll(async () => {
-    admin = await createUser("ADMIN_GENERAL");
+    admin = await createUser("SUPERADMIN");
   });
 
   it("un usuario nuevo tiene que cambiar la contraseña que le puso el administrador", async () => {
@@ -43,13 +43,13 @@ describe("cambiar la propia contraseña", () => {
     expect(await prisma.auditLog.count({ where: { userId: user.id, action: "PASSWORD_CHANGED" } })).toBe(1);
   });
 
-  it("si el administrador le pone otra contraseña, vuelve a pedir el cambio; si se la cambia a sí mismo, no", async () => {
+  it("si el Superadmin le pone otra contraseña, vuelve a pedir el cambio; si se la cambia a sí mismo, no", async () => {
     const user = await prisma.user.findUniqueOrThrow({ where: { email: "nueva@prueba.test" } });
     loginAs(admin);
     await updateUserAction({ id: user.id, name: "Nueva", email: user.email!, role: "OPERATIVO", password: "reseteada1" });
     expect((await prisma.user.findUniqueOrThrow({ where: { id: user.id } })).mustChangePassword).toBe(true);
 
-    await updateUserAction({ id: admin.id, name: "Admin", email: admin.email!, role: "ADMIN_GENERAL", password: "propia123" });
+    await updateUserAction({ id: admin.id, name: "Admin", email: admin.email!, role: "SUPERADMIN", password: "propia123" });
     expect((await prisma.user.findUniqueOrThrow({ where: { id: admin.id } })).mustChangePassword).toBe(false);
   });
 

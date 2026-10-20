@@ -5,7 +5,9 @@ import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
 import bcrypt from "bcryptjs";
 import { Role, User } from "@prisma/client";
-import { hasPermission, PERMISSIONS } from "@/lib/permissions";
+import { canCreateUsersAndResetPasswords, hasPermission, PERMISSIONS } from "@/lib/permissions";
+import { newPasswordProblem } from "@/lib/password-rules";
+import { generateTemporaryPassword } from "@/lib/temporary-password";
 import { ActionResult } from "@/types/actions";
 import { actionErrorMessage } from "@/lib/action-error";
 import { isEmergencyDbUpdated, EMERGENCY_DB_PENDING_MESSAGE } from "@/services/emergency-db-status";
@@ -34,8 +36,8 @@ function canModifyUser(actorRole: string | null | undefined, targetUserRole: Rol
 
 export async function createUserAction(formData: FormData): Promise<ActionResult<User>> {
   const session = await auth();
-  if (!session?.user || !canManageUsers(session.user.role)) {
-    return { success: false, error: "Solo los administradores autorizados pueden crear usuarios" };
+  if (!session?.user || !canCreateUsersAndResetPasswords(session.user.role)) {
+    return { success: false, error: "Solo el Superadmin puede crear usuarios." };
   }
 
   const name = formData.get("name") as string;
@@ -47,6 +49,8 @@ export async function createUserAction(formData: FormData): Promise<ActionResult
   if (!canAssignRole(session.user.role, role)) {
     return { success: false, error: "No tiene permisos para asignar ese rol" };
   }
+  const passwordProblem = newPasswordProblem(password || "");
+  if (passwordProblem) return { success: false, error: `Contraseña temporal: ${passwordProblem}` };
   if (role === Role.RELEVADOR_EMERGENCIA && !(await isEmergencyDbUpdated())) {
     return { success: false, error: EMERGENCY_DB_PENDING_MESSAGE };
   }
@@ -113,6 +117,9 @@ export async function updateUserAction(input: UpdateUserInput): Promise<ActionRe
 
     if (!canModifyUser(session.user.role, existing.role) || !canAssignRole(session.user.role, input.role)) {
       return { success: false, error: "No tiene permisos para asignar ese rol o modificar este usuario" };
+    }
+    if (input.password && !canCreateUsersAndResetPasswords(session.user.role)) {
+      return { success: false, error: "Solo el Superadmin puede cambiar contraseñas desde acá. La tuya la cambiás en “Cambiar mi contraseña”." };
     }
     if (input.role === Role.RELEVADOR_EMERGENCIA && existing.role !== Role.RELEVADOR_EMERGENCIA && !(await isEmergencyDbUpdated())) {
       return { success: false, error: EMERGENCY_DB_PENDING_MESSAGE };
@@ -213,5 +220,46 @@ export async function toggleUserStatusAction(userId: string) {
   } catch (error: any) {
     console.error("Error en toggleUserStatusAction:", error);
     return { success: false, error: actionErrorMessage(error, "No se pudo cambiar el estado del usuario") };
+  }
+}
+
+/**
+ * Genera una clave temporal para otra persona (solo el Superadmin). La clave anterior deja de
+ * andar, la persona la cambia al ingresar y la clave se devuelve una sola vez (no se guarda en ningún lado).
+ */
+export async function resetTemporaryPasswordAction(userId: string): Promise<{ success: true; password: string } | { success: false; error: string }> {
+  const session = await auth();
+  if (!session?.user?.id || !canCreateUsersAndResetPasswords(session.user.role)) {
+    return { success: false, error: "Solo el Superadmin puede restablecer contraseñas." };
+  }
+  if (session.user.id === userId) {
+    return { success: false, error: "Tu propia contraseña la cambiás en “Cambiar mi contraseña”." };
+  }
+
+  try {
+    const target = await prisma.user.findUnique({ where: { id: userId }, select: { id: true, email: true } });
+    if (!target) return { success: false, error: "Usuario no encontrado" };
+
+    const password = generateTemporaryPassword();
+    await prisma.user.update({
+      where: { id: target.id },
+      data: { password: await bcrypt.hash(password, 10), mustChangePassword: true },
+    });
+    // También destraba la cuenta si estaba bloqueada por intentos fallidos (ver login-security).
+    await prisma.auditLog.create({
+      data: {
+        userId: session.user.id,
+        action: "PASSWORD_RESET",
+        entity: "User",
+        entityId: target.id,
+        details: `Clave temporal generada para ${target.email}`,
+      },
+    });
+
+    revalidatePath("/admin/users");
+    return { success: true, password };
+  } catch (error: any) {
+    console.error("Error al generar clave temporal:", error);
+    return { success: false, error: actionErrorMessage(error, "No se pudo generar la clave temporal") };
   }
 }

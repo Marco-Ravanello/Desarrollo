@@ -24,6 +24,8 @@ import { CaseSummaryHeader } from "@/components/cases/case-summary-header";
 import { fechaCorta, summarizeCase } from "@/lib/case-summary";
 import { AssignCaseControl } from "@/components/cases/assign-case";
 import { canAssignCase, canTakeCase, getAssignableUsers } from "@/services/case-assignment";
+import { canCloseOrReopenCase } from "@/lib/case-closing";
+import { CloseReopenCaseButton } from "@/components/cases/close-reopen-case";
 
 export default async function CaseDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
@@ -82,6 +84,8 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
 
   const canAssign = !isClosed && canAssignCase(session.user, caseData.areaId);
   const canTake = !isClosed && canTakeCase(session.user, caseData.areaId);
+  // Mientras hay una derivación sin responder no se cierra (primero la responde el área que la recibe).
+  const canCloseOrReopen = canCloseOrReopenCase(session.user, areaName) && (isClosed || !pendingDerivation);
   const assignOptions = canAssign ? await getAssignableUsers({ areaId: caseData.areaId, areaName }) : [];
   const assignee = caseData.assignedTo;
   const assigneeName = assignee ? assignee.name || assignee.email || "Usuario" : null;
@@ -116,6 +120,7 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
         icon={ClipboardList}
         actions={
           <>
+            {canCloseOrReopen && <CloseReopenCaseButton caseId={caseData.id} mode={isClosed ? "reopen" : "close"} />}
             {canDerive && (
               <DeriveCaseButton
                 caseId={caseData.id}
