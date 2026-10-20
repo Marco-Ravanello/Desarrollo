@@ -17,12 +17,13 @@ import { PageHeader } from "@/components/layout/page-header";
 import { EmptyMessage } from "@/components/ui/empty-message";
 import {
   Search, Users, User, MapPin, Phone,
-  Layers, ArrowRight, Share2, Sparkles, AlertCircle, CheckCircle2,
+  Layers, AlertCircle, CheckCircle2,
   ExternalLink, Network, HeartHandshake, Baby, Home, RefreshCw, BarChart2, FolderOpen
 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { FichaHistorialView, historialCount } from "@/components/people/ficha-historial";
+import { GrupoFamiliarView, grupoFamiliarCount } from "@/components/people/grupo-familiar";
 
 function FichaSocialContent() {
   const searchParams = useSearchParams();
@@ -235,8 +236,8 @@ function FichaSocialContent() {
                     Historial municipal ({historialCount(ficha.historial)})
                   </TabsTrigger>
                   <TabsTrigger value="familia" className="text-xs font-bold gap-1.5">
-                    <Share2 className="h-3.5 w-3.5" />
-                    Árbol de Vínculos Familiares ({ficha.relaciones_familiares?.length || 0})
+                    <Users className="h-3.5 w-3.5" />
+                    Grupo familiar ({ficha.grupo_familiar ? grupoFamiliarCount(ficha.grupo_familiar) : ficha.relaciones_familiares?.length || 0})
                   </TabsTrigger>
                 </TabsList>
               </div>
@@ -325,60 +326,21 @@ function FichaSocialContent() {
               </TabsContent>
 
               <TabsContent value="familia" className="p-6 space-y-4 m-0">
-                <div className="p-4 rounded-2xl bg-primary/5 border border-primary/20 flex items-start gap-3">
-                  <Sparkles className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-                  <div className="text-xs space-y-1">
-                    <p className="font-bold text-foreground">Inferencia Automática de Vínculos Familiares</p>
-                    <p className="text-muted-foreground leading-relaxed">
-                      El motor cruza automáticamente los roles de <b>Titular/Adulto Responsable</b> y <b>Beneficiario Menor</b> en todas las bases (Jardines, Tarjeta Alimentar, Niñez, etc.) para reconstruir el árbol de parentesco sin necesidad de carga manual.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {ficha.relaciones_familiares && ficha.relaciones_familiares.length > 0 ? (
-                    ficha.relaciones_familiares.map((rel, idx) => (
-                      <Card key={idx} className="bg-muted/30 border border-border/40 rounded-2xl p-4 space-y-3 hover:border-primary/40 transition-all">
-                        <div className="flex items-center justify-between">
-                          <div className="h-10 w-10 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-sm">
-                            {rel.nombre_completo.charAt(0)}
-                          </div>
-                          <Badge className="bg-indigo-500/15 text-indigo-400 border border-indigo-500/30 text-[10px] font-bold">
-                            {rel.tipo_relacion}
-                          </Badge>
-                        </div>
-                        <div>
-                          <h4 className="font-bold text-foreground text-sm leading-tight">{rel.nombre_completo}</h4>
-                          <p className="text-xs text-muted-foreground font-mono mt-0.5">DNI: {rel.dni}</p>
-                        </div>
-                        <div className="text-[11px] text-muted-foreground space-y-1 pt-2 border-t border-border/30">
-                          <p>
-                            <span className="font-semibold">Visto en:</span> {rel.programas.join(", ")}
-                          </p>
-                          {rel.telefono && <p>Tel: {rel.telefono}</p>}
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            setSearchTerm(rel.dni);
-                            handleSearch(rel.dni);
-                          }}
-                          className="w-full text-xs font-bold text-primary hover:bg-primary/10 rounded-xl gap-1.5 h-8"
-                        >
-                          <span>Ver Ficha 360° de {rel.nombre_completo.split(" ")[0]}</span>
-                          <ArrowRight className="h-3.5 w-3.5" />
-                        </Button>
-                      </Card>
-                    ))
-                  ) : (
-                    <EmptyMessage
-                      title="No se detectaron vínculos familiares automáticos para este DNI."
-                      icon={Users}
-                      className="col-span-full rounded-2xl border-2 border-dashed border-border/60"
-                    />
-                  )}
-                </div>
+                {ficha.grupo_familiar ? (
+                  <GrupoFamiliarView
+                    grupo={ficha.grupo_familiar}
+                    onOpen={(dni) => {
+                      setSearchTerm(dni);
+                      handleSearch(dni);
+                    }}
+                  />
+                ) : (
+                  <EmptyMessage
+                    title="No se pudo cargar el grupo familiar."
+                    icon={Users}
+                    className="rounded-2xl border-2 border-dashed border-border/60"
+                  />
+                )}
               </TabsContent>
             </Tabs>
           </Card>

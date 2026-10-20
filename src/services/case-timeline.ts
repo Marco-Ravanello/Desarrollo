@@ -2,10 +2,10 @@ import prisma from "@/lib/prisma";
 import type { DerivationRow } from "@/services/derivations";
 
 // Movimientos de un expediente que no son intervenciones (apertura, derivaciones
-// y sus respuestas, cierre), para mostrarlos junto con las intervenciones en
+// y sus respuestas, cambios de profesional a cargo, cierre), para mostrarlos junto con las intervenciones en
 // una sola línea de tiempo.
 
-export type CaseEventKind = "APERTURA" | "CIERRE" | "DERIVACION" | "RESPUESTA";
+export type CaseEventKind = "APERTURA" | "CIERRE" | "DERIVACION" | "RESPUESTA" | "ASIGNACION";
 
 export type CaseEvent = {
   id: string;
@@ -23,9 +23,9 @@ export async function getCaseEvents(
   derivations: DerivationRow[]
 ): Promise<CaseEvent[]> {
   const logs = await prisma.auditLog.findMany({
-    where: { entity: "Case", entityId: caseItem.id, action: { in: ["CREATE_CASE", "CLOSE_CASE"] } },
+    where: { entity: "Case", entityId: caseItem.id, action: { in: ["CREATE_CASE", "CLOSE_CASE", "ASSIGN_CASE"] } },
     orderBy: { createdAt: "asc" },
-    select: { id: true, action: true, userId: true, createdAt: true },
+    select: { id: true, action: true, userId: true, createdAt: true, details: true },
   });
   const userIds = Array.from(new Set(logs.map((l) => l.userId).filter((id): id is string => Boolean(id))));
   const users = userIds.length ? await prisma.user.findMany({ where: { id: { in: userIds } }, select: { id: true, name: true } }) : [];
@@ -80,6 +80,17 @@ export async function getCaseEvents(
       kind: "CIERRE",
       date: l.createdAt.toISOString(),
       title: "Se cerró el expediente",
+      detail: null,
+      author: nameOf(l.userId),
+    });
+  }
+
+  for (const l of logs.filter((l) => l.action === "ASSIGN_CASE")) {
+    events.push({
+      id: `asig-${l.id}`,
+      kind: "ASIGNACION",
+      date: l.createdAt.toISOString(),
+      title: (l.details || "Cambió el profesional a cargo").replace(/\.$/, ""),
       detail: null,
       author: nameOf(l.userId),
     });

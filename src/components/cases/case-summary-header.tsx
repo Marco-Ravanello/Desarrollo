@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { AlertTriangle, CalendarClock, Clock, Landmark, MessageSquareText, User } from "lucide-react";
+import { AlertTriangle, CalendarClock, Clock, Landmark, MessageSquareText, User, UserCheck } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { getCaseStatusConfig } from "@/lib/status-styles";
 import { CASE_PRIORITY_LABEL, CASE_STATUS_LABEL, STALE_DAYS, agoText, daysText, fechaCorta, type CaseSummary } from "@/lib/case-summary";
@@ -57,6 +57,8 @@ export function CaseSummaryHeader({
   lastIntervention,
   pendingTo,
   person,
+  assigneeName,
+  assignmentControl,
 }: {
   status: string;
   priority: string;
@@ -70,6 +72,10 @@ export function CaseSummaryHeader({
   /** Área a la que está derivado, mientras espera respuesta. */
   pendingTo: string | null;
   person: { name: string; dni: string | null; href: string } | null;
+  /** Profesional a cargo (null si no tiene). */
+  assigneeName: string | null;
+  /** Botón para asignar, cambiar o tomar el expediente. */
+  assignmentControl?: React.ReactNode;
 }) {
   const statusStyle = getCaseStatusConfig(status);
 
@@ -99,11 +105,18 @@ export function CaseSummaryHeader({
           {pendingTo && <p className="text-xs text-muted-foreground">Esperando respuesta de {pendingTo}</p>}
         </Tile>
 
-        <Tile label="Área a cargo" icon={Landmark}>
+        <Tile label="A cargo" icon={Landmark}>
           <Link href={areaUrl} title={areaName} className="block truncate text-base font-bold text-foreground hover:underline">
             {areaLabel}
           </Link>
           {areaLabel !== areaName && <p className="truncate text-xs text-muted-foreground" title={areaName}>{areaName}</p>}
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 pt-1">
+            <p className={`flex min-w-0 items-start gap-1 text-xs font-semibold ${assigneeName ? "text-foreground" : "text-muted-foreground"}`}>
+              <UserCheck className="mt-px h-3.5 w-3.5 shrink-0" />
+              <span className="break-words">{assigneeName ? `Profesional: ${assigneeName}` : "Sin profesional a cargo"}</span>
+            </p>
+            {assignmentControl}
+          </div>
         </Tile>
 
         <Tile label={summary.closed ? "Estuvo abierto" : "Abierto hace"} icon={CalendarClock}>

@@ -8,6 +8,7 @@ import { actionErrorMessage } from "@/lib/action-error";
 import { canEditSocialRecords } from "@/lib/permissions";
 import { createDerivation, respondDerivation } from "@/services/derivations";
 import { editIntervention } from "@/services/interventions";
+import { assignCase } from "@/services/case-assignment";
 import { isInterventionType } from "@/lib/intervention-types";
 
 export async function addCaseInterventionAction(caseId: string, description: string, type?: string) {
@@ -243,6 +244,19 @@ export async function respondDerivationAction(derivationId: string, accept: bool
     return result;
   } catch (error: any) {
     return { success: false, error: actionErrorMessage(error, "No se pudo responder la derivación") };
+  }
+}
+
+/** Deja a una persona a cargo del expediente (o lo deja sin profesional, con null). */
+export async function assignCaseAction(caseId: string, assigneeId: string | null) {
+  const session = await auth();
+  if (!session?.user?.id) return { success: false, error: "No tenés permiso para hacer esto o tu sesión expiró. Si sigue pasando, volvé a iniciar sesión." };
+  try {
+    const result = await assignCase(session.user, { caseId, assigneeId: assigneeId || null });
+    if (result.success) revalidateDerivation(caseId);
+    return result;
+  } catch (error: any) {
+    return { success: false, error: actionErrorMessage(error, "No se pudo asignar el expediente") };
   }
 }
 

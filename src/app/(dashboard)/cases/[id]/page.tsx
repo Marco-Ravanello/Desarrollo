@@ -22,6 +22,8 @@ import { getAreaDashboardUrl, getAreaShortName } from "@/lib/area-theme";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CaseSummaryHeader } from "@/components/cases/case-summary-header";
 import { fechaCorta, summarizeCase } from "@/lib/case-summary";
+import { AssignCaseControl } from "@/components/cases/assign-case";
+import { canAssignCase, canTakeCase, getAssignableUsers } from "@/services/case-assignment";
 
 export default async function CaseDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
@@ -77,6 +79,12 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
   const canDerive = canDeriveCases(session.user) && !isClosed && !pendingDerivation;
   const areaUrl = getAreaDashboardUrl(areaName);
   const areaLabel = getAreaShortName(areaName);
+
+  const canAssign = !isClosed && canAssignCase(session.user, caseData.areaId);
+  const canTake = !isClosed && canTakeCase(session.user, caseData.areaId);
+  const assignOptions = canAssign ? await getAssignableUsers({ areaId: caseData.areaId, areaName }) : [];
+  const assignee = caseData.assignedTo;
+  const assigneeName = assignee ? assignee.name || assignee.email || "Usuario" : null;
 
   const lastIntervention = interventions[0] ?? null;
   const lastClose = events.filter((e) => e.kind === "CIERRE").at(-1);
@@ -135,6 +143,20 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
         lastIntervention={lastIntervention}
         pendingTo={pendingDerivation?.toArea ?? null}
         person={person && personName ? { name: personName, dni: person.dni ?? null, href: `/people/${person.dni || person.id}` } : null}
+        assigneeName={assigneeName}
+        assignmentControl={
+          (canAssign || canTake) && (
+            <AssignCaseControl
+              caseId={caseData.id}
+              areaLabel={areaLabel}
+              assigneeId={assignee?.id ?? null}
+              canAssign={canAssign}
+              canTake={canTake}
+              currentUserId={session.user.id!}
+              options={assignOptions}
+            />
+          )
+        }
       />
 
       {pendingDerivation && (
