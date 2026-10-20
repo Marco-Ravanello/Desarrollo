@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,7 +9,8 @@ import { toast } from "sonner";
 import { createUserAction } from "../actions/user-actions";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Role } from "@prisma/client";
-import { UserPlus, Mail, Lock, Shield, Building2, RefreshCw } from "lucide-react";
+import { UserPlus, Mail, Lock, Shield, Building2, RefreshCw, Copy, Dices } from "lucide-react";
+import { generateTemporaryPassword } from "@/lib/temporary-password";
 
 const ROLE_LABELS: Record<Role, string> = {
   SUPERADMIN: "SUPERADMIN - Administración General del Sistema",
@@ -31,6 +32,19 @@ export function CreateUserForm({
 }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [password, setPassword] = useState("");
+
+  // Se genera en el navegador (no en el servidor) para no mostrar la misma clave en dos renders.
+  useEffect(() => setPassword(generateTemporaryPassword()), []);
+
+  const copyPassword = async () => {
+    try {
+      await navigator.clipboard.writeText(password);
+      toast.success("Clave copiada");
+    } catch {
+      toast.error("No se pudo copiar. Seleccionala y copiala a mano.");
+    }
+  };
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -41,6 +55,7 @@ export function CreateUserForm({
     if (res.success) {
       toast.success("Agente municipal registrado con éxito");
       (e.target as HTMLFormElement).reset();
+      setPassword(generateTemporaryPassword());
       if (onSuccess) onSuccess();
       router.refresh();
     } else {
@@ -61,7 +76,7 @@ export function CreateUserForm({
       </CardHeader>
       <CardContent className="p-6">
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4">
             <div className="space-y-1.5">
               <Label htmlFor="name" className="text-xs font-bold text-foreground">Nombre Completo</Label>
               <Input id="name" name="name" required placeholder="Ej: Lic. Bautista Pino" className="h-10 rounded-xl bg-muted/30 border-border/60 text-xs" />
@@ -72,8 +87,27 @@ export function CreateUserForm({
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="password" className="text-xs font-bold text-foreground">Contraseña Temporal</Label>
-              <Input id="password" name="password" type="password" required placeholder="Mínimo 6 caracteres..." className="h-10 rounded-xl bg-muted/30 border-border/60 text-xs" />
-              <p className="text-[10px] text-muted-foreground">La persona la cambia por una propia la primera vez que ingresa.</p>
+              <div className="flex gap-1.5">
+                <Input
+                  id="password"
+                  name="password"
+                  type="text"
+                  required
+                  autoComplete="off"
+                  spellCheck={false}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Mínimo 8, con letras y números"
+                  className="h-10 rounded-xl bg-muted/30 border-border/60 text-xs font-mono"
+                />
+                <Button type="button" variant="outline" size="icon" onClick={() => setPassword(generateTemporaryPassword())} title="Generar otra" aria-label="Generar otra clave" className="h-10 w-10 shrink-0 rounded-xl">
+                  <Dices className="h-4 w-4" />
+                </Button>
+                <Button type="button" variant="outline" size="icon" onClick={copyPassword} disabled={!password} title="Copiar" aria-label="Copiar clave" className="h-10 w-10 shrink-0 rounded-xl">
+                  <Copy className="h-4 w-4" />
+                </Button>
+              </div>
+              <p className="text-[10px] text-muted-foreground">Copiala y pasásela a la persona. La cambia por una propia la primera vez que ingresa.</p>
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="role" className="text-xs font-bold text-foreground">Rol Institucional</Label>
@@ -90,7 +124,7 @@ export function CreateUserForm({
                 ))}
               </select>
             </div>
-            <div className="md:col-span-2 space-y-1.5">
+            <div className="space-y-1.5">
               <Label htmlFor="areaId" className="text-xs font-bold text-foreground">Área Municipal Responsable</Label>
               <select
                 id="areaId"

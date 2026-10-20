@@ -5,7 +5,7 @@ import { getAreas } from "@/services/cases";
 import { UsersManagementView } from "./users-management-view";
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
-import { hasPermission, PERMISSIONS } from "@/lib/permissions";
+import { canCreateUsersAndResetPasswords, hasPermission, PERMISSIONS } from "@/lib/permissions";
 
 export default async function UsersPage({
   searchParams,
@@ -27,7 +27,9 @@ export default async function UsersPage({
   }
 
   const { new: isNew, create } = await searchParams;
-  const autoOpenNew = Boolean(isNew === "true" || isNew === "1" || create === "true" || create === "1");
+  // Crear usuarios y restablecer contraseñas de otras personas: solo el Superadmin.
+  const isSuperadmin = canCreateUsersAndResetPasswords(userRole);
+  const autoOpenNew = isSuperadmin && Boolean(isNew === "true" || isNew === "1" || create === "true" || create === "1");
 
   const [usersRaw, areas] = await Promise.all([
     getUsers(),
@@ -50,6 +52,7 @@ export default async function UsersPage({
       areas={areas as any}
       currentUserId={session.user.id}
       autoOpenNew={autoOpenNew}
+      isSuperadmin={isSuperadmin}
     />
   );
 }

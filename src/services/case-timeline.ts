@@ -1,11 +1,12 @@
 import prisma from "@/lib/prisma";
 import type { DerivationRow } from "@/services/derivations";
+import { reasonFromDetails } from "@/lib/case-closing";
 
 // Movimientos de un expediente que no son intervenciones (apertura, derivaciones
-// y sus respuestas, cambios de profesional a cargo, cierre), para mostrarlos junto con las intervenciones en
+// y sus respuestas, cambios de profesional a cargo, cierre y reapertura), para mostrarlos junto con las intervenciones en
 // una sola línea de tiempo.
 
-export type CaseEventKind = "APERTURA" | "CIERRE" | "DERIVACION" | "RESPUESTA" | "ASIGNACION";
+export type CaseEventKind = "APERTURA" | "CIERRE" | "REAPERTURA" | "DERIVACION" | "RESPUESTA" | "ASIGNACION";
 
 export type CaseEvent = {
   id: string;
@@ -23,7 +24,7 @@ export async function getCaseEvents(
   derivations: DerivationRow[]
 ): Promise<CaseEvent[]> {
   const logs = await prisma.auditLog.findMany({
-    where: { entity: "Case", entityId: caseItem.id, action: { in: ["CREATE_CASE", "CLOSE_CASE", "ASSIGN_CASE"] } },
+    where: { entity: "Case", entityId: caseItem.id, action: { in: ["CREATE_CASE", "CLOSE_CASE", "REOPEN_CASE", "ASSIGN_CASE"] } },
     orderBy: { createdAt: "asc" },
     select: { id: true, action: true, userId: true, createdAt: true, details: true },
   });
@@ -74,13 +75,15 @@ export async function getCaseEvents(
     }
   }
 
-  for (const l of logs.filter((l) => l.action === "CLOSE_CASE")) {
+  for (const l of logs.filter((l) => l.action === "CLOSE_CASE" || l.action === "REOPEN_CASE")) {
+    const reason = reasonFromDetails(l.details);
+    const closed = l.action === "CLOSE_CASE";
     events.push({
-      id: `cierre-${l.id}`,
-      kind: "CIERRE",
+      id: `${closed ? "cierre" : "reapertura"}-${l.id}`,
+      kind: closed ? "CIERRE" : "REAPERTURA",
       date: l.createdAt.toISOString(),
-      title: "Se cerró el expediente",
-      detail: null,
+      title: closed ? "Se cerró el expediente" : "Se reabrió el expediente",
+      detail: reason ? `Motivo: ${reason}` : null,
       author: nameOf(l.userId),
     });
   }

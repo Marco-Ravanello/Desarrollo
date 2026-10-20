@@ -15,7 +15,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { UserCog, UserPlus, Settings, LogOut, ChevronDown, KeyRound } from "lucide-react";
 import Link from "next/link";
-import { hasPermission, PERMISSIONS } from "@/lib/permissions";
+import { canCreateUsersAndResetPasswords, hasPermission, PERMISSIONS } from "@/lib/permissions";
 
 interface UserNavProps {
   variant?: "header" | "sidebar";
@@ -118,12 +118,14 @@ export function UserNav({ variant = "header", isCollapsed = false }: UserNavProp
                 <span>Gestión de Usuarios</span>
               </Link>
             </DropdownMenuItem>
-            <DropdownMenuItem asChild className="rounded-xl text-xs font-semibold cursor-pointer py-2 focus:bg-primary/10 focus:text-primary">
-              <Link href="/admin/users?new=true" className="flex items-center gap-2.5 w-full font-bold text-primary">
-                <UserPlus className="h-4 w-4 text-primary" />
-                <span>+ Crear Nuevo Usuario</span>
-              </Link>
-            </DropdownMenuItem>
+            {canCreateUsersAndResetPasswords(userRole) && (
+              <DropdownMenuItem asChild className="rounded-xl text-xs font-semibold cursor-pointer py-2 focus:bg-primary/10 focus:text-primary">
+                <Link href="/admin/users?new=true" className="flex items-center gap-2.5 w-full font-bold text-primary">
+                  <UserPlus className="h-4 w-4 text-primary" />
+                  <span>+ Crear Nuevo Usuario</span>
+                </Link>
+              </DropdownMenuItem>
+            )}
             <DropdownMenuSeparator className="my-1 bg-border/60" />
           </>
         )}

@@ -98,7 +98,7 @@ describe("historia del expediente", () => {
     loginAs(deNinez);
     const segunda = await prisma.derivation.findFirstOrThrow({ where: { caseId: caso.id, status: "PENDIENTE" } });
     expect(await respondDerivationAction(segunda.id, true)).toEqual({ success: true });
-    expect((await closeCaseAction(caso.id)).success).toBe(true);
+    expect((await closeCaseAction(caso.id, "Se resolvió")).success).toBe(true);
 
     const events = await getCaseEvents({ id: caso.id, createdAt: caso.createdAt, areaName: ninez.name }, await getCaseDerivations(caso.id));
     const byKind = (k: string) => events.filter((e) => e.kind === k);
@@ -106,6 +106,6 @@ describe("historia del expediente", () => {
     expect(byKind("DERIVACION").map((e) => e.outcome).sort()).toEqual(["ACEPTADA", "RECHAZADA"]);
     expect(byKind("RESPUESTA").map((e) => e.title).sort()).toEqual([`${ninez.name} aceptó la derivación`, `${ninez.name} rechazó la derivación`]);
     expect(byKind("RESPUESTA").find((e) => e.outcome === "RECHAZADA")?.detail).toContain("No es de nuestra área");
-    expect(byKind("CIERRE")).toEqual([expect.objectContaining({ author: deNinez.name })]);
+    expect(byKind("CIERRE")).toEqual([expect.objectContaining({ author: deNinez.name, detail: "Motivo: Se resolvió" })]);
   });
 });
