@@ -103,7 +103,7 @@ export function DashboardBreadcrumbs() {
   return (
     <nav
       aria-label="Breadcrumb"
-      className="flex items-center gap-1.5 text-xs text-muted-foreground mb-4 py-1.5 px-3 rounded-2xl bg-card/60 border border-border/40 w-fit backdrop-blur-xs shadow-2xs print:hidden"
+      className="flex items-center gap-1.5 text-xs text-muted-foreground mb-4 py-1.5 px-3 rounded-2xl bg-card/60 border border-border/40 w-fit max-w-full backdrop-blur-xs shadow-2xs print:hidden"
     >
       <Link
         href="/dashboard"
@@ -122,12 +122,12 @@ export function DashboardBreadcrumbs() {
             {item.href && !isLast ? (
               <Link
                 href={item.href}
-                className="hover:text-primary font-bold transition-colors truncate max-w-[160px]"
+                className="hover:text-primary font-bold transition-colors truncate min-w-0 max-w-[160px]"
               >
                 {item.label}
               </Link>
             ) : (
-              <span className="font-bold text-foreground bg-muted/40 px-2 py-0.5 rounded-lg border border-border/40 truncate max-w-[200px]">
+              <span className="font-bold text-foreground bg-muted/40 px-2 py-0.5 rounded-lg border border-border/40 truncate min-w-0 max-w-[200px]">
                 {item.label}
               </span>
             )}

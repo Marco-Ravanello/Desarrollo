@@ -31,10 +31,12 @@ export function DeriveCaseButton({
   caseId,
   areas,
   currentAreaId,
+  triggerClassName = "w-full",
 }: {
   caseId: string;
   areas: { id: string; name: string }[];
   currentAreaId: string;
+  triggerClassName?: string;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -62,7 +64,7 @@ export function DeriveCaseButton({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" className="w-full rounded-xl font-bold gap-2">
+        <Button variant="outline" className={`${triggerClassName} rounded-xl font-bold gap-2`}>
           <ArrowRightLeft className="h-4 w-4" /> Derivar a otra área
         </Button>
       </DialogTrigger>
