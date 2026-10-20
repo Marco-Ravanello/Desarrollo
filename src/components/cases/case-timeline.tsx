@@ -35,8 +35,8 @@ function eventIcon(e: CaseEvent) {
 function EventCard({ e }: { e: CaseEvent }) {
   const { fecha, hora } = fechaHora(e.date);
   return (
-    <div className="flex gap-4 p-4 rounded-2xl border border-border/60 bg-muted/10">
-      <div className="text-[11px] font-mono font-bold text-muted-foreground min-w-[92px] border-r border-border/40 pr-3 flex flex-col justify-center">
+    <div className="flex flex-col gap-2 sm:flex-row sm:gap-4 p-4 rounded-2xl border border-border/60 bg-muted/10">
+      <div className="text-[11px] font-mono font-bold text-muted-foreground flex items-baseline gap-2 sm:min-w-[92px] sm:flex-col sm:items-start sm:justify-center sm:gap-0 sm:border-r sm:border-border/40 sm:pr-3">
         <span>{fecha}</span>
         <span className="text-[10px] opacity-70">{hora}</span>
       </div>
