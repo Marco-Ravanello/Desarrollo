@@ -17,7 +17,7 @@ import { hasPermission, PERMISSIONS } from "@/lib/permissions";
 import { getCaseStatusConfig } from "@/lib/status-styles";
 import { getAreaShortName } from "@/lib/area-theme";
 import { interventionTypeLabel } from "@/lib/intervention-types";
-import { CASE_STATUS_LABEL, STALE_DAYS, agoText, daysText, fechaCorta, summarizeCase } from "@/lib/case-summary";
+import { CASE_PRIORITY_LABEL, CASE_STATUS_LABEL, STALE_DAYS, agoText, daysText, fechaCorta, isProvisionalDni, splitCaseTitle, summarizeCase } from "@/lib/case-summary";
 import { countMyOpenCases } from "@/services/case-assignment";
 import {
   FileText, ShieldAlert, CheckCircle2, Clock, Plus, Search,
@@ -149,79 +149,83 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-        <StatCard label="Total Casos" value={data.stats.totalAll} hint="Registrados en el sistema" icon={FileText} tone="blue" />
-        <StatCard label="En Curso" value={data.stats.active} hint="Abiertos o en proceso" icon={Clock} tone="green" />
-        <StatCard label="Alertas Urgentes" value={data.stats.urgent} hint="Prioridad máxima" icon={ShieldAlert} tone="red" />
-        <StatCard label="Resueltos" value={data.stats.closed} hint="Casos cerrados" icon={CheckCircle2} tone="slate" />
+        <StatCard label="Todos" value={data.stats.totalAll} hint="Expedientes cargados" icon={FileText} tone="blue" />
+        <StatCard label="En curso" value={data.stats.active} hint="Abiertos o en proceso" icon={Clock} tone="green" />
+        <StatCard label="Urgentes" value={data.stats.urgent} hint="Prioridad urgente" icon={ShieldAlert} tone="red" />
+        <StatCard label="Cerrados" value={data.stats.closed} hint="Ya resueltos" icon={CheckCircle2} tone="slate" />
       </div>
 
       {/* Filters Form */}
       <Card className="rounded-2xl border-border/60 bg-card p-4 shadow-xs">
-        <form method="GET" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3 items-center">
-          <div className="lg:col-span-3 relative">
+        <form method="GET" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 items-center">
+          <div className="sm:col-span-2 lg:col-span-3 relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               name="q"
               defaultValue={q || ""}
-              placeholder="Buscar por carátula, DNI o apellido..."
+              aria-label="Buscar expedientes"
+              placeholder="Buscar por carátula, DNI o apellido"
               className="pl-9 h-10 rounded-xl bg-muted/30 border-border/60 text-xs"
             />
           </div>
-          <div className="lg:col-span-2">
+          <div className="sm:col-span-2 lg:col-span-1 sm:order-last lg:order-none">
+            <Button type="submit" size="sm" className="h-10 w-full rounded-xl text-xs font-bold">
+              Buscar
+            </Button>
+          </div>
+          <div>
             <select
               name="area"
+              aria-label="Área"
               defaultValue={area || "all"}
               className="w-full h-10 px-3 rounded-xl bg-muted/30 border border-border/60 text-xs font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
             >
-              <option value="all">Todas las Áreas Municipales</option>
+              <option value="all">Todas las áreas</option>
               {areasList.map((a) => (
                 <option key={a.id} value={a.id}>{a.name}</option>
               ))}
             </select>
           </div>
-          <div className="lg:col-span-2">
+          <div>
             <select
               name="status"
+              aria-label="Estado"
               defaultValue={status || "all"}
               className="w-full h-10 px-3 rounded-xl bg-muted/30 border border-border/60 text-xs font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
             >
-              <option value="all">Todos los Estados</option>
+              <option value="all">Todos los estados</option>
               <option value="ACTIVOS">Activos (abiertos y en proceso)</option>
               <option value="ABIERTO">Abierto</option>
-              <option value="EN_PROCESO">En Proceso</option>
+              <option value="EN_PROCESO">En proceso</option>
               <option value="DERIVADO">Derivado (esperando respuesta)</option>
               <option value="CERRADO">Cerrado / Resuelto</option>
             </select>
           </div>
-          <div className="lg:col-span-2">
+          <div>
             <select
               name="priority"
+              aria-label="Prioridad"
               defaultValue={priority || "all"}
               className="w-full h-10 px-3 rounded-xl bg-muted/30 border border-border/60 text-xs font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
             >
-              <option value="all">Todas las Prioridades</option>
+              <option value="all">Todas las prioridades</option>
               <option value="URGENTE">Urgente</option>
               <option value="ALTA">Alta</option>
               <option value="MEDIA">Media</option>
               <option value="BAJA">Baja</option>
             </select>
           </div>
-          <div className="lg:col-span-2">
+          <div>
             <select
               name="assigned"
               aria-label="Profesional a cargo"
               defaultValue={assigned || "all"}
               className="w-full h-10 px-3 rounded-xl bg-muted/30 border border-border/60 text-xs font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
             >
-              <option value="all">Cualquier profesional</option>
+              <option value="all">Cualquier profesional a cargo</option>
               <option value="mine">Mis expedientes</option>
               <option value="none">Sin profesional a cargo</option>
             </select>
-          </div>
-          <div className="lg:col-span-1 flex gap-1">
-            <Button type="submit" size="sm" className="h-10 w-full rounded-xl text-xs font-bold">
-              Filtrar
-            </Button>
           </div>
         </form>
         {(q || (area && area !== "all") || (status && status !== "all") || (priority && priority !== "all") || assigned) && (
@@ -230,10 +234,10 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
             {q && <Badge variant="secondary" className="text-[10px]">Texto: {q}</Badge>}
             {area && area !== "all" && <Badge variant="secondary" className="text-[10px]">Área: {areasList.find((a) => a.id === area)?.name || area}</Badge>}
             {status && status !== "all" && <Badge variant="secondary" className="text-[10px]">Estado: {STATUS_LABELS[status] || status}</Badge>}
-            {priority && priority !== "all" && <Badge variant="secondary" className="text-[10px]">Prioridad: {priority}</Badge>}
+            {priority && priority !== "all" && <Badge variant="secondary" className="text-[10px]">Prioridad: {CASE_PRIORITY_LABEL[priority]?.replace(/^Prioridad /, "") ?? priority}</Badge>}
             {assigned && <Badge variant="secondary" className="text-[10px]">{ASSIGNED_LABELS[assigned]}</Badge>}
             <Button variant="ghost" size="sm" asChild className="h-6 text-[10px] text-muted-foreground hover:text-foreground">
-              <Link href="/cases">Limpiar Filtros</Link>
+              <Link href="/cases">Limpiar filtros</Link>
             </Button>
           </div>
         )}
@@ -283,21 +287,33 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
                     lastInterventionAt: last?.date ?? null,
                     now,
                   });
+                  const shown = splitCaseTitle(c.title);
                   const assigneeName = c.assignedTo ? c.assignedTo.name || c.assignedTo.email || "Usuario" : null;
                   return (
                     <TableRow key={c.id} className={`border-border/60 hover:bg-muted/30 transition-colors ${summary.stale ? "bg-amber-500/[0.04]" : ""}`}>
                       <TableCell className="font-medium max-w-xs align-top">
                         {isRestricted ? (
-                          <span className="italic text-muted-foreground text-xs font-semibold">Expediente Confidencial Reservado</span>
+                          <span className="italic text-muted-foreground text-xs font-semibold">Expediente reservado</span>
                         ) : (
                           <div className="space-y-1">
-                            <Link href={`/cases/${c.id}`} className="block truncate font-bold text-xs text-foreground hover:underline">{c.title}</Link>
+                            <div className="flex min-w-0 items-center gap-1.5">
+                              {shown.tag && (
+                                <span className="shrink-0 rounded-md border border-sky-500/30 bg-sky-500/10 px-1.5 py-0.5 text-[10px] font-bold text-sky-800 dark:text-sky-300">
+                                  {shown.tag}
+                                </span>
+                              )}
+                              <Link href={`/cases/${c.id}`} title={c.title} className="block min-w-0 truncate font-bold text-xs text-foreground hover:underline">{shown.title}</Link>
+                            </div>
                             {c.person ? (
                               <div className="text-[11px] text-muted-foreground">
                                 <Link href={`/people/${c.person.dni || c.person.id}`} className="font-semibold text-primary hover:underline">
                                   {c.person.lastName}, {c.person.firstName}
                                 </Link>
-                                <span className="font-mono"> · DNI {c.person.dni}</span>
+                                {isProvisionalDni(c.person.dni) ? (
+                                  <span> · Sin DNI</span>
+                                ) : (
+                                  <span className="font-mono"> · DNI {c.person.dni}</span>
+                                )}
                               </div>
                             ) : (
                               <div className="text-[11px] text-muted-foreground">Sin titular</div>

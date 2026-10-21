@@ -78,3 +78,27 @@ export function summarizeCase(input: {
     quietDays,
   };
 }
+
+const TITLE_TAGS: { prefix: RegExp; label: string }[] = [
+  { prefix: /^\s*\[CONTINGENCIA TORMENTA\]\s*/i, label: "Tormenta" },
+];
+
+/**
+ * Separa la marca entre corchetes que algunos expedientes llevan al principio
+ * (por ejemplo "[CONTINGENCIA TORMENTA]") para mostrarla como etiqueta chica.
+ * No cambia lo guardado: solo cómo se muestra.
+ */
+export function splitCaseTitle(title: string): { tag: string | null; title: string } {
+  for (const t of TITLE_TAGS) {
+    if (t.prefix.test(title)) {
+      const rest = title.replace(t.prefix, "").trim();
+      return { tag: t.label, title: rest || title };
+    }
+  }
+  return { tag: null, title };
+}
+
+/** Los DNI provisorios ("TEMP-…") se cargan cuando la persona no tenía documento a mano. */
+export function isProvisionalDni(dni: string | null | undefined): boolean {
+  return Boolean(dni?.startsWith("TEMP-"));
+}
