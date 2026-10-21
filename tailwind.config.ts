@@ -1,6 +1,9 @@
 import type { Config } from "tailwindcss";
 
 const config: Config = {
+  // El modo oscuro lo elige la app (clase "dark" de next-themes), no la compu:
+  // si no, los estilos "dark:" se mezclaban con el modo claro.
+  darkMode: "class",
   content: [
     "./src/**/*.{js,ts,jsx,tsx,mdx}",
   ],

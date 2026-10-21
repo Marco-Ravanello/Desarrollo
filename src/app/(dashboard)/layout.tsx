@@ -83,10 +83,10 @@ export default function DashboardLayout({
             <PrintFooter />
           </div>
 
-          <footer className="mt-auto border-t border-border/80 bg-[#0E2A49] text-white py-3.5 px-6 print:hidden">
-            <div className="max-w-7xl mx-auto flex items-center justify-center text-center text-xs text-[#B8D0EB]/90">
-              <p>© 2026 Municipalidad de Tres de Febrero — Todos los derechos reservados</p>
-            </div>
+          <footer className="mt-auto border-t border-border/50 px-6 py-3 print:hidden">
+            <p className="text-center text-[11px] text-muted-foreground/80">
+              Municipalidad de Tres de Febrero · Secretaría de Desarrollo Humano y Hábitat
+            </p>
           </footer>
         </main>
       </div>

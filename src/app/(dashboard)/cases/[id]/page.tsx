@@ -25,7 +25,7 @@ import { EmptyMessage } from "@/components/ui/empty-message";
 import { getAreaDashboardUrl, getAreaShortName } from "@/lib/area-theme";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CaseSummaryHeader } from "@/components/cases/case-summary-header";
-import { fechaCorta, summarizeCase } from "@/lib/case-summary";
+import { fechaCorta, isProvisionalDni, splitCaseTitle, summarizeCase } from "@/lib/case-summary";
 import { AssignCaseControl } from "@/components/cases/assign-case";
 import { canAssignCase, canTakeCase, getAssignableUsers } from "@/services/case-assignment";
 import { canCloseOrReopenCase } from "@/lib/case-closing";
@@ -51,6 +51,7 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
 
   const areaName = caseData.area?.name || "Dirección General de Desarrollo Humano y Hábitat";
   const titleStr = caseData.title || "Expediente Social";
+  const shownTitle = splitCaseTitle(titleStr);
 
   // Validar permiso para casos sensibles (Violencia de Género)
   const isViolenceCase =
@@ -115,7 +116,7 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
   const breadcrumbs = [
     { label: "Áreas", href: "/areas/social" },
     { label: areaLabel, href: areaUrl },
-    { label: `Expediente ${titleStr.substring(0, 20)}...`, active: true }
+    { label: `Expediente ${shownTitle.title.substring(0, 20)}...`, active: true }
   ];
 
   const tabClass = "rounded-xl text-xs font-bold gap-1.5 px-3";
@@ -126,7 +127,8 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
       <RememberVisit kind="case" id={caseData.id} />
 
       <PageHeader
-        title={titleStr}
+        title={shownTitle.title}
+        badge={shownTitle.tag ?? undefined}
         icon={ClipboardList}
         actions={
           <>
@@ -158,7 +160,7 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
         summary={summary}
         lastIntervention={lastIntervention}
         pendingTo={pendingDerivation?.toArea ?? null}
-        person={person && personName ? { name: personName, dni: person.dni ?? null, href: `/people/${person.dni || person.id}` } : null}
+        person={person && personName ? { name: personName, dni: isProvisionalDni(person.dni) ? null : person.dni ?? null, href: `/people/${person.dni || person.id}` } : null}
         assigneeName={assigneeName}
         assignmentControl={
           (canAssign || canTake) && (
@@ -235,12 +237,12 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
                         </Link>
                       </div>
                       <div className="flex items-center gap-2 text-sm text-muted-foreground font-semibold">
-                        <Tag className="h-4 w-4 text-muted-foreground" /> DNI {person.dni}
+                        <Tag className="h-4 w-4 text-muted-foreground" /> {isProvisionalDni(person.dni) ? "Sin DNI" : `DNI ${person.dni}`}
                       </div>
                       <div className="flex items-center gap-2 text-sm text-muted-foreground font-semibold">
                         <MapPin className="h-4 w-4 text-muted-foreground" /> {person.address || 'Sin dirección'}
                       </div>
-                      {person.dni && (
+                      {person.dni && !isProvisionalDni(person.dni) && (
                         <Button variant="outline" size="sm" asChild className="w-full rounded-xl font-bold">
                           <Link href={`/ficha-social?dni=${person.dni}`}>Ver Ficha Social 360°</Link>
                         </Button>
