@@ -138,7 +138,9 @@ export function FuelReportView({ vehicles }: { vehicles: any[] }) {
         }).length === 0) && (
            <EmptyMessage
              className="rounded-xl border-2 border-dashed border-border/60"
-             title="No hay registros de combustible para el período seleccionado."
+             kind="search"
+             title="No hay cargas de combustible en este período"
+             description="Probá con otras fechas."
            />
         )}
       </div>

@@ -4,7 +4,7 @@ import { User, Clock, FileEdit, CheckCircle2, Package } from "lucide-react";
 import { EmptyMessage } from "@/components/ui/empty-message";
 
 export function OrderAuditTimeline({ logs }: { logs: any[] }) {
-  if (logs.length === 0) return <EmptyMessage icon={Clock} title="Sin actividad registrada." className="py-6" />;
+  if (logs.length === 0) return <EmptyMessage icon={Clock} compact title="Todavía no hay movimientos en esta orden" />;
 
   return (
     <div className="space-y-4">

@@ -354,7 +354,7 @@ export async function getStormVictimRecords(): Promise<StormVictimItem[]> {
 }
 
 /** Totales entregados de una ficha a partir de sus entregas. */
-function deliveryTotals(entregas?: { colchones: number; camas: number; cuchetas: number; frazadas: number; otrosElementos?: unknown; createdAt: Date }[]) {
+export function deliveryTotals(entregas?: { colchones: number; camas: number; cuchetas: number; frazadas: number; otrosElementos?: unknown; createdAt: Date }[]) {
   if (!entregas?.length) return { entregadoColchon: 0, entregadoCama: 0, entregadoCucheta: 0, entregadoFrazada: 0, entregadoOtros: {}, ultimaEntrega: null };
   const entregadoOtros: Record<string, number> = {};
   for (const e of entregas) {

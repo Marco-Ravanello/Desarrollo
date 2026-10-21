@@ -234,7 +234,7 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
                       )}
                     </>
                   ) : (
-                    <EmptyMessage title="Información del titular no disponible" icon={User} className="py-6" />
+                    <EmptyMessage compact title="Este expediente no tiene titular cargado" icon={User} />
                   )}
                 </CardContent>
               </Card>
@@ -265,7 +265,7 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
         <TabsContent value="documentos" className="mt-0">
           <Card className="rounded-2xl border border-border/60 shadow-sm bg-card p-6 space-y-4">
             {documents.length === 0 ? (
-              <EmptyMessage title="Este expediente no tiene documentos adjuntos." icon={Paperclip} className="rounded-2xl border border-dashed border-border/60" />
+              <EmptyMessage compact title="Este expediente todavía no tiene documentos" description="Los informes, fotos y constancias que se adjunten aparecen acá." icon={Paperclip} className="rounded-2xl border border-dashed border-border/60" />
             ) : (
               <div className="grid grid-cols-1 gap-2">
                 {documents.map((d) => {

@@ -72,7 +72,16 @@ export default async function ProvidersPage({ searchParams }: { searchParams: Pr
           {providers.length === 0 ? (
             <EmptyMessage
               icon={Building2}
-              title={q ? "Ningún proveedor coincide con la búsqueda." : "Todavía no hay proveedores registrados."}
+              kind={q ? "search" : "empty"}
+              title={q ? "Ningún proveedor coincide con la búsqueda" : "Todavía no hay proveedores registrados"}
+              description={q ? "Probá con otra parte del nombre o con el CUIT sin guiones." : "Los proveedores que cargues aparecen acá."}
+              action={
+                q ? (
+                  <Button asChild variant="outline" size="sm" className="rounded-xl text-xs">
+                    <Link href="/admin/providers">Borrar búsqueda</Link>
+                  </Button>
+                ) : undefined
+              }
             />
           ) : (
             <div className="overflow-x-auto">

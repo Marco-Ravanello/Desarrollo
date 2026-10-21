@@ -68,7 +68,7 @@ export default async function VehicleRequestsPage() {
               {requests.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6}>
-                    <EmptyMessage title="No hay solicitudes pendientes." />
+                    <EmptyMessage kind="done" title="No hay pedidos esperando respuesta" description="Cuando alguien pida un vehículo, el pedido aparece acá." />
                   </TableCell>
                 </TableRow>
               ) : (

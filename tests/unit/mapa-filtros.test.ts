@@ -32,3 +32,20 @@ describe("filtros del Mapa Social", () => {
     expect(params).toContain("%30123456%");
   });
 });
+
+describe("varios programas a la vez", () => {
+  it("toma hasta tres, sin repetir, y suma el programa de la forma anterior", () => {
+    expect(normalizeMapFilters({ programs: ["A", "B", "A", " ", "C", "D"] }).programs).toEqual(["A", "B", "C"]);
+    expect(normalizeMapFilters({ program: "Envión" }).programs).toEqual(["Envión"]);
+    expect(normalizeMapFilters({ program: "all" }).programs).toEqual([]);
+  });
+
+  it("la marca por programa usa parámetros propios, después de los del filtro", () => {
+    const { where, params, mask } = buildMapWhere({ programs: ["Envión", "Tarjeta"] }, { withMask: true });
+    expect(where).toContain("IN ($1, $2)");
+    expect(mask).toContain("$3");
+    expect(mask).toContain("THEN 2");
+    expect(params).toEqual(["Envión", "Tarjeta", "Envión", "Tarjeta"]);
+    expect(buildMapWhere({}, { withMask: true }).mask).toBe("0");
+  });
+});

@@ -13,12 +13,15 @@ import { PageHeader } from "@/components/layout/page-header";
 import { StatCard } from "@/components/ui/stat-card";
 import {
   MapPin, Users, Search, RotateCcw, Map as MapIcon,
-  Building2, Sparkles, HeartHandshake, MapPinned, Info
+  Building2, Sparkles, HeartHandshake, MapPinned, Info, X
 } from "lucide-react";
 import { MUNICIPAL_LOCALITIES } from "@/lib/constants/localities";
-import type { MapFilters } from "@/lib/map-filters";
+import { MAP_MAX_PROGRAMS, type MapFilters } from "@/lib/map-filters";
+import { PROGRAM_COLORS } from "@/lib/map-colors";
 import type { MapData } from "@/services/map";
-import { getMapDataAction, getMapExportAction } from "@/app/(dashboard)/maps/actions";
+import type { MapLayerKey, MapLayerPoints } from "@/services/map-layers";
+import type { MapLayerToggles } from "@/components/maps/map-view";
+import { getMapDataAction, getMapExportAction, getMapLayerAction } from "@/app/(dashboard)/maps/actions";
 
 const DynamicMapView = dynamic(
   () => import("@/components/maps/map-view").then((mod) => mod.MapView),
@@ -44,14 +47,22 @@ const fmt = (n: number) => n.toLocaleString("es-AR");
 
 export function SocialMapDashboard({ initialData, programs, unlocated = 0, canLocate = false, canExport = false }: SocialMapDashboardProps) {
   const [selectedLocalityId, setSelectedLocalityId] = useState<string>("all");
-  const [selectedProgram, setSelectedProgram] = useState<string>("all");
+  const [selectedPrograms, setSelectedPrograms] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [debouncedQuery, setDebouncedQuery] = useState<string>("");
   const [viewMode, setViewMode] = useState<string>("markers");
   const [data, setData] = useState<MapData>(initialData);
+  // Los programas con los que se armaron los datos que se ven (los colores siguen a esta lista).
+  const [dataPrograms, setDataPrograms] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const requestRef = useRef(0);
   const firstRender = useRef(true);
+  const [toggles, setToggles] = useState<MapLayerToggles>({ padron: true, cases: false, storm: false });
+  const [layers, setLayers] = useState<Record<MapLayerKey, { points: MapLayerPoints | null; loading: boolean }>>({
+    cases: { points: null, loading: false },
+    storm: { points: null, loading: false },
+  });
+  const layerRequests = useRef<Record<MapLayerKey, number>>({ cases: 0, storm: 0 });
 
   const selectedLocality = useMemo(
     () => MUNICIPAL_LOCALITIES.find((l) => l.id === selectedLocalityId) || MUNICIPAL_LOCALITIES[0],
@@ -59,8 +70,8 @@ export function SocialMapDashboard({ initialData, programs, unlocated = 0, canLo
   );
 
   const filters: MapFilters = useMemo(
-    () => ({ localityId: selectedLocalityId, program: selectedProgram, query: debouncedQuery }),
-    [selectedLocalityId, selectedProgram, debouncedQuery]
+    () => ({ localityId: selectedLocalityId, programs: selectedPrograms, query: debouncedQuery }),
+    [selectedLocalityId, selectedPrograms, debouncedQuery]
   );
 
   // La búsqueda por texto espera a que se deje de escribir.
@@ -80,16 +91,47 @@ export function SocialMapDashboard({ initialData, programs, unlocated = 0, canLo
     getMapDataAction(filters)
       .then((res) => {
         if (request !== requestRef.current) return;
-        if (res.success) setData(res.data);
-        else toast.error(res.error);
+        if (res.success) {
+          setData(res.data);
+          setDataPrograms(filters.programs ?? []);
+        } else toast.error(res.error);
       })
       .catch(() => request === requestRef.current && toast.error("No se pudo cargar el mapa. Probá de nuevo."))
       .finally(() => request === requestRef.current && setLoading(false));
   }, [filters]);
 
+  // Expedientes y fichas: se piden recién cuando se prenden, y otra vez si cambian los filtros.
+  useEffect(() => {
+    (["cases", "storm"] as MapLayerKey[]).forEach((layer) => {
+      if (!toggles[layer]) return;
+      const request = ++layerRequests.current[layer];
+      setLayers((prev) => ({ ...prev, [layer]: { ...prev[layer], loading: true } }));
+      getMapLayerAction(layer, filters)
+        .then((res) => {
+          if (request !== layerRequests.current[layer]) return;
+          if (res.success) setLayers((prev) => ({ ...prev, [layer]: { points: res.points, loading: false } }));
+          else {
+            toast.error(res.error);
+            setLayers((prev) => ({ ...prev, [layer]: { ...prev[layer], loading: false } }));
+          }
+        })
+        .catch(() => {
+          if (request !== layerRequests.current[layer]) return;
+          toast.error("No se pudo cargar la capa. Probá de nuevo.");
+          setLayers((prev) => ({ ...prev, [layer]: { ...prev[layer], loading: false } }));
+        });
+    });
+  }, [filters, toggles.cases, toggles.storm]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const addProgram = (name: string) => {
+    if (!name) return;
+    setSelectedPrograms((prev) => (prev.includes(name) || prev.length >= MAP_MAX_PROGRAMS ? prev : [...prev, name]));
+  };
+  const removeProgram = (name: string) => setSelectedPrograms((prev) => prev.filter((p) => p !== name));
+
   const handleResetFilters = () => {
     setSelectedLocalityId("all");
-    setSelectedProgram("all");
+    setSelectedPrograms([]);
     setSearchQuery("");
   };
 
@@ -194,20 +236,29 @@ export function SocialMapDashboard({ initialData, programs, unlocated = 0, canLo
 
           <div className="space-y-1">
             <label htmlFor="mapa-programa" className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
-              <HeartHandshake className="h-3.5 w-3.5 text-emerald-500" /> Programa Social
+              <HeartHandshake className="h-3.5 w-3.5 text-emerald-500" /> Programas (hasta {MAP_MAX_PROGRAMS})
             </label>
             <select
               id="mapa-programa"
-              value={selectedProgram}
-              onChange={(e) => setSelectedProgram(e.target.value)}
-              className="w-full h-10 px-3 rounded-2xl bg-muted/30 border border-border/60 text-xs font-bold text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+              value=""
+              onChange={(e) => addProgram(e.target.value)}
+              disabled={selectedPrograms.length >= MAP_MAX_PROGRAMS}
+              className="w-full h-10 px-3 rounded-2xl bg-muted/30 border border-border/60 text-xs font-bold text-foreground focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-60"
             >
-              <option value="all">Todos los programas activos</option>
-              {programs.map((prog) => (
-                <option key={prog} value={prog}>
-                  {prog}
-                </option>
-              ))}
+              <option value="">
+                {selectedPrograms.length === 0
+                  ? "Todos los programas"
+                  : selectedPrograms.length >= MAP_MAX_PROGRAMS
+                    ? "Ya elegiste 3 programas"
+                    : "Sumar otro programa"}
+              </option>
+              {programs
+                .filter((prog) => !selectedPrograms.includes(prog))
+                .map((prog) => (
+                  <option key={prog} value={prog}>
+                    {prog}
+                  </option>
+                ))}
             </select>
           </div>
 
@@ -235,6 +286,28 @@ export function SocialMapDashboard({ initialData, programs, unlocated = 0, canLo
             </Button>
           </div>
         </div>
+        {selectedPrograms.length > 0 && (
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <span className="text-[11px] font-semibold text-muted-foreground">Comparando:</span>
+            {selectedPrograms.map((prog, k) => (
+              <span
+                key={prog}
+                className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-border/60 bg-muted/30 py-1 pl-2.5 pr-1 text-xs font-semibold text-foreground"
+              >
+                <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: PROGRAM_COLORS[k] }} />
+                <span className="truncate">{prog}</span>
+                <button
+                  type="button"
+                  onClick={() => removeProgram(prog)}
+                  className="rounded-full p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+                  aria-label={`Quitar ${prog}`}
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
       </Card>
 
       <div className={`grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4 transition-opacity ${loading ? "opacity-60" : ""}`} aria-busy={loading}>
@@ -295,6 +368,12 @@ export function SocialMapDashboard({ initialData, programs, unlocated = 0, canLo
           viewMode={viewMode}
           onViewModeChange={setViewMode}
           localityName={selectedLocality.name}
+          programs={dataPrograms}
+          programMask={data.programMask}
+          toggles={toggles}
+          onTogglesChange={setToggles}
+          caseLayer={layers.cases}
+          stormLayer={layers.storm}
         />
       </Card>
     </div>

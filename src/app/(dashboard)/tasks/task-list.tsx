@@ -343,11 +343,32 @@ export function TaskList({ initialTasks, userId }: { initialTasks: TaskItem[], u
       <div className="space-y-3">
         {filteredTasks.length === 0 ? (
           <Card className="bg-card text-card-foreground border-2 border-dashed border-border/60 rounded-2xl">
-            <EmptyMessage
-              title="No hay tareas para mostrar."
-              description="Pruebe cambiando los filtros de búsqueda o registre un nuevo compromiso."
-              icon={Sparkles}
-            />
+            {searchQuery.trim() || priorityFilter !== "TODAS" ? (
+              <EmptyMessage
+                kind="search"
+                title="Ninguna tarea coincide con la búsqueda"
+                description="Probá con otras palabras o con otra prioridad."
+                icon={Sparkles}
+                action={
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="rounded-xl text-xs"
+                    onClick={() => {
+                      setSearchQuery("");
+                      setPriorityFilter("TODAS");
+                    }}
+                  >
+                    Quitar filtros
+                  </Button>
+                }
+              />
+            ) : activeTab === "PENDIENTES" ? (
+              <EmptyMessage kind="done" title="No tenés tareas pendientes" description="Cuando agendes una tarea, aparece acá." icon={Sparkles} />
+            ) : (
+              <EmptyMessage title="Todavía no hay tareas en esta lista" description="Las tareas que cargues aparecen acá." icon={Sparkles} />
+            )}
           </Card>
         ) : (
           filteredTasks.map((t) => {

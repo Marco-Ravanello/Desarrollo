@@ -352,8 +352,9 @@ function FichaSocialContent() {
       ) : ficha && !ficha.encontrado ? (
         <Card className="bg-card border border-border/60 rounded-2xl">
           <EmptyMessage
-            title="No se encontraron registros"
-            description="El DNI o CUIL ingresado no figura actualmente en las bases de datos de programas sociales del municipio."
+            kind="search"
+            title="No encontramos a nadie con ese DNI"
+            description="No figura en el padrón ni en los programas del municipio. Revisá que el número esté bien escrito."
             icon={AlertCircle}
             className="py-12"
           />

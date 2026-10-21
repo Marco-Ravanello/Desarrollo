@@ -70,7 +70,7 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
   const orderRows = data.orderStatus.map((o) => ({ estado: getOrderStatusConfig(o.status).label, cantidad: o.count, monto: money(o.amount) }));
   const providerRows = data.topProviders.map((p) => ({ name: p.name, cuit: p.cuit || "Sin CUIT", orders: p.orders, executed: money(p.executed) }));
 
-  const empty = <EmptyMessage title="No hay registros en este período." />;
+  const empty = <EmptyMessage kind="search" compact title="No hay registros en este período" description="Probá con un período más largo." />;
 
   return (
     <div className="space-y-6 max-w-6xl mx-auto">

@@ -1,5 +1,5 @@
 import prisma from "@/lib/prisma";
-import { buildMapWhere, type MapFilters } from "@/lib/map-filters";
+import { buildMapWhere, normalizeMapFilters, type MapFilters } from "@/lib/map-filters";
 import { APPROXIMATE_POINT_SQL, isApproximatePoint } from "@/lib/geocoding";
 
 // Datos del Mapa Social. Al navegador viajan solo los puntos (DNI y coordenadas);
@@ -22,6 +22,8 @@ export interface MapStats {
 export interface MapData {
   /** DNI de cada punto, en el mismo orden que `coords`. Primero los exactos, después los aproximados. */
   dnis: string[];
+  /** Con programas elegidos: a cuáles pertenece cada punto (bit k = programa k), en el orden de `dnis`. */
+  programMask?: number[];
   /** Los primeros `exactCount` puntos son exactos; el resto, aproximados (solo barrio). */
   exactCount: number;
   /** Coordenadas planas: [lat0, lon0, lat1, lon1, ...] (5 decimales, ~1 m). */
@@ -45,12 +47,13 @@ const round5 = (n: number) => Math.round(n * 1e5) / 1e5;
 
 export async function getMapData(filters: MapFilters): Promise<MapData> {
   const { where, params } = buildMapWhere(filters);
-  const located = `${where} AND latitude IS NOT NULL AND longitude IS NOT NULL`;
+  const withMask = buildMapWhere(filters, { withMask: true });
+  const comparing = normalizeMapFilters(filters).programs.length > 0;
   const [points, totals, barrios, programs] = await Promise.all([
-    prisma.$queryRawUnsafe<{ dni: string; latitude: number; longitude: number; approx: boolean }[]>(
-      `SELECT dni, latitude, longitude, ${APPROXIMATE_POINT_SQL} AS approx FROM padron_unificado
-       WHERE ${located} ORDER BY approx, dni LIMIT ${MAP_POINTS_LIMIT}`,
-      ...params
+    prisma.$queryRawUnsafe<{ dni: string; latitude: number; longitude: number; approx: boolean; mask: number }[]>(
+      `SELECT dni, latitude, longitude, ${APPROXIMATE_POINT_SQL} AS approx, (${withMask.mask})::int AS mask FROM padron_unificado
+       WHERE ${withMask.where} AND latitude IS NOT NULL AND longitude IS NOT NULL ORDER BY approx, dni LIMIT ${MAP_POINTS_LIMIT}`,
+      ...withMask.params
     ),
     prisma.$queryRawUnsafe<{ total: number }[]>(`SELECT COUNT(*)::int AS total FROM padron_unificado WHERE ${where}`, ...params),
     prisma.$queryRawUnsafe<{ name: string }[]>(
@@ -70,16 +73,19 @@ export async function getMapData(filters: MapFilters): Promise<MapData> {
 
   const dnis: string[] = new Array(points.length);
   const coords: number[] = new Array(points.length * 2);
+  const programMask: number[] | undefined = comparing ? new Array(points.length) : undefined;
   let exactCount = 0;
   points.forEach((p, i) => {
     if (!p.approx) exactCount++;
     dnis[i] = p.dni;
+    if (programMask) programMask[i] = Number(p.mask) || 0;
     coords[i * 2] = round5(Number(p.latitude));
     coords[i * 2 + 1] = round5(Number(p.longitude));
   });
 
   return {
     dnis,
+    ...(programMask ? { programMask } : {}),
     exactCount,
     coords,
     stats: {

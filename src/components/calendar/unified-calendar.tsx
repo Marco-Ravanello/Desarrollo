@@ -803,7 +803,7 @@ export function UnifiedCalendar({ reservations = [], purchaseOrders = [], tasks 
           {view === "agenda" && (
             <div className="divide-y divide-border/20 p-6 max-h-[620px] overflow-y-auto custom-scrollbar">
               {filteredEvents.length === 0 ? (
-                <EmptyMessage title="No hay compromisos registrados en esta vista." icon={Calendar} className="py-20" />
+                <EmptyMessage title="No hay compromisos en estas fechas" description="Probá con otra semana o con otro filtro." icon={Calendar} className="py-20" />
               ) : (
                 filteredEvents
                   .sort((a, b) => a.startDate.getTime() - b.startDate.getTime())

@@ -61,7 +61,7 @@ export default async function AuditPage() {
               {logs.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={5}>
-                    <EmptyMessage title="No se han registrado acciones de auditoría aún." />
+                    <EmptyMessage title="Todavía no hay movimientos registrados" description="Cada acción importante en la app queda anotada acá." />
                   </TableCell>
                 </TableRow>
               ) : (

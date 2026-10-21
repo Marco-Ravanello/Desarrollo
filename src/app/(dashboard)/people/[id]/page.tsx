@@ -164,7 +164,7 @@ export default async function PersonDetailPage({ params }: { params: Promise<{ i
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Casos Activos</h3>
               </div>
-              {activeCases.length === 0 ? <EmptyMessage title="No hay casos activos." icon={FileIcon} className="rounded-2xl border border-dashed border-border/60" /> : (
+              {activeCases.length === 0 ? <EmptyMessage compact title="No tiene expedientes abiertos" icon={FileIcon} className="rounded-2xl border border-dashed border-border/60" /> : (
                 <div className="space-y-3">
                   {activeCases.map(c => (
                     <div key={c.id} className="p-4 border border-border/60 rounded-2xl flex justify-between items-center bg-muted/20 shadow-xs hover:border-primary/50 transition-all">
@@ -198,7 +198,8 @@ export default async function PersonDetailPage({ params }: { params: Promise<{ i
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                 {familyMembers.length === 0 && !(person as any).familyId && (
                   <EmptyMessage
-                    title="No se han registrado vínculos familiares."
+                    compact
+                    title="Todavía no hay familiares vinculados"
                     icon={Users}
                     className="md:col-span-2 rounded-2xl border border-dashed border-border/60"
                   />
@@ -246,7 +247,7 @@ export default async function PersonDetailPage({ params }: { params: Promise<{ i
                 <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Historial de Casos Cerrados</h3>
               </div>
               {closedCases.length === 0 ? (
-                <EmptyMessage title="No hay casos cerrados aún." icon={History} />
+                <EmptyMessage compact title="Todavía no tiene expedientes cerrados" icon={History} />
               ) : (
                 <div className="space-y-3">
                   {closedCases.map(c => (
@@ -276,7 +277,7 @@ export default async function PersonDetailPage({ params }: { params: Promise<{ i
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Documentación Adjunta</h3>
               </div>
-              {filteredDocuments.length === 0 ? <EmptyMessage title="No hay documentos adjuntos." icon={FileIcon} className="rounded-2xl border border-dashed border-border/60" /> : (
+              {filteredDocuments.length === 0 ? <EmptyMessage compact title="Todavía no tiene documentos" icon={FileIcon} className="rounded-2xl border border-dashed border-border/60" /> : (
                 <div className="grid grid-cols-1 gap-2">
                   {filteredDocuments.map(d => {
                     const href = d.url.startsWith("/api") ? d.url : `/api${d.url}`;

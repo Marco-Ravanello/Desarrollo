@@ -277,6 +277,7 @@ function AttentionCard({ items, viewAllHref }: { items: DashboardStats["attentio
       <div className="divide-y divide-border/30 mt-1">
         {items.length === 0 && (
           <EmptyMessage
+            kind="done"
             icon={ShieldCheck}
             title="Nada urgente por ahora"
             description="No hay casos urgentes ni órdenes de compra esperando firma."

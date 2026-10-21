@@ -377,11 +377,34 @@ export function AreaDashboardView({
               ) : (
                 <tr>
                   <td colSpan={7} className="p-0">
-                    <EmptyMessage
-                      title="No se encontraron expedientes."
-                      description="Pruebe modificando los filtros o la palabra clave de búsqueda."
-                      icon={Sparkles}
-                    />
+                    {searchQuery.trim() || priorityFilter !== "TODAS" ? (
+                      <EmptyMessage
+                        kind="search"
+                        title="Ningún expediente coincide con la búsqueda"
+                        description="Probá con otras palabras o con otra prioridad."
+                        icon={Sparkles}
+                        action={
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="rounded-xl text-xs"
+                            onClick={() => {
+                              setSearchQuery("");
+                              setPriorityFilter("TODAS");
+                            }}
+                          >
+                            Quitar filtros
+                          </Button>
+                        }
+                      />
+                    ) : (
+                      <EmptyMessage
+                        title="No hay expedientes en esta pestaña"
+                        description="Probá con otra pestaña de arriba para ver los demás."
+                        icon={Sparkles}
+                      />
+                    )}
                   </td>
                 </tr>
               )}

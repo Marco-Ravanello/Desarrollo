@@ -242,16 +242,17 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
       <Card className="rounded-2xl border-border/60 bg-card shadow-xs overflow-hidden">
         {data.cases.length === 0 ? (
           <EmptyMessage
-            title={assigned === "mine" ? "No tenés expedientes a cargo" : "No se encontraron expedientes"}
+            kind={assigned === "mine" ? "empty" : "search"}
+            title={assigned === "mine" ? "No tenés expedientes a cargo" : "Ningún expediente coincide con la búsqueda"}
             description={
               assigned === "mine"
                 ? "Cuando te dejen a cargo de un expediente, te llega un aviso y aparece acá."
-                : "No hay casos que coincidan con los criterios de búsqueda o filtros seleccionados."
+                : "Probá con otras palabras o quitá algunos filtros."
             }
             icon={FileText}
             action={
               <Button asChild variant="outline" size="sm" className="rounded-xl text-xs">
-                <Link href="/cases">Restablecer búsqueda</Link>
+                <Link href="/cases">{assigned === "mine" ? "Ver todos los expedientes" : "Quitar filtros"}</Link>
               </Button>
             }
           />

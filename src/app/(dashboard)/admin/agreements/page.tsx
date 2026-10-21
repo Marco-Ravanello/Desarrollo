@@ -35,7 +35,7 @@ export default async function AgreementsPage({ searchParams }: { searchParams: P
         {agreements.length === 0 ? (
           <Card className="border-dashed border-2 bg-muted/20">
             <CardContent className="p-0">
-              <EmptyMessage icon={FileText} title="No se han registrado convenios todavía." />
+              <EmptyMessage icon={FileText} title="Todavía no hay convenios cargados" description="Los convenios que se carguen aparecen acá, con su vigencia y su monto." />
             </CardContent>
           </Card>
         ) : (
