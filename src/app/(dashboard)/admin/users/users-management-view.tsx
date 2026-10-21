@@ -28,6 +28,7 @@ import { TemporaryPasswordButton } from "./temporary-password-button";
 import { toggleUserStatusAction } from "../actions/user-actions";
 import { toast } from "sonner";
 import { Role } from "@prisma/client";
+import { ROLE_INFO, ROLE_ORDER, roleLabel } from "@/lib/roles";
 
 interface AreaItem {
   id: string;
@@ -72,7 +73,7 @@ export function UsersManagementView({
 
   const handleToggleStatus = (userId: string, currentActive: boolean) => {
     if (userId === currentUserId) {
-      toast.error("No puede desactivar su propio usuario administrador en sesión");
+      toast.error("No podés suspender tu propia cuenta.");
       return;
     }
 
@@ -80,10 +81,10 @@ export function UsersManagementView({
       const res = await toggleUserStatusAction(userId);
       if (res.success) {
         toast.success(
-          res.isActive ? "Cuenta de agente activada" : "Cuenta de agente suspendida"
+          res.isActive ? "Cuenta activada: ya puede ingresar." : "Cuenta suspendida: no va a poder ingresar."
         );
       } else {
-        toast.error(res.error || "Error al cambiar estado del agente");
+        toast.error(res.error || "No se pudo cambiar el estado de la cuenta.");
       }
     });
   };
@@ -104,7 +105,8 @@ export function UsersManagementView({
       const matchName = u.name?.toLowerCase().includes(q) || false;
       const matchEmail = u.email?.toLowerCase().includes(q) || false;
       const matchArea = u.area?.name.toLowerCase().includes(q) || false;
-      if (!matchName && !matchEmail && !matchArea) return false;
+      const matchRole = roleLabel(u.role).toLowerCase().includes(q);
+      if (!matchName && !matchEmail && !matchArea && !matchRole) return false;
     }
 
     return true;
@@ -113,70 +115,56 @@ export function UsersManagementView({
   const totalUsers = users.length;
   const activeCount = usersWithStatus.filter((u) => u.isActive).length;
   const inactiveCount = totalUsers - activeCount;
-  const execCount = users.filter((u) => u.role === "SUPERADMIN" || u.role === "DIRECCION_GENERAL").length;
+  const managementCount = users.filter((u) => u.role === "SUPERADMIN" || u.role === "DIRECCION_GENERAL" || u.role === "ADMIN_GENERAL").length;
+  // Solo los roles que hay cargados, en orden de más acceso a menos.
+  const rolesInUse = ROLE_ORDER.filter((r) => users.some((u) => u.role === r));
 
   const exportColumns = [
-    { header: "Nombre Completo", accessorKey: "name" },
-    { header: "Correo Electrónico", accessorKey: "email" },
+    { header: "Nombre", accessorKey: "name" },
+    { header: "Correo", accessorKey: "email" },
     { header: "Rol", accessorKey: "role" },
-    { header: "Área Asignada", accessorKey: "areaName" },
+    { header: "Área", accessorKey: "areaName" },
     { header: "Estado", accessorKey: "status" }
   ];
 
   const exportData = filteredUsers.map((u) => ({
-    name: u.name || "Sin Nombre",
-    email: u.email || "N/R",
-    role: u.role,
-    areaName: u.area?.name || "Administración General",
-    status: u.isActive ? "ACTIVO" : "INACTIVO"
+    name: u.name || "Sin nombre",
+    email: u.email || "",
+    role: roleLabel(u.role),
+    areaName: u.area?.name || "Sin área",
+    status: u.isActive ? "Activa" : "Suspendida"
   }));
 
-  const renderRoleBadge = (role: Role) => {
-    switch (role) {
-      case "SUPERADMIN":
-        return <Badge className="bg-rose-500/15 text-rose-500 border border-rose-500/30 font-bold text-[10px]">SUPERADMIN</Badge>;
-      case "DIRECCION_GENERAL":
-        return <Badge className="bg-purple-500/15 text-purple-500 border border-purple-500/30 font-bold text-[10px]">DIRECCIÓN GENERAL</Badge>;
-      case "ADMIN_GENERAL":
-        return <Badge className="bg-blue-500/15 text-blue-500 border border-blue-500/30 font-bold text-[10px]">ADMIN GENERAL</Badge>;
-      case "DIRECTOR_AREA":
-        return <Badge className="bg-indigo-500/15 text-indigo-500 border border-indigo-500/30 font-bold text-[10px]">DIRECTOR ÁREA</Badge>;
-      case "VIOLENCIA_GENERO":
-        return <Badge className="bg-amber-500/15 text-amber-500 border border-amber-500/30 font-bold text-[10px]">VIOLENCIA GÉNERO</Badge>;
-      case "RELEVADOR_EMERGENCIA":
-        return <Badge className="bg-sky-500/15 text-sky-600 border border-sky-500/30 font-bold text-[10px]">RELEVAMIENTO EMERGENCIA</Badge>;
-      case "AUDITOR":
-        return <Badge className="bg-emerald-500/15 text-emerald-500 border border-emerald-500/30 font-bold text-[10px]">AUDITOR</Badge>;
-      default:
-        return <Badge variant="outline" className="font-bold text-[10px]">OPERATIVO</Badge>;
-    }
-  };
+  const renderRoleBadge = (role: Role) => (
+    <Badge variant="outline" title={ROLE_INFO[role]?.description} className={`whitespace-nowrap font-bold text-[10px] ${ROLE_INFO[role]?.badgeClass ?? ""}`}>
+      {roleLabel(role)}
+    </Badge>
+  );
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500 pb-20">
       <PageHeader
-        title="Gestión de Usuarios y Personal"
+        title="Usuarios"
         description={
           isSuperadmin
-            ? "Administración de agentes, reasignación de áreas municipales, roles y conmutador de estados."
-            : "Reasignación de áreas, roles y estado de las cuentas. Crear usuarios y restablecer contraseñas lo hace el Superadmin."
+            ? "Quién puede entrar a la app, con qué rol y en qué área."
+            : "Quién puede entrar a la app, con qué rol y en qué área. Crear usuarios y restablecer contraseñas lo hace el Superadmin."
         }
         icon={UserCog}
-        badge="Personal Tres de Febrero"
         actions={
           isSuperadmin && (
           <Sheet open={isCreateOpen} onOpenChange={setIsCreateOpen}>
             <SheetTrigger asChild>
-              <Button className="rounded-2xl h-11 px-5 font-bold text-xs uppercase tracking-wider bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20 gap-2 font-heading">
+              <Button className="rounded-2xl h-11 px-5 font-bold text-sm bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20 gap-2">
                 <Plus className="h-4 w-4" />
-                <span>Nuevo Usuario</span>
+                <span>Nuevo usuario</span>
               </Button>
             </SheetTrigger>
             <SheetContent side="right" className="sm:max-w-md w-full bg-card border-l border-border/60 p-6 overflow-y-auto">
               <SheetHeader className="mb-4">
-                <SheetTitle className="text-xl font-bold font-heading">Alta de Funcionario</SheetTitle>
+                <SheetTitle className="text-xl font-bold font-heading">Nuevo usuario</SheetTitle>
                 <SheetDescription className="text-xs">
-                  Creación de credenciales para agentes de Tres de Febrero.
+                  La persona entra con su correo y la clave temporal, y la cambia por una propia.
                 </SheetDescription>
               </SheetHeader>
               <CreateUserForm areas={areas} onSuccess={() => setIsCreateOpen(false)} />
@@ -188,37 +176,37 @@ export function UsersManagementView({
 
       <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         <StatCard
-          label="Total Agentes"
+          label="Usuarios"
           value={totalUsers}
-          hint="Registrados en sistema"
+          hint="Cargados en la app"
           icon={Users}
           tone="blue"
         />
         <StatCard
-          label="Cuentas Activas"
+          label="Activos"
           value={activeCount}
-          hint="Habilitados para login"
+          hint="Pueden ingresar"
           icon={UserCheck}
           tone="green"
         />
         <StatCard
-          label="Cuentas Suspendidas"
+          label="Suspendidos"
           value={inactiveCount}
-          hint="Acceso bloqueado"
+          hint="No pueden ingresar"
           icon={UserX}
           tone="red"
         />
         <StatCard
-          label="Directivos y Admin"
-          value={execCount}
-          hint="Roles ejecutivos"
+          label="Conducción"
+          value={managementCount}
+          hint="Superadmin, Dirección y Administración General"
           icon={Shield}
           tone="purple"
         />
       </div>
 
       <Card className="bg-card text-card-foreground border border-border/60 shadow-xs rounded-2xl overflow-hidden">
-        <div className="p-4 sm:p-5 border-b border-border/40 bg-muted/20 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="p-4 sm:p-5 border-b border-border/40 bg-muted/20 flex flex-col xl:flex-row xl:items-center justify-between gap-4">
           <div className="flex items-center gap-1.5 bg-muted/40 p-1 rounded-2xl border border-border/40 shrink-0">
             <button
               type="button"
@@ -251,15 +239,15 @@ export function UsersManagementView({
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              Inactivos ({inactiveCount})
+              Suspendidos ({inactiveCount})
             </button>
           </div>
 
-          <div className="flex flex-col sm:flex-row items-center gap-2">
-            <div className="relative w-full sm:w-64">
+          <div className="flex flex-col sm:flex-row sm:flex-wrap items-center gap-2">
+            <div className="relative w-full sm:w-56">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
               <Input
-                placeholder="Buscar por nombre, email o área..."
+                placeholder="Buscar por nombre, correo, área o rol"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-9 h-9 text-xs rounded-xl bg-muted/20 border-border/60 text-foreground"
@@ -272,9 +260,9 @@ export function UsersManagementView({
               className="h-9 px-3 rounded-xl bg-muted/20 border border-border/60 text-xs font-bold text-foreground focus:outline-none focus:ring-1 focus:ring-primary w-full sm:w-auto"
             >
               <option value="TODOS">Todos los roles</option>
-              {Object.values(Role).map((r) => (
+              {rolesInUse.map((r) => (
                 <option key={r} value={r}>
-                  {r}
+                  {roleLabel(r)}
                 </option>
               ))}
             </select>
@@ -282,8 +270,8 @@ export function UsersManagementView({
             <UniversalExportMenu
               data={exportData}
               columns={exportColumns}
-              filename="personal_municipal_tres_de_febrero"
-              title="Padrón Unificado de Personal y Funcionario Municipal"
+              filename="usuarios_munigestion"
+              title="Usuarios de MuniGestión 3F"
               subtitle="MUNICIPALIDAD DE TRES DE FEBRERO"
               label="Exportar"
             />
@@ -294,10 +282,9 @@ export function UsersManagementView({
           <table className="w-full text-xs text-left">
             <thead className="bg-muted/40 text-muted-foreground uppercase font-bold tracking-wider border-b border-border/40">
               <tr>
-                <th className="px-5 py-3.5">Funcionario / Agente</th>
-                <th className="px-4 py-3.5">Correo Electrónico</th>
-                <th className="px-4 py-3.5">Rol e Atribuciones</th>
-                <th className="px-4 py-3.5">Área Municipal Asignada</th>
+                <th className="px-5 py-3.5 min-w-[240px]">Persona</th>
+                <th className="px-4 py-3.5">Rol</th>
+                <th className="px-4 py-3.5">Área</th>
                 <th className="px-4 py-3.5">Estado</th>
                 <th className="px-4 py-3.5 text-right">Acciones</th>
               </tr>
@@ -311,22 +298,20 @@ export function UsersManagementView({
                       <td className="px-5 py-3.5 font-bold text-foreground">
                         <div className="flex items-center gap-3">
                           <div className="h-9 w-9 rounded-xl bg-primary/10 text-primary border border-primary/20 flex items-center justify-center font-bold text-xs shrink-0">
-                            {u.name ? u.name[0].toUpperCase() : "A"}
+                            {(u.name || u.email || "?")[0].toUpperCase()}
                           </div>
-                          <div>
+                          <div className="min-w-0">
                             <p className="text-xs font-bold text-foreground leading-tight">
-                              {u.name || "Agente Sin Nombre"}
+                              {u.name || "Sin nombre"}
                             </p>
+                            <p className="mt-0.5 truncate font-mono text-[11px] font-normal text-muted-foreground" title={u.email ?? undefined}>{u.email}</p>
                             {isSelf && (
                               <Badge variant="outline" className="text-[9px] font-bold border-primary/30 text-primary mt-0.5">
-                                Su Sesión Actual
+                                Sos vos
                               </Badge>
                             )}
                           </div>
                         </div>
-                      </td>
-                      <td className="px-4 py-3.5 font-mono text-muted-foreground">
-                        {u.email}
                       </td>
                       <td className="px-4 py-3.5">
                         {renderRoleBadge(u.role)}
@@ -334,7 +319,7 @@ export function UsersManagementView({
                       <td className="px-4 py-3.5 text-muted-foreground font-semibold">
                         <div className="flex items-center gap-1.5">
                           <Building2 className="h-3.5 w-3.5 text-primary shrink-0" />
-                          <span>{u.area?.name || "Administración General"}</span>
+                          <span className={u.area ? "line-clamp-2" : "italic"} title={u.area?.name}>{u.area?.name || "Sin área"}</span>
                         </div>
                       </td>
                       <td className="px-4 py-3.5">
@@ -342,18 +327,18 @@ export function UsersManagementView({
                           type="button"
                           disabled={isSelf || isPending}
                           onClick={() => handleToggleStatus(u.id, u.isActive)}
-                          title={isSelf ? "No puede desactivarse a sí mismo" : "Haga clic para cambiar estado"}
+                          title={isSelf ? "No podés suspender tu propia cuenta" : u.isActive ? "Tocá para suspender la cuenta" : "Tocá para volver a activar la cuenta"}
                           className={`px-2.5 py-1 rounded-xl text-[10px] font-bold border transition-all ${
                             u.isActive
-                              ? "bg-emerald-500/15 text-emerald-500 border-emerald-500/30 hover:bg-rose-500/10 hover:text-rose-500 hover:border-rose-500/30"
-                              : "bg-rose-500/15 text-rose-500 border-rose-500/30 hover:bg-emerald-500/10 hover:text-emerald-500 hover:border-emerald-500/30"
+                              ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30 hover:bg-rose-500/10 hover:text-rose-700 dark:hover:text-rose-300 hover:border-rose-500/30"
+                              : "bg-rose-500/15 text-rose-700 dark:text-rose-300 border-rose-500/30 hover:bg-emerald-500/10 hover:text-emerald-700 dark:hover:text-emerald-300 hover:border-emerald-500/30"
                           } ${isSelf ? "opacity-70 cursor-not-allowed" : "cursor-pointer"}`}
                         >
-                          {u.isActive ? "ACTIVO" : "SUSPENDIDO"}
+                          {u.isActive ? "Activa" : "Suspendida"}
                         </button>
                       </td>
                       <td className="px-4 py-3.5 text-right">
-                        <div className="flex flex-wrap items-center justify-end gap-1">
+                        <div className="flex items-center justify-end gap-1 whitespace-nowrap">
                         {isSuperadmin && !isSelf && (
                           <TemporaryPasswordButton userId={u.id} userName={u.name || u.email || "esta persona"} isActive={u.isActive} />
                         )}
@@ -376,8 +361,8 @@ export function UsersManagementView({
                 })
               ) : (
                 <tr>
-                  <td colSpan={6}>
-                    <EmptyMessage title="No se encontraron agentes municipales que coincidan con la búsqueda." />
+                  <td colSpan={5}>
+                    <EmptyMessage title="Nadie coincide con la búsqueda." />
                   </td>
                 </tr>
               )}

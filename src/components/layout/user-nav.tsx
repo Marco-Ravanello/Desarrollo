@@ -16,6 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { UserCog, UserPlus, Settings, LogOut, ChevronDown, KeyRound } from "lucide-react";
 import Link from "next/link";
 import { canCreateUsersAndResetPasswords, hasPermission, PERMISSIONS } from "@/lib/permissions";
+import { roleLabel } from "@/lib/roles";
 
 interface UserNavProps {
   variant?: "header" | "sidebar";
@@ -57,8 +58,8 @@ export function UserNav({ variant = "header", isCollapsed = false }: UserNavProp
                   <p className="text-xs font-bold text-foreground truncate group-hover:text-primary transition-colors">
                     {user.name || "Usuario"}
                   </p>
-                  <p className="text-[10px] text-muted-foreground font-semibold uppercase truncate">
-                    {user.role || "Agente"}
+                  <p className="text-[10px] text-muted-foreground font-semibold truncate">
+                    {roleLabel(user.role)}
                   </p>
                 </div>
                 <ChevronDown className="h-3.5 w-3.5 text-muted-foreground shrink-0 ml-1 group-hover:text-foreground transition-colors" />
@@ -92,8 +93,8 @@ export function UserNav({ variant = "header", isCollapsed = false }: UserNavProp
             <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
               Agente Municipal
             </span>
-            <Badge className="bg-primary/15 text-primary border border-primary/20 text-[9px] font-bold uppercase py-0">
-              {user.role || "OPERATIVO"}
+            <Badge className="bg-primary/15 text-primary border border-primary/20 text-[9px] font-bold py-0">
+              {roleLabel(user.role)}
             </Badge>
           </div>
           <p className="text-xs font-bold text-foreground truncate">{user.name || "Usuario Municipal"}</p>
@@ -115,7 +116,7 @@ export function UserNav({ variant = "header", isCollapsed = false }: UserNavProp
             <DropdownMenuItem asChild className="rounded-xl text-xs font-semibold cursor-pointer py-2 focus:bg-primary/10 focus:text-primary">
               <Link href="/admin/users" className="flex items-center gap-2.5 w-full">
                 <UserCog className="h-4 w-4 text-primary" />
-                <span>Gestión de Usuarios</span>
+                <span>Usuarios</span>
               </Link>
             </DropdownMenuItem>
             {canCreateUsersAndResetPasswords(userRole) && (

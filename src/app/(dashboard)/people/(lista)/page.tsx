@@ -15,7 +15,7 @@ import {
   SheetTitle,
   SheetTrigger
 } from "@/components/ui/sheet";
-import InterventionsAdminPage from "../admin/interventions/page";
+import InterventionsAdminPage from "../../admin/interventions/page";
 import { PadronImport } from "@/components/people/padron-import";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { auth } from "@/auth";

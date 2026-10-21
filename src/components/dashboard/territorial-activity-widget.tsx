@@ -1,5 +1,6 @@
 "use client";
 
+import { MapPlaceholder } from "@/components/layout/page-skeletons";
 import React from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
@@ -9,12 +10,7 @@ const DynamicTerritorialMap = dynamic(
   () => import("./territorial-map-inner").then((mod) => mod.TerritorialMapInner),
   {
     ssr: false,
-    loading: () => (
-      <div className="h-[220px] w-full bg-muted/30 animate-pulse rounded-xl flex flex-col items-center justify-center gap-2 border border-border/40">
-        <MapPin className="h-5 w-5 text-blue-600 animate-bounce" />
-        <span className="text-xs text-muted-foreground font-medium">Cargando cartografía de Tres de Febrero...</span>
-      </div>
-    )
+    loading: () => <MapPlaceholder height={220} className="rounded-xl" />
   }
 );
 

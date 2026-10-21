@@ -18,6 +18,7 @@ import {
   User, Mail, Shield, Building2, Lock, Save, RefreshCw, AlertTriangle
 } from "lucide-react";
 import { updateUserAction } from "../actions/user-actions";
+import { ROLE_INFO, ROLE_ORDER } from "@/lib/roles";
 
 interface AreaItem {
   id: string;
@@ -42,41 +43,6 @@ interface EditUserDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-const ROLE_DESCRIPTIONS: Record<Role, { title: string; desc: string }> = {
-  SUPERADMIN: {
-    title: "Superadministrador General",
-    desc: "Acceso total a auditorías, usuarios, áreas y configuraciones del servidor."
-  },
-  DIRECCION_GENERAL: {
-    title: "Dirección General Executive",
-    desc: "Vista estratégica de la Sala de Situación, reportes ejecutivos y casos de violencia."
-  },
-  ADMIN_GENERAL: {
-    title: "Administración General",
-    desc: "Gestión global de compras, insumos, flota vehicular y recursos de áreas."
-  },
-  DIRECTOR_AREA: {
-    title: "Director de Área / Secretaría",
-    desc: "Coordinación directa de agentes, aprobación de trámites y expedientes locales."
-  },
-  OPERATIVO: {
-    title: "Agente Operativo / Trabajo Social",
-    desc: "Carga de intervenciones territoriales, expedientes sociales y asistencia directa."
-  },
-  AUDITOR: {
-    title: "Auditor / Control de Gestión",
-    desc: "Acceso de lectura y fiscalización de trazabilidad financiera e intervenciones."
-  },
-  VIOLENCIA_GENERO: {
-    title: "Especialista Violencia de Género",
-    desc: "Acceso exclusivo a legajos y casos confidenciales con protección de datos."
-  },
-  RELEVADOR_EMERGENCIA: {
-    title: "Relevamiento de Emergencia Climática",
-    desc: "Solo carga fichas de emergencia climática y ve las que cargó. No ve stock ni el resto del sistema."
-  }
-};
-
 export function EditUserDialog({
   user,
   areas,
@@ -100,7 +66,7 @@ export function EditUserDialog({
     if (!user) return;
 
     if (!name.trim() || !email.trim()) {
-      toast.error("El nombre y el correo electrónico son obligatorios");
+      toast.error("Completá el nombre y el correo.");
       return;
     }
 
@@ -115,10 +81,10 @@ export function EditUserDialog({
       });
 
       if (res.success) {
-        toast.success(`Perfil de agente ${user.email} actualizado correctamente`);
+        toast.success("Cambios guardados.");
         onOpenChange(false);
       } else {
-        toast.error(res.error || "Error al actualizar perfil del agente");
+        toast.error(res.error || "No se pudieron guardar los cambios.");
       }
     });
   };
@@ -129,32 +95,32 @@ export function EditUserDialog({
         <DialogHeader>
           <DialogTitle className="text-xl font-bold flex items-center gap-2">
             <User className="h-5 w-5 text-primary" />
-            Editar Perfil de Agente Municipal
+            Editar usuario
           </DialogTitle>
           <DialogDescription className="text-xs text-muted-foreground">
-            Modifique los permisos institucionales, reasigne áreas o cambie el estado de la cuenta.
+            Cambiá el nombre, el rol, el área o el estado de la cuenta.
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSave} className="space-y-4 pt-2">
           <div className="space-y-1.5">
-            <Label className="text-xs font-bold text-foreground">Nombre y Apellido</Label>
+            <Label className="text-xs font-bold text-foreground">Nombre y apellido</Label>
             <Input
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Ej: Lic. Bautista Pino"
+              placeholder="Ej: María Pérez"
               className="h-10 rounded-xl bg-muted/30 border-border/60 text-xs"
               required
             />
           </div>
 
           <div className="space-y-1.5">
-            <Label className="text-xs font-bold text-foreground">Correo Electrónico Oficial</Label>
+            <Label className="text-xs font-bold text-foreground">Correo</Label>
             <Input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="ejemplo@tresdefebrero.gov.ar"
+              placeholder="nombre@tresdefebrero.gob.ar"
               className="h-10 rounded-xl bg-muted/30 border-border/60 text-xs font-mono"
               required
             />
@@ -162,28 +128,29 @@ export function EditUserDialog({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <Label className="text-xs font-bold text-foreground">Rol e Atribuciones</Label>
+              <Label className="text-xs font-bold text-foreground">Rol</Label>
               <select
                 value={role}
                 onChange={(e) => setRole(e.target.value as Role)}
                 className="w-full h-10 px-3 rounded-xl bg-muted/30 border border-border/60 text-xs font-bold text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
               >
-                {Object.keys(ROLE_DESCRIPTIONS).map((rKey) => (
-                  <option key={rKey} value={rKey}>
-                    {rKey}
+                {/* Superadmin solo lo da otro Superadmin. */}
+                {ROLE_ORDER.filter((r) => r !== "SUPERADMIN" || isSuperadmin || user?.role === "SUPERADMIN").map((r) => (
+                  <option key={r} value={r}>
+                    {ROLE_INFO[r].label}
                   </option>
                 ))}
               </select>
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-xs font-bold text-foreground">Área Municipal Asignada</Label>
+              <Label className="text-xs font-bold text-foreground">Área</Label>
               <select
                 value={areaId}
                 onChange={(e) => setAreaId(e.target.value)}
                 className="w-full h-10 px-3 rounded-xl bg-muted/30 border border-border/60 text-xs font-bold text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
               >
-                <option value="">Sin Área Específica (Global)</option>
+                <option value="">Sin área</option>
                 {areas.map((a) => (
                   <option key={a.id} value={a.id}>
                     {a.name}
@@ -194,9 +161,9 @@ export function EditUserDialog({
           </div>
 
           <div className="p-3 rounded-2xl bg-muted/30 border border-border/40 space-y-1 text-xs">
-            <span className="font-bold text-primary">{ROLE_DESCRIPTIONS[role]?.title}</span>
+            <span className="font-bold text-primary">{ROLE_INFO[role]?.label}</span>
             <p className="text-[11px] text-muted-foreground leading-relaxed">
-              {ROLE_DESCRIPTIONS[role]?.desc}
+              {ROLE_INFO[role]?.description}
             </p>
           </div>
 
@@ -213,9 +180,9 @@ export function EditUserDialog({
 
           <div className="p-3.5 rounded-2xl bg-muted/30 border border-border/40 flex items-center justify-between gap-3">
             <div>
-              <p className="text-xs font-bold text-foreground">Estado de la Cuenta Institucional</p>
+              <p className="text-xs font-bold text-foreground">Estado de la cuenta</p>
               <p className="text-[11px] text-muted-foreground">
-                {isActive ? "Cuenta habilitada para inicio de sesión" : "Acceso bloqueado en auth"}
+                {isActive ? "Puede ingresar a la app." : "No puede ingresar hasta que se active."}
               </p>
             </div>
 
@@ -225,18 +192,18 @@ export function EditUserDialog({
               onClick={() => setIsActive(!isActive)}
               className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
                 isActive
-                  ? "bg-emerald-500/15 text-emerald-500 border border-emerald-500/30"
-                  : "bg-rose-500/15 text-rose-500 border border-rose-500/30"
+                  ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30"
+                  : "bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/30"
               }`}
             >
-              {isActive ? "Cuenta Activa" : "Suspendida"}
+              {isActive ? "Activa" : "Suspendida"}
             </button>
           </div>
 
           {isSelf && (
-            <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-500 text-[11px] font-bold flex items-center gap-2">
+            <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-800 dark:text-amber-300 text-[11px] font-bold flex items-center gap-2">
               <AlertTriangle className="h-4 w-4 shrink-0" />
-              <span>Está editando su propia sesión activa. El cambio de estado queda inhabilitado.</span>
+              <span>Es tu propia cuenta: no la podés suspender.</span>
             </div>
           )}
 
@@ -253,10 +220,10 @@ export function EditUserDialog({
             <Button
               type="submit"
               disabled={isPending}
-              className="rounded-xl h-10 px-5 text-xs font-bold uppercase tracking-wider bg-primary hover:bg-primary/90 text-primary-foreground gap-2"
+              className="rounded-xl h-10 px-5 text-sm font-bold bg-primary hover:bg-primary/90 text-primary-foreground gap-2"
             >
               {isPending ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-              <span>Guardar Perfil</span>
+              <span>Guardar</span>
             </Button>
           </div>
         </form>
