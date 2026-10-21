@@ -81,7 +81,7 @@ export default async function ProviderDetailPage({ params }: { params: Promise<{
         </CardHeader>
         <CardContent>
           {orders.length === 0 ? (
-            <EmptyMessage title="Este proveedor todavía no tiene órdenes de compra." />
+            <EmptyMessage compact title="Este proveedor todavía no tiene órdenes de compra" />
           ) : (
             <div className="overflow-x-auto">
               <Table>

@@ -49,7 +49,8 @@ export default async function PadronDuplicatesPage() {
 
       {total === 0 ? (
         <EmptyMessage
-          title="No se encontraron posibles duplicados."
+          kind="done"
+          title="No hay posibles duplicados para revisar"
           icon={Users}
           className="rounded-2xl border-2 border-dashed border-border/60"
         />

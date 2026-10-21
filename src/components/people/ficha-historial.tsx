@@ -39,7 +39,9 @@ export function FichaHistorialView({ historial }: { historial: FichaHistorial })
   if (historialCount(historial) === 0) {
     return (
       <EmptyMessage
-        title="No hay expedientes, intervenciones ni fichas de emergencia para este DNI."
+        compact
+        title="Todavía no tiene atención municipal registrada"
+        description="Cuando tenga expedientes, intervenciones o fichas de emergencia, aparecen acá."
         icon={FolderOpen}
         className="rounded-2xl border-2 border-dashed border-border/60"
       />

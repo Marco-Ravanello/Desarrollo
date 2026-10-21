@@ -59,7 +59,7 @@ export default async function DerivationsPage() {
         {tabs.map((t) => (
           <TabsContent key={t.id} value={t.id}>
             {t.rows.length === 0 ? (
-              <EmptyMessage title={t.empty} icon={t.icon} className="rounded-2xl border-2 border-dashed border-border/60" />
+              <EmptyMessage kind={t.canRespond ? "done" : "empty"} title={t.empty} icon={t.icon} className="rounded-2xl border-2 border-dashed border-border/60" />
             ) : (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
                 {t.rows.map((d) => (

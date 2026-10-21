@@ -4,21 +4,41 @@ import { MUNICIPAL_LOCALITIES } from "@/lib/constants/localities";
 
 export interface MapFilters {
   localityId?: string;
+  /** Programas a comparar (hasta MAP_MAX_PROGRAMS). Sin programas: todo el padrón. */
+  programs?: string[];
+  /** Un solo programa (forma anterior, se suma a `programs`). */
   program?: string;
   query?: string;
+}
+
+/** Hasta tres programas a la vez: con más colores los puntos ya no se distinguen bien. */
+export const MAP_MAX_PROGRAMS = 3;
+
+export interface NormalizedMapFilters {
+  localityId: string;
+  programs: string[];
+  query: string;
 }
 
 /** Distancia (km) hasta el centro de la localidad para contar a alguien que no la tiene escrita en su dirección. */
 export const LOCALITY_RADIUS_KM = 1.8;
 
-export function normalizeMapFilters(input: MapFilters | null | undefined): Required<MapFilters> {
+export function normalizeMapFilters(input: MapFilters | null | undefined): NormalizedMapFilters {
   const localityId = String(input?.localityId || "all");
+  const raw = [...(Array.isArray(input?.programs) ? input!.programs : []), input?.program];
+  const programs: string[] = [];
+  for (const value of raw) {
+    const name = String(value ?? "").trim().slice(0, 120);
+    if (name && name !== "all" && !programs.includes(name)) programs.push(name);
+  }
   return {
     localityId: MUNICIPAL_LOCALITIES.some((l) => l.id === localityId) ? localityId : "all",
-    program: String(input?.program || "all").trim().slice(0, 120) || "all",
+    programs: programs.slice(0, MAP_MAX_PROGRAMS),
     query: String(input?.query || "").trim().slice(0, 100),
   };
 }
+
+const PROGRAMS_OF_ROW = "unnest(string_to_array(COALESCE(programas_activos, ''), '|')) AS prog";
 
 class SqlBuilder {
   params: unknown[] = [];
@@ -81,8 +101,14 @@ function localityCondition(b: SqlBuilder, localityId: string): string | null {
   return `(${byText} OR ${near})`;
 }
 
-/** WHERE para padron_unificado con los filtros del Mapa Social. */
-export function buildMapWhere(input: MapFilters | null | undefined): { where: string; params: unknown[] } {
+/**
+ * WHERE para padron_unificado con los filtros del Mapa Social.
+ * Con `withMask`, también la expresión que dice a qué programa elegido pertenece cada fila
+ * (bit k = programa k); sus parámetros van después de los del WHERE, así que hay que usar las dos.
+ */
+export function buildMapWhere(input: MapFilters | null | undefined): { where: string; params: unknown[] };
+export function buildMapWhere(input: MapFilters | null | undefined, options: { withMask: true }): { where: string; params: unknown[]; mask: string };
+export function buildMapWhere(input: MapFilters | null | undefined, options?: { withMask?: boolean }): { where: string; params: unknown[]; mask?: string } {
   const filters = normalizeMapFilters(input);
   const b = new SqlBuilder();
   const conditions: string[] = [];
@@ -90,9 +116,9 @@ export function buildMapWhere(input: MapFilters | null | undefined): { where: st
   const locality = localityCondition(b, filters.localityId);
   if (locality) conditions.push(locality);
 
-  if (filters.program !== "all") {
-    const p = b.param(filters.program);
-    conditions.push(`EXISTS (SELECT 1 FROM unnest(string_to_array(COALESCE(programas_activos, ''), '|')) AS prog WHERE trim(prog) = ${p})`);
+  if (filters.programs.length > 0) {
+    const list = filters.programs.map((p) => b.param(p)).join(", ");
+    conditions.push(`EXISTS (SELECT 1 FROM ${PROGRAMS_OF_ROW} WHERE trim(prog) IN (${list}))`);
   }
 
   if (filters.query) {
@@ -103,5 +129,14 @@ export function buildMapWhere(input: MapFilters | null | undefined): { where: st
     conditions.push(`(${parts.join(" OR ")})`);
   }
 
-  return { where: conditions.length ? conditions.join(" AND ") : "TRUE", params: b.params };
+  const where = conditions.length ? conditions.join(" AND ") : "TRUE";
+  if (!options?.withMask) return { where, params: b.params };
+
+  const mask =
+    filters.programs.length > 0
+      ? filters.programs
+          .map((p, k) => `(CASE WHEN EXISTS (SELECT 1 FROM ${PROGRAMS_OF_ROW} WHERE trim(prog) = ${b.param(p)}) THEN ${1 << k} ELSE 0 END)`)
+          .join(" + ")
+      : "0";
+  return { where, params: b.params, mask };
 }

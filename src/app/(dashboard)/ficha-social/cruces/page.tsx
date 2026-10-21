@@ -317,7 +317,12 @@ export default function CrucesSocialesPage() {
                 <tr>
                   <td colSpan={6} className={isPending ? "text-center py-12 text-muted-foreground italic" : "p-0"}>
                     {isPending ? "Calculando matriz de cruces..." : (
-                      <EmptyMessage title="No se encontraron coincidencias para los programas seleccionados." icon={Users} />
+                      <EmptyMessage
+                        kind="search"
+                        title={modo === "interseccion" ? "Nadie está en todos los programas elegidos" : "Nadie está en los programas elegidos"}
+                        description={modo === "interseccion" ? "Probá quitando alguno de los programas." : "Probá con otros programas."}
+                        icon={Users}
+                      />
                     )}
                   </td>
                 </tr>

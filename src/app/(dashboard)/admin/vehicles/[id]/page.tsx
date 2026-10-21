@@ -156,7 +156,7 @@ export default async function VehicleDetailPage({ params }: { params: Promise<{ 
                   ))}
                   {vehicle.reservations.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={4}><EmptyMessage title="Sin reservas registradas" /></TableCell>
+                      <TableCell colSpan={4}><EmptyMessage compact title="Este vehículo todavía no tiene reservas" /></TableCell>
                     </TableRow>
                   )}
                 </TableBody>
@@ -200,7 +200,7 @@ export default async function VehicleDetailPage({ params }: { params: Promise<{ 
                   ))}
                   {vehicle.fuelRecords.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={4}><EmptyMessage title="Sin cargas registradas" /></TableCell>
+                      <TableCell colSpan={4}><EmptyMessage compact title="Todavía no hay cargas de combustible" /></TableCell>
                     </TableRow>
                   )}
                 </TableBody>

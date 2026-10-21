@@ -111,8 +111,9 @@ export default async function AgreementDetailPage({ params }: { params: Promise<
                ) : (
                  <EmptyMessage
                    icon={FileText}
-                   title="No hay archivo adjunto."
-                   className="rounded-xl border-2 border-dashed py-6"
+                   compact
+                   title="Este convenio todavía no tiene archivo adjunto"
+                   className="rounded-xl border-2 border-dashed"
                  />
                )}
             </CardContent>

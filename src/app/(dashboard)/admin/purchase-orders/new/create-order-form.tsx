@@ -281,7 +281,9 @@ export function CreatePurchaseOrderForm({ providers, areas = [] }: { providers: 
              {items.length === 0 ? (
                <EmptyMessage
                  icon={Info}
-                 title="No hay ítems cargados. Usa el asistente de OCR o agrega uno manualmente."
+                 compact
+                 title="Todavía no hay ítems en la orden"
+                 description="Agregá uno a mano o subí la factura para leerla automáticamente."
                  className="rounded-xl border-2 border-dashed border-border/60"
                />
              ) : (

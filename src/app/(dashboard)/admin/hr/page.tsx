@@ -1,5 +1,6 @@
 export const dynamic = "force-dynamic";
 
+import Link from "next/link";
 import prisma from "@/lib/prisma";
 import { getHRRecords, getHRStats } from "@/services/hr";
 import { Card, CardContent } from "@/components/ui/card";
@@ -191,7 +192,17 @@ export default async function HRPage({
             {sanitizedRecords.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={5}>
-                  <EmptyMessage title="No se encontraron agentes con los filtros aplicados." />
+                  <EmptyMessage
+                    kind={q || (area && area !== "all") || (status && status !== "all") ? "search" : "empty"}
+                    title={q || (area && area !== "all") || (status && status !== "all") ? "Nadie del personal coincide con la búsqueda" : "Todavía no hay personal cargado"}
+                    action={
+                      q || (area && area !== "all") || (status && status !== "all") ? (
+                        <Button asChild variant="outline" size="sm" className="rounded-xl text-xs">
+                          <Link href="/admin/hr">Quitar filtros</Link>
+                        </Button>
+                      ) : undefined
+                    }
+                  />
                 </TableCell>
               </TableRow>
             ) : (

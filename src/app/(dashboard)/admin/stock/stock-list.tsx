@@ -128,7 +128,7 @@ export function StockList({ supplies }: { supplies: any[] }) {
           {supplies.length === 0 && (
             <TableRow>
               <TableCell colSpan={5}>
-                <EmptyMessage icon={Package} title="No hay insumos registrados." />
+                <EmptyMessage icon={Package} title="Todavía no hay insumos cargados" description="Los insumos que cargues aparecen acá, con su stock." />
               </TableCell>
             </TableRow>
           )}

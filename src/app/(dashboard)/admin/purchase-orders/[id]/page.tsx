@@ -218,8 +218,9 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
             <CardContent className="p-0">
               <EmptyMessage
                 icon={FileText}
-                title="No se registran documentos digitalizados adjuntos para esta orden."
-                description="Los comprobantes de entrega, facturas y remitos cargados aparecerán en esta sección."
+                compact
+                title="Esta orden todavía no tiene documentos"
+                description="Las facturas, remitos y comprobantes que se adjunten aparecen acá."
               />
             </CardContent>
           </Card>

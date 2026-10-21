@@ -262,14 +262,19 @@ export default async function PeoplePage({
                 <TableRow>
                   <TableCell colSpan={6} className="p-0">
                     <EmptyMessage
-                      title="No se encontraron ciudadanos empadronados"
-                      description="Pruebe ajustando la búsqueda por texto o limpiando los filtros de barrio y programa social."
+                      kind={search || barrio || programa ? "search" : "empty"}
+                      title={search || barrio || programa ? "Nadie del padrón coincide con la búsqueda" : "Todavía no hay personas en el padrón"}
+                      description={
+                        search || barrio || programa
+                          ? "Probá con otro nombre o DNI, o quitá los filtros de barrio y programa."
+                          : "Cuando se importe la planilla del padrón, las personas aparecen acá."
+                      }
                       icon={UserX}
                       action={
                         <Button variant="outline" asChild className="rounded-2xl text-xs font-bold gap-2 border-border/60">
                           <Link href="/people">
                             <RotateCcw className="h-3.5 w-3.5 text-primary" />
-                            Restablecer Filtros
+                            Quitar filtros
                           </Link>
                         </Button>
                       }

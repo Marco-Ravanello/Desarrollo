@@ -362,7 +362,26 @@ export function UsersManagementView({
               ) : (
                 <tr>
                   <td colSpan={5}>
-                    <EmptyMessage title="Nadie coincide con la búsqueda." />
+                    <EmptyMessage
+                      kind="search"
+                      title="Nadie coincide con la búsqueda"
+                      description="Probá con otro nombre, correo o rol."
+                      action={
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="rounded-xl text-xs"
+                          onClick={() => {
+                            setSearchQuery("");
+                            setRoleFilter("TODOS");
+                            setStatusFilter("TODOS");
+                          }}
+                        >
+                          Quitar filtros
+                        </Button>
+                      }
+                    />
                   </td>
                 </tr>
               )}
