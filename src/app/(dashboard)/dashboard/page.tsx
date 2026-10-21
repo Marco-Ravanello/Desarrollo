@@ -153,7 +153,9 @@ export default async function DashboardPage({
 
   const layout = LAYOUT[profile];
   // "Mis expedientes a cargo" aparece primero, solo para quien tiene expedientes asignados.
-  const sections: SectionId[] = myCases.total > 0 ? ["myCases", ...layout.sections] : layout.sections;
+  // El Superadmin la ve siempre (se usa para probar todo), aunque no tenga expedientes a cargo.
+  const showMyCases = myCases.total > 0 || role === "SUPERADMIN";
+  const sections: SectionId[] = showMyCases ? ["myCases", ...layout.sections] : layout.sections;
   const canLoadData = profile !== "auditor";
   const canSeeReports = hasPermission(role, PERMISSIONS.VIEW_REPORTS);
 
@@ -417,10 +419,18 @@ function MyCasesCard({ total, cases }: { total: number; cases: MyAssignedCase[] 
       <CardHeaderRow
         icon={FolderOpen}
         iconClass="text-primary"
-        title={`Mis expedientes a cargo (${total})`}
+        title={total > 0 ? `Mis expedientes a cargo (${total})` : "Mis expedientes a cargo"}
         href="/cases?assigned=mine"
         linkLabel="Ver todos"
       />
+      {cases.length === 0 && (
+        <EmptyMessage
+          compact
+          icon={FolderOpen}
+          title="No tenés expedientes a cargo"
+          description="Cuando te dejen a cargo de un expediente, o lo tomes vos, aparece acá."
+        />
+      )}
       <div className="divide-y divide-border/20 mt-1">
         {cases.map((c) => (
           <Link
