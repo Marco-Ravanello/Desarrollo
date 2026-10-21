@@ -103,11 +103,11 @@ describe("usuarios y contraseñas: solo el Superadmin", () => {
   it("Admin General y Dirección General ya no crean usuarios; el Superadmin sí", async () => {
     for (const u of [adminGeneral, direccion]) {
       loginAs(u);
-      expect((await createUserAction(form({ name: "X", email: `nuevo-${u.role}@prueba.test`, password: "temporal12", role: "OPERATIVO" }))).success).toBe(false);
+      expect((await createUserAction(form({ name: "X", username: `nuevo-${u.role}`, email: `nuevo-${u.role}@prueba.test`, password: "temporal12", role: "OPERATIVO" }))).success).toBe(false);
     }
     loginAs(superadmin);
-    expect((await createUserAction(form({ name: "X", email: "nuevo-sa@prueba.test", password: "corta", role: "OPERATIVO" }))).success).toBe(false);
-    expect((await createUserAction(form({ name: "X", email: "nuevo-sa@prueba.test", password: "temporal12", role: "OPERATIVO" }))).success).toBe(true);
+    expect((await createUserAction(form({ name: "X", username: `nuevo-sa`, email: "nuevo-sa@prueba.test", password: "corta", role: "OPERATIVO" }))).success).toBe(false);
+    expect((await createUserAction(form({ name: "X", username: `nuevo-sa`, email: "nuevo-sa@prueba.test", password: "temporal12", role: "OPERATIVO" }))).success).toBe(true);
     expect(await prisma.user.count({ where: { email: { startsWith: "nuevo-" } } })).toBe(1);
   });
 

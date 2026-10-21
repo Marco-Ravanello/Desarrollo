@@ -4,7 +4,7 @@ import prisma from "@/lib/prisma";
 import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { authConfig } from "./auth.config";
-import { isAccountLocked, logLogin } from "@/services/login-security";
+import { findUserForLogin, isAccountLocked, logLogin } from "@/services/login-security";
 
 // Cada cuánto se vuelve a consultar la base para confirmar que la cuenta sigue activa.
 const ACCOUNT_RECHECK_MS = 5 * 60 * 1000;
@@ -51,17 +51,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     CredentialsProvider({
       name: "credentials",
       credentials: {
-        email: { label: "Email", type: "email" },
+        username: { label: "Usuario", type: "text" },
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
         try {
-          if (!credentials?.email || !credentials?.password) return null;
+          if (!credentials?.username || !credentials?.password) return null;
 
-          
-          const user = await prisma.user.findUnique({
-            where: { email: credentials.email as string },
-          });
+          const user = await findUserForLogin(String(credentials.username));
 
           if (!user) {
             console.warn("⚠️ Login rechazado: usuario no encontrado");
@@ -100,6 +97,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           return {
             id: user.id,
             email: user.email,
+            username: user.username,
             name: user.name,
             role: user.role,
             areaId: user.areaId,

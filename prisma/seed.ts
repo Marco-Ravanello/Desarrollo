@@ -34,6 +34,7 @@ async function main() {
     const initialPassword = process.env.SEED_ADMIN_PASSWORD || randomBytes(9).toString('base64url');
     await prisma.user.create({
       data: {
+        username: 'admin',
         email: 'admin@municipio.gob.ar',
         name: 'Administrador General',
         password: await bcrypt.hash(initialPassword, 10),

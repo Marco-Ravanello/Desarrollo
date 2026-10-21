@@ -28,6 +28,7 @@ interface AreaItem {
 interface UserItem {
   id: string;
   name: string | null;
+  username?: string | null;
   email: string | null;
   role: Role;
   areaId: string | null;
@@ -55,6 +56,7 @@ export function EditUserDialog({
 
   const [name, setName] = useState(user?.name || "");
   const [email, setEmail] = useState(user?.email || "");
+  const [username, setUsername] = useState(user?.username || "");
   const [role, setRole] = useState<Role>(user?.role || "OPERATIVO");
   const [areaId, setAreaId] = useState<string>(user?.areaId || "");
   const [isActive, setIsActive] = useState<boolean>(user?.isActive ?? true);
@@ -65,8 +67,12 @@ export function EditUserDialog({
     e.preventDefault();
     if (!user) return;
 
-    if (!name.trim() || !email.trim()) {
-      toast.error("Completá el nombre y el correo.");
+    if (!name.trim()) {
+      toast.error("Completá el nombre.");
+      return;
+    }
+    if (isSuperadmin && !username.trim()) {
+      toast.error("Completá el nombre de usuario.");
       return;
     }
 
@@ -75,6 +81,8 @@ export function EditUserDialog({
         id: user.id,
         name: name.trim(),
         email: email.trim(),
+        // Solo el Superadmin cambia el nombre de usuario.
+        ...(isSuperadmin ? { username: username.trim() } : {}),
         role,
         areaId: areaId || null,
         isActive
@@ -115,14 +123,37 @@ export function EditUserDialog({
           </div>
 
           <div className="space-y-1.5">
-            <Label className="text-xs font-bold text-foreground">Correo</Label>
+            <Label className="text-xs font-bold text-foreground">Usuario</Label>
+            {isSuperadmin ? (
+              <Input
+                value={username}
+                onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/\s/g, ""))}
+                placeholder="Ej: maria.perez"
+                autoCapitalize="none"
+                spellCheck={false}
+                className="h-10 rounded-xl bg-muted/30 border-border/60 text-xs font-mono"
+                required
+              />
+            ) : (
+              <p className="flex h-10 items-center rounded-xl border border-border/40 bg-muted/20 px-3 font-mono text-xs text-muted-foreground">
+                {user?.username || "Sin usuario"}
+              </p>
+            )}
+            <p className="text-[11px] text-muted-foreground">
+              {isSuperadmin ? "Con este nombre ingresa a la app. Si lo cambiás, avisale a la persona." : "Con este nombre ingresa a la app. Solo lo cambia el Superadmin."}
+            </p>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label className="text-xs font-bold text-foreground">
+              Correo <span className="font-normal text-muted-foreground">(opcional)</span>
+            </Label>
             <Input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="nombre@tresdefebrero.gob.ar"
               className="h-10 rounded-xl bg-muted/30 border-border/60 text-xs font-mono"
-              required
             />
           </div>
 

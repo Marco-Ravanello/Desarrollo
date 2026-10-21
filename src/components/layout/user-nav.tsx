@@ -98,7 +98,7 @@ export function UserNav({ variant = "header", isCollapsed = false }: UserNavProp
             </Badge>
           </div>
           <p className="text-xs font-bold text-foreground truncate">{user.name || "Usuario Municipal"}</p>
-          <p className="text-[11px] text-muted-foreground font-mono truncate">{user.email || ""}</p>
+          <p className="text-[11px] text-muted-foreground font-mono truncate">{(user as any).username || user.email || ""}</p>
         </DropdownMenuLabel>
 
         <DropdownMenuSeparator className="my-1 bg-border/60" />

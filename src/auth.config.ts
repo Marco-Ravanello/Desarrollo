@@ -57,6 +57,7 @@ export const authConfig = {
         token.role = user.role;
         token.areaId = user.areaId;
         token.mustChangePassword = Boolean(user.mustChangePassword);
+        token.username = user.username ?? null;
       }
       return token;
     },
@@ -66,6 +67,7 @@ export const authConfig = {
         session.user.role = token.role;
         session.user.areaId = token.areaId;
         session.user.mustChangePassword = Boolean(token.mustChangePassword);
+        session.user.username = token.username ?? null;
       }
       return session;
     },

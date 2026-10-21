@@ -9,6 +9,8 @@ declare module "next-auth" {
       areaId: string | null;
       /** La contraseña la puso un administrador: hay que cambiarla antes de seguir. */
       mustChangePassword?: boolean;
+      /** Nombre con el que ingresa. */
+      username?: string | null;
     } & DefaultSession["user"]
   }
 
@@ -16,6 +18,7 @@ declare module "next-auth" {
     role: Role;
     areaId: string | null;
     mustChangePassword?: boolean;
+    username?: string | null;
   }
 }
 
@@ -24,5 +27,6 @@ declare module "next-auth/jwt" {
     role: Role;
     areaId: string | null;
     mustChangePassword?: boolean;
+    username?: string | null;
   }
 }

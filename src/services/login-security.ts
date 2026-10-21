@@ -28,3 +28,16 @@ export function logLogin(userId: string, action: "LOGIN" | "LOGIN_FAILED", detai
     .create({ data: { userId, action, entity: "User", entityId: userId, details } })
     .catch((error) => console.error("No se pudo registrar el intento de ingreso:", error));
 }
+
+/**
+ * La cuenta con la que se quiere ingresar: se busca por nombre de usuario y, para que nadie
+ * quede afuera mientras se acostumbra, también por el correo si se escribe uno.
+ */
+export async function findUserForLogin(identifier: string) {
+  const value = identifier.trim();
+  if (!value) return null;
+  const byUsername = await prisma.user.findUnique({ where: { username: value.toLowerCase() } });
+  if (byUsername) return byUsername;
+  if (!value.includes("@")) return null;
+  return prisma.user.findFirst({ where: { email: { equals: value, mode: "insensitive" } } });
+}

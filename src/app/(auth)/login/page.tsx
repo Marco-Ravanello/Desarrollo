@@ -7,12 +7,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Lock, Mail, ShieldCheck, ArrowRight } from "lucide-react";
+import { Lock, User, ShieldCheck, ArrowRight } from "lucide-react";
 import { MunicipalCrest } from "@/components/ui/municipal-crest";
 
 export default function LoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [closedByInactivity, setClosedByInactivity] = useState(false);
@@ -26,14 +26,14 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const result = await signIn("credentials", { email, password, redirect: false });
+      const result = await signIn("credentials", { username, password, redirect: false });
       if (result?.code === "bloqueada") {
-        toast.error("Cuenta bloqueada temporalmente", {
-          description: "Hubo demasiados intentos fallidos. Espere 15 minutos e intente de nuevo."
+        toast.error("Cuenta bloqueada por un rato", {
+          description: "Hubo demasiados intentos fallidos. Esperá 15 minutos y probá de nuevo."
         });
       } else if (result?.error) {
-        toast.error("Credenciales incorrectas", {
-          description: "Por favor, verifique su email y contraseña oficial."
+        toast.error("Usuario o contraseña incorrectos", {
+          description: "Revisá los dos y probá de nuevo."
         });
       } else {
         toast.success("¡Bienvenido al sistema!", {
@@ -94,7 +94,7 @@ export default function LoginPage() {
 
           <div className="space-y-1.5">
             <h2 className="font-heading text-2xl font-bold tracking-tight text-foreground">Ingresar</h2>
-            <p className="text-sm text-muted-foreground">Usá tu correo y contraseña de la plataforma.</p>
+            <p className="text-sm text-muted-foreground">Usá tu nombre de usuario y tu contraseña.</p>
           </div>
 
           {closedByInactivity && (
@@ -105,16 +105,19 @@ export default function LoginPage() {
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-sm font-medium">Correo electrónico</Label>
+              <Label htmlFor="username" className="text-sm font-medium">Usuario</Label>
               <div className="relative">
-                <Mail className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <User className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
-                  id="email"
-                  type="email"
-                  autoComplete="email"
-                  placeholder="nombre@tresdefebrero.gob.ar"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  id="username"
+                  type="text"
+                  autoComplete="username"
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  placeholder="Ej: maria.perez"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
                   className="h-11 rounded-xl pl-10 text-sm"
                   required
                 />

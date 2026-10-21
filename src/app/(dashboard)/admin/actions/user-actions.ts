@@ -8,6 +8,7 @@ import { Role, User } from "@prisma/client";
 import { canCreateUsersAndResetPasswords, hasPermission, PERMISSIONS } from "@/lib/permissions";
 import { newPasswordProblem } from "@/lib/password-rules";
 import { generateTemporaryPassword } from "@/lib/temporary-password";
+import { normalizeEmail, normalizeUsername, usernameProblem } from "@/lib/username";
 import { ActionResult } from "@/types/actions";
 import { actionErrorMessage } from "@/lib/action-error";
 import { isEmergencyDbUpdated, EMERGENCY_DB_PENDING_MESSAGE } from "@/services/emergency-db-status";
@@ -41,7 +42,8 @@ export async function createUserAction(formData: FormData): Promise<ActionResult
   }
 
   const name = formData.get("name") as string;
-  const email = formData.get("email") as string;
+  const username = normalizeUsername(formData.get("username"));
+  const emailCheck = normalizeEmail(formData.get("email"));
   const password = formData.get("password") as string;
   const role = formData.get("role") as Role;
   const areaId = formData.get("areaId") as string;
@@ -49,6 +51,10 @@ export async function createUserAction(formData: FormData): Promise<ActionResult
   if (!canAssignRole(session.user.role, role)) {
     return { success: false, error: "No tiene permisos para asignar ese rol" };
   }
+  const userProblem = usernameProblem(username);
+  if (userProblem) return { success: false, error: userProblem };
+  if (!emailCheck.ok) return { success: false, error: emailCheck.error };
+  const email = emailCheck.email;
   const passwordProblem = newPasswordProblem(password || "");
   if (passwordProblem) return { success: false, error: `Contraseña temporal: ${passwordProblem}` };
   if (role === Role.RELEVADOR_EMERGENCIA && !(await isEmergencyDbUpdated())) {
@@ -61,6 +67,7 @@ export async function createUserAction(formData: FormData): Promise<ActionResult
     const user = await prisma.user.create({
       data: {
         name,
+        username,
         email,
         password: hashedPassword,
         // La contraseña la eligió el administrador: la persona la cambia al ingresar.
@@ -77,7 +84,7 @@ export async function createUserAction(formData: FormData): Promise<ActionResult
         action: 'CREATE_USER',
         entity: 'User',
         entityId: user.id,
-        details: `Nuevo usuario creado: ${email} con rol ${role}`
+        details: `Nuevo usuario creado: ${username} con rol ${role}`
       }
     });
 
@@ -85,15 +92,23 @@ export async function createUserAction(formData: FormData): Promise<ActionResult
     return { success: true, data: user, message: "Agente municipal registrado con éxito" };
   } catch (error) {
     console.error(error);
-    if ((error as any).code === 'P2002') return { success: false, error: "Ya existe un usuario con ese email" };
+    if ((error as any).code === 'P2002') return { success: false, error: duplicateMessage(error) };
     return { success: false, error: actionErrorMessage(error, "No se pudo crear el usuario") };
   }
+}
+
+/** Qué dato está repetido cuando la base rechaza un usuario nuevo o un cambio. */
+function duplicateMessage(error: unknown): string {
+  const target = String((error as any)?.meta?.target ?? "");
+  return target.includes("username") ? "Ya hay otra persona con ese nombre de usuario." : "Ya hay otra persona con ese correo.";
 }
 
 export interface UpdateUserInput {
   id: string;
   name: string;
-  email: string;
+  /** Solo el Superadmin cambia el nombre de usuario (es con lo que se ingresa). */
+  username?: string;
+  email?: string | null;
   role: Role;
   areaId?: string | null;
   password?: string;
@@ -125,21 +140,35 @@ export async function updateUserAction(input: UpdateUserInput): Promise<ActionRe
       return { success: false, error: EMERGENCY_DB_PENDING_MESSAGE };
     }
 
-    if (input.email !== existing.email) {
-      const duplicate = await prisma.user.findUnique({
-        where: { email: input.email }
-      });
-      if (duplicate && duplicate.id !== input.id) {
-        return { success: false, error: "El correo electrónico ya está registrado por otro agente" };
-      }
+    // Sin el campo, el correo queda como está; vacío, se borra.
+    const emailCheck = input.email === undefined ? { ok: true as const, email: existing.email } : normalizeEmail(input.email);
+    if (!emailCheck.ok) return { success: false, error: emailCheck.error };
+    const email = emailCheck.email;
+    if (email && email !== existing.email) {
+      const duplicate = await prisma.user.findFirst({ where: { email: { equals: email, mode: "insensitive" }, id: { not: input.id } } });
+      if (duplicate) return { success: false, error: "Ya hay otra persona con ese correo." };
     }
 
     const dataToUpdate: any = {
       name: input.name,
-      email: input.email,
+      email,
       role: input.role,
       areaId: input.areaId || null,
     };
+
+    if (input.username !== undefined) {
+      const username = normalizeUsername(input.username);
+      if (username !== existing.username) {
+        if (!canCreateUsersAndResetPasswords(session.user.role)) {
+          return { success: false, error: "Solo el Superadmin puede cambiar el nombre de usuario." };
+        }
+        const problem = usernameProblem(username);
+        if (problem) return { success: false, error: problem };
+        const taken = await prisma.user.findUnique({ where: { username } });
+        if (taken && taken.id !== input.id) return { success: false, error: "Ya hay otra persona con ese nombre de usuario." };
+        dataToUpdate.username = username;
+      }
+    }
 
     if (typeof input.isActive === "boolean") {
       dataToUpdate.isActive = input.isActive;
@@ -162,7 +191,7 @@ export async function updateUserAction(input: UpdateUserInput): Promise<ActionRe
         action: 'UPDATE_USER',
         entity: 'User',
         entityId: updatedUser.id,
-        details: `Actualización de perfil/rol/área para usuario: ${updatedUser.email}`
+        details: `Actualización de perfil/rol/área para usuario: ${updatedUser.username || updatedUser.email}`
       }
     });
 
@@ -170,6 +199,7 @@ export async function updateUserAction(input: UpdateUserInput): Promise<ActionRe
     return { success: true, data: updatedUser, message: "Usuario actualizado con éxito" };
   } catch (error: any) {
     console.error("Error al actualizar usuario:", error);
+    if (error?.code === "P2002") return { success: false, error: duplicateMessage(error) };
     return { success: false, error: actionErrorMessage(error, "No se pudo actualizar el usuario") };
   }
 }
@@ -187,7 +217,7 @@ export async function toggleUserStatusAction(userId: string) {
   try {
     const existingUser = await prisma.user.findUnique({
       where: { id: userId },
-      select: { id: true, isActive: true, email: true, role: true }
+      select: { id: true, isActive: true, email: true, username: true, role: true }
     });
 
     if (!existingUser) {
@@ -211,7 +241,7 @@ export async function toggleUserStatusAction(userId: string) {
         action: newStatus ? 'ACTIVATE_USER' : 'DEACTIVATE_USER',
         entity: 'User',
         entityId: userId,
-        details: `Cambio de estado de cuenta para ${existingUser.email} (${newStatus ? 'Activo' : 'Suspendido'})`
+        details: `Cambio de estado de cuenta para ${existingUser.username || existingUser.email} (${newStatus ? 'Activo' : 'Suspendido'})`
       }
     });
 
@@ -237,7 +267,7 @@ export async function resetTemporaryPasswordAction(userId: string): Promise<{ su
   }
 
   try {
-    const target = await prisma.user.findUnique({ where: { id: userId }, select: { id: true, email: true } });
+    const target = await prisma.user.findUnique({ where: { id: userId }, select: { id: true, email: true, username: true } });
     if (!target) return { success: false, error: "Usuario no encontrado" };
 
     const password = generateTemporaryPassword();
@@ -252,7 +282,7 @@ export async function resetTemporaryPasswordAction(userId: string): Promise<{ su
         action: "PASSWORD_RESET",
         entity: "User",
         entityId: target.id,
-        details: `Clave temporal generada para ${target.email}`,
+        details: `Clave temporal generada para ${target.username || target.email}`,
       },
     });
 

@@ -21,7 +21,7 @@ describe("cambiar la propia contraseña", () => {
 
   it("un usuario nuevo tiene que cambiar la contraseña que le puso el administrador", async () => {
     loginAs(admin);
-    const res = await createUserAction(form({ name: "Nueva", email: "nueva@prueba.test", password: "temporal1", role: "OPERATIVO" }));
+    const res = await createUserAction(form({ name: "Nueva", username: `nueva`, email: "nueva@prueba.test", password: "temporal1", role: "OPERATIVO" }));
     expect(res.success).toBe(true);
     const user = await prisma.user.findUniqueOrThrow({ where: { email: "nueva@prueba.test" } });
     expect(user.mustChangePassword).toBe(true);

@@ -10,6 +10,8 @@ datasource db {
 model User {
   id            String    @id @default(cuid())
   name          String?
+  /// Con este nombre se ingresa a la app (en minúsculas). El correo es un dato aparte.
+  username      String?   @unique
   email         String?   @unique
   password      String?
   role          Role      @default(OPERATIVO)
