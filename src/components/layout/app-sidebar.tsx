@@ -46,11 +46,11 @@ export function AppSidebar({ isMobile = false, onNavigate }: AppSidebarProps) {
   const canOpen = (url: string) => canAccessPath(role, url);
 
   const navigation = [
-    { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
+    { title: "Inicio", url: "/dashboard", icon: LayoutDashboard },
     { title: "Ficha Social 360°", url: "/ficha-social", icon: Network },
     { title: "Expedientes", url: "/cases", icon: ClipboardList },
     { title: "Mapa Social", url: "/maps", icon: MapPin },
-    { title: "Mis Tareas", url: "/tasks", icon: CheckCircle2 },
+    { title: "Mis tareas", url: "/tasks", icon: CheckCircle2 },
     { title: "Registro Único", url: "/people", icon: Users },
   ].filter((i) => canOpen(i.url));
 
@@ -61,18 +61,18 @@ export function AppSidebar({ isMobile = false, onNavigate }: AppSidebarProps) {
       title: "Operación diaria",
       items: [
         { title: "Sala de Situación", url: "/admin/war-room", icon: Tv },
-        { title: "Agenda Unificada", url: "/admin/calendar", icon: Calendar },
+        { title: "Agenda", url: "/admin/calendar", icon: Calendar },
         { title: "Asistente de IA", url: "/admin/assistant", icon: Sparkles },
-        { title: "Emergencia Climática", url: "/admin/emergency", icon: CloudRain },
+        { title: "Emergencia climática", url: "/admin/emergency", icon: CloudRain },
       ],
     },
     {
       id: "compras",
       title: "Compras y presupuesto",
       items: [
-        { title: "Órdenes de compras", url: "/admin/purchase-orders", icon: Briefcase },
+        { title: "Órdenes de compra", url: "/admin/purchase-orders", icon: Briefcase },
         { title: "Proveedores", url: "/admin/providers", icon: Building2 },
-        { title: "Convenios y Presupuesto", url: "/admin/budget", icon: Wallet },
+        { title: "Presupuesto y convenios", url: "/admin/budget", icon: Wallet },
         { title: "Reportes", url: "/admin/reports", icon: BarChart3 },
       ],
     },
@@ -80,8 +80,8 @@ export function AppSidebar({ isMobile = false, onNavigate }: AppSidebarProps) {
       id: "recursos",
       title: "Recursos",
       items: [
-        { title: "Vehículos y Logística", url: "/admin/vehicles", icon: Car },
-        { title: "Stock de Insumos", url: "/admin/stock", icon: Package },
+        { title: "Vehículos", url: "/admin/vehicles", icon: Car },
+        { title: "Stock de insumos", url: "/admin/stock", icon: Package },
         { title: "Recursos Humanos", url: "/admin/hr", icon: UserCog },
       ],
     },
@@ -90,7 +90,7 @@ export function AppSidebar({ isMobile = false, onNavigate }: AppSidebarProps) {
       title: "Sistema",
       items: [
         { title: "Configuración", url: "/admin/settings", icon: Settings },
-        { title: "Importar Datos", url: "/admin/interventions", icon: FileSpreadsheet },
+        { title: "Importar datos", url: "/admin/interventions", icon: FileSpreadsheet },
         { title: "Usuarios", url: "/admin/users", icon: Users },
         { title: "Auditoría", url: "/admin/audit", icon: ScrollText },
       ],
@@ -121,7 +121,7 @@ export function AppSidebar({ isMobile = false, onNavigate }: AppSidebarProps) {
     { title: "Protección Social", url: "/areas/social", icon: ClipboardList, color: "emerald" },
     { title: "Niñez y Familia", url: "/areas/ninez", icon: ClipboardList, color: "amber" },
     { title: "Hábitat y Vivienda", url: "/areas/habitat", icon: Building2, color: "blue" },
-    { title: "Violencia y Género", url: "/areas/violence", icon: ShieldAlert, color: "rose" },
+    { title: "Violencia de Género", url: "/areas/violence", icon: ShieldAlert, color: "rose" },
   ].filter((i) => canOpen(i.url));
 
   const sidebarColor = getAreaBgColor(user?.role === 'SUPERADMIN' ? 'slate' : (user as any)?.area?.color);

@@ -1439,7 +1439,7 @@ export async function handleFichaSocialAIQuery(query: string): Promise<AIRespons
     dataSummary: {
       hasResults: true,
       sources: [{ type: "Matriz de Cruces", name: "Cruce de Programas 3F", url: "/ficha-social/cruces" }],
-      actions: [{ label: "Ver Matriz de Cruces Masivos", actionType: "NAVIGATE", payload: { path: "/ficha-social/cruces" } }]
+      actions: [{ label: "Ver cruces de programas", actionType: "NAVIGATE", payload: { path: "/ficha-social/cruces" } }]
     }
   };
 }

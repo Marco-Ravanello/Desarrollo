@@ -14,6 +14,8 @@ import { DuplicatePairCard } from "@/components/people/padron-duplicates";
 
 const LIMIT = 200;
 
+export const metadata = { title: "Posibles duplicados" };
+
 export default async function PadronDuplicatesPage() {
   const session = await auth();
   if (!session?.user?.id) redirect("/login");

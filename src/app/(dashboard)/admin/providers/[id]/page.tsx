@@ -16,6 +16,8 @@ import { DeleteProviderButton } from "../delete-provider-button";
 
 const money = (n: number) => `$ ${n.toLocaleString("es-AR", { maximumFractionDigits: 0 })}`;
 
+export const metadata = { title: "Proveedor" };
+
 export default async function ProviderDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const [session, detail] = await Promise.all([auth(), getProviderDetail(id)]);

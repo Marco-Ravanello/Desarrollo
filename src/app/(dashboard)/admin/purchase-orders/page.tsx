@@ -12,6 +12,8 @@ import { TableFilter } from "@/components/ui/table-filter";
 import { OrderTableRow } from "./order-table-row";
 import { EmptyState } from "@/components/ui/empty-state";
 
+export const metadata = { title: "Órdenes de compra" };
+
 export default async function PurchaseOrdersPage({
   searchParams,
 }: {
@@ -34,12 +36,12 @@ export default async function PurchaseOrdersPage({
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       <PageHeader
-        title="Órdenes de Compra"
+        title="Órdenes de compra"
         description={<>Módulo de Administración General • Seguimiento y adjudicación de compras públicas ({totalCount} registros).</>}
         icon={Briefcase}
         actions={
           <Button asChild className="rounded-2xl h-11 px-5 font-bold text-xs uppercase tracking-wider bg-primary text-primary-foreground shadow-lg shadow-primary/20">
-            <Link href="/admin/purchase-orders/new"><Plus className="mr-2 h-4 w-4"/> Nueva Orden</Link>
+            <Link href="/admin/purchase-orders/new"><Plus className="mr-2 h-4 w-4"/> Nueva orden</Link>
           </Button>
         }
       />

@@ -5,6 +5,8 @@ import { redirect } from "next/navigation";
 import { getAreaDashboardData } from "@/services/cases";
 import { AreaDashboardView } from "@/components/areas/area-dashboard-view";
 
+export const metadata = { title: "Niñez, Adolescencia y Familia" };
+
 export default async function NinezAreaPage() {
   const session = await auth();
   if (!session?.user?.id) redirect("/login");
@@ -16,7 +18,7 @@ export default async function NinezAreaPage() {
   return (
     <AreaDashboardView
       areaTitle="Niñez, Adolescencia y Familia"
-      areaDescription="Protección de derechos de niños, niñas y adolescentes, intervención de servicios locales y apoyo a familias en situación de vulnerabilidad."
+      areaDescription="Protección de los derechos de chicos, chicas y adolescentes, y apoyo a sus familias."
       themeColor="amber"
       area={area}
       initialCases={cases as any}

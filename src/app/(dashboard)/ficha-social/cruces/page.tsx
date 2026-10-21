@@ -99,10 +99,9 @@ export default function CrucesSocialesPage() {
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       <PageHeader
-        title="Matriz de Cruces Masivos & Auditoría"
-        description="Detección de superposiciones de beneficios, duplicidades y cálculo de cobertura poblacional unificada."
+        title="Cruces de programas"
+        description="Quiénes están en más de un programa a la vez y a cuánta gente llega cada uno."
         icon={Network}
-        badge="Analítica 3F"
         actions={
           <>
             <Button variant="ghost" size="icon" asChild className="rounded-xl h-9 w-9">
@@ -114,9 +113,9 @@ export default function CrucesSocialesPage() {
               data={exportData}
               columns={exportColumns}
               filename="matriz_cruces_sociales_3f"
-              title="Matriz de Beneficiarios y Cruces de Programas Sociales"
+              title="Cruces de programas sociales"
               subtitle="AUDITORÍA SOCIAL Y COBERTURA POBLACIONAL"
-              label="Exportar Matriz"
+              label="Exportar"
               orientation="landscape"
             />
           </>

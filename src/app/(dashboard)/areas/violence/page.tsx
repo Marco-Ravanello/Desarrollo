@@ -5,6 +5,8 @@ import { redirect } from "next/navigation";
 import { getAreaDashboardData } from "@/services/cases";
 import { AreaDashboardView } from "@/components/areas/area-dashboard-view";
 
+export const metadata = { title: "Violencia de Género" };
+
 export default async function ViolenceAreaPage() {
   const session = await auth();
   if (!session?.user?.id) redirect("/login");
@@ -25,8 +27,8 @@ export default async function ViolenceAreaPage() {
 
   return (
     <AreaDashboardView
-      areaTitle="Abordaje de Violencia de Género"
-      areaDescription="Acompañamiento integral, medidas de protección urgente, alojamiento protegido y asistencia psicológica a víctimas de violencia."
+      areaTitle="Violencia de Género"
+      areaDescription="Acompañamiento, medidas de protección, alojamiento y asistencia psicológica a quienes sufren violencia."
       themeColor="rose"
       area={area}
       initialCases={cases as any}

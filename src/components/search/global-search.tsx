@@ -3,7 +3,7 @@ import * as React from "react";
 import {
   Search, Users, FileText, CheckCircle2, LayoutDashboard, MapPin,
   Briefcase, Car, Wallet, Building2, UserCog, ShieldAlert, Loader2,
-  Plus, Moon, Sun, History, DollarSign, UserPlus, FilePlus, Sparkles
+  Plus, Moon, Sun, History, DollarSign, UserPlus, FilePlus, Sparkles, Clock
 } from "lucide-react";
 import { Command } from "cmdk";
 import { useRouter } from "next/navigation";
@@ -11,7 +11,9 @@ import { useSession } from "next-auth/react";
 import { canAccessPath } from "@/lib/permissions";
 import { useTheme } from "next-themes";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import { searchGlobalAction } from "@/app/(dashboard)/actions/search-actions";
+import { getRecentItemsAction, searchGlobalAction } from "@/app/(dashboard)/actions/search-actions";
+import { forgetRecent, readRecent } from "@/lib/recent-views";
+import type { RecentItem } from "@/services/recent-views";
 
 export function GlobalSearch() {
   const router = useRouter();
@@ -26,6 +28,31 @@ export function GlobalSearch() {
     hr: [],
     agreements: []
   });
+
+  const userId = session?.user?.id;
+  const [recent, setRecent] = React.useState<RecentItem[]>([]);
+
+  // Al abrir el buscador, trae los últimos expedientes y personas que abrió este usuario.
+  React.useEffect(() => {
+    if (!open) return;
+    const refs = readRecent(userId);
+    if (refs.length === 0) {
+      setRecent([]);
+      return;
+    }
+    let cancelled = false;
+    getRecentItemsAction(refs)
+      .then((items) => {
+        if (cancelled) return;
+        setRecent(items);
+        // Lo que ya no existe o no se puede ver se olvida.
+        if (items.length < refs.length) forgetRecent(userId, items.map(({ kind, id }) => ({ kind, id })));
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [open, userId]);
 
   React.useEffect(() => {
     const down = (e: KeyboardEvent) => {
@@ -82,7 +109,7 @@ export function GlobalSearch() {
         className="flex items-center gap-2.5 w-full px-3.5 py-2.5 text-xs text-muted-foreground bg-muted/60 dark:bg-muted/30 hover:bg-muted rounded-xl border border-border/60 transition-all group shadow-sm"
       >
         <Search className="h-4 w-4 shrink-0 text-muted-foreground group-hover:text-primary transition-colors" />
-        <span className="flex-1 text-left font-medium">Buscar o ejecutar comando...</span>
+        <span className="flex-1 text-left font-medium">Buscar o ir a…</span>
         <kbd className="pointer-events-none hidden h-5 select-none items-center gap-1 rounded-md border border-border/60 bg-background/80 px-1.5 font-mono text-[10px] font-bold text-muted-foreground sm:flex">
           <span className="text-xs">⌘</span>K
         </kbd>
@@ -90,7 +117,7 @@ export function GlobalSearch() {
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="p-0 overflow-hidden max-w-2xl border-none shadow-2xl bg-card/95 backdrop-blur-xl">
-          <DialogTitle className="sr-only">Paleta de Comandos Global</DialogTitle>
+          <DialogTitle className="sr-only">Buscador</DialogTitle>
           <Command
             shouldFilter={false}
             className="flex h-full w-full flex-col overflow-hidden rounded-xl bg-popover text-popover-foreground"
@@ -98,7 +125,7 @@ export function GlobalSearch() {
             <div className="flex items-center border-b px-4 py-1 bg-muted/20" cmdk-input-wrapper="">
               <Search className="mr-2 h-5 w-5 shrink-0 opacity-60 text-primary" />
               <Command.Input
-                placeholder="Busca ciudadanos, expedientes, personal o ejecuta un comando..."
+                placeholder="Buscá una persona, un expediente o una sección…"
                 className="flex h-14 w-full rounded-md bg-transparent py-3 text-base outline-none placeholder:text-muted-foreground/60 disabled:cursor-not-allowed disabled:opacity-50"
                 value={query}
                 onValueChange={setQuery}
@@ -111,15 +138,49 @@ export function GlobalSearch() {
                 <div className="p-3 bg-muted/50 rounded-full">
                   <Search className="h-6 w-6 text-muted-foreground opacity-30" />
                 </div>
-                <p className="font-semibold text-muted-foreground">No se encontraron resultados para &ldquo;{query}&rdquo;</p>
-                <p className="text-xs text-muted-foreground/60">Intenta buscar por DNI, apellido, número de expediente o comando.</p>
+                <p className="font-semibold text-muted-foreground">No encontramos nada con &ldquo;{query}&rdquo;</p>
+                <p className="text-xs text-muted-foreground/60">Probá con el DNI, el apellido o el título del expediente.</p>
               </Command.Empty>
+
+              {query.length < 2 && recent.length > 0 && (
+                <>
+                  <Command.Group heading="Vistos recientemente">
+                    {recent.map((r) => (
+                      <Command.Item
+                        key={`${r.kind}-${r.id}`}
+                        value={`reciente ${r.kind} ${r.id}`}
+                        onSelect={() => navigate(r.url)}
+                        className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-muted aria-selected:bg-muted transition-all group"
+                      >
+                        {r.kind === "case" ? (
+                          <div className="h-9 w-9 shrink-0 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 rounded-full flex items-center justify-center">
+                            <FileText className="h-4 w-4" />
+                          </div>
+                        ) : (
+                          <div className="h-9 w-9 shrink-0 bg-blue-500/15 text-blue-600 dark:text-blue-400 rounded-full flex items-center justify-center font-bold text-xs uppercase">
+                            {r.title[0]}
+                          </div>
+                        )}
+                        <div className="flex min-w-0 flex-1 flex-col">
+                          <span className="truncate font-semibold text-sm text-foreground">{r.title}</span>
+                          <span className="truncate text-[11px] text-muted-foreground">
+                            {r.kind === "case" ? "Expediente" : "Persona"}
+                            {r.subtitle ? ` · ${r.subtitle}` : ""}
+                          </span>
+                        </div>
+                        <Clock className="h-3.5 w-3.5 shrink-0 text-muted-foreground/60" />
+                      </Command.Item>
+                    ))}
+                  </Command.Group>
+                  <Command.Separator className="my-3 h-px bg-border/50" />
+                </>
+              )}
 
               {/* Dynamic DB Search Results */}
               {query.length >= 2 && (
                 <>
                   {results.citizens.length > 0 && (
-                    <Command.Group heading="Ciudadanos Registrados">
+                    <Command.Group heading="Personas">
                       {results.citizens.map((c) => (
                         <Command.Item
                           key={c.id}
@@ -140,7 +201,7 @@ export function GlobalSearch() {
                   )}
 
                   {results.cases.length > 0 && (
-                    <Command.Group heading="Expedientes Sociales">
+                    <Command.Group heading="Expedientes">
                       {results.cases.map((c) => (
                         <Command.Item
                           key={c.id}
@@ -160,7 +221,7 @@ export function GlobalSearch() {
                   )}
 
                   {results.hr.length > 0 && (
-                    <Command.Group heading="Personal de RRHH">
+                    <Command.Group heading="Personal">
                       {results.hr.map((h) => (
                         <Command.Item
                           key={h.id}
@@ -180,7 +241,7 @@ export function GlobalSearch() {
                   )}
 
                   {results.agreements.length > 0 && (
-                    <Command.Group heading="Convenios Institucionales">
+                    <Command.Group heading="Convenios">
                       {results.agreements.map((a) => (
                         <Command.Item
                           key={a.id}
@@ -206,7 +267,7 @@ export function GlobalSearch() {
               )}
 
               {/* Quick Creation Actions */}
-              <Command.Group heading="Acciones Rápidas (Creación)">
+              <Command.Group heading="Crear">
                 {canOpen("/people/new") && (
                   <Command.Item
                     onSelect={() => navigate("/people/new")}
@@ -216,8 +277,8 @@ export function GlobalSearch() {
                       <UserPlus className="h-4 w-4" />
                     </div>
                     <div className="flex flex-col">
-                      <span className="font-semibold text-sm">Registrar Nuevo Ciudadano</span>
-                      <span className="text-[10px] text-muted-foreground">Crear legajo en el Registro Único Social</span>
+                      <span className="font-semibold text-sm">Cargar persona</span>
+                      <span className="text-[10px] text-muted-foreground">Sumar a alguien al Registro Único</span>
                     </div>
                   </Command.Item>
                 )}
@@ -230,8 +291,8 @@ export function GlobalSearch() {
                       <FilePlus className="h-4 w-4" />
                     </div>
                     <div className="flex flex-col">
-                      <span className="font-semibold text-sm">Nueva Orden de Compra (con OCR)</span>
-                      <span className="text-[10px] text-muted-foreground">Crear solicitud o escanear comprobante con OCR</span>
+                      <span className="font-semibold text-sm">Nueva orden de compra</span>
+                      <span className="text-[10px] text-muted-foreground">Cargar un pedido o leer un comprobante escaneado</span>
                     </div>
                   </Command.Item>
                 )}
@@ -244,8 +305,8 @@ export function GlobalSearch() {
                       <Car className="h-4 w-4" />
                     </div>
                     <div className="flex flex-col">
-                      <span className="font-semibold text-sm">Reservar Vehículo Municipal</span>
-                      <span className="text-[10px] text-muted-foreground">Programar uso de unidad logística de la flota</span>
+                      <span className="font-semibold text-sm">Reservar vehículo</span>
+                      <span className="text-[10px] text-muted-foreground">Pedir un vehículo para una fecha</span>
                     </div>
                   </Command.Item>
                 )}
@@ -258,8 +319,8 @@ export function GlobalSearch() {
                       <Plus className="h-4 w-4" />
                     </div>
                     <div className="flex flex-col">
-                      <span className="font-semibold text-sm">Nuevo Convenio Institucional</span>
-                      <span className="text-[10px] text-muted-foreground">Registrar acuerdo marco con instituciones</span>
+                      <span className="font-semibold text-sm">Nuevo convenio</span>
+                      <span className="text-[10px] text-muted-foreground">Cargar un convenio con otra institución</span>
                     </div>
                   </Command.Item>
                 )}
@@ -268,48 +329,48 @@ export function GlobalSearch() {
               <Command.Separator className="my-3 h-px bg-border/50" />
 
               {/* Navigation Group */}
-              <Command.Group heading="Navegación Principal">
+              <Command.Group heading="Ir a">
                 <Command.Item
                   onSelect={() => navigate("/dashboard")}
                   className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-muted aria-selected:bg-muted transition-all"
                 >
                   <LayoutDashboard className="h-4 w-4 text-blue-500" />
-                  <span>Panel de Control (Dashboard)</span>
+                  <span>Inicio</span>
                 </Command.Item>
                 <Command.Item
                   onSelect={() => navigate("/maps")}
                   className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-muted aria-selected:bg-muted transition-all"
                 >
                   <MapPin className="h-4 w-4 text-emerald-500" />
-                  <span>Mapa Social GIS y Mapa de Calor</span>
+                  <span>Mapa Social</span>
                 </Command.Item>
                 <Command.Item
                   onSelect={() => navigate("/people")}
                   className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-muted aria-selected:bg-muted transition-all"
                 >
                   <Users className="h-4 w-4 text-purple-500" />
-                  <span>Registro Único de Ciudadanos</span>
+                  <span>Registro Único</span>
                 </Command.Item>
                 <Command.Item
                   onSelect={() => navigate("/tasks")}
                   className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-muted aria-selected:bg-muted transition-all"
                 >
                   <CheckCircle2 className="h-4 w-4 text-amber-500" />
-                  <span>Mis Tareas y Agenda</span>
+                  <span>Mis tareas</span>
                 </Command.Item>
               </Command.Group>
 
               <Command.Separator className="my-3 h-px bg-border/50" />
 
               {/* Admin Modules */}
-              <Command.Group heading="Módulos Administrativos">
+              <Command.Group heading="Administración">
                 {canOpen("/admin/purchase-orders") && (
                   <Command.Item
                     onSelect={() => navigate("/admin/purchase-orders")}
                     className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-muted aria-selected:bg-muted transition-all"
                   >
                     <Briefcase className="h-4 w-4 text-indigo-400" />
-                    <span>Gestión de Órdenes de Compra</span>
+                    <span>Órdenes de compra</span>
                   </Command.Item>
                 )}
                 {canOpen("/admin/vehicles") && (
@@ -318,7 +379,7 @@ export function GlobalSearch() {
                     className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-muted aria-selected:bg-muted transition-all"
                   >
                     <Car className="h-4 w-4 text-teal-400" />
-                    <span>Flota Logística y Combustible</span>
+                    <span>Vehículos</span>
                   </Command.Item>
                 )}
                 {canOpen("/admin/hr") && (
@@ -327,7 +388,7 @@ export function GlobalSearch() {
                     className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-muted aria-selected:bg-muted transition-all"
                   >
                     <Building2 className="h-4 w-4 text-sky-400" />
-                    <span>Recursos Humanos y Nómina</span>
+                    <span>Recursos Humanos</span>
                   </Command.Item>
                 )}
                 {canOpen("/admin/stock") && (
@@ -336,7 +397,7 @@ export function GlobalSearch() {
                     className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-muted aria-selected:bg-muted transition-all"
                   >
                     <Briefcase className="h-4 w-4 text-emerald-400" />
-                    <span>Inventario y Stock de Depósito</span>
+                    <span>Stock de insumos</span>
                   </Command.Item>
                 )}
                 {isAdmin && (
@@ -347,7 +408,7 @@ export function GlobalSearch() {
                         className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-muted aria-selected:bg-muted transition-all"
                       >
                         <UserCog className="h-4 w-4 text-rose-400" />
-                        <span>Gestión de Usuarios y Roles</span>
+                        <span>Usuarios</span>
                       </Command.Item>
                     )}
                     {canOpen("/admin/audit") && (
@@ -356,7 +417,7 @@ export function GlobalSearch() {
                         className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-muted aria-selected:bg-muted transition-all"
                       >
                         <History className="h-4 w-4 text-amber-400" />
-                        <span>Auditoría e Historial del Sistema</span>
+                        <span>Auditoría</span>
                       </Command.Item>
                     )}
                     {canOpen("/admin/budget") && (
@@ -365,7 +426,7 @@ export function GlobalSearch() {
                         className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-muted aria-selected:bg-muted transition-all"
                       >
                         <DollarSign className="h-4 w-4 text-emerald-400" />
-                        <span>Control de Presupuesto Anual</span>
+                        <span>Presupuesto</span>
                       </Command.Item>
                     )}
                   </>
@@ -375,7 +436,7 @@ export function GlobalSearch() {
               <Command.Separator className="my-3 h-px bg-border/50" />
 
               {/* System & Preference Commands */}
-              <Command.Group heading="Comandos de Sistema">
+              <Command.Group heading="Otros">
                 <Command.Item
                   onSelect={toggleTheme}
                   className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-muted aria-selected:bg-muted transition-all"
@@ -385,7 +446,7 @@ export function GlobalSearch() {
                   ) : (
                     <Moon className="h-4 w-4 text-indigo-400" />
                   )}
-                  <span>Cambiar Tema ({theme === "dark" ? "Activar Modo Claro" : "Activar Modo Oscuro"})</span>
+                  <span>{theme === "dark" ? "Pasar a modo claro" : "Pasar a modo oscuro"}</span>
                 </Command.Item>
                 {canOpen("/admin/assistant") && (
                   <Command.Item
@@ -393,7 +454,7 @@ export function GlobalSearch() {
                     className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-muted aria-selected:bg-muted transition-all"
                   >
                     <Sparkles className="h-4 w-4 text-violet-400" />
-                    <span>Abrir Asistente IA Municipal</span>
+                    <span>Asistente de IA</span>
                   </Command.Item>
                 )}
               </Command.Group>
@@ -402,10 +463,10 @@ export function GlobalSearch() {
             <div className="flex items-center justify-between border-t p-3.5 text-xs text-muted-foreground bg-muted/30 font-medium">
               <div className="flex items-center gap-4">
                 <span className="flex items-center gap-1.5">
-                  <kbd className="rounded border bg-background px-1.5 py-0.5 shadow-xs">↑↓</kbd> Navegar
+                  <kbd className="rounded border bg-background px-1.5 py-0.5 shadow-xs">↑↓</kbd> Moverse
                 </span>
                 <span className="flex items-center gap-1.5">
-                  <kbd className="rounded border bg-background px-1.5 py-0.5 shadow-xs">↵</kbd> Seleccionar
+                  <kbd className="rounded border bg-background px-1.5 py-0.5 shadow-xs">↵</kbd> Abrir
                 </span>
               </div>
               <span className="flex items-center gap-1.5">

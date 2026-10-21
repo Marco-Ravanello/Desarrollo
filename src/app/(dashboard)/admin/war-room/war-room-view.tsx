@@ -117,11 +117,11 @@ export function WarRoomView({ initialData }: WarRoomViewProps) {
                 <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
               </span>
               <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-primary">
-                SALA DE SITUACIÓN • GOBIERNO MUNICIPAL
+                En vivo • Municipalidad de Tres de Febrero
               </span>
             </div>
             <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground mt-0.5">
-              Tablero de Control Estratégico y Monitoreo en Vivo
+              Sala de Situación
             </h1>
           </div>
         </div>
@@ -249,7 +249,7 @@ export function WarRoomView({ initialData }: WarRoomViewProps) {
             <div className="flex items-center gap-2.5">
               <Radio className="h-5 w-5 text-rose-500 animate-pulse" />
               <h2 className="text-lg font-bold tracking-tight text-foreground">
-                Casos y Alertas Reales en Vivo
+                Casos y alertas en vivo
               </h2>
             </div>
             <Badge variant="outline" className="border-border/60 text-muted-foreground text-xs font-bold">
@@ -289,7 +289,7 @@ export function WarRoomView({ initialData }: WarRoomViewProps) {
           <div className="border-b border-border/40 pb-4">
             <h2 className="text-lg font-bold tracking-tight text-foreground flex items-center gap-2">
               <Building2 className="h-5 w-5 text-primary" />
-              Carga de Trabajo por Área
+              Trabajo por área
             </h2>
           </div>
           <div className="space-y-4 text-xs">

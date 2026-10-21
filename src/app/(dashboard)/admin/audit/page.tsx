@@ -11,6 +11,8 @@ import { PageHeader } from "@/components/layout/page-header";
 import { EmptyMessage } from "@/components/ui/empty-message";
 import { hasPermission, PERMISSIONS } from "@/lib/permissions";
 
+export const metadata = { title: "Auditoría" };
+
 export default async function AuditPage() {
   const session = await auth();
   if (!session?.user || !hasPermission(session.user.role as any, PERMISSIONS.VIEW_AUDIT_LOGS)) {
@@ -33,8 +35,8 @@ export default async function AuditPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Registro de Auditoría"
-        description="Seguimiento de acciones realizadas por los usuarios en el sistema."
+        title="Auditoría"
+        description="Quién hizo qué en la app, y cuándo."
         icon={ScrollText}
       />
 

@@ -4,6 +4,8 @@ import { auth } from "@/auth";
 import { getEmergencyOperationsData } from "@/services/emergency";
 import { EmergencyView } from "./emergency-view";
 
+export const metadata = { title: "Emergencia climática" };
+
 export default async function EmergencyOperationsPage({
   searchParams,
 }: {

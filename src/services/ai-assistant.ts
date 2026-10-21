@@ -60,7 +60,7 @@ export function handleGreetingQuery(queryText: string): AIResponse {
       actions: [
         { label: "Ver en Mapa Social", actionType: "NAVIGATE", payload: { path: "/maps" } },
         { label: "Ver Nómina de RRHH", actionType: "NAVIGATE", payload: { path: "/admin/hr" } },
-        { label: "Ver Agenda Unificada", actionType: "NAVIGATE", payload: { path: "/admin/calendar" } },
+        { label: "Ver agenda", actionType: "NAVIGATE", payload: { path: "/admin/calendar" } },
         { label: "Ver Órdenes de Compra", actionType: "NAVIGATE", payload: { path: "/admin/purchase-orders" } }
       ]
     }

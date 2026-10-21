@@ -6,6 +6,8 @@ import { MunicipalSettingsClient } from "./settings-client-form";
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 
+export const metadata = { title: "Configuración" };
+
 export default async function MunicipalSettingsPage() {
   const session = await auth();
   if (!session?.user) redirect("/login");

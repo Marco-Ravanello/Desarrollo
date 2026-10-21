@@ -13,6 +13,8 @@ import Link from "next/link";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 
+export const metadata = { title: "Convenio" };
+
 export default async function AgreementDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const agreement = await getAgreementById(id);

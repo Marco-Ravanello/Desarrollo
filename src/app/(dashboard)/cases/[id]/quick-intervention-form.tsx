@@ -54,7 +54,7 @@ export function QuickInterventionForm({ caseId, caseTitle }: QuickInterventionFo
         onClick={() => setExpanded(true)}
         className="w-full rounded-2xl bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 font-bold gap-2 h-11"
       >
-        <PlusCircle className="h-4 w-4" /> Nueva Intervención / Nota de Evolución
+        <PlusCircle className="h-4 w-4" /> Nueva intervención
       </Button>
     );
   }

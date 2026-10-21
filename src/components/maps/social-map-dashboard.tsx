@@ -162,10 +162,9 @@ export function SocialMapDashboard({ initialData, programs, unlocated = 0, canLo
   return (
     <div className="space-y-6 animate-in fade-in duration-500 pb-20">
       <PageHeader
-        title="Cartografía Social GIS 3F"
-        description="Monitoreo territorial, geolocalización de vecinos asistidos y densidad de cobertura socio-barrial."
+        title="Mapa Social"
+        description="Dónde vive la gente del padrón, por localidad, barrio y programa."
         icon={MapPin}
-        badge="Georreferenciación Localidades"
         actions={
           <>
             {canLocate && (
@@ -182,9 +181,9 @@ export function SocialMapDashboard({ initialData, programs, unlocated = 0, canLo
                 pdfMaxRows={5000}
                 columns={exportColumns}
                 filename={`mapa_social_${selectedLocality.id}_3f`}
-                title={`Cartografía Social y Padrón Georreferenciado - ${selectedLocality.name}`}
+                title={`Mapa Social - ${selectedLocality.name}`}
                 subtitle="MUNICIPALIDAD DE TRES DE FEBRERO"
-                label="Exportar Padrón Zona"
+                label="Exportar esta zona"
               />
             )}
           </>

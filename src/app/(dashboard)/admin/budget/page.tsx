@@ -22,6 +22,8 @@ const formatCurrency = (amount: number) => {
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 
+export const metadata = { title: "Presupuesto" };
+
 export default async function BudgetPage() {
   const session = await auth();
   if (!session?.user?.id) redirect("/login");
@@ -62,13 +64,13 @@ export default async function BudgetPage() {
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
       <PageHeader
-        title="Gestión de Presupuesto"
-        description="Monitoreo y ejecución presupuestaria de las secretarías municipales."
+        title="Presupuesto"
+        description="Cuánto tiene asignado cada área y cuánto lleva gastado."
         icon={Wallet}
         actions={
           <Button asChild variant="outline" className="rounded-xl font-bold gap-2">
             <Link href="/admin/agreements">
-              <FileCheck className="h-4 w-4 text-primary" /> Ver Convenios Institucionales
+              <FileCheck className="h-4 w-4 text-primary" /> Ver convenios
             </Link>
           </Button>
         }

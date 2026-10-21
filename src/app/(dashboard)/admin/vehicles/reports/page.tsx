@@ -6,6 +6,8 @@ import { ArrowLeft, Fuel } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
 import Link from "next/link";
 
+export const metadata = { title: "Gasto en combustible" };
+
 export default async function ReportsPage() {
   const vehicles = await getVehicles();
 
@@ -13,8 +15,8 @@ export default async function ReportsPage() {
     <div className="space-y-6">
       <PageHeader
         className="print:hidden"
-        title="Reportes de Combustible"
-        description="Resumen mensual de gastos por vehículo."
+        title="Gasto en combustible"
+        description="Cuánto se gastó en cada vehículo, mes por mes."
         icon={Fuel}
         actions={
           <Button variant="ghost" size="icon" asChild>

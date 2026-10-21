@@ -171,12 +171,11 @@ export function AreaDashboardView({
         title={areaTitle}
         description={areaDescription}
         icon={Layers}
-        badge="Dashboard Operativo"
         actions={
           area && (
             <Button asChild className={`rounded-2xl h-11 px-5 font-bold text-xs uppercase tracking-wider ${colorStyles.buttonBg} shadow-md`}>
               <Link href={`/cases/new${area?.id ? `?areaId=${area.id}` : ""}`}>
-                <FolderPlus className="mr-2 h-4 w-4" /> Nuevo Expediente
+                <FolderPlus className="mr-2 h-4 w-4" /> Nuevo expediente
               </Link>
             </Button>
           )

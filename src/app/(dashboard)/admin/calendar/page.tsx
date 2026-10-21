@@ -7,6 +7,8 @@ import { UnifiedCalendar } from "@/components/calendar/unified-calendar";
 import { PageHeader } from "@/components/layout/page-header";
 import { Car, ShoppingBag, CheckSquare, Calendar as CalendarIcon } from "lucide-react";
 
+export const metadata = { title: "Agenda" };
+
 export default async function AdminCalendarPage() {
   const session = await auth();
   if (!session?.user?.id) {
@@ -90,10 +92,9 @@ export default async function AdminCalendarPage() {
   return (
     <div className="space-y-6 animate-in fade-in duration-500 pb-20">
       <PageHeader
-        title="Agenda Unificada de Logística y Tareas"
-        description="Calendario interactivo con vista semanal/diaria, capas operativas, arrastrar y soltar (drag & drop) y mini mapa mensual."
+        title="Agenda"
+        description="Tareas, reservas de vehículos y eventos en un mismo calendario. Arrastrá un evento para cambiarle la fecha."
         icon={CalendarIcon}
-        badge="Planificación 3F"
         actions={
           <>
             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-blue-500/10 border border-blue-500/20 text-blue-500 text-xs font-bold">

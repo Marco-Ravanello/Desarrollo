@@ -13,6 +13,8 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DerivationCard } from "@/components/cases/derivations";
 
+export const metadata = { title: "Derivaciones" };
+
 export default async function DerivationsPage() {
   const session = await auth();
   if (!session?.user?.id) redirect("/login");
@@ -33,7 +35,7 @@ export default async function DerivationsPage() {
     <div className="space-y-6 pb-20 animate-in fade-in duration-500">
       <PageBreadcrumbs
         items={[
-          { label: "Expedientes y Casos", href: "/cases" },
+          { label: "Expedientes", href: "/cases" },
           { label: "Derivaciones", active: true },
         ]}
       />

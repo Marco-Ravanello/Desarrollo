@@ -10,6 +10,8 @@ import { Car } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
 import { EmptyMessage } from "@/components/ui/empty-message";
 
+export const metadata = { title: "Pedidos de vehículos" };
+
 export default async function VehicleRequestsPage() {
   const session = await auth();
   if (!session?.user || (session.user.role !== 'SUPERADMIN' && session.user.role !== 'ADMIN_GENERAL')) {
@@ -42,8 +44,8 @@ export default async function VehicleRequestsPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Solicitudes de Vehículos"
-        description="Gestión y aprobación de uso de flota municipal."
+        title="Pedidos de vehículos"
+        description="Aprobá o rechazá los pedidos para usar un vehículo."
         icon={Car}
       />
 
