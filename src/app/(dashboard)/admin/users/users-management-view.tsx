@@ -38,6 +38,7 @@ interface AreaItem {
 interface UserItem {
   id: string;
   name: string | null;
+  username: string | null;
   email: string | null;
   role: Role;
   areaId: string | null;
@@ -103,7 +104,7 @@ export function UsersManagementView({
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase().trim();
       const matchName = u.name?.toLowerCase().includes(q) || false;
-      const matchEmail = u.email?.toLowerCase().includes(q) || false;
+      const matchEmail = u.email?.toLowerCase().includes(q) || u.username?.includes(q) || false;
       const matchArea = u.area?.name.toLowerCase().includes(q) || false;
       const matchRole = roleLabel(u.role).toLowerCase().includes(q);
       if (!matchName && !matchEmail && !matchArea && !matchRole) return false;
@@ -121,6 +122,7 @@ export function UsersManagementView({
 
   const exportColumns = [
     { header: "Nombre", accessorKey: "name" },
+    { header: "Usuario", accessorKey: "username" },
     { header: "Correo", accessorKey: "email" },
     { header: "Rol", accessorKey: "role" },
     { header: "Área", accessorKey: "areaName" },
@@ -129,6 +131,7 @@ export function UsersManagementView({
 
   const exportData = filteredUsers.map((u) => ({
     name: u.name || "Sin nombre",
+    username: u.username || "",
     email: u.email || "",
     role: roleLabel(u.role),
     areaName: u.area?.name || "Sin área",
@@ -164,7 +167,7 @@ export function UsersManagementView({
               <SheetHeader className="mb-4">
                 <SheetTitle className="text-xl font-bold font-heading">Nuevo usuario</SheetTitle>
                 <SheetDescription className="text-xs">
-                  La persona entra con su correo y la clave temporal, y la cambia por una propia.
+                  La persona entra con su usuario y la clave temporal, y la cambia por una propia.
                 </SheetDescription>
               </SheetHeader>
               <CreateUserForm areas={areas} onSuccess={() => setIsCreateOpen(false)} />
@@ -247,7 +250,7 @@ export function UsersManagementView({
             <div className="relative w-full sm:w-56">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
               <Input
-                placeholder="Buscar por nombre, correo, área o rol"
+                placeholder="Buscar por nombre, usuario, correo, área o rol"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-9 h-9 text-xs rounded-xl bg-muted/20 border-border/60 text-foreground"
@@ -304,7 +307,12 @@ export function UsersManagementView({
                             <p className="text-xs font-bold text-foreground leading-tight">
                               {u.name || "Sin nombre"}
                             </p>
-                            <p className="mt-0.5 truncate font-mono text-[11px] font-normal text-muted-foreground" title={u.email ?? undefined}>{u.email}</p>
+                            {u.username && (
+                              <p className="mt-0.5 truncate font-mono text-[11px] font-semibold text-foreground/80" title="Nombre de usuario para ingresar">{u.username}</p>
+                            )}
+                            {u.email && (
+                              <p className="truncate font-mono text-[11px] font-normal text-muted-foreground" title={u.email}>{u.email}</p>
+                            )}
                             {isSelf && (
                               <Badge variant="outline" className="text-[9px] font-bold border-primary/30 text-primary mt-0.5">
                                 Sos vos
@@ -365,7 +373,7 @@ export function UsersManagementView({
                     <EmptyMessage
                       kind="search"
                       title="Nadie coincide con la búsqueda"
-                      description="Probá con otro nombre, correo o rol."
+                      description="Probá con otro nombre, usuario, correo o rol."
                       action={
                         <Button
                           type="button"

@@ -61,14 +61,14 @@ describe("usuarios", () => {
 
   it("un operativo no puede crear usuarios", async () => {
     loginAs(await createUser("OPERATIVO"));
-    const res = await createUserAction(form({ name: "X", email: "nuevo1@prueba.test", password: "clave-prueba", role: "OPERATIVO" }));
+    const res = await createUserAction(form({ name: "X", username: `nuevo1`, email: "nuevo1@prueba.test", password: "clave-prueba", role: "OPERATIVO" }));
     expect(res.success).toBe(false);
     expect(await prisma.user.count({ where: { email: "nuevo1@prueba.test" } })).toBe(0);
   });
 
   it("solo un Superadmin puede dar el rol Superadmin", async () => {
     loginAs(await createUser("ADMIN_GENERAL"));
-    const res = await createUserAction(form({ name: "X", email: "nuevo2@prueba.test", password: "clave-prueba", role: "SUPERADMIN" }));
+    const res = await createUserAction(form({ name: "X", username: `nuevo2`, email: "nuevo2@prueba.test", password: "clave-prueba", role: "SUPERADMIN" }));
     expect(res.success).toBe(false);
 
     const operativo = await createUser("OPERATIVO");

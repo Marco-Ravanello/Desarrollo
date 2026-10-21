@@ -11,6 +11,7 @@ import type { Role } from "@prisma/client";
 import { UserPlus, RefreshCw, Copy, Dices } from "lucide-react";
 import { generateTemporaryPassword } from "@/lib/temporary-password";
 import { ROLE_INFO, ROLE_ORDER } from "@/lib/roles";
+import { suggestUsername, USERNAME_MAX } from "@/lib/username";
 
 const fieldClass = "h-10 rounded-xl bg-muted/30 border-border/60 text-sm";
 const selectClass =
@@ -26,6 +27,9 @@ export function CreateUserForm({
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [password, setPassword] = useState("");
+  const [username, setUsername] = useState("");
+  // Mientras no lo toquen, el usuario se sugiere a partir del nombre.
+  const [usernameEdited, setUsernameEdited] = useState(false);
   // Arranca en el rol con menos acceso de la gestión diaria, nunca en Superadmin.
   const [role, setRole] = useState<Role>("OPERATIVO");
 
@@ -50,6 +54,8 @@ export function CreateUserForm({
     if (res.success) {
       toast.success("Usuario creado. Ya puede ingresar con la clave temporal.");
       (e.target as HTMLFormElement).reset();
+      setUsername("");
+      setUsernameEdited(false);
       setRole("OPERATIVO");
       setPassword(generateTemporaryPassword());
       if (onSuccess) onSuccess();
@@ -64,13 +70,44 @@ export function CreateUserForm({
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-1.5">
         <Label htmlFor="name" className="text-xs font-bold text-foreground">Nombre y apellido</Label>
-        <Input id="name" name="name" required placeholder="Ej: María Pérez" className={fieldClass} />
+        <Input
+          id="name"
+          name="name"
+          required
+          placeholder="Ej: María Pérez"
+          className={fieldClass}
+          onChange={(e) => {
+            if (!usernameEdited) setUsername(suggestUsername(e.target.value));
+          }}
+        />
       </div>
 
       <div className="space-y-1.5">
-        <Label htmlFor="email" className="text-xs font-bold text-foreground">Correo</Label>
-        <Input id="email" name="email" type="email" required placeholder="nombre@tresdefebrero.gob.ar" className={`${fieldClass} font-mono`} />
-        <p className="text-[11px] text-muted-foreground">Con este correo ingresa a la app.</p>
+        <Label htmlFor="username" className="text-xs font-bold text-foreground">Usuario</Label>
+        <Input
+          id="username"
+          name="username"
+          required
+          autoComplete="off"
+          autoCapitalize="none"
+          spellCheck={false}
+          maxLength={USERNAME_MAX}
+          value={username}
+          onChange={(e) => {
+            setUsernameEdited(true);
+            setUsername(e.target.value.toLowerCase().replace(/\s/g, ""));
+          }}
+          placeholder="Ej: maria.perez"
+          className={`${fieldClass} font-mono`}
+        />
+        <p className="text-[11px] text-muted-foreground">Con este nombre ingresa a la app. Sin espacios ni tildes.</p>
+      </div>
+
+      <div className="space-y-1.5">
+        <Label htmlFor="email" className="text-xs font-bold text-foreground">
+          Correo <span className="font-normal text-muted-foreground">(opcional)</span>
+        </Label>
+        <Input id="email" name="email" type="email" placeholder="nombre@tresdefebrero.gob.ar" className={`${fieldClass} font-mono`} />
       </div>
 
       <div className="space-y-1.5">

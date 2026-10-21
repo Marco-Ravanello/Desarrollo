@@ -41,6 +41,7 @@ export default async function UsersPage({
   const sanitizedUsers = (usersRaw || []).map((u: any) => ({
     id: u.id,
     name: u.name,
+    username: u.username ?? null,
     email: u.email,
     role: u.role,
     areaId: u.areaId,
