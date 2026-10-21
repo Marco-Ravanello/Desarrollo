@@ -15,6 +15,8 @@ import { PageHeader } from "@/components/layout/page-header";
 import { StatCard } from "@/components/ui/stat-card";
 import { Progress } from "@/components/ui/progress";
 
+export const metadata = { title: "Vehículos" };
+
 export default async function VehiclesPage() {
   const now = new Date();
 
@@ -65,8 +67,8 @@ export default async function VehiclesPage() {
   return (
     <div className="space-y-8 pb-10">
       <PageHeader
-        title="Gestión de Flota"
-        description="Control operativo, mantenimiento y logística municipal."
+        title="Vehículos"
+        description="Los vehículos de la Muni: estado, reservas, combustible y vencimientos."
         icon={Car}
         actions={
           <>

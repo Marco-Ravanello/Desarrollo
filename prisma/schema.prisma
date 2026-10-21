@@ -105,6 +105,7 @@ model Case {
   assignedAt    DateTime?
   interventions Intervention[]
   derivations   Derivation[]
+  followUps     Task[]
   documents     Document[]
   stormVictims  StormVictimRecord[]
   createdAt     DateTime       @default(now())
@@ -461,7 +462,13 @@ model Task {
   status      TaskStatus @default(PENDIENTE)
   priority    Priority   @default(MEDIA)
   viewerIds   String?   // Comma-separated list of User IDs allowed to view this task/event
+  // Seguimiento agendado desde un expediente; el aviso de "hoy" se manda una sola vez.
+  caseId      String?
+  case        Case?     @relation(fields: [caseId], references: [id], onDelete: SetNull)
+  notifiedAt  DateTime?
   createdAt   DateTime  @default(now())
+
+  @@index([caseId])
 }
 
 enum TaskStatus {

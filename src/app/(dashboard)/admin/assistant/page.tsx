@@ -479,7 +479,7 @@ export default function AssistantPage() {
       <PageHeader
         className="shrink-0"
         title="Asistente de IA"
-        description="Consultas y análisis dinámico de la base de datos municipal en tiempo real."
+        description="Preguntale por los datos de la Secretaría y te responde con números, tablas y gráficos."
         icon={Sparkles}
         actions={
           <Button

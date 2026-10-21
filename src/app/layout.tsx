@@ -19,7 +19,8 @@ const montserrat = Montserrat({
 });
 
 export const metadata: Metadata = {
-  title: "MuniGestión 3F — Municipalidad de Tres de Febrero",
+  // Cada pantalla pone su nombre en la pestaña del navegador: "Expedientes · MuniGestión 3F".
+  title: { default: "MuniGestión 3F — Municipalidad de Tres de Febrero", template: "%s · MuniGestión 3F" },
   description: "Plataforma oficial de gestión pública y social de Tres de Febrero",
 };
 

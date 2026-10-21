@@ -37,6 +37,8 @@ function presets() {
   ];
 }
 
+export const metadata = { title: "Reportes" };
+
 export default async function ReportsPage({ searchParams }: { searchParams: Promise<{ desde?: string; hasta?: string }> }) {
   const session = await auth();
   if (!session?.user || !hasPermission(session.user.role as any, PERMISSIONS.VIEW_REPORTS)) {

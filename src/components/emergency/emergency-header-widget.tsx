@@ -76,7 +76,7 @@ export function EmergencyHeaderWidget() {
               href="/admin/emergency"
               className="bg-white/20 hover:bg-white text-white hover:text-slate-900 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest transition-all inline-flex items-center gap-1 shadow-sm"
             >
-              Ver Centro de Operaciones <ChevronRight className="h-3 w-3" />
+              Ver emergencia climática <ChevronRight className="h-3 w-3" />
             </Link>
           </div>
           <button

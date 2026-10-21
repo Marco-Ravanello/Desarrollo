@@ -14,6 +14,8 @@ import { ProviderFormDialog } from "./provider-form-dialog";
 
 const money = (n: number) => `$ ${n.toLocaleString("es-AR", { maximumFractionDigits: 0 })}`;
 
+export const metadata = { title: "Proveedores" };
+
 export default async function ProvidersPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
   const { q } = await searchParams;
   const [session, { providers, total, unregistered }] = await Promise.all([auth(), getProvidersOverview(q)]);
@@ -23,7 +25,7 @@ export default async function ProvidersPage({ searchParams }: { searchParams: Pr
     <div className="space-y-6 max-w-6xl mx-auto">
       <PageHeader
         title="Proveedores"
-        description="Padrón de proveedores y su historial de órdenes de compra."
+        description="Los proveedores de la Muni y las órdenes de compra de cada uno."
         icon={Building2}
         actions={
           canEdit ? (

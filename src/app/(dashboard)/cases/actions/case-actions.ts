@@ -9,6 +9,7 @@ import { canEditSocialRecords } from "@/lib/permissions";
 import { createDerivation, respondDerivation } from "@/services/derivations";
 import { editIntervention } from "@/services/interventions";
 import { assignCase } from "@/services/case-assignment";
+import { completeFollowUp, scheduleFollowUp } from "@/services/follow-ups";
 import { isInterventionType } from "@/lib/intervention-types";
 
 export async function addCaseInterventionAction(caseId: string, description: string, type?: string) {
@@ -283,5 +284,37 @@ export async function editCaseInterventionAction(interventionId: string, descrip
     return result;
   } catch (error: any) {
     return { success: false, error: actionErrorMessage(error, "No se pudo corregir la intervención") };
+  }
+}
+
+export async function scheduleFollowUpAction(caseId: string, day: string, note?: string) {
+  const session = await auth();
+  if (!session?.user?.id) return { success: false, error: "No tenés permiso para hacer esto o tu sesión expiró. Si sigue pasando, volvé a iniciar sesión." };
+  try {
+    const result = await scheduleFollowUp(session.user, { caseId, day, note });
+    if (result.success) {
+      revalidatePath(`/cases/${caseId}`);
+      revalidatePath("/tasks");
+      revalidatePath("/dashboard");
+    }
+    return result;
+  } catch (error: any) {
+    return { success: false, error: actionErrorMessage(error, "No se pudo agendar el seguimiento") };
+  }
+}
+
+export async function completeFollowUpAction(taskId: string) {
+  const session = await auth();
+  if (!session?.user?.id) return { success: false, error: "No tenés permiso para hacer esto o tu sesión expiró. Si sigue pasando, volvé a iniciar sesión." };
+  try {
+    const result = await completeFollowUp(session.user, taskId);
+    if (result.success) {
+      if (result.caseId) revalidatePath(`/cases/${result.caseId}`);
+      revalidatePath("/tasks");
+      revalidatePath("/dashboard");
+    }
+    return { success: result.success, error: result.success ? undefined : result.error };
+  } catch (error: any) {
+    return { success: false, error: actionErrorMessage(error, "No se pudo marcar el seguimiento") };
   }
 }

@@ -7,6 +7,8 @@ import { MANAGEMENT_ROLES, PERMISSIONS, hasPermission } from "@/lib/permissions"
 import { getMapData, getMapPrograms } from "@/services/map";
 import { SocialMapDashboard } from "@/components/maps/social-map-dashboard";
 
+export const metadata = { title: "Mapa Social" };
+
 export default async function MapsPage() {
   const session = await auth();
   if (!session?.user?.id) redirect("/login");

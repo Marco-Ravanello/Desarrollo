@@ -80,8 +80,8 @@ export default function InterventionsAdminPage() {
   return (
     <div className="space-y-8 max-w-5xl mx-auto">
       <PageHeader
-        title="Gestión de Datos Externos"
-        description="Importación y exportación masiva de intervenciones sociales."
+        title="Importar datos"
+        description="Subí planillas de intervenciones o descargá las que ya están cargadas."
         icon={HandHeart}
       />
 

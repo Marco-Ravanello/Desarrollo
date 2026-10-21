@@ -10,6 +10,8 @@ import { Button } from "@/components/ui/button";
 import { GeocodingPanel } from "@/components/maps/geocoding-panel";
 import { getGeocodingStatus } from "@/services/geocoding";
 
+export const metadata = { title: "Ubicar en el mapa" };
+
 export default async function UbicarEnElMapaPage() {
   const session = await auth();
   if (!session?.user?.id) redirect("/login");

@@ -8,6 +8,8 @@ import { PageHeader } from "@/components/layout/page-header";
 import { EmptyMessage } from "@/components/ui/empty-message";
 import Link from "next/link";
 
+export const metadata = { title: "Convenios" };
+
 export default async function AgreementsPage({ searchParams }: { searchParams: Promise<{ areaId?: string }> }) {
   const { areaId } = await searchParams;
   let agreements = await getAgreements();
@@ -20,7 +22,7 @@ export default async function AgreementsPage({ searchParams }: { searchParams: P
     <div className="space-y-6">
       <PageHeader
         title="Convenios"
-        description="Registro y seguimiento de acuerdos institucionales."
+        description="Los convenios de la Muni, con su vigencia y su monto."
         icon={Landmark}
         actions={
           <Button asChild className="bg-emerald-600 hover:bg-emerald-700">

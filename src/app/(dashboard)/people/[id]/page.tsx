@@ -18,8 +18,11 @@ import { AddFamilyMemberForm } from "./add-family-member-form";
 import { EditPersonDialog } from "./edit-person-dialog";
 import { RemoveFamilyMemberButton } from "./remove-family-member-button";
 import { PageBreadcrumbs } from "@/components/layout/breadcrumbs-context";
+import { RememberVisit } from "@/components/search/remember-visit";
 import { PageHeader } from "@/components/layout/page-header";
 import { EmptyMessage } from "@/components/ui/empty-message";
+
+export const metadata = { title: "Persona" };
 
 export default async function PersonDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
@@ -87,13 +90,14 @@ export default async function PersonDetailPage({ params }: { params: Promise<{ i
   ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   const breadcrumbs = [
-    { label: "Padrón Único", href: "/people" },
+    { label: "Registro Único", href: "/people" },
     { label: `${person.lastName}, ${person.firstName}`, active: true }
   ];
 
   return (
     <div className="space-y-6">
       <PageBreadcrumbs items={breadcrumbs} />
+      <RememberVisit kind="person" id={id} />
 
       <div className="space-y-3">
         <PageHeader

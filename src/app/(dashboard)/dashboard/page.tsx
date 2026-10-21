@@ -68,6 +68,8 @@ const LAYOUT: Record<Profile, { kpis: KpiId[]; sections: SectionId[] }> = {
   },
 };
 
+export const metadata = { title: "Inicio" };
+
 export default async function DashboardPage({
   searchParams,
 }: {
@@ -177,7 +179,7 @@ export default async function DashboardPage({
             {canLoadData && (
               <>
                 <Button asChild size="sm" className="h-9 rounded-xl gap-1.5">
-                  <Link href="/cases/new"><Plus className="h-4 w-4" /> Nuevo caso</Link>
+                  <Link href="/cases/new"><Plus className="h-4 w-4" /> Nuevo expediente</Link>
                 </Button>
                 <Button asChild variant="outline" size="sm" className="h-9 rounded-xl gap-1.5">
                   <Link href="/people/new"><UserPlus className="h-4 w-4" /> Cargar persona</Link>
@@ -462,7 +464,7 @@ function MyCasesCard({ total, cases }: { total: number; cases: MyAssignedCase[] 
   );
 }
 
-function TasksCard({ tasks }: { tasks: { id: string; title: string; priority: string | null; dueDate: Date | null }[] }) {
+function TasksCard({ tasks }: { tasks: { id: string; title: string; priority: string | null; dueDate: Date | null; caseId?: string | null }[] }) {
   const upcoming = tasks.slice(0, 5);
   return (
     <Card className="rounded-2xl border border-border/60 bg-card p-5 shadow-sm h-full">
@@ -477,7 +479,7 @@ function TasksCard({ tasks }: { tasks: { id: string; title: string; priority: st
           return (
             <Link
               key={t.id}
-              href="/tasks"
+              href={t.caseId ? `/cases/${t.caseId}` : "/tasks"}
               className="flex items-center justify-between gap-2 py-2.5 px-1 rounded-lg hover:bg-muted/20 transition-colors group"
             >
               <p className="text-xs font-medium text-foreground truncate group-hover:text-primary transition-colors">{t.title}</p>

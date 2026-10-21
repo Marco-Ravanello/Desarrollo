@@ -7,6 +7,8 @@ import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { canCreateUsersAndResetPasswords, hasPermission, PERMISSIONS } from "@/lib/permissions";
 
+export const metadata = { title: "Usuarios" };
+
 export default async function UsersPage({
   searchParams,
 }: {

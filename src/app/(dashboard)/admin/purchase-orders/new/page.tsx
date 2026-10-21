@@ -6,6 +6,8 @@ import { CreatePurchaseOrderForm } from "./create-order-form";
 import { PageHeader } from "@/components/layout/page-header";
 import { Briefcase } from "lucide-react";
 
+export const metadata = { title: "Nueva orden de compra" };
+
 export default async function NewPurchaseOrderPage() {
   const [providers, areas] = await Promise.all([
     getProviders(),
@@ -15,8 +17,8 @@ export default async function NewPurchaseOrderPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Nueva Orden de Compra"
-        description="Genere una nueva solicitud de compra para proveedores registrados."
+        title="Nueva orden de compra"
+        description="Elegí el proveedor y cargá lo que se va a comprar."
         icon={Briefcase}
       />
 

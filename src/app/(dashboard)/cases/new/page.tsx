@@ -12,6 +12,8 @@ import Link from "next/link";
 import { PageBreadcrumbs } from "@/components/layout/breadcrumbs-context";
 import { PageHeader } from "@/components/layout/page-header";
 
+export const metadata = { title: "Nuevo expediente" };
+
 export default async function NewCasePage({
   searchParams
 }: {
@@ -46,8 +48,8 @@ export default async function NewCasePage({
     : null;
 
   const breadcrumbs = [
-    { label: "Áreas Sociales", href: "/areas/social" },
-    { label: "Nuevo Expediente", active: true }
+    { label: "Áreas", href: "/areas/social" },
+    { label: "Nuevo expediente", active: true }
   ];
 
   return (
@@ -55,10 +57,9 @@ export default async function NewCasePage({
       <PageBreadcrumbs items={breadcrumbs} />
 
       <PageHeader
-        title="Creación Centralizada de Expediente"
-        description="Registro asistido de actuaciones sociales, asignación de área y carátula oficial."
+        title="Nuevo expediente"
+        description="Elegí a la persona y el área, y contá en pocas palabras por qué se abre."
         icon={FolderPlus}
-        badge="Nuevo Legajo 3F"
         actions={
           <Button variant="ghost" size="icon" asChild className="rounded-xl h-10 w-10 shrink-0">
             <Link href="/areas/social" aria-label="Volver">

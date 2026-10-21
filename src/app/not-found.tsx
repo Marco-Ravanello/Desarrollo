@@ -25,32 +25,32 @@ export default function NotFoundPage() {
 
   const shortcuts = [
     {
-      title: "Padrón Único y Legajos",
-      desc: "Consulta unificada de ciudadanos y familias de Tres de Febrero",
+      title: "Registro Único",
+      desc: "Las personas del padrón y sus legajos",
       href: "/people",
       icon: Users,
       color: "text-blue-500",
       bg: "bg-blue-500/10 border-blue-500/20"
     },
     {
-      title: "Ficha Social Unificada 360°",
-      desc: "Cruce de datos y programas sociales activos",
+      title: "Ficha Social 360°",
+      desc: "Todo sobre una persona: datos, programas y familia",
       href: "/ficha-social",
       icon: Network,
       color: "text-indigo-500",
       bg: "bg-indigo-500/10 border-indigo-500/20"
     },
     {
-      title: "Cartografía Social GIS",
-      desc: "Mapa de geolocalización por 15 localidades",
+      title: "Mapa Social",
+      desc: "Dónde vive la gente del padrón, por barrio y programa",
       href: "/maps",
       icon: Map,
       color: "text-emerald-500",
       bg: "bg-emerald-500/10 border-emerald-500/20"
     },
     {
-      title: "Centro de Operaciones (COE)",
-      desc: "Comando de emergencias, radar SMN y riesgo hídrico",
+      title: "Emergencia climática",
+      desc: "Fichas del relevamiento y entregas",
       href: "/admin/emergency",
       icon: ShieldAlert,
       color: "text-amber-500",
@@ -122,7 +122,7 @@ export default function NotFoundPage() {
                 className="rounded-2xl h-11 px-5 text-xs font-bold gap-2 border-border/60"
               >
                 <Link href="/people">
-                  <Users className="h-4 w-4 text-primary" /> Ir al Padrón Único
+                  <Users className="h-4 w-4 text-primary" /> Ir al Registro Único
                 </Link>
               </Button>
 

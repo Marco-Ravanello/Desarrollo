@@ -13,9 +13,13 @@ import { User, MapPin, Tag, ArrowLeft, ShieldAlert, ClipboardList, History, File
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { auth } from "@/auth";
-import { hasPermission, PERMISSIONS } from "@/lib/permissions";
+import { canEditSocialRecords, hasPermission, PERMISSIONS } from "@/lib/permissions";
 import { QuickInterventionForm } from "./quick-intervention-form";
 import { PageBreadcrumbs } from "@/components/layout/breadcrumbs-context";
+import { RememberVisit } from "@/components/search/remember-visit";
+import { FollowUpList, ScheduleFollowUpButton } from "@/components/cases/follow-ups";
+import { getCaseFollowUps } from "@/services/follow-ups";
+import { todayInArgentina } from "@/lib/follow-up-dates";
 import { PageHeader } from "@/components/layout/page-header";
 import { EmptyMessage } from "@/components/ui/empty-message";
 import { getAreaDashboardUrl, getAreaShortName } from "@/lib/area-theme";
@@ -26,6 +30,8 @@ import { AssignCaseControl } from "@/components/cases/assign-case";
 import { canAssignCase, canTakeCase, getAssignableUsers } from "@/services/case-assignment";
 import { canCloseOrReopenCase } from "@/lib/case-closing";
 import { CloseReopenCaseButton } from "@/components/cases/close-reopen-case";
+
+export const metadata = { title: "Expediente" };
 
 export default async function CaseDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
@@ -71,11 +77,14 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
   }
 
   const isClosed = caseData.status === "CERRADO";
-  const [derivations, areas, interventions] = await Promise.all([
+  const [derivations, areas, interventions, followUps] = await Promise.all([
     getCaseDerivations(caseData.id),
     getAreas(),
     getCaseInterventions(caseData.id, session.user.id),
+    getCaseFollowUps(caseData.id),
   ]);
+  const today = todayInArgentina();
+  const canScheduleFollowUp = !isClosed && canEditSocialRecords(session.user.role);
   const events = await getCaseEvents({ id: caseData.id, createdAt: caseData.createdAt, areaName }, derivations);
   const pendingDerivation = derivations.find((d) => d.status === "PENDIENTE");
   const canDerive = canDeriveCases(session.user) && !isClosed && !pendingDerivation;
@@ -104,7 +113,7 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
   const historyCount = interventions.length + events.length;
 
   const breadcrumbs = [
-    { label: "Áreas Sociales", href: "/areas/social" },
+    { label: "Áreas", href: "/areas/social" },
     { label: areaLabel, href: areaUrl },
     { label: `Expediente ${titleStr.substring(0, 20)}...`, active: true }
   ];
@@ -114,12 +123,14 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
       <PageBreadcrumbs items={breadcrumbs} />
+      <RememberVisit kind="case" id={caseData.id} />
 
       <PageHeader
         title={titleStr}
         icon={ClipboardList}
         actions={
           <>
+            {canScheduleFollowUp && <ScheduleFollowUpButton caseId={caseData.id} today={today} />}
             {canCloseOrReopen && <CloseReopenCaseButton caseId={caseData.id} mode={isClosed ? "reopen" : "close"} />}
             {canDerive && (
               <DeriveCaseButton
@@ -185,8 +196,10 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
           <Card className="rounded-2xl border border-border/60 shadow-sm bg-card space-y-4 p-6">
             <div className="pb-2 border-b border-border/40">
               <CardTitle className="text-lg font-bold text-foreground">Historia del expediente</CardTitle>
-              <CardDescription>Intervenciones, derivaciones, apertura y cierre, de lo más nuevo a lo más viejo.</CardDescription>
+              <CardDescription>Intervenciones, derivaciones, seguimientos, apertura y cierre, de lo más nuevo a lo más viejo.</CardDescription>
             </div>
+
+            <FollowUpList items={followUps} today={today} currentUserId={session.user.id!} />
 
             {!isClosed && (
               <QuickInterventionForm caseId={caseData.id} caseTitle={titleStr} />

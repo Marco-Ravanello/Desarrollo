@@ -26,6 +26,8 @@ import { PageHeader } from "@/components/layout/page-header";
 import { StatCard } from "@/components/ui/stat-card";
 import { EmptyMessage } from "@/components/ui/empty-message";
 
+export const metadata = { title: "Registro Único" };
+
 export default async function PeoplePage({
   searchParams,
 }: {
@@ -63,20 +65,19 @@ export default async function PeoplePage({
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20">
       <PageHeader
         title="Registro Único"
-        description="Padrón centralizado de ciudadanos, familias y asistencia municipal unificada de Tres de Febrero."
+        description="Las personas del padrón municipal. Buscá por nombre, DNI o dirección y entrá a su legajo."
         icon={Users}
-        badge="Padrón 360°"
         actions={
           <>
             <Button variant="outline" asChild className="rounded-2xl h-11 px-4 text-xs font-bold transition-all hover:bg-accent border-border/60 gap-2">
               <Link href="/ficha-social">
                 <Network className="h-4 w-4 text-indigo-500" />
-                Buscador Ficha 360°
+                Ficha Social 360°
               </Link>
             </Button>
             <Button variant="outline" asChild className="rounded-2xl h-11 px-4 text-xs font-bold transition-all hover:bg-accent border-border/60 gap-2">
               <Link href="/ficha-social/cruces">
-                Matriz de Cruces
+                Cruces de programas
               </Link>
             </Button>
             {canImport && (
@@ -115,7 +116,7 @@ export default async function PeoplePage({
             </Sheet>
             )}
             <Button asChild className="rounded-2xl h-11 px-5 shadow-lg shadow-primary/20 transition-all hover:scale-105 bg-primary text-primary-foreground font-bold text-xs">
-              <Link href="/people/new"><Plus className="mr-2 h-4 w-4"/> Nueva Persona</Link>
+              <Link href="/people/new"><Plus className="mr-2 h-4 w-4"/> Cargar persona</Link>
             </Button>
           </>
         }

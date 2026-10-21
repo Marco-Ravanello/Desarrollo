@@ -38,6 +38,8 @@ function Firma({ titulo, lineas }: { titulo: string; lineas: string[] }) {
   );
 }
 
+export const metadata = { title: "Constancia de entrega" };
+
 /** Constancia imprimible de una entrega de elementos de emergencia, para que firme quien recibe. */
 export default async function DeliveryReceiptPage({ params }: { params: Promise<{ id: string }> }) {
   const session = await auth();

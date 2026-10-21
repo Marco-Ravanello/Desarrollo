@@ -31,6 +31,8 @@ import { EmptyMessage } from "@/components/ui/empty-message";
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 
+export const metadata = { title: "Recursos Humanos" };
+
 export default async function HRPage({
   searchParams
 }: {
@@ -111,7 +113,7 @@ export default async function HRPage({
     <div className="space-y-10 pb-20">
       <PageHeader
         title="Recursos Humanos"
-        description="Gestión integral y control presupuestario de la nómina."
+        description="El personal de cada área, su situación y lo que cuesta por mes."
         icon={Briefcase}
         actions={
           <>

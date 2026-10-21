@@ -14,6 +14,8 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
+export const metadata = { title: "Mis tareas" };
+
 export default async function TasksPage() {
   const session = await auth();
   if (!session?.user?.id) redirect("/login");
@@ -37,15 +39,14 @@ export default async function TasksPage() {
   return (
     <div className="max-w-5xl mx-auto space-y-6 animate-in fade-in duration-500">
       <PageHeader
-        title="Mis Tareas & Pendientes"
-        description="Panel de gestión personal de compromisos, trámites operativos y prioridades de trabajo."
+        title="Mis tareas"
+        description="Lo que tenés pendiente, con su fecha y su prioridad."
         icon={CheckCircle2}
-        badge="Productividad Municipal"
         actions={
           <Button variant="outline" asChild className="rounded-xl border-border/60 text-xs font-bold gap-2">
             <Link href="/admin/calendar">
               <Calendar className="h-4 w-4 text-primary" />
-              <span>Calendario Operativo</span>
+              <span>Ver en la agenda</span>
               <ArrowRight className="h-3.5 w-3.5 text-muted-foreground ml-0.5" />
             </Link>
           </Button>

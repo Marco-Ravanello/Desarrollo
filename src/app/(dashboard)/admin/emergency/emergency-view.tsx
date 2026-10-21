@@ -103,11 +103,11 @@ export function EmergencyView({ initialData, deniedAccess }: EmergencyViewProps)
       )}
 
       <PageHeader
-        title={surveyor ? "Mis fichas de emergencia climática" : "Relevamiento Territorial y Ficha de Tormenta"}
+        title={surveyor ? "Mis fichas de emergencia climática" : "Emergencia climática"}
         description={
           surveyor
             ? "Cargá las fichas del relevamiento. Acá ves solo las que cargaste vos y lo que pediste en cada una."
-            : "Planilla Oficial de Contingencia Climática • Municipalidad de Tres de Febrero"
+            : "Las fichas del relevamiento casa por casa, lo que pidió cada familia y cómo va la entrega."
         }
         icon={CloudRain}
         actions={

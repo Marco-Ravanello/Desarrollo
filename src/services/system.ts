@@ -10,7 +10,9 @@ export async function getTasks(userId: string) {
       { status: 'asc' },
       { dueDate: 'asc' },
       { createdAt: 'desc' }
-    ]
+    ],
+    // Los seguimientos agendados desde un expediente llevan a ese expediente.
+    include: { case: { select: { id: true, title: true } } }
   });
 }
 

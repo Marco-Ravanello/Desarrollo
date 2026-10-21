@@ -5,6 +5,8 @@ import { redirect } from "next/navigation";
 import { getAreaDashboardData } from "@/services/cases";
 import { AreaDashboardView } from "@/components/areas/area-dashboard-view";
 
+export const metadata = { title: "Hábitat y Vivienda" };
+
 export default async function HabitatAreaPage() {
   const session = await auth();
   if (!session?.user?.id) redirect("/login");
@@ -15,8 +17,8 @@ export default async function HabitatAreaPage() {
 
   return (
     <AreaDashboardView
-      areaTitle="Hábitat, Vivienda y Barrio"
-      areaDescription="Acompañamiento en regularización dominial, mejoras habitacionales, infraestructura socio-urbana y escrituración comunitaria."
+      areaTitle="Hábitat y Vivienda"
+      areaDescription="Regularización de terrenos, escrituras, mejoras de vivienda y obras en los barrios."
       themeColor="blue"
       area={area}
       initialCases={cases as any}

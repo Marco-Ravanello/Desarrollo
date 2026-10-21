@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { EmptyMessage } from "@/components/ui/empty-message";
 import { addTaskAction, toggleTaskAction, deleteTaskAction } from "./actions";
 import { toast } from "sonner";
+import Link from "next/link";
 
 type PriorityType = "BAJA" | "MEDIA" | "ALTA" | "URGENTE";
 
@@ -24,6 +25,8 @@ interface TaskItem {
   status: "PENDIENTE" | "EN_PROCESO" | "COMPLETADA";
   priority?: PriorityType;
   createdAt: string | Date;
+  /** Seguimiento agendado desde un expediente. */
+  case?: { id: string; title: string } | null;
 }
 
 export function TaskList({ initialTasks, userId }: { initialTasks: TaskItem[], userId: string }) {
@@ -412,6 +415,16 @@ export function TaskList({ initialTasks, userId }: { initialTasks: TaskItem[], u
                         <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
                           {t.description}
                         </p>
+                      )}
+
+                      {t.case && (
+                        <Link
+                          href={`/cases/${t.case.id}`}
+                          className="inline-flex max-w-full items-center gap-1 text-xs font-semibold text-primary hover:underline"
+                        >
+                          <FileText className="h-3 w-3 shrink-0" />
+                          <span className="truncate">Expediente: {t.case.title}</span>
+                        </Link>
                       )}
                     </div>
                   </div>

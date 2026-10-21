@@ -3,6 +3,7 @@
 import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
 import { canAccessPath, hasPermission, PERMISSIONS } from "@/lib/permissions";
+import { getRecentItems } from "@/services/recent-views";
 
 export async function searchGlobalAction(query: string) {
   const session = await auth();
@@ -145,4 +146,13 @@ export async function searchGlobalAction(query: string) {
       url: `/admin/agreements`
     }))
   };
+}
+
+/** Datos de "Vistos recientemente" (el navegador solo guarda tipo e id). */
+export async function getRecentItemsAction(refs: unknown) {
+  const session = await auth();
+  if (!session?.user) return [];
+  const role = session.user.role as any;
+  const items = await getRecentItems(refs, hasPermission(role, PERMISSIONS.VIEW_SENSITIVE_CASES));
+  return items.filter((i) => canAccessPath(role, i.kind === "case" ? "/cases" : "/people"));
 }

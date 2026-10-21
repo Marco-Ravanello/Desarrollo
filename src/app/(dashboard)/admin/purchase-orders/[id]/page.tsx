@@ -22,6 +22,8 @@ import { OrderAuditTimeline } from "./order-audit-timeline";
 import { OrderStatusActions } from "../order-status-actions";
 import { PrintOrderButton } from "./print-order-button";
 
+export const metadata = { title: "Orden de compra" };
+
 export default async function OrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const order = await getPurchaseOrderById(id);

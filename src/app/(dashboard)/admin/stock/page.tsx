@@ -9,6 +9,8 @@ import { Package, AlertCircle } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
 import { StatCard } from "@/components/ui/stat-card";
 
+export const metadata = { title: "Stock de insumos" };
+
 export default async function StockPage() {
   const [supplies, areas] = await Promise.all([
     getSupplies(),
@@ -20,8 +22,8 @@ export default async function StockPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Gestión de Stock"
-        description="Control de inventario de insumos municipales y alertas de reposición."
+        title="Stock de insumos"
+        description="Qué hay en el depósito y qué hace falta reponer."
         icon={Package}
       />
 

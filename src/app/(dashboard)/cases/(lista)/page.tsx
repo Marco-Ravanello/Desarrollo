@@ -47,6 +47,8 @@ const ASSIGNED_LABELS: Record<string, string> = {
   none: "Sin profesional a cargo",
 };
 
+export const metadata = { title: "Expedientes" };
+
 export default async function CasesPage({ searchParams }: CasesPageProps) {
   const session = await auth();
   if (!session?.user?.id) redirect("/login");
@@ -106,8 +108,8 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
   };
 
   const breadcrumbs = [
-    { label: "Dashboard", href: "/dashboard" },
-    { label: "Expedientes y Casos", active: true }
+    { label: "Inicio", href: "/dashboard" },
+    { label: "Expedientes", active: true }
   ];
 
   return (
@@ -115,10 +117,9 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
       <PageBreadcrumbs items={breadcrumbs} />
 
       <PageHeader
-        title="Expedientes y Casos Sociales"
-        description="Bandeja unificada de seguimiento, intervenciones y resolución territorial de todas las áreas municipales."
+        title="Expedientes"
+        description="Los expedientes de todas las áreas que podés ver. Buscá, filtrá y entrá a cada uno para seguirlo."
         icon={ClipboardList}
-        badge="Gestión Integral"
         actions={
           <>
             <Button asChild variant={assigned === "mine" ? "default" : "outline"} className="rounded-xl font-bold text-xs gap-1.5">
@@ -139,7 +140,7 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
             </Button>
             <Button asChild className="rounded-xl font-bold text-xs gap-1.5 shadow-sm">
               <Link href="/cases/new">
-                <Plus className="h-4 w-4" /> Nuevo Expediente
+                <Plus className="h-4 w-4" /> Nuevo expediente
               </Link>
             </Button>
           </>

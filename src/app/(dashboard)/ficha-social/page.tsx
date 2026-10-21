@@ -86,15 +86,14 @@ function FichaSocialContent() {
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       <PageHeader
-        title="Ficha Social Unificada 360°"
-        description="Cruce integral de bases de datos municipales, programas nacionales y detección automática de vínculos familiares."
+        title="Ficha Social 360°"
+        description="Buscá a una persona por DNI o nombre y mirá todo junto: sus datos, los programas que cobra, su familia y la atención que recibió."
         icon={Network}
-        badge="Cruce de Datos 3F"
         actions={
           <Button variant="outline" asChild className="rounded-xl border-border/60 text-xs font-bold gap-2">
             <Link href="/ficha-social/cruces">
               <BarChart2 className="h-4 w-4 text-primary" />
-              Matriz de Cruces Masivos
+              Cruces de programas
             </Link>
           </Button>
         }

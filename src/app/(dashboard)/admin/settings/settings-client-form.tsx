@@ -107,8 +107,8 @@ export function MunicipalSettingsClient({
   return (
     <div className="space-y-6 pb-20 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <PageHeader
-        title="Configuración Municipal"
-        description="Personalización de identidad institucional, logotipo/escudo, autoridades y contactos oficiales."
+        title="Configuración"
+        description="El nombre, el escudo, las autoridades y los contactos de la Municipalidad que aparecen en la app y en los documentos."
         icon={Settings}
         actions={
           <>
