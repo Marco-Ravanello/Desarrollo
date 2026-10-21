@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 import { getDashboardStats, type DashboardStats } from "@/services/dashboard";
 import { getTasks } from "@/services/system";
 import { countDerivationsToAnswer } from "@/services/derivations";
+import { getMyAssignedCases, type MyAssignedCase } from "@/services/cases";
 import { auth } from "@/auth";
 import prisma from "@/lib/prisma";
 import { hasPermission, PERMISSIONS } from "@/lib/permissions";
@@ -10,7 +11,7 @@ import { Card } from "@/components/ui/card";
 import {
   Users, FileText, CheckCircle2, ShieldCheck,
   Plus, UserPlus, ChevronRight, AlertTriangle,
-  Car, Calendar, ArrowUpRight, LayoutDashboard, Wallet, FileSignature, Archive, ArrowRightLeft,
+  Car, Calendar, ArrowUpRight, LayoutDashboard, Wallet, FileSignature, Archive, ArrowRightLeft, FolderOpen,
 } from "lucide-react";
 import type { Role } from "@prisma/client";
 import { PageHeader } from "@/components/layout/page-header";
@@ -46,7 +47,7 @@ function profileFor(role: Role): Profile {
 }
 
 type KpiId = "people" | "activeCases" | "urgentCases" | "closedCases" | "pendingOrders" | "myTasks";
-type SectionId = "attention" | "budget" | "territorial" | "recentCases" | "tasks" | "vehicles";
+type SectionId = "myCases" | "attention" | "budget" | "territorial" | "recentCases" | "tasks" | "vehicles";
 
 const LAYOUT: Record<Profile, { kpis: KpiId[]; sections: SectionId[] }> = {
   direccion: {
@@ -80,11 +81,12 @@ export default async function DashboardPage({
   // Dirección y auditoría miran toda la gestión; el resto, su área (si tiene una asignada).
   const areaId = profile === "direccion" || profile === "auditor" ? null : session?.user?.areaId || null;
 
-  const [stats, myTasks, area, derivationsToAnswer] = await Promise.all([
+  const [stats, myTasks, area, derivationsToAnswer, myCases] = await Promise.all([
     getDashboardStats({ areaId, canViewSensitive }),
     session?.user?.id ? getTasks(session.user.id).catch(() => []) : Promise.resolve([]),
     areaId ? prisma.area.findUnique({ where: { id: areaId }, select: { name: true } }).catch(() => null) : null,
     session?.user ? countDerivationsToAnswer(session.user).catch(() => 0) : 0,
+    session?.user?.id ? getMyAssignedCases(session.user.id).catch(() => ({ total: 0, cases: [] })) : { total: 0, cases: [] },
   ]);
 
   // Mismas tareas que muestra "Mis Tareas": las del usuario que no están completadas.
@@ -150,6 +152,8 @@ export default async function DashboardPage({
   };
 
   const layout = LAYOUT[profile];
+  // "Mis expedientes a cargo" aparece primero, solo para quien tiene expedientes asignados.
+  const sections: SectionId[] = myCases.total > 0 ? ["myCases", ...layout.sections] : layout.sections;
   const canLoadData = profile !== "auditor";
   const canSeeReports = hasPermission(role, PERMISSIONS.VIEW_REPORTS);
 
@@ -229,8 +233,10 @@ export default async function DashboardPage({
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 items-stretch">
-        {layout.sections.map((id) => {
+        {sections.map((id) => {
           switch (id) {
+            case "myCases":
+              return <MyCasesCard key={id} total={myCases.total} cases={myCases.cases} />;
             case "attention":
               return <AttentionCard key={id} items={stats.attentionItems} viewAllHref={kpis.urgentCases.href} />;
             case "budget":
@@ -401,6 +407,47 @@ function RecentCasesCard({ cases, viewAllHref }: { cases: DashboardStats["recent
           </Link>
         ))}
       </div>
+    </Card>
+  );
+}
+
+function MyCasesCard({ total, cases }: { total: number; cases: MyAssignedCase[] }) {
+  return (
+    <Card className="rounded-2xl border border-border/60 bg-card p-5 shadow-sm h-full">
+      <CardHeaderRow
+        icon={FolderOpen}
+        iconClass="text-primary"
+        title={`Mis expedientes a cargo (${total})`}
+        href="/cases?assigned=mine"
+        linkLabel="Ver todos"
+      />
+      <div className="divide-y divide-border/20 mt-1">
+        {cases.map((c) => (
+          <Link
+            key={c.id}
+            href={`/cases/${c.id}`}
+            className="flex items-center justify-between gap-2 py-2.5 px-1 rounded-lg hover:bg-muted/20 transition-colors group"
+          >
+            <div className="min-w-0">
+              <p className="text-xs font-medium text-foreground truncate group-hover:text-primary transition-colors">{c.titular || c.title}</p>
+              <p className="text-[11px] text-muted-foreground truncate">{c.titular ? `${c.title} · ${c.status}` : c.status}</p>
+            </div>
+            <span
+              className={`inline-block shrink-0 px-2 py-0.5 rounded-full text-[10px] font-medium whitespace-nowrap ${
+                c.stale ? "bg-amber-500/15 text-amber-700 dark:text-amber-300" : "bg-muted text-muted-foreground"
+              }`}
+              title="Desde la última intervención o, si no tiene, desde que se abrió"
+            >
+              {c.quietDays <= 0 ? "Movido hoy" : c.quietDays === 1 ? "Movido ayer" : `${c.quietDays} días sin movimiento`}
+            </span>
+          </Link>
+        ))}
+      </div>
+      {total > cases.length && (
+        <p className="pt-2 text-[11px] text-muted-foreground">
+          Se muestran los {cases.length} que llevan más tiempo sin movimiento.
+        </p>
+      )}
     </Card>
   );
 }

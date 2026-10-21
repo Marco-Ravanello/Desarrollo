@@ -1,4 +1,5 @@
 import prisma from "@/lib/prisma";
+import { CASE_STATUS_LABEL, summarizeCase } from "@/lib/case-summary";
 
 export async function getCasesByArea(areaName: string) {
   return await prisma.case.findMany({
@@ -237,4 +238,43 @@ export async function getAllCases(filters: GetCasesFilters = {}) {
       closed: totalClosed,
     },
   };
+}
+
+export interface MyAssignedCase {
+  id: string;
+  title: string;
+  titular: string | null;
+  status: string;
+  /** Días sin movimiento (desde la última intervención o la apertura). */
+  quietDays: number;
+  stale: boolean;
+}
+
+/** Expedientes sin cerrar a cargo de este usuario: primero los que llevan más tiempo quietos. */
+export async function getMyAssignedCases(userId: string, limit = 5): Promise<{ total: number; cases: MyAssignedCase[] }> {
+  const rows = await prisma.case.findMany({
+    where: { assignedToId: userId, status: { not: "CERRADO" } },
+    select: {
+      id: true,
+      title: true,
+      status: true,
+      createdAt: true,
+      person: { select: { firstName: true, lastName: true } },
+      interventions: { orderBy: { date: "desc" }, take: 1, select: { date: true } },
+    },
+  });
+  const cases = rows
+    .map((c) => {
+      const summary = summarizeCase({ status: c.status, createdAt: c.createdAt, lastInterventionAt: c.interventions[0]?.date ?? null });
+      return {
+        id: c.id,
+        title: c.title,
+        titular: c.person ? `${c.person.lastName}, ${c.person.firstName}` : null,
+        status: CASE_STATUS_LABEL[c.status] ?? c.status,
+        quietDays: summary.quietDays,
+        stale: summary.stale,
+      };
+    })
+    .sort((a, b) => b.quietDays - a.quietDays || a.title.localeCompare(b.title, "es"));
+  return { total: cases.length, cases: cases.slice(0, limit) };
 }
