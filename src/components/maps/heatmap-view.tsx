@@ -1,5 +1,6 @@
 "use client";
 
+import { MapPlaceholder } from "@/components/layout/page-skeletons";
 import { useEffect, useMemo, useState } from "react";
 import { MapContainer, TileLayer, ZoomControl, useMap } from "react-leaflet";
 import L from "leaflet";
@@ -69,9 +70,7 @@ export function HeatmapView({
 
   if (!isMounted) {
     return (
-      <div className="h-[620px] w-full rounded-2xl bg-muted/40 animate-pulse flex items-center justify-center">
-        <p className="text-muted-foreground text-xs font-bold">Cargando mapa de calor socio-barrial...</p>
-      </div>
+      <MapPlaceholder height={620} label="Cargando el mapa de calor…" />
     );
   }
 

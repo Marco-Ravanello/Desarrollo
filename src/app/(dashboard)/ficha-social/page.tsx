@@ -24,6 +24,8 @@ import Link from "next/link";
 import { toast } from "sonner";
 import { FichaHistorialView, historialCount } from "@/components/people/ficha-historial";
 import { GrupoFamiliarView, grupoFamiliarCount } from "@/components/people/grupo-familiar";
+import { FichaSkeleton, LoadingPage, SkeletonHeader } from "@/components/layout/page-skeletons";
+import { Skeleton } from "@/components/ui/skeleton";
 
 function FichaSocialContent() {
   const searchParams = useSearchParams();
@@ -161,7 +163,9 @@ function FichaSocialContent() {
         </CardContent>
       </Card>
 
-      {ficha && ficha.encontrado ? (
+      {isPending ? (
+        <FichaSkeleton />
+      ) : ficha && ficha.encontrado ? (
         <div className="space-y-6">
           <Card className="bg-card text-card-foreground border border-border/60 shadow-sm rounded-2xl overflow-hidden">
             <div className="p-6 sm:p-7 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 border-b border-border/40">
@@ -383,10 +387,10 @@ export default function FichaSocialPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex flex-col items-center justify-center min-h-[400px] gap-3 text-muted-foreground">
-          <RefreshCw className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-sm font-bold">Cargando Ficha Social Unificada...</p>
-        </div>
+        <LoadingPage label="Cargando la Ficha Social 360°…">
+          <SkeletonHeader actions={1} />
+          <Skeleton className="h-[88px] w-full rounded-2xl" />
+        </LoadingPage>
       }
     >
       <FichaSocialContent />

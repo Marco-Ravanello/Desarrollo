@@ -1,5 +1,6 @@
 "use client";
 
+import { MapPlaceholder } from "@/components/layout/page-skeletons";
 import { useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
@@ -23,14 +24,7 @@ const DynamicMapView = dynamic(
   () => import("@/components/maps/map-view").then((mod) => mod.MapView),
   {
     ssr: false,
-    loading: () => (
-      <div className="h-[620px] w-full rounded-2xl bg-muted/40 animate-pulse flex flex-col items-center justify-center gap-2">
-        <MapIcon className="h-8 w-8 text-primary animate-bounce" />
-        <p className="text-xs font-bold text-muted-foreground">
-          Cargando Cartografía Social Tres de Febrero...
-        </p>
-      </div>
-    )
+    loading: () => <MapPlaceholder height={620} label="Cargando el mapa de Tres de Febrero…" />
   }
 );
 

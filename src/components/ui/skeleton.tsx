@@ -1,12 +1,13 @@
 import { cn } from "@/lib/utils"
 
+/** Bloque gris de las pantallas de carga, con un brillo que lo recorre. */
 function Skeleton({
   className,
   ...props
 }: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      className={cn("animate-pulse rounded-md bg-muted", className)}
+      className={cn("skeleton-shimmer rounded-md bg-muted-foreground/10", className)}
       {...props}
     />
   )

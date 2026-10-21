@@ -1,5 +1,6 @@
 "use client";
 
+import { MapPlaceholder } from "@/components/layout/page-skeletons";
 import * as React from "react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
@@ -13,12 +14,7 @@ const DynamicMiniHeatmap = dynamic(
   () => import("./mini-heatmap-inner").then((mod) => mod.MiniHeatmapInner),
   {
     ssr: false,
-    loading: () => (
-      <div className="h-[220px] w-full bg-muted/30 animate-pulse rounded-xl flex flex-col items-center justify-center gap-2 border border-border/50">
-        <MapPin className="h-6 w-6 text-muted-foreground opacity-40 animate-bounce" />
-        <span className="text-xs text-muted-foreground font-medium">Cargando mapa socio-barrial...</span>
-      </div>
-    )
+    loading: () => <MapPlaceholder height={220} className="rounded-xl" />
   }
 );
 
