@@ -12,7 +12,7 @@ export default async function HabitatAreaPage() {
   if (!session?.user?.id) redirect("/login");
 
   const { area, cases, stats } = await getAreaDashboardData([
-    "Hábitat", "Habitat", "Vivienda", "Regularización"
+    "Vivienda", "Regularización", "Hábitat", "Habitat"
   ]);
 
   return (

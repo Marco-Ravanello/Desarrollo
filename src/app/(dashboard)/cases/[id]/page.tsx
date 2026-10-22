@@ -89,7 +89,7 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
   const events = await getCaseEvents({ id: caseData.id, createdAt: caseData.createdAt, areaName }, derivations);
   const pendingDerivation = derivations.find((d) => d.status === "PENDIENTE");
   const canDerive = canDeriveCases(session.user) && !isClosed && !pendingDerivation;
-  const areaUrl = getAreaDashboardUrl(areaName);
+  const areaUrl = getAreaDashboardUrl(areaName, caseData.areaId);
   const areaLabel = getAreaShortName(areaName);
 
   const canAssign = !isClosed && canAssignCase(session.user, caseData.areaId);

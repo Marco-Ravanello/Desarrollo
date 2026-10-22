@@ -183,7 +183,11 @@ export default function CrucesSocialesPage() {
                   </div>
                   <p className="text-[10px] text-muted-foreground line-clamp-2 mt-1 mb-2 font-medium">{prog.descripcion}</p>
                   <div className="flex items-center justify-between text-[10px] pt-2 border-t border-border/20">
-                    <span className="text-muted-foreground font-mono">{prog.total_personas.toLocaleString()} pers.</span>
+                    <span className="text-muted-foreground">
+                      {prog.total_personas === null
+                        ? "Sin dato"
+                        : `${prog.total_personas.toLocaleString("es-AR")} ${prog.total_personas === 1 ? "persona" : "personas"}`}
+                    </span>
                     <Badge variant="outline" className="text-[9px] py-0 border-border/40">
                       {prog.area.split(" ")[0]}
                     </Badge>

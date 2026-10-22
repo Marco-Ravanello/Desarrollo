@@ -24,6 +24,12 @@ export function CreatePersonForm() {
       if (result.success) {
         toast.success("Persona registrada con éxito");
         router.push(`/people/${result.id}`);
+      } else if (result.existingId) {
+        const existingId = result.existingId;
+        toast.error(result.error, {
+          duration: 10000,
+          action: { label: "Ver su ficha", onClick: () => router.push(`/people/${existingId}`) },
+        });
       } else {
         toast.error(result.error || "Error al registrar persona");
       }

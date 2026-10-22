@@ -8,10 +8,22 @@ import { getEmergencyStatusAction, toggleEmergencyStatusAction } from "@/app/(da
 import { toast } from "sonner";
 import { useSession } from "next-auth/react";
 import { MANAGEMENT_ROLES } from "@/lib/permissions";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 export function EmergencyHeaderWidget() {
   const [isEmergencyActive, setIsEmergencyActive] = useState(false);
   const [dismissBanner, setDismissBanner] = useState(false);
+  // Prender o apagar la emergencia cambia la app para todos: se pide confirmación.
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
   const { data: session } = useSession();
   // Solo la conducción activa o desactiva el modo emergencia; el resto ve el estado.
   const canToggle = Boolean(session?.user?.role && MANAGEMENT_ROLES.includes(session.user.role));
@@ -42,21 +54,26 @@ export function EmergencyHeaderWidget() {
     };
   }, []);
 
-  const toggleEmergency = async () => {
-    const nextState = !isEmergencyActive;
-    setIsEmergencyActive(nextState);
-    localStorage.setItem("muni-emergency-mode", JSON.stringify(nextState));
-    localStorage.setItem("emergency-mode-active", JSON.stringify(nextState));
+  const applyEmergencyState = (active: boolean) => {
+    setIsEmergencyActive(active);
+    localStorage.setItem("muni-emergency-mode", JSON.stringify(active));
+    localStorage.setItem("emergency-mode-active", JSON.stringify(active));
     window.dispatchEvent(new Event("muni-emergency-toggle"));
     window.dispatchEvent(new Event("emergency-toggle"));
+  };
 
+  const toggleEmergency = async () => {
+    const nextState = !isEmergencyActive;
+    setSaving(true);
     const res = await toggleEmergencyStatusAction(nextState);
+    setSaving(false);
+    setConfirmOpen(false);
     if (res.success) {
-      toast.success(
-        nextState ? "Protocolo de emergencia climática activado" : "Protocolo de emergencia climática desactivado"
-      );
+      applyEmergencyState(nextState);
+      if (nextState) setDismissBanner(false);
+      toast.success(nextState ? "Emergencia climática activada para toda la Secretaría" : "Emergencia climática desactivada");
     } else {
-      toast.error(res.error || "Error al actualizar estado de emergencia");
+      toast.error(res.error || "No se pudo cambiar la emergencia climática. Probá de nuevo.");
     }
   };
 
@@ -90,24 +107,25 @@ export function EmergencyHeaderWidget() {
       )}
 
       {canToggle && <button
-        onClick={toggleEmergency}
+        onClick={() => setConfirmOpen(true)}
         className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold transition-all border shadow-sm ${
           isEmergencyActive
             ? "bg-rose-500/15 border-rose-500/40 text-rose-500 animate-pulse hover:bg-rose-500/25"
             : "bg-muted/40 hover:bg-muted border-border/60 text-muted-foreground hover:text-foreground"
         }`}
-        title={isEmergencyActive ? "Desactivar protocolo de emergencia" : "Activar protocolo de emergencia climática"}
+        title={isEmergencyActive ? "Desactivar la emergencia climática" : "Activar la emergencia climática"}
+        aria-label={isEmergencyActive ? "Emergencia climática activa. Desactivar" : "Emergencia climática apagada. Activar"}
       >
         {isEmergencyActive ? (
           <>
             <ShieldAlert className="h-4 w-4 text-rose-500" />
-            <span className="hidden sm:inline tracking-wider">MODO CRISIS: ON</span>
+            <span className="hidden sm:inline">Emergencia climática: activa</span>
             <span className="h-2 w-2 rounded-full bg-rose-500 animate-ping"></span>
           </>
         ) : (
           <>
             <CloudRain className="h-4 w-4 text-slate-400" />
-            <span className="hidden sm:inline font-bold">Modo Temporal: OFF</span>
+            <span className="hidden sm:inline font-bold">Emergencia climática: apagada</span>
           </>
         )}
       </button>}
@@ -118,6 +136,34 @@ export function EmergencyHeaderWidget() {
             <AlertTriangle className="h-3 w-3" /> Operaciones
           </Badge>
         </Link>
+      )}
+      {canToggle && (
+        <Dialog open={confirmOpen} onOpenChange={(open) => !saving && setConfirmOpen(open)}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>
+                {isEmergencyActive ? "¿Desactivar la emergencia climática?" : "¿Activar la emergencia climática?"}
+              </DialogTitle>
+              <DialogDescription>
+                {isEmergencyActive
+                  ? "Se saca el aviso rojo de emergencia de todas las pantallas, para toda la gente que usa la app."
+                  : "Aparece un aviso rojo de emergencia arriba de todas las pantallas, para toda la gente que usa la app. Queda registrado en Auditoría con tu nombre."}
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter className="gap-2 sm:gap-0">
+              <Button variant="outline" onClick={() => setConfirmOpen(false)} disabled={saving}>
+                Cancelar
+              </Button>
+              <Button
+                variant={isEmergencyActive ? "default" : "destructive"}
+                onClick={toggleEmergency}
+                disabled={saving}
+              >
+                {saving ? "Guardando…" : isEmergencyActive ? "Sí, desactivar" : "Sí, activar para todos"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       )}
     </div>
   );

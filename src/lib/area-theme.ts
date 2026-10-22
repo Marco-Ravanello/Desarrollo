@@ -37,20 +37,52 @@ export function getAreaBgColor(colorName?: string | null) {
   return AREA_BG_COLORS[colorName || "blue"] || AREA_BG_COLORS.blue;
 }
 
-export function getAreaDashboardUrl(areaName?: string): string {
+/** Áreas que no tienen página propia en "Áreas" (su lista es la de Expedientes filtrada). */
+function isAreaWithoutPage(name: string) {
+  return name.includes("general") || name.includes("formación") || name.includes("formacion");
+}
+
+/**
+ * Página del área. La Dirección General y el Centro de Formación no tienen página propia:
+ * con su id se va a Expedientes filtrado por esa área.
+ */
+export function getAreaDashboardUrl(areaName?: string, areaId?: string): string {
   if (!areaName) return "/areas/social";
   const name = areaName.toLowerCase();
-  if (name.includes("hábitat") || name.includes("habitat") || name.includes("vivienda")) return "/areas/habitat";
-  if (name.includes("niñez") || name.includes("ninez") || name.includes("familia")) return "/areas/ninez";
+  if (isAreaWithoutPage(name)) return areaId ? `/cases?area=${encodeURIComponent(areaId)}` : "/cases";
   if (name.includes("violencia") || name.includes("género") || name.includes("genero")) return "/areas/violence";
+  if (name.includes("niñez") || name.includes("ninez") || name.includes("familia")) return "/areas/ninez";
+  if (name.includes("hábitat") || name.includes("habitat") || name.includes("vivienda")) return "/areas/habitat";
   return "/areas/social";
 }
 
+/** Nombre corto del área para listas y encabezados. */
 export function getAreaShortName(areaName?: string): string {
-  if (!areaName) return "Protección Social";
+  if (!areaName) return "Sin área";
   const name = areaName.toLowerCase();
-  if (name.includes("hábitat") || name.includes("habitat") || name.includes("vivienda")) return "Hábitat y Vivienda";
-  if (name.includes("niñez") || name.includes("ninez") || name.includes("familia")) return "Niñez y Familia";
+  // Primero las que se confundían: "Dirección General de Desarrollo Humano y Hábitat" dice "Hábitat",
+  // y la de Violencia dice "Protección".
+  if (name.includes("general")) return "Dirección General";
+  if (name.includes("formación") || name.includes("formacion")) return "Centro de Formación";
   if (name.includes("violencia") || name.includes("género") || name.includes("genero")) return "Violencia de Género";
-  return "Protección Social";
+  if (name.includes("niñez") || name.includes("ninez") || name.includes("familia")) return "Niñez y Familia";
+  if (name.includes("hábitat") || name.includes("habitat") || name.includes("vivienda")) return "Hábitat y Vivienda";
+  if (name.includes("protección social") || name.includes("proteccion social")) return "Protección Social";
+  // Un área nueva: su nombre sin "Dirección de" / "Coordinación de".
+  return areaName.replace(/^(direcci[oó]n|coordinaci[oó]n)\s+(de\s+(la\s+|los\s+|las\s+)?)?/i, "").trim() || areaName;
+}
+
+/**
+ * Elige el área de una página de "Áreas". Las palabras van de la más precisa a la más general:
+ * gana el área que tiene la primera palabra de la lista, y entre varias, la que no es la Dirección General
+ * (que tiene "Desarrollo" y "Hábitat" en el nombre y antes se quedaba con dos páginas ajenas).
+ */
+export function pickAreaByKeywords<T extends { name: string }>(areas: T[], keywords: string[]): T | null {
+  for (const keyword of keywords) {
+    const k = keyword.toLowerCase();
+    const matches = areas.filter((a) => a.name.toLowerCase().includes(k));
+    if (matches.length === 0) continue;
+    return matches.find((a) => !a.name.toLowerCase().includes("general")) ?? matches[0];
+  }
+  return null;
 }

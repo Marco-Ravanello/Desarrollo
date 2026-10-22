@@ -86,7 +86,7 @@ export function NewCaseForm({
   const [isSearching, setIsSearching] = useState(false);
   const [selectedPerson, setSelectedPerson] = useState<CitizenItem | null>(preselectedPerson || null);
 
-  const [areaId, setAreaId] = useState<string>(preselectedAreaId || areas[0]?.id || "");
+  const [areaId, setAreaId] = useState<string>(preselectedAreaId || "");
   const [priority, setPriority] = useState<PriorityType>("MEDIA");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -137,7 +137,7 @@ export function NewCaseForm({
     }
 
     if (!areaId) {
-      toast.error("Seleccione un área responsable");
+      toast.error("Elegí el área responsable del expediente");
       return;
     }
 
@@ -297,8 +297,12 @@ export function NewCaseForm({
               <select
                 value={areaId}
                 onChange={(e) => setAreaId(e.target.value)}
-                className="w-full h-11 px-3 rounded-2xl bg-muted/30 border border-border/60 text-xs font-bold text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                aria-label="Área responsable"
+                className={`w-full h-11 px-3 rounded-2xl bg-muted/30 border border-border/60 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary ${areaId ? "text-foreground" : "text-muted-foreground"}`}
               >
+                <option value="" disabled>
+                  Elegí el área…
+                </option>
                 {areas.map((a) => (
                   <option key={a.id} value={a.id}>
                     {a.name}

@@ -12,7 +12,7 @@ export default async function SocialAreaPage() {
   if (!session?.user?.id) redirect("/login");
 
   const { area, cases, stats } = await getAreaDashboardData([
-    "Protección Social", "Proteccion", "Social", "Desarrollo"
+    "Protección Social", "Proteccion Social", "Social"
   ]);
 
   return (
