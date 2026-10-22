@@ -1,6 +1,7 @@
 import prisma from "@/lib/prisma";
 import { z } from "zod";
 import { MUNICIPAL_LOCALITIES } from "@/lib/constants/localities";
+import { normalizeDni } from "@/lib/padron-import";
 
 export const CreatePersonSchema = z.object({
   dni: z.string().min(1),
@@ -732,25 +733,39 @@ async function geocodeAddress(address: string) {
   };
 }
 
+/**
+ * Persona que ya está cargada con ese DNI, en el Registro Único o en el padrón.
+ * "Cargar persona" la usa para avisar en vez de pisar sus datos.
+ */
+export async function findExistingPersonByDni(dni: string): Promise<{ id: string; nombre: string } | null> {
+  const candidates = Array.from(new Set([dni.trim(), normalizeDni(dni)].filter((d): d is string => Boolean(d))));
+  if (candidates.length === 0) return null;
+
+  const padron = await prisma.padronUnificado.findFirst({
+    where: { dni: { in: candidates } },
+    select: { dni: true, nombre_completo: true },
+  });
+  if (padron) return { id: padron.dni, nombre: padron.nombre_completo || `DNI ${padron.dni}` };
+
+  const person = await prisma.person.findFirst({
+    where: { dni: { in: candidates } },
+    select: { id: true, firstName: true, lastName: true },
+  });
+  if (person) return { id: person.id, nombre: `${person.lastName}, ${person.firstName}` };
+
+  return null;
+}
+
+/** Da de alta a una persona nueva. Si el DNI ya existe no toca nada (ver findExistingPersonByDni). */
 export async function createPerson(rawData: z.infer<typeof CreatePersonSchema>) {
-  const data = CreatePersonSchema.parse(rawData);
+  const data = CreatePersonSchema.parse({ ...rawData, dni: rawData.dni?.trim() });
   const coords = await geocodeAddress(data.address);
   const nombreCompleto = `${data.lastName}, ${data.firstName}`;
 
-  // 1. Crear o actualizar en tabla Person (usando DNI como ID para compatibilidad de rutas)
-  const person = await prisma.person.upsert({
-    where: { dni: data.dni },
-    update: {
-      firstName: data.firstName,
-      lastName: data.lastName,
-      birthDate: data.birthDate ? new Date(data.birthDate) : null,
-      address: data.address,
-      phone: data.phone || null,
-      email: data.email || null,
-      latitude: coords.lat,
-      longitude: coords.lng,
-    },
-    create: {
+  // 1. Crear en la tabla Person (usando DNI como ID para compatibilidad de rutas).
+  // Es "create" y no "upsert": si el DNI ya existe falla con P2002 y no pisa los datos de nadie.
+  const person = await prisma.person.create({
+    data: {
       id: data.dni,
       dni: data.dni,
       firstName: data.firstName,
@@ -764,18 +779,13 @@ export async function createPerson(rawData: z.infer<typeof CreatePersonSchema>) 
     }
   });
 
-  // 2. Sincronizar en padron_unificado para que aparezca inmediatamente en el listado general
+  // 2. Sumarla a padron_unificado para que aparezca enseguida en el listado general.
+  // Si ya hay una fila con ese DNI se deja como está: sus datos y su ubicación vienen del padrón original.
   try {
     await prisma.$executeRawUnsafe(
       `INSERT INTO padron_unificado (dni, nombre_completo, direccion, telefono, email, latitude, longitude, cantidad_programas)
        VALUES ($1, $2, $3, $4, $5, $6, $7, 0)
-       ON CONFLICT (dni) DO UPDATE SET
-         nombre_completo = EXCLUDED.nombre_completo,
-         direccion = EXCLUDED.direccion,
-         telefono = EXCLUDED.telefono,
-         email = EXCLUDED.email,
-         latitude = EXCLUDED.latitude,
-         longitude = EXCLUDED.longitude;`,
+       ON CONFLICT (dni) DO NOTHING;`,
       data.dni,
       nombreCompleto,
       data.address,

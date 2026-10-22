@@ -1,5 +1,6 @@
 import prisma from "@/lib/prisma";
 import { CASE_STATUS_LABEL, summarizeCase } from "@/lib/case-summary";
+import { pickAreaByKeywords } from "@/lib/area-theme";
 
 export async function getCasesByArea(areaName: string) {
   return await prisma.case.findMany({
@@ -58,12 +59,8 @@ export async function getCaseById(id: string) {
 }
 
 export async function getAreaDashboardData(areaKeywords: string[]) {
-  const allAreas = await prisma.area.findMany();
-  const matchingArea = allAreas.find((a) =>
-    areaKeywords.some((keyword) =>
-      a.name.toLowerCase().includes(keyword.toLowerCase())
-    )
-  );
+  const allAreas = await prisma.area.findMany({ orderBy: { name: "asc" } });
+  const matchingArea = pickAreaByKeywords(allAreas, areaKeywords);
 
   if (!matchingArea) {
     return {

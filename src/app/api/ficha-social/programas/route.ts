@@ -1,4 +1,7 @@
 import { NextResponse } from "next/server";
+import prisma from "@/lib/prisma";
+import { auth } from "@/auth";
+import { PADRON_PROGRAMS } from "@/lib/padron-programs";
 
 export const dynamic = "force-dynamic";
 
@@ -23,6 +26,28 @@ const PROGRAMAS_CATALOGO = [
   { id: "prog_emergencia_climatica", nombre: "Emergencia climática", area: "Desarrollo Humano y Hábitat", descripcion: "Familias relevadas en las fichas de tormenta de la contingencia climática" }
 ];
 
+/** Cuántas personas del padrón tiene cada programa (una sola consulta, columna por columna). */
+async function countPeoplePerProgram(): Promise<Record<string, number>> {
+  const columns = PADRON_PROGRAMS.map((p) => p.column).filter((c) => /^[a-z0-9_]+$/.test(c));
+  if (columns.length === 0) return {};
+  const rows = await prisma.$queryRawUnsafe<Record<string, number>[]>(
+    `SELECT ${columns.map((c) => `COUNT(*) FILTER (WHERE "${c}" = 1)::int AS "${c}"`).join(", ")} FROM padron_unificado;`
+  );
+  return rows[0] ?? {};
+}
+
 export async function GET() {
-  return NextResponse.json(PROGRAMAS_CATALOGO);
+  const session = await auth();
+  if (!session?.user) {
+    return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+  }
+
+  // Si la cuenta falla se devuelve el catálogo sin números (antes se mostraba un 1.200 inventado).
+  const counts = await countPeoplePerProgram().catch((err) => {
+    console.error("No se pudo contar las personas por programa:", err);
+    return {} as Record<string, number>;
+  });
+  return NextResponse.json(
+    PROGRAMAS_CATALOGO.map((p) => ({ ...p, total_personas: typeof counts[p.id] === "number" ? counts[p.id] : null }))
+  );
 }

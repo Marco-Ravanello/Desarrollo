@@ -12,7 +12,7 @@ export default async function NinezAreaPage() {
   if (!session?.user?.id) redirect("/login");
 
   const { area, cases, stats } = await getAreaDashboardData([
-    "Niñez", "Ninez", "Familia", "Adolescencia"
+    "Niñez", "Ninez", "Adolescencia", "Familia"
   ]);
 
   return (

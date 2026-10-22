@@ -1,13 +1,17 @@
 "use server";
 
-import { createPerson } from "@/services/people";
+import { createPerson, findExistingPersonByDni } from "@/services/people";
 import { createAuditLog } from "@/services/system";
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
 import { actionErrorMessage } from "@/lib/action-error";
 import { canEditSocialRecords } from "@/lib/permissions";
 
-export async function createPersonAction(formData: FormData) {
+type CreatePersonResult =
+  | { success: true; id: string }
+  | { success: false; error: string; existingId?: string };
+
+export async function createPersonAction(formData: FormData): Promise<CreatePersonResult> {
   const session = await auth();
   if (session?.user && !canEditSocialRecords(session.user.role)) {
     return { success: false, error: "Tu rol (Auditoría) puede consultar pero no cargar ni modificar datos." };
@@ -25,6 +29,16 @@ export async function createPersonAction(formData: FormData) {
   }
 
   try {
+    // Si ya está cargada no se toca: se avisa y se ofrece ir a su ficha (para corregir datos está "Editar").
+    const existing = await findExistingPersonByDni(dni);
+    if (existing) {
+      return {
+        success: false,
+        error: `Esta persona ya está cargada: ${existing.nombre} (DNI ${dni.trim()}). No se cambió nada.`,
+        existingId: existing.id,
+      };
+    }
+
     const person = await createPerson({
       dni,
       firstName,
@@ -43,7 +57,7 @@ export async function createPersonAction(formData: FormData) {
     return { success: true, id: person.id };
   } catch (error: any) {
     if (error.code === 'P2002') {
-      return { success: false, error: "Ya existe una persona registrada con ese DNI" };
+      return { success: false, error: "Esta persona ya está cargada. No se cambió nada." };
     }
     return { success: false, error: actionErrorMessage(error, "No se pudo guardar la persona") };
   }

@@ -127,9 +127,8 @@ export interface ProgramaCatalogoItem {
   nombre: string;
   area: string;
   descripcion: string;
-  total_personas: number;
-  total_beneficiarios: number;
-  total_titulares: number;
+  /** Personas del padrón en el programa; null si no se pudo contar. */
+  total_personas: number | null;
 }
 
 export interface CruceProgramasResultado {
@@ -219,9 +218,7 @@ export async function getProgramCatalog(): Promise<ProgramaCatalogoItem[]> {
       const items = await res.json();
       return items.map((p: any) => ({
         ...p,
-        total_personas: p.total_personas || 1200,
-        total_beneficiarios: p.total_beneficiarios || 950,
-        total_titulares: p.total_titulares || 600
+        total_personas: typeof p.total_personas === "number" ? p.total_personas : null,
       }));
     }
   } catch (error) {}

@@ -25,6 +25,10 @@ export default async function NewCasePage({
   const { areaId, personId, dni } = await searchParams;
 
   const areas = await getAreas();
+  // Arranca con el área pedida (botón "Nuevo expediente" de una página de área) o con la de quien carga.
+  // Si no hay ninguna, queda vacía y hay que elegirla: antes quedaba la primera por orden alfabético.
+  const isArea = (id?: string | null) => Boolean(id && areas.some((a) => a.id === id));
+  const defaultAreaId = isArea(areaId) ? areaId : isArea(session.user.areaId) ? session.user.areaId! : undefined;
 
   let preselectedPerson = null;
   if (personId) {
@@ -71,7 +75,7 @@ export default async function NewCasePage({
 
       <NewCaseForm
         areas={areas as any}
-        preselectedAreaId={areaId}
+        preselectedAreaId={defaultAreaId}
         preselectedPerson={formattedPerson}
       />
     </div>
