@@ -235,6 +235,46 @@ export async function retryWithAddress(dni: string, direccion: string): Promise<
   return { located: false };
 }
 
+export type RelocateResult = "UBICADA" | "NO_ENCONTRADA" | "SIN_DIRECCION" | "PENDIENTE";
+
+/**
+ * Después de cambiar la dirección de alguien ("Editar datos" o "Cargar persona"): busca el punto nuevo.
+ * El punto viejo es de la dirección anterior, así que no se conserva: si la nueva no aparece, la persona
+ * queda en "Ubicar en el mapa" para marcarla a mano. Si los servicios no responden, queda para la próxima tanda.
+ */
+export async function relocateAfterAddressChange(dni: string): Promise<RelocateResult> {
+  const row = await prisma.padronUnificado.findUnique({ where: { dni }, select: { direccion: true, localidad: true, barrio: true } });
+  if (!row) return "PENDIENTE";
+  await prisma.padronUnificado.update({
+    where: { dni },
+    data: { latitude: null, longitude: null, geo_estado: null, geo_fuente: null, geo_actualizado: new Date() },
+  });
+  await prisma.person.updateMany({ where: { dni }, data: { latitude: null, longitude: null } });
+
+  const address = cleanAddressForSearch(row.direccion);
+  if (!address) {
+    await markState([dni], "SIN_DIRECCION");
+    return "SIN_DIRECCION";
+  }
+  try {
+    const [georef] = await georefLookup([address]);
+    if (georef) {
+      await saveLocation(dni, georef, "GEOREF");
+      return "UBICADA";
+    }
+    const osm = await osmLookup(address, row.localidad, row.barrio);
+    if (osm) {
+      await saveLocation(dni, osm, "OSM");
+      return "UBICADA";
+    }
+  } catch (err) {
+    if (err instanceof GeocodingServiceError) return "PENDIENTE";
+    throw err;
+  }
+  await markState([dni], "NO_ENCONTRADA");
+  return "NO_ENCONTRADA";
+}
+
 /** Guarda el punto que alguien marcó a mano en el mapa. */
 export async function setManualLocation(dni: string, point: Point): Promise<boolean> {
   if (!(await isInsideTresDeFebrero(point))) return false;

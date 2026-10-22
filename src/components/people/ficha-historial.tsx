@@ -169,7 +169,7 @@ export function FichaHistorialView({ historial, withCases = true }: { historial:
         )}
       </section>
 
-      {historial.personaId && (
+      {withCases && historial.personaId && (
         <Button variant="outline" asChild className="rounded-xl text-xs font-bold">
           <Link href={`/people/${historial.personaId}`}>
             Abrir legajo completo en el Registro Único <ArrowRight className="h-3.5 w-3.5" />

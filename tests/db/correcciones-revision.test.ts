@@ -32,7 +32,7 @@ describe("Cargar persona con un DNI que ya existe", () => {
 
   it("avisa, ofrece su ficha y no cambia nada del padrón", async () => {
     const res = await createPersonAction(personForm({
-      dni: " 93.000.001 ", firstName: "Otro", lastName: "Nombre", address: "Calle que no existe 99999", phone: "",
+      dni: " 93.000.001 ", firstName: "Otro", lastName: "Nombre", direccion: "Calle que no existe 99999", phone: "",
     }));
     expect(res.success).toBe(false);
     if (res.success) return;
@@ -49,13 +49,13 @@ describe("Cargar persona con un DNI que ya existe", () => {
 
   it("también avisa si la persona ya está en el Registro Único", async () => {
     await prisma.person.create({ data: { id: "93000002", dni: "93000002", firstName: "Ya", lastName: "Cargada" } });
-    const res = await createPersonAction(personForm({ dni: "93000002", firstName: "Otro", lastName: "Nombre", address: "Calle 2" }));
+    const res = await createPersonAction(personForm({ dni: "93000002", firstName: "Otro", lastName: "Nombre", direccion: "Calle 2" }));
     expect(res).toMatchObject({ success: false, existingId: "93000002" });
     expect(await prisma.person.findUniqueOrThrow({ where: { id: "93000002" } })).toMatchObject({ firstName: "Ya", lastName: "Cargada" });
   });
 
   it("una persona nueva se carga y entra al padrón", async () => {
-    const res = await createPersonAction(personForm({ dni: "93000003", firstName: "Nueva", lastName: "Prueba", address: "Calle 3" }));
+    const res = await createPersonAction(personForm({ dni: "93000003", firstName: "Nueva", lastName: "Prueba", direccion: "Calle 3" }));
     expect(res).toMatchObject({ success: true, id: "93000003" });
     expect(await prisma.padronUnificado.findUnique({ where: { dni: "93000003" } })).toMatchObject({ nombre_completo: "Prueba, Nueva" });
   });

@@ -12,6 +12,7 @@ import { notFound } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Separator } from "@/components/ui/separator";
+import { RESERVATION_STATUS, formatFechaHora, formatReservationRange } from "@/lib/vehicle-reservations";
 
 export const metadata = { title: "Vehículo" };
 
@@ -24,6 +25,16 @@ export default async function VehicleDetailPage({ params }: { params: Promise<{ 
   const now = new Date();
   const thirtyDaysFromNow = new Date();
   thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
+
+  // Ahora: en uso (salió y no volvió), reservado para este momento, o libre.
+  const enUso = vehicle.reservations.find((r) => r.status === "EN_CURSO");
+  const reservadoAhora = vehicle.reservations.find((r) => r.status === "APROBADA" && r.startDate <= now && r.endDate >= now);
+  const ahora =
+    vehicle.status === "EN_TALLER" ? "En el taller" :
+    vehicle.status === "FUERA_DE_SERVICIO" ? "Fuera de servicio" :
+    enUso ? `En uso ahora · ${enUso.user?.name || "sin nombre"}, ${enUso.endDate < now ? "tenía que volver el" : "vuelve el"} ${formatFechaHora(enUso.endDate)}` :
+    reservadoAhora ? `Reservado ahora · ${reservadoAhora.user?.name || "sin nombre"}` :
+    "Libre ahora";
 
   const isVtvClose = vehicle.vtvExpiry && new Date(vehicle.vtvExpiry) < thirtyDaysFromNow;
   const isInsClose = vehicle.insuranceExpiry && new Date(vehicle.insuranceExpiry) < thirtyDaysFromNow;
@@ -39,11 +50,12 @@ export default async function VehicleDetailPage({ params }: { params: Promise<{ 
               {vehicle.plate}
             </span>
             <span className={cn(badgeVariants(),
+              vehicle.status === 'DISPONIBLE' && (enUso || reservadoAhora) ? "bg-amber-100 text-amber-800 hover:bg-amber-100 dark:bg-amber-500/10 dark:text-amber-400 dark:border dark:border-amber-500/20" :
               vehicle.status === 'DISPONIBLE' ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border dark:border-emerald-500/20" :
               vehicle.status === 'EN_TALLER' ? "bg-rose-100 text-rose-700 hover:bg-rose-100 dark:bg-rose-500/10 dark:text-rose-400 dark:border dark:border-rose-500/20" :
               "bg-muted text-muted-foreground hover:bg-muted"
             )}>
-              {vehicle.status}
+              {ahora}
             </span>
           </span>
         }
@@ -138,7 +150,7 @@ export default async function VehicleDetailPage({ params }: { params: Promise<{ 
                   {vehicle.reservations.map((res) => (
                     <TableRow key={res.id} className="hover:bg-muted/30 transition-colors border-border/40">
                       <TableCell className="text-sm font-medium text-foreground">
-                        {new Date(res.startDate).toLocaleDateString()}
+                        {formatReservationRange(res.startDate, res.endDate)}
                       </TableCell>
                       <TableCell>
                         <div className="flex flex-col">
@@ -150,8 +162,8 @@ export default async function VehicleDetailPage({ params }: { params: Promise<{ 
                         {res.reason}
                       </TableCell>
                       <TableCell>
-                        <Badge variant="outline" className="text-xs font-bold rounded-full border-border/60">
-                          {res.status}
+                        <Badge variant="outline" className={`text-xs font-bold rounded-full ${RESERVATION_STATUS[res.status].className}`}>
+                          {RESERVATION_STATUS[res.status].label}
                         </Badge>
                       </TableCell>
                     </TableRow>

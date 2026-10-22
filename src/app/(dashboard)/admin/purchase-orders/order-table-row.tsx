@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Eye } from "lucide-react";
 import { getOrderStatusConfig } from "@/lib/status-styles";
 
-export function OrderTableRow({ o }: { o: any }) {
+export function OrderTableRow({ o, allowed }: { o: any; allowed: string[] }) {
   const router = useRouter();
   const statusCfg = getOrderStatusConfig(o.status);
 
@@ -17,7 +17,8 @@ export function OrderTableRow({ o }: { o: any }) {
       key={o.id}
       className="cursor-pointer hover:bg-muted/50 transition-colors"
       onClick={(e) => {
-        if ((e.target as HTMLElement).closest('button')) return;
+        // Los clics en botones, y en la ventana de confirmar (que React hace llegar hasta acá), no abren la orden.
+        if ((e.target as HTMLElement).closest('button') || !e.currentTarget.contains(e.target as Node)) return;
         router.push(`/admin/purchase-orders/${o.id}`);
       }}
     >
@@ -47,7 +48,7 @@ export function OrderTableRow({ o }: { o: any }) {
         <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => router.push(`/admin/purchase-orders/${o.id}`)}>
           <Eye className="h-4 w-4" />
         </Button>
-        <OrderStatusActions orderId={o.id} currentStatus={o.status} />
+        <OrderStatusActions orderId={o.id} currentStatus={o.status} allowed={allowed} />
       </TableCell>
     </TableRow>
   );

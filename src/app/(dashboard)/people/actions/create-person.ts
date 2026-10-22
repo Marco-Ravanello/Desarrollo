@@ -1,6 +1,8 @@
 "use server";
 
-import { createPerson, findExistingPersonByDni } from "@/services/people";
+import { findExistingPersonByDni } from "@/services/people";
+import { createPersonRecord, parsePersonDataForm } from "@/services/person-data";
+import type { RelocateResult } from "@/services/geocoding";
 import { createAuditLog } from "@/services/system";
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
@@ -8,7 +10,7 @@ import { actionErrorMessage } from "@/lib/action-error";
 import { canEditSocialRecords } from "@/lib/permissions";
 
 type CreatePersonResult =
-  | { success: true; id: string }
+  | { success: true; id: string; ubicacion: RelocateResult }
   | { success: false; error: string; existingId?: string };
 
 export async function createPersonAction(formData: FormData): Promise<CreatePersonResult> {
@@ -16,47 +18,40 @@ export async function createPersonAction(formData: FormData): Promise<CreatePers
   if (session?.user && !canEditSocialRecords(session.user.role)) {
     return { success: false, error: "Tu rol (Auditoría) puede consultar pero no cargar ni modificar datos." };
   }
-  const dni = formData.get("dni") as string;
-  const firstName = formData.get("firstName") as string;
-  const lastName = formData.get("lastName") as string;
-  const birthDate = formData.get("birthDate") as string;
-  const address = formData.get("address") as string;
-  const phone = formData.get("phone") as string;
-  const email = formData.get("email") as string;
+  if (!session?.user?.id) {
+    return { success: false, error: "No tenés permiso para hacer esto o tu sesión expiró. Si sigue pasando, volvé a iniciar sesión." };
+  }
 
-  if (!dni || !firstName || !lastName) {
-    return { success: false, error: "DNI y nombre completo son requeridos" };
+  // "12.345.678" se guarda como "12345678"; un pasaporte u otro documento queda como se escribió.
+  const rawDni = String(formData.get("dni") ?? "").trim();
+  const dni = /^[\d.\s]+$/.test(rawDni) ? rawDni.replace(/[.\s]/g, "") : rawDni.slice(0, 30);
+  if (!dni) return { success: false, error: "Completá el DNI." };
+
+  const parsed = parsePersonDataForm(formData);
+  if ("error" in parsed) return { success: false, error: parsed.error };
+  if (!parsed.data.direccion && !parsed.data.barrio) {
+    return { success: false, error: "Completá la calle y altura, o al menos el barrio." };
   }
 
   try {
-    // Si ya está cargada no se toca: se avisa y se ofrece ir a su ficha (para corregir datos está "Editar").
+    // Si ya está cargada no se toca: se avisa y se ofrece ir a su ficha (para corregir datos está "Editar datos").
     const existing = await findExistingPersonByDni(dni);
     if (existing) {
       return {
         success: false,
-        error: `Esta persona ya está cargada: ${existing.nombre} (DNI ${dni.trim()}). No se cambió nada.`,
+        error: `Esta persona ya está cargada: ${existing.nombre} (DNI ${dni}). No se cambió nada.`,
         existingId: existing.id,
       };
     }
 
-    const person = await createPerson({
-      dni,
-      firstName,
-      lastName,
-      birthDate,
-      address,
-      phone,
-      email,
-    });
-
-    if (session?.user?.id) {
-      await createAuditLog(session.user.id, "CREATE", "Person", person.id, { dni: person.dni });
-    }
+    const { id, ubicacion } = await createPersonRecord(dni, parsed.data);
+    await createAuditLog(session.user.id, "CREATE", "Person", id, { dni });
 
     revalidatePath("/people");
-    return { success: true, id: person.id };
+    revalidatePath("/maps");
+    return { success: true, id, ubicacion };
   } catch (error: any) {
-    if (error.code === 'P2002') {
+    if (error?.code === "P2002") {
       return { success: false, error: "Esta persona ya está cargada. No se cambió nada." };
     }
     return { success: false, error: actionErrorMessage(error, "No se pudo guardar la persona") };

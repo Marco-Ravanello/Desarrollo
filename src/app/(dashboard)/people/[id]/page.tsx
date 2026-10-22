@@ -3,6 +3,7 @@ import { getPersonById, getRegistroFamilyMembers } from "@/services/people";
 import { getFichaSocialByDniFromDb } from "@/services/ficha-social-db";
 import { getFichaHistorial } from "@/services/ficha-historial";
 import { getGrupoFamiliar } from "@/services/grupo-familiar";
+import { getAddressOptions, getPersonDataChanges, getPersonEditData } from "@/services/person-data";
 import { cleanDni } from "@/services/ficha-social";
 import { Card } from "@/components/ui/card";
 import { TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -12,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   Calendar, Phone, MapPin, ShieldAlert, Mail, History, Eye, FileIcon, ExternalLink, Users,
-  Contact, Layers, FolderOpen, CheckCircle2, UserPlus,
+  Contact, Layers, FolderOpen, CheckCircle2, UserPlus, PencilLine, User,
 } from "lucide-react";
 import { notFound } from "next/navigation";
 import { auth } from "@/auth";
@@ -41,6 +42,10 @@ const TABS = ["datos", "programas", "expedientes", "familia", "historia", "docum
 type Tab = (typeof TABS)[number];
 
 const fecha = (d: Date | string) => new Date(d).toLocaleDateString("es-AR");
+const fechaHora = (d: Date | string) =>
+  new Date(d).toLocaleString("es-AR", {
+    timeZone: "America/Argentina/Buenos_Aires", day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit", hourCycle: "h23",
+  });
 
 function Dato({ icon: Icon, label, children }: { icon: React.ElementType; label: string; children: React.ReactNode }) {
   return (
@@ -76,12 +81,15 @@ export default async function PersonDetailPage({
   const dni = person?.dni || cleanDni(id);
   if (!dni) notFound();
 
-  const [ficha, historial, grupo, registroFamily, areas] = await Promise.all([
+  const [ficha, historial, grupo, registroFamily, areas, cambiosDatos, editData, addressOptions] = await Promise.all([
     getFichaSocialByDniFromDb(dni),
     getFichaHistorial(dni, { canViewSensitive }),
     getGrupoFamiliar(dni, { canViewSensitive }),
     getRegistroFamilyMembers(dni),
     person && canEdit ? getAreas() : Promise.resolve([]),
+    getPersonDataChanges(dni),
+    person && canEdit ? getPersonEditData(dni) : Promise.resolve(null),
+    person && canEdit ? getAddressOptions() : Promise.resolve(null),
   ]);
 
   // Sin legajo ni padrón, pero con fichas de emergencia: se muestra lo que hay.
@@ -98,13 +106,15 @@ export default async function PersonDetailPage({
 
   const programas: string[] = ficha.programas_activos || person?.programasActivos || [];
   const totalProgramas = Object.keys(ficha.detalle_programas || {}).length || programas.length;
-  const historiaCount = historial.intervencionesTotal + historial.fichasTormenta.length;
+  const historiaCount = historial.intervencionesTotal + historial.fichasTormenta.length + cambiosDatos.length;
   const familiaCount = grupo.declarados.length + grupo.mismoDomicilio.length;
   const activeTab: Tab = TABS.includes(tab as Tab) ? (tab as Tab) : "datos";
 
   const edad = person?.birthDate
     ? `${fecha(person.birthDate)}`
-    : person?.edadAprox && person.edadAprox !== "No registrada"
+    : person?.fechaNacimientoTexto
+      ? person.fechaNacimientoTexto
+      : person?.edadAprox && person.edadAprox !== "No registrada"
       ? `${person.edadAprox} años (aprox.)`
       : "Sin dato";
 
@@ -117,7 +127,7 @@ export default async function PersonDetailPage({
         <PageHeader
           title={nombre}
           icon={Users}
-          actions={person && canEdit ? <EditPersonDialog person={person} /> : undefined}
+          actions={editData && addressOptions ? <EditPersonDialog person={editData} options={addressOptions} /> : undefined}
         />
         <div className="flex flex-wrap gap-2 items-center">
           <Badge variant="outline" className="border-border text-foreground font-mono font-bold">DNI {dni}</Badge>
@@ -168,7 +178,8 @@ export default async function PersonDetailPage({
                 </Dato>
                 <Dato icon={Phone} label="Teléfono">{person?.phone || "Sin teléfono"}</Dato>
                 {person?.email && <Dato icon={Mail} label="Correo">{person.email}</Dato>}
-                <Dato icon={Calendar} label={person?.birthDate ? "Fecha de nacimiento" : "Edad"}>{edad}</Dato>
+                <Dato icon={Calendar} label={person?.birthDate || person?.fechaNacimientoTexto ? "Fecha de nacimiento" : "Edad"}>{edad}</Dato>
+                {person?.gender && person.gender !== "No especificado" && <Dato icon={User} label="Género">{person.gender}</Dato>}
               </div>
               <div className="space-y-4">
                 <h3 className="text-xs font-bold text-muted-foreground">Programas sociales</h3>
@@ -266,6 +277,28 @@ export default async function PersonDetailPage({
 
           <TabsContent value="historia" className="p-4 sm:p-6">
             <FichaHistorialView historial={historial} withCases={false} />
+            {cambiosDatos.length > 0 && (
+              <section className="space-y-3 mt-8">
+                <h3 className="flex items-center gap-2 text-xs font-bold text-muted-foreground">
+                  <PencilLine className="h-4 w-4 text-primary" /> Cambios de datos ({cambiosDatos.length})
+                </h3>
+                <ol className="relative space-y-4 border-l border-border/60 pl-5">
+                  {cambiosDatos.map((c) => (
+                    <li key={c.id} className="relative">
+                      <span className="absolute -left-[25px] top-1 h-2.5 w-2.5 rounded-full bg-muted-foreground ring-4 ring-background" />
+                      <p className="text-xs font-bold text-muted-foreground">
+                        {fechaHora(c.fecha)}{c.usuario ? ` · ${c.usuario}` : ""}
+                      </p>
+                      <ul className="mt-0.5 space-y-0.5">
+                        {c.cambios.map((linea, idx) => (
+                          <li key={idx} className="text-xs text-foreground break-words">{linea}</li>
+                        ))}
+                      </ul>
+                    </li>
+                  ))}
+                </ol>
+              </section>
+            )}
           </TabsContent>
 
           <TabsContent value="documentos" className="p-4 sm:p-6 space-y-6">

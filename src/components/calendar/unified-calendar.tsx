@@ -184,13 +184,18 @@ export function UnifiedCalendar({ reservations = [], purchaseOrders = [], tasks 
       } else if (type === "order") {
         res = await reschedulePurchaseOrderAction(id, computedStart.toISOString());
       } else if (type === "reservation") {
-        const computedEnd = new Date(computedStart);
-        computedEnd.setHours(computedStart.getHours() + 2);
+        // Se mueve con la misma duración que tenía.
+        const original = reservations.find((r) => r?.id === id);
+        const duration = original ? new Date(original.endDate).getTime() - new Date(original.startDate).getTime() : 2 * 3600000;
+        const computedEnd = new Date(computedStart.getTime() + Math.max(duration, 15 * 60000));
         res = await rescheduleReservationAction(id, computedStart.toISOString(), computedEnd.toISOString());
       }
 
       if (res?.success) {
-        toast.success("Evento reprogramado con éxito", { id: toastId });
+        toast.success(
+          res && "backToPending" in res && res.backToPending ? "Reserva movida. Vuelve a quedar pendiente de aprobación." : "Evento reprogramado con éxito",
+          { id: toastId }
+        );
       } else {
         toast.error(res?.error || "Error al reprogramar el evento", { id: toastId });
       }
@@ -218,7 +223,10 @@ export function UnifiedCalendar({ reservations = [], purchaseOrders = [], tasks 
       }
 
       if (res?.success) {
-        toast.success("Fecha reprogramada con éxito", { id: toastId });
+        toast.success(
+          res && "backToPending" in res && res.backToPending ? "Reserva movida. Vuelve a quedar pendiente de aprobación." : "Fecha reprogramada con éxito",
+          { id: toastId }
+        );
         setSelectedEvent(null);
       } else {
         toast.error(res?.error || "Error al reprogramar el evento", { id: toastId });

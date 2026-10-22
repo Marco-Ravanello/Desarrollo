@@ -21,13 +21,16 @@ import { OrderTimeline } from "./order-timeline";
 import { OrderAuditTimeline } from "./order-audit-timeline";
 import { OrderStatusActions } from "../order-status-actions";
 import { PrintOrderButton } from "./print-order-button";
+import { auth } from "@/auth";
+import { allowedOrderTransitions, canEditPurchaseOrders } from "@/lib/purchase-orders";
+import { getOrderStatusConfig } from "@/lib/status-styles";
 
 export const metadata = { title: "Orden de compra" };
 
 export default async function OrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const order = await getPurchaseOrderById(id);
-  const auditLogs = await getOrderAuditLogs(id);
+  const [order, auditLogs, session] = await Promise.all([getPurchaseOrderById(id), getOrderAuditLogs(id), auth()]);
+  const role = session?.user?.role;
 
   if (!order) {
     notFound();
@@ -37,16 +40,18 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
   const totalAmount = Number(order.amount);
   const globalProgress = totalAmount > 0 ? (executedAmount / totalAmount) * 100 : 0;
 
-  const currentResponsible =
-    order.status === 'BORRADOR' ? 'Iniciador' :
-    order.status === 'PENDIENTE_APROBACION' ? 'Secretaría / Dirección' :
-    order.status === 'APROBADA' ? 'Compras / Proveedor' :
-    order.status === 'CUMPLIDA' ? 'Tesorería (Pago)' :
-    'Archivo';
+  // Qué falta y quién lo tiene que hacer.
+  const nextStep =
+    order.status === 'BORRADOR' ? 'enviarla a firma' :
+    order.status === 'PENDIENTE_APROBACION' ? 'que la apruebe Administración General' :
+    order.status === 'APROBADA' ? 'registrar las entregas del proveedor' :
+    order.status === 'RECHAZADA' ? 'corregirla y volver a enviarla' :
+    order.status === 'CUMPLIDA' ? 'nada: se entregó todo' :
+    'nada: está cancelada';
 
-  const financialStatus =
-    order.status === 'CUMPLIDA' ? 'Pagada' :
-    executedAmount > 0 ? 'Parcialmente Pagada' : 'Pendiente de Pago';
+  const statusCfg = getOrderStatusConfig(order.status);
+  const allowed = allowedOrderTransitions(role, order.status);
+  const createdBy = auditLogs.find((l: any) => l.action === "CREATE")?.user?.name;
 
   return (
     <div className="space-y-6 pb-20">
@@ -55,25 +60,22 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
         title={<>Orden #{order.number}</>}
         description={
           <span className="flex flex-wrap items-center gap-x-4 gap-y-1">
-            <span className="flex items-center gap-1"><User className="h-3 w-3" /> Responsable Actual: <b className="text-foreground">{currentResponsible}</b></span>
+            <span className="flex items-center gap-1"><User className="h-3 w-3" /> Falta: <b className="text-foreground">{nextStep}</b></span>
             <span className="flex items-center gap-1"><Calendar className="h-3 w-3" /> {format(new Date(order.createdAt), "dd/MM/yyyy HH:mm")}</span>
           </span>
         }
         icon={Briefcase}
         actions={
           <>
-            <Badge
-              className="text-xs px-3 py-0.5 rounded-full font-bold"
-              variant={order.status === 'APROBADA' ? 'default' : order.status === 'RECHAZADA' ? 'destructive' : order.status === 'CUMPLIDA' ? 'outline' : 'secondary'}
-            >
-              {order.status.replace('_', ' ')}
+            <Badge variant="outline" className={`text-xs px-3 py-0.5 rounded-full font-bold ${statusCfg.badgeClass}`}>
+              {statusCfg.label}
             </Badge>
             <Button variant="outline" size="icon" asChild className="rounded-full h-10 w-10 shadow-xs border-border/60">
               <Link href="/admin/purchase-orders" aria-label="Volver a órdenes de compra">
                 <ChevronLeft className="h-5 w-5" />
               </Link>
             </Button>
-            <OrderStatusActions orderId={order.id} currentStatus={order.status} />
+            <OrderStatusActions orderId={order.id} currentStatus={order.status} allowed={allowed} />
             <PrintOrderButton />
           </>
         }
@@ -82,7 +84,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
       {/* Main Process Timeline */}
       <Card className="border border-border/60 shadow-xs bg-card overflow-hidden rounded-2xl">
          <CardContent className="p-0">
-            <OrderTimeline currentStatus={order.status} />
+            <OrderTimeline currentStatus={order.status} deliveredPct={globalProgress} />
          </CardContent>
       </Card>
 
@@ -114,7 +116,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                     </div>
                     <Badge variant="secondary" className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-none font-bold text-xs">Ejecutado</Badge>
                 </div>
-                <span className="text-xs font-bold text-muted-foreground mb-1">Total Recibido (Devengado)</span>
+                <span className="text-xs font-bold text-muted-foreground mb-1">Total recibido</span>
                 <p className="text-2xl font-bold text-foreground">${executedAmount.toLocaleString("es-AR")}</p>
                 <div className="mt-4 space-y-1">
                     <Progress value={globalProgress} className="h-1.5 [&>div]:bg-emerald-500 bg-emerald-500/10" />
@@ -127,15 +129,13 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                     <div className="w-10 h-10 rounded-2xl bg-orange-500/10 flex items-center justify-center text-orange-700 dark:text-orange-400">
                         <DollarSign className="h-5 w-5" />
                     </div>
-                    <Badge variant="secondary" className="bg-orange-500/10 text-orange-700 dark:text-orange-400 border-none font-bold text-xs">Finanzas</Badge>
+                    <Badge variant="secondary" className="bg-orange-500/10 text-orange-700 dark:text-orange-400 border-none font-bold text-xs">Falta entregar</Badge>
                 </div>
                 <span className="text-xs font-bold text-muted-foreground mb-1">Saldo pendiente de entrega</span>
                 <p className="text-2xl font-bold text-foreground">${(totalAmount - executedAmount).toLocaleString("es-AR")}</p>
                 <div className="mt-4 pt-4 border-t border-border/40 flex items-center justify-between">
-                    <span className="text-xs font-bold text-muted-foreground">Finanzas</span>
-                    <span className={`text-xs font-bold ${financialStatus === 'Pagada' ? 'text-emerald-700 dark:text-emerald-400' : financialStatus === 'Parcialmente Pagada' ? 'text-blue-700 dark:text-blue-400' : 'text-orange-700 dark:text-orange-400'}`}>
-                        {financialStatus}
-                    </span>
+                    <span className="text-xs font-bold text-muted-foreground">Entregado</span>
+                    <span className="text-xs font-bold text-foreground">{Math.round(globalProgress)} %</span>
                 </div>
               </div>
           </div>
@@ -200,6 +200,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
           <OrderItemsTable
             orderId={order.id}
             orderStatus={order.status}
+            canRecord={canEditPurchaseOrders(role)}
             items={order.items.map(i => ({
               ...i,
               quantity: i.quantity.toString(),
@@ -243,25 +244,15 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                   {order.provider?.name || order.providerName || "Desconocido"}
                 </p>
                 <div className="flex items-center gap-2 mt-2">
-                    <Badge variant="outline" className="text-xs font-bold border-border text-foreground">CUIT: {order.providerCuit || "---"}</Badge>
-                    <Badge className="bg-primary text-primary-foreground border-none text-xs font-bold">CAT: {(order.provider?.orders?.length ?? 0) > 10 ? 'A' : 'B'}</Badge>
+                    <Badge variant="outline" className="text-xs font-bold border-border text-foreground">CUIT: {order.providerCuit || order.provider?.cuit || "sin dato"}</Badge>
                 </div>
               </div>
 
               {order.provider && (
                 <div className="pt-4 border-t border-border/40 space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-1">
-                          <p className="text-xs font-bold text-muted-foreground">Órdenes totales</p>
-                          <p className="text-lg font-bold text-foreground">{(order.provider as any)._count?.orders || 0}</p>
-                      </div>
-                      <div className="space-y-1">
-                          <p className="text-xs font-bold text-muted-foreground">Estado</p>
-                          <div className="flex items-center gap-1">
-                              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                              <p className="text-xs font-bold text-emerald-700 dark:text-emerald-400">Verificado</p>
-                          </div>
-                      </div>
+                  <div className="space-y-1">
+                      <p className="text-xs font-bold text-muted-foreground">Órdenes con este proveedor</p>
+                      <p className="text-lg font-bold text-foreground">{(order.provider as any)._count?.orders || 0}</p>
                   </div>
 
                   <div className="space-y-2 bg-muted/30 p-3 rounded-2xl border border-border/40">
@@ -271,7 +262,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                   </div>
 
                   <div className="space-y-2">
-                      <p className="text-xs font-bold text-muted-foreground">Actividad reciente</p>
+                      <p className="text-xs font-bold text-muted-foreground">Últimas órdenes</p>
                       <div className="space-y-2">
                           {(order.provider as any).orders?.slice(0, 3).map((o: any) => (
                               <Link key={o.id} href={`/admin/purchase-orders/${o.id}`} className="block group">
@@ -308,10 +299,12 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                 <span>ID Interno:</span>
                 <span className="font-mono">{order.id.substring(0, 8)}...</span>
               </div>
-              <div className="flex justify-between">
-                <span>Creado por:</span>
-                <span className="text-foreground font-bold">Admin municipal</span>
-              </div>
+              {createdBy && (
+                <div className="flex justify-between">
+                  <span>Cargada por:</span>
+                  <span className="text-foreground font-bold">{createdBy}</span>
+                </div>
+              )}
               <div className="flex justify-between">
                 <span>Última modif:</span>
                 <span>{format(new Date(order.updatedAt), "dd/MM/yyyy HH:mm")}</span>
