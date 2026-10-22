@@ -194,7 +194,7 @@ export async function createFuelRecordAction(formData: FormData) {
       const totalSpent = Number(monthlySpent._sum.amount || 0);
       if (totalSpent + amount > Number(vehicle.fuelMonthlyLimit)) {
         return {
-          error: `Cupo insuficiente. Saldo disponible: $${(Number(vehicle.fuelMonthlyLimit) - totalSpent).toLocaleString()}`
+          error: `Cupo insuficiente. Saldo disponible: $${(Number(vehicle.fuelMonthlyLimit) - totalSpent).toLocaleString("es-AR")}`
         };
       }
     }

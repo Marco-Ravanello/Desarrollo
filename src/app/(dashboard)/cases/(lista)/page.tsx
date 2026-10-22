@@ -82,16 +82,16 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
   const getPriorityBadge = (p: string) => {
     switch (p) {
       case "URGENTE":
-        return <Badge variant="outline" className="bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/30 text-[10px] font-bold">Urgente</Badge>;
+        return <Badge variant="outline" className="bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/30 text-xs font-bold">Urgente</Badge>;
       case "ALTA":
-        return <Badge variant="outline" className="bg-orange-500/10 text-orange-700 dark:text-orange-300 border-orange-500/30 text-[10px] font-bold">Prioridad alta</Badge>;
+        return <Badge variant="outline" className="bg-orange-500/10 text-orange-700 dark:text-orange-300 border-orange-500/30 text-xs font-bold">Prioridad alta</Badge>;
       default:
         return null;
     }
   };
 
   const getStatusBadge = (s: string) => (
-    <Badge variant="outline" className={`text-[11px] font-bold ${getCaseStatusConfig(s).badgeClass}`}>
+    <Badge variant="outline" className={`text-xs font-bold ${getCaseStatusConfig(s).badgeClass}`}>
       {CASE_STATUS_LABEL[s] ?? s}
     </Badge>
   );
@@ -126,7 +126,7 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
               <Link href="/cases?assigned=mine">
                 <UserCheck className="h-4 w-4" /> Mis expedientes
                 {myOpenCases > 0 && (
-                  <span className="ml-0.5 rounded-full bg-primary/15 px-1.5 py-0.5 text-[10px] font-bold text-primary">{myOpenCases}</span>
+                  <span className="ml-0.5 rounded-full bg-primary/15 px-1.5 py-0.5 text-xs font-bold text-primary">{myOpenCases}</span>
                 )}
               </Link>
             </Button>
@@ -134,7 +134,7 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
               <Link href="/cases/derivaciones">
                 <ArrowRightLeft className="h-4 w-4" /> Derivaciones
                 {derivationsToAnswer > 0 && (
-                  <span className="ml-0.5 rounded-full bg-amber-500 px-1.5 py-0.5 text-[10px] font-bold text-white">{derivationsToAnswer}</span>
+                  <span className="ml-0.5 rounded-full bg-amber-500 px-1.5 py-0.5 text-xs font-bold text-white">{derivationsToAnswer}</span>
                 )}
               </Link>
             </Button>
@@ -198,7 +198,7 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
               <option value="ABIERTO">Abierto</option>
               <option value="EN_PROCESO">En proceso</option>
               <option value="DERIVADO">Derivado (esperando respuesta)</option>
-              <option value="CERRADO">Cerrado / Resuelto</option>
+              <option value="CERRADO">Cerrado / resuelto</option>
             </select>
           </div>
           <div>
@@ -230,13 +230,13 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
         </form>
         {(q || (area && area !== "all") || (status && status !== "all") || (priority && priority !== "all") || assigned) && (
           <div className="flex flex-wrap items-center gap-2 mt-3 pt-3 border-t border-border/40 text-xs">
-            <span className="text-[11px] font-bold text-muted-foreground">Filtros activos:</span>
-            {q && <Badge variant="secondary" className="text-[10px]">Texto: {q}</Badge>}
-            {area && area !== "all" && <Badge variant="secondary" className="text-[10px]">Área: {areasList.find((a) => a.id === area)?.name || area}</Badge>}
-            {status && status !== "all" && <Badge variant="secondary" className="text-[10px]">Estado: {STATUS_LABELS[status] || status}</Badge>}
-            {priority && priority !== "all" && <Badge variant="secondary" className="text-[10px]">Prioridad: {CASE_PRIORITY_LABEL[priority]?.replace(/^Prioridad /, "") ?? priority}</Badge>}
-            {assigned && <Badge variant="secondary" className="text-[10px]">{ASSIGNED_LABELS[assigned]}</Badge>}
-            <Button variant="ghost" size="sm" asChild className="h-6 text-[10px] text-muted-foreground hover:text-foreground">
+            <span className="text-xs font-bold text-muted-foreground">Filtros activos:</span>
+            {q && <Badge variant="secondary" className="text-xs">Texto: {q}</Badge>}
+            {area && area !== "all" && <Badge variant="secondary" className="text-xs">Área: {areasList.find((a) => a.id === area)?.name || area}</Badge>}
+            {status && status !== "all" && <Badge variant="secondary" className="text-xs">Estado: {STATUS_LABELS[status] || status}</Badge>}
+            {priority && priority !== "all" && <Badge variant="secondary" className="text-xs">Prioridad: {CASE_PRIORITY_LABEL[priority]?.replace(/^Prioridad /, "") ?? priority}</Badge>}
+            {assigned && <Badge variant="secondary" className="text-xs">{ASSIGNED_LABELS[assigned]}</Badge>}
+            <Button variant="ghost" size="sm" asChild className="h-6 text-xs text-muted-foreground hover:text-foreground">
               <Link href="/cases">Limpiar filtros</Link>
             </Button>
           </div>
@@ -265,12 +265,12 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
           <Table>
               <TableHeader>
                 <TableRow className="border-border/60 bg-muted/30">
-                  <TableHead className="text-[11px] font-bold uppercase text-muted-foreground">Expediente</TableHead>
-                  <TableHead className="text-[11px] font-bold uppercase text-muted-foreground">A cargo</TableHead>
-                  <TableHead className="text-[11px] font-bold uppercase text-muted-foreground">Estado</TableHead>
-                  <TableHead className="text-[11px] font-bold uppercase text-muted-foreground">Abierto</TableHead>
-                  <TableHead className="text-[11px] font-bold uppercase text-muted-foreground">Última intervención</TableHead>
-                  <TableHead className="text-[11px] font-bold uppercase text-muted-foreground text-center">Acción</TableHead>
+                  <TableHead className="text-xs font-bold text-muted-foreground">Expediente</TableHead>
+                  <TableHead className="text-xs font-bold text-muted-foreground">A cargo</TableHead>
+                  <TableHead className="text-xs font-bold text-muted-foreground">Estado</TableHead>
+                  <TableHead className="text-xs font-bold text-muted-foreground">Abierto</TableHead>
+                  <TableHead className="text-xs font-bold text-muted-foreground">Última intervención</TableHead>
+                  <TableHead className="text-xs font-bold text-muted-foreground text-center">Acción</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -298,14 +298,14 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
                           <div className="space-y-1">
                             <div className="flex min-w-0 items-center gap-1.5">
                               {shown.tag && (
-                                <span className="shrink-0 rounded-md border border-sky-500/30 bg-sky-500/10 px-1.5 py-0.5 text-[10px] font-bold text-sky-800 dark:text-sky-300">
+                                <span className="shrink-0 rounded-md border border-sky-500/30 bg-sky-500/10 px-1.5 py-0.5 text-xs font-bold text-sky-800 dark:text-sky-300">
                                   {shown.tag}
                                 </span>
                               )}
                               <Link href={`/cases/${c.id}`} title={c.title} className="block min-w-0 truncate font-bold text-xs text-foreground hover:underline">{shown.title}</Link>
                             </div>
                             {c.person ? (
-                              <div className="text-[11px] text-muted-foreground">
+                              <div className="text-xs text-muted-foreground">
                                 <Link href={`/people/${c.person.dni || c.person.id}`} className="font-semibold text-primary hover:underline">
                                   {c.person.lastName}, {c.person.firstName}
                                 </Link>
@@ -316,14 +316,14 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
                                 )}
                               </div>
                             ) : (
-                              <div className="text-[11px] text-muted-foreground">Sin titular</div>
+                              <div className="text-xs text-muted-foreground">Sin titular</div>
                             )}
                           </div>
                         )}
                       </TableCell>
                       <TableCell className="text-xs align-top">
                         <div className="font-semibold text-foreground" title={c.area.name}>{getAreaShortName(c.area.name)}</div>
-                        <div className={`mt-0.5 flex items-center gap-1 text-[11px] ${assigneeName ? "text-foreground" : "text-muted-foreground"}`}>
+                        <div className={`mt-0.5 flex items-center gap-1 text-xs ${assigneeName ? "text-foreground" : "text-muted-foreground"}`}>
                           <UserCheck className="h-3 w-3 shrink-0" />
                           {isRestricted ? "Reservado" : assigneeName ?? "Sin profesional"}
                         </div>
@@ -336,23 +336,23 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
                       </TableCell>
                       <TableCell className="text-xs align-top">
                         <div className="whitespace-nowrap font-semibold text-foreground">{daysText(summary.openDays)}</div>
-                        <div className="whitespace-nowrap text-[11px] text-muted-foreground">desde {fechaCorta(c.createdAt)}</div>
+                        <div className="whitespace-nowrap text-xs text-muted-foreground">desde {fechaCorta(c.createdAt)}</div>
                       </TableCell>
                       <TableCell className="text-xs align-top">
                         {isRestricted ? (
-                          <span className="text-[11px] text-muted-foreground">Reservado</span>
+                          <span className="text-xs text-muted-foreground">Reservado</span>
                         ) : (
                           <>
                             <div className={`font-semibold ${summary.stale ? "text-amber-800 dark:text-amber-300" : "text-foreground"}`}>
                               {last && summary.lastInterventionDays !== null ? agoText(summary.lastInterventionDays) : "Ninguna todavía"}
                             </div>
                             {last && (
-                              <div className="text-[11px] text-muted-foreground">
+                              <div className="text-xs text-muted-foreground">
                                 {interventionTypeLabel(last.type) ?? "Sin tipo"}
                               </div>
                             )}
                             {summary.stale && (
-                              <div className="mt-1 inline-flex items-center gap-1 rounded-full border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[10px] font-bold text-amber-800 dark:text-amber-300">
+                              <div className="mt-1 inline-flex items-center gap-1 rounded-full border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-xs font-bold text-amber-800 dark:text-amber-300">
                                 <AlertTriangle className="h-3 w-3" /> Sin movimiento hace {STALE_DAYS}+ días
                               </div>
                             )}

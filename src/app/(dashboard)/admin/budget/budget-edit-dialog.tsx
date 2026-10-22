@@ -41,7 +41,7 @@ export function BudgetEditDialog({ areaId, areaName, currentBudget }: { areaId: 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="ghost" size="icon">
+        <Button variant="ghost" size="icon" aria-label="Editar presupuesto">
           <Settings2 className="h-4 w-4 text-muted-foreground" />
         </Button>
       </DialogTrigger>
@@ -61,7 +61,7 @@ export function BudgetEditDialog({ areaId, areaName, currentBudget }: { areaId: 
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
-          <Button onClick={handleSave} disabled={loading}>Guardar Cambios</Button>
+          <Button onClick={handleSave} disabled={loading}>Guardar cambios</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

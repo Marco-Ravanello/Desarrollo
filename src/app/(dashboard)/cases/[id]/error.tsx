@@ -18,7 +18,7 @@ export default function CaseDetailError({
 
   return (
     <div className="min-h-[50vh] flex flex-col items-center justify-center text-center p-6 space-y-4">
-      <div className="p-4 rounded-2xl bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20">
+      <div className="p-4 rounded-2xl bg-rose-500/10 text-rose-700 dark:text-rose-400 border border-rose-500/20">
         <AlertTriangle className="h-10 w-10 animate-pulse" />
       </div>
       <div className="space-y-1 max-w-md">
@@ -29,7 +29,7 @@ export default function CaseDetailError({
           Ocurrió un problema temporal al recuperar la información del expediente o los datos del ciudadano.
         </p>
         {error.digest && (
-          <p className="text-[10px] font-mono text-muted-foreground/60 pt-1">
+          <p className="text-xs font-mono text-muted-foreground pt-1">
             Código de diagnóstico: {error.digest}
           </p>
         )}
@@ -44,7 +44,7 @@ export default function CaseDetailError({
         </Button>
         <Button asChild className="rounded-xl font-semibold gap-2 bg-primary hover:bg-primary/90 text-primary-foreground">
           <Link href="/cases">
-            <ArrowLeft className="h-4 w-4" /> Volver a Expedientes
+            <ArrowLeft className="h-4 w-4" /> Volver a expedientes
           </Link>
         </Button>
       </div>

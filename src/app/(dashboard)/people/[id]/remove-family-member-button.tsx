@@ -40,7 +40,7 @@ export function RemoveFamilyMemberButton({ id, name }: { id: string; name: strin
           variant="ghost"
           size="icon"
           aria-label={`Desvincular a ${name} del grupo familiar`}
-          className="h-7 w-7 text-rose-500 hover:text-rose-600 hover:bg-rose-500/10 shrink-0"
+          className="h-7 w-7 text-rose-700 dark:text-rose-400 hover:text-rose-600 hover:bg-rose-500/10 shrink-0"
         >
           <UserMinus className="h-4 w-4 shrink-0" />
         </Button>

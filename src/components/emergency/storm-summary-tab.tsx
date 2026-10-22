@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Download, FileCheck2, PackageCheck } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { textoNormal } from "@/lib/formato";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { EmergencyStockItem, StormDeliveryListItem, StormVictimItem } from "@/types/emergency";
@@ -53,8 +54,8 @@ function BarrioChart({ rows }: { rows: { barrio: string; esperan: number; comple
   return (
     <section className="space-y-3 rounded-2xl border border-border/60 bg-card p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h4 className="text-xs font-bold uppercase text-muted-foreground">Falta entregar por barrio</h4>
-        <div className="flex items-center gap-3 text-[11px] font-semibold text-muted-foreground">
+        <h4 className="text-xs font-bold text-muted-foreground">Falta entregar por barrio</h4>
+        <div className="flex items-center gap-3 text-xs font-semibold text-muted-foreground">
           <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-amber-500" /> Esperan entrega</span>
           <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-emerald-600" /> Entregadas completas</span>
         </div>
@@ -79,7 +80,7 @@ function BarrioChart({ rows }: { rows: { barrio: string; esperan: number; comple
                 />
               )}
             </div>
-            <span className="col-start-2 text-[11px] text-muted-foreground sm:col-start-auto sm:text-right">
+            <span className="col-start-2 text-xs text-muted-foreground sm:col-start-auto sm:text-right">
               <b className="text-foreground">{r.esperan}</b> esperan · {r.completas} completas
             </span>
           </li>
@@ -216,7 +217,7 @@ export function StormSummaryTab({ records, stock, onDeliver, deliveries = [] }: 
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h3 className="text-sm font-bold uppercase tracking-wider text-foreground">Resumen de la emergencia</h3>
+          <h3 className="text-sm font-bold text-foreground">Resumen de la emergencia</h3>
           <p className="text-xs text-muted-foreground">
             {records.length} fichas · {pendingRecords.length} con elementos sin entregar
           </p>
@@ -227,7 +228,7 @@ export function StormSummaryTab({ records, stock, onDeliver, deliveries = [] }: 
       </div>
 
       <section className="space-y-2">
-        <h4 className="text-xs font-bold uppercase text-muted-foreground">Por elemento</h4>
+        <h4 className="text-xs font-bold text-muted-foreground">Por elemento</h4>
         <div className="rounded-2xl border border-border/60 bg-card overflow-x-auto">
           <Table className="text-sm">
             <TableHeader>
@@ -249,7 +250,7 @@ export function StormSummaryTab({ records, stock, onDeliver, deliveries = [] }: 
                   <TableCell className="text-right">
                     {i.deposito}
                     {i.falta > i.deposito && (
-                      <Badge variant="outline" className="ml-2 text-[10px] font-bold bg-rose-500/10 text-rose-600 border-rose-500/30">
+                      <Badge variant="outline" className="ml-2 text-xs font-bold bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/30">
                         No alcanza: faltan {i.falta - i.deposito}
                       </Badge>
                     )}
@@ -265,7 +266,7 @@ export function StormSummaryTab({ records, stock, onDeliver, deliveries = [] }: 
 
       <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
         <section className="space-y-2">
-          <h4 className="text-xs font-bold uppercase text-muted-foreground">Por barrio</h4>
+          <h4 className="text-xs font-bold text-muted-foreground">Por barrio</h4>
           <div className="rounded-2xl border border-border/60 bg-card overflow-x-auto">
             <Table className="text-sm">
               <TableHeader>
@@ -298,7 +299,7 @@ export function StormSummaryTab({ records, stock, onDeliver, deliveries = [] }: 
         </section>
 
         <section className="space-y-2">
-          <h4 className="text-xs font-bold uppercase text-muted-foreground">Por prioridad</h4>
+          <h4 className="text-xs font-bold text-muted-foreground">Por prioridad</h4>
           <div className="rounded-2xl border border-border/60 bg-card overflow-x-auto">
             <Table className="text-sm">
               <TableHeader>
@@ -311,7 +312,7 @@ export function StormSummaryTab({ records, stock, onDeliver, deliveries = [] }: 
               <TableBody>
                 {byPriority.map((p) => (
                   <TableRow key={p.prioridad}>
-                    <TableCell className="font-semibold">{p.prioridad}</TableCell>
+                    <TableCell className="font-semibold">{textoNormal(p.prioridad)}</TableCell>
                     <TableCell className="text-right">{p.fichas}</TableCell>
                     <TableCell className="text-right font-bold">{p.pendientes}</TableCell>
                   </TableRow>
@@ -323,14 +324,14 @@ export function StormSummaryTab({ records, stock, onDeliver, deliveries = [] }: 
       </div>
 
       <section className="space-y-2">
-        <h4 className="text-xs font-bold uppercase text-muted-foreground">Falta entregar (primero prioridad alta y las más antiguas)</h4>
+        <h4 className="text-xs font-bold text-muted-foreground">Falta entregar (primero prioridad alta y las más antiguas)</h4>
         <div className="rounded-2xl border border-border/60 bg-card overflow-x-auto">
           <Table className="text-sm">
             <TableHeader>
               <TableRow>
                 <TableHead>Prioridad</TableHead>
                 <TableHead>Familia</TableHead>
-                <TableHead>Barrio / Domicilio</TableHead>
+                <TableHead>Barrio / domicilio</TableHead>
                 <TableHead>Falta</TableHead>
                 {onDeliver && <TableHead className="text-right">Entrega</TableHead>}
               </TableRow>
@@ -348,9 +349,9 @@ export function StormSummaryTab({ records, stock, onDeliver, deliveries = [] }: 
                   <TableCell>
                     <Badge
                       variant="outline"
-                      className={`text-[10px] font-bold ${r.prioridad === "ALTA" ? "bg-rose-500/10 text-rose-600 border-rose-500/30" : ""}`}
+                      className={`text-xs font-bold ${r.prioridad === "ALTA" ? "bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/30" : ""}`}
                     >
-                      {r.prioridad}
+                      {textoNormal(r.prioridad)}
                     </Badge>
                   </TableCell>
                   <TableCell className="font-semibold uppercase">{r.nombreApellido}</TableCell>
@@ -377,14 +378,14 @@ export function StormSummaryTab({ records, stock, onDeliver, deliveries = [] }: 
 
       {deliveries.length > 0 && (
         <section className="space-y-2">
-          <h4 className="text-xs font-bold uppercase text-muted-foreground">Entregas realizadas</h4>
+          <h4 className="text-xs font-bold text-muted-foreground">Entregas realizadas</h4>
           <div className="rounded-2xl border border-border/60 bg-card overflow-x-auto">
             <Table className="text-sm">
               <TableHeader>
                 <TableRow>
                   <TableHead>Fecha</TableHead>
                   <TableHead>Familia</TableHead>
-                  <TableHead>Barrio / Domicilio</TableHead>
+                  <TableHead>Barrio / domicilio</TableHead>
                   <TableHead>Se entregó</TableHead>
                   <TableHead>Entregó</TableHead>
                   <TableHead className="text-right">Constancia</TableHead>
@@ -394,9 +395,9 @@ export function StormSummaryTab({ records, stock, onDeliver, deliveries = [] }: 
                 {deliveries.map((d) => (
                   <TableRow key={d.id}>
                     <TableCell className="text-xs whitespace-nowrap">{fechaHora(d.date)}</TableCell>
-                    <TableCell className="font-semibold uppercase">
+                    <TableCell className="font-semibold">
                       {d.nombre}
-                      {d.dni && <span className="block text-[11px] font-normal normal-case text-muted-foreground">DNI {d.dni}</span>}
+                      {d.dni && <span className="block text-xs font-normal normal-case text-muted-foreground">DNI {d.dni}</span>}
                     </TableCell>
                     <TableCell className="text-xs">
                       {d.barrio && <span className="font-bold">{d.barrio} · </span>}
@@ -417,7 +418,7 @@ export function StormSummaryTab({ records, stock, onDeliver, deliveries = [] }: 
             </Table>
           </div>
           {deliveries.length >= 100 && (
-            <p className="text-[11px] text-muted-foreground">Se muestran las últimas 100 entregas.</p>
+            <p className="text-xs text-muted-foreground">Se muestran las últimas 100 entregas.</p>
           )}
         </section>
       )}

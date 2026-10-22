@@ -42,7 +42,7 @@ export function TerritorialActivityWidget({
         </div>
         <Link
           href="/maps"
-          className="text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-0.5"
+          className="inline-flex items-center min-h-8 text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-0.5"
         >
           Ver mapa <ArrowUpRight className="h-3 w-3" />
         </Link>
@@ -51,7 +51,7 @@ export function TerritorialActivityWidget({
       {/* Map Canvas */}
       <div className="relative w-full h-[220px] rounded-xl overflow-hidden border border-border/40 my-3">
         {locations.length > 0 ? (
-          <div className="absolute top-2.5 right-2.5 z-20 bg-background/85 backdrop-blur-md border border-border/40 rounded-lg px-2.5 py-1.5 text-[10px] font-medium text-foreground flex items-center gap-1.5">
+          <div className="absolute top-2.5 right-2.5 z-20 bg-background/85 backdrop-blur-md border border-border/40 rounded-lg px-2.5 py-1.5 text-xs font-medium text-foreground flex items-center gap-1.5">
             <span className="w-1.5 h-1.5 rounded-full bg-blue-600 shrink-0"></span>
             <span>Personas con domicilio ubicado</span>
           </div>

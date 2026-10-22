@@ -17,7 +17,7 @@ export function UploadDocumentForm({ personId, caseId }: { personId?: string, ca
     const fileInput = form.querySelector('input[type="file"]') as HTMLInputElement;
 
     if (!fileInput.files?.[0]) {
-      toast.error("Por favor seleccione un archivo");
+      toast.error("Elegí un archivo");
       return;
     }
 
@@ -42,18 +42,18 @@ export function UploadDocumentForm({ personId, caseId }: { personId?: string, ca
   return (
     <form onSubmit={handleSubmit} className="mt-6 p-4 border border-border/60 rounded-2xl bg-muted/30 space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="file" className="text-xs font-bold uppercase text-muted-foreground">Adjuntar Nuevo Documento</Label>
+        <Label htmlFor="file" className="text-xs font-bold text-muted-foreground">Adjuntar nuevo documento</Label>
         <div className="flex gap-2">
           <Input id="file" name="file" type="file" required disabled={uploading} className="bg-background text-foreground border-border/60 text-xs" />
           <input type="hidden" name="personId" value={personId || ""} />
           <input type="hidden" name="caseId" value={caseId || ""} />
-          <Button type="submit" disabled={uploading} className="bg-primary text-primary-foreground font-bold text-xs uppercase">
+          <Button type="submit" disabled={uploading} className="bg-primary text-primary-foreground font-bold text-xs">
             {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
             <span className="ml-2">{uploading ? "Subiendo..." : "Subir"}</span>
           </Button>
         </div>
       </div>
-      <p className="text-[10px] text-muted-foreground">Formatos permitidos: PDF, JPG, PNG. Máx 5MB.</p>
+      <p className="text-xs text-muted-foreground">Formatos permitidos: PDF, JPG, PNG. Máx 5MB.</p>
     </form>
   );
 }

@@ -79,12 +79,12 @@ export default async function VehiclesPage() {
             </Button>
             <Button variant="outline" asChild className="rounded-xl border-border/60">
               <Link href="/admin/vehicles/fuel">
-                <Fuel className="mr-2 h-4 w-4 text-amber-500"/> Carga Combustible
+                <Fuel className="mr-2 h-4 w-4 text-amber-500"/> Carga combustible
               </Link>
             </Button>
             <Button asChild className="rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground">
               <Link href="/admin/vehicles/new">
-                <Plus className="mr-2 h-4 w-4"/> Nueva Unidad
+                <Plus className="mr-2 h-4 w-4"/> Nueva unidad
               </Link>
             </Button>
           </>
@@ -93,7 +93,7 @@ export default async function VehiclesPage() {
 
       <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         <StatCard
-          label="Disponibles Hoy"
+          label="Disponibles hoy"
           value={availableNow}
           hint={`de ${totalVehicles} unidades`}
           icon={CheckCircle2}
@@ -101,7 +101,7 @@ export default async function VehiclesPage() {
         />
         <Link href="/admin/vehicles/requests" className="block">
           <StatCard
-            label="Solicitudes Pendientes"
+            label="Solicitudes pendientes"
             value={pendingRequestsCount}
             hint={<span className="inline-flex items-center">Ver solicitudes <ChevronRight className="h-3 w-3 ml-1" /></span>}
             icon={Clock}
@@ -110,14 +110,14 @@ export default async function VehiclesPage() {
           />
         </Link>
         <StatCard
-          label="En Mantenimiento"
+          label="En mantenimiento"
           value={inMaintenance}
           hint="Unidades fuera de servicio"
           icon={Settings}
           tone="red"
         />
         <StatCard
-          label="Alertas Críticas"
+          label="Alertas críticas"
           value={criticalAlerts}
           hint="VTV o Seguros próximos a vencer"
           icon={AlertTriangle}
@@ -128,12 +128,12 @@ export default async function VehiclesPage() {
       <Card className="rounded-2xl shadow-xs border border-border/60 bg-card text-card-foreground overflow-hidden">
         <CardHeader className="bg-muted/30 flex flex-row items-center justify-between space-y-0">
           <div>
-            <CardTitle className="text-xl">Estado de la Flota</CardTitle>
+            <CardTitle className="text-xl">Estado de la flota</CardTitle>
             <CardDescription>Detalle técnico y disponibilidad de unidades.</CardDescription>
           </div>
           <div className="text-right hidden md:block">
             <p className="text-xs text-muted-foreground">Gasto Combustible (Mes)</p>
-            <p className="text-lg font-bold text-emerald-500">${totalFuelSpentMonth.toLocaleString()}</p>
+            <p className="text-lg font-bold text-emerald-700 dark:text-emerald-400">${totalFuelSpentMonth.toLocaleString("es-AR")}</p>
           </div>
         </CardHeader>
         <CardContent className="p-0">
@@ -142,7 +142,7 @@ export default async function VehiclesPage() {
               <TableHeader className="bg-muted/50">
                 <TableRow>
                   <TableHead className="w-[120px]">Dominio</TableHead>
-                  <TableHead>Marca y Modelo</TableHead>
+                  <TableHead>Marca y modelo</TableHead>
                   <TableHead>Estado</TableHead>
                   <TableHead>Combustible (Mes)</TableHead>
                   <TableHead>Vencimientos</TableHead>
@@ -165,32 +165,32 @@ export default async function VehiclesPage() {
                     <TableRow key={v.id} className="hover:bg-muted/30 transition-colors group">
                       <TableCell>
                         <div className="px-2 py-1 bg-muted/60 rounded-md border-b-2 border-border/60 w-fit">
-                          <span className="font-mono font-bold text-foreground uppercase tracking-wider">{v.plate}</span>
+                          <span className="font-mono font-bold text-foreground">{v.plate}</span>
                         </div>
                       </TableCell>
                       <TableCell>
                         <div className="flex flex-col">
                           <span className="font-medium text-foreground">{v.brand} {v.model}</span>
-                          <span className="text-xs text-muted-foreground">KM Service: {v.lastServiceKm?.toLocaleString() || 0} km</span>
+                          <span className="text-xs text-muted-foreground">KM Service: {v.lastServiceKm?.toLocaleString("es-AR") || 0} km</span>
                         </div>
                       </TableCell>
                       <TableCell>
                         {isMaintenance ? (
-                          <Badge className="bg-rose-500/10 text-rose-500 hover:bg-rose-500/20 border-none rounded-full px-3">EN TALLER</Badge>
+                          <Badge className="bg-rose-500/10 text-rose-700 dark:text-rose-400 hover:bg-rose-500/20 border-none rounded-full px-3">En taller</Badge>
                         ) : isOccupied ? (
                           <div className="flex flex-col gap-1">
-                            <Badge className="bg-amber-500/10 text-amber-500 hover:bg-amber-500/20 border-none rounded-full px-3 w-fit">OCUPADO</Badge>
-                            <span className="text-[10px] text-muted-foreground italic">Reservado</span>
+                            <Badge className="bg-amber-500/10 text-amber-700 dark:text-amber-400 hover:bg-amber-500/20 border-none rounded-full px-3 w-fit">Ocupado</Badge>
+                            <span className="text-xs text-muted-foreground italic">Reservado</span>
                           </div>
                         ) : (
-                          <Badge className="bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20 border-none rounded-full px-3">DISPONIBLE</Badge>
+                          <Badge className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/20 border-none rounded-full px-3">Disponible</Badge>
                         )}
                       </TableCell>
                       <TableCell className="w-[200px]">
                         <div className="space-y-1">
-                          <div className="flex justify-between text-[10px] font-medium">
-                            <span className="text-muted-foreground">${monthlyFuel.toLocaleString()}</span>
-                            <span className="text-muted-foreground/80">lim. ${fuelLimit.toLocaleString()}</span>
+                          <div className="flex justify-between text-xs font-medium">
+                            <span className="text-muted-foreground">${monthlyFuel.toLocaleString("es-AR")}</span>
+                            <span className="text-muted-foreground">lim. ${fuelLimit.toLocaleString("es-AR")}</span>
                           </div>
                           <Progress value={fuelPercent} className="h-1.5 bg-muted" />
                         </div>
@@ -198,24 +198,24 @@ export default async function VehiclesPage() {
                       <TableCell>
                         <div className="flex flex-col gap-1">
                           {v.vtvExpiry ? (
-                            <div className={`text-[10px] flex items-center gap-1 ${isVtvClose ? 'text-rose-500 font-bold' : 'text-muted-foreground'}`}>
+                            <div className={`text-xs flex items-center gap-1 ${isVtvClose ? 'text-rose-700 dark:text-rose-400 font-bold' : 'text-muted-foreground'}`}>
                               VTV: {new Date(v.vtvExpiry).toLocaleDateString()}
                               {isVtvClose && <AlertTriangle className="h-2.5 w-2.5" />}
                             </div>
-                          ) : <span className="text-[10px] text-muted-foreground/60 italic">Sin VTV</span>}
+                          ) : <span className="text-xs text-muted-foreground italic">Sin VTV</span>}
 
                           {v.insuranceExpiry ? (
-                            <div className={`text-[10px] flex items-center gap-1 ${isInsClose ? 'text-rose-500 font-bold' : 'text-muted-foreground'}`}>
+                            <div className={`text-xs flex items-center gap-1 ${isInsClose ? 'text-rose-700 dark:text-rose-400 font-bold' : 'text-muted-foreground'}`}>
                               Seg: {new Date(v.insuranceExpiry).toLocaleDateString()}
                               {isInsClose && <AlertTriangle className="h-2.5 w-2.5" />}
                             </div>
-                          ) : <span className="text-[10px] text-muted-foreground/60 italic">Sin Seguro</span>}
+                          ) : <span className="text-xs text-muted-foreground italic">Sin seguro</span>}
                         </div>
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                           <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" asChild>
-                            <Link href={`/admin/vehicles/${v.id}`} title="Ver Historial">
+                            <Link href={`/admin/vehicles/${v.id}`} title="Ver historial">
                               <Clock className="h-4 w-4 text-muted-foreground" />
                             </Link>
                           </Button>

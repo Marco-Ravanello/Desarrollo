@@ -37,14 +37,14 @@ export function AddFamilyMemberForm({ personId }: { personId: string }) {
     <form onSubmit={handleSubmit} className="space-y-4 border border-border/60 p-4 rounded-2xl bg-muted/20">
       <div className="flex items-center gap-2 mb-1">
         <UserPlus className="h-4 w-4 text-primary" />
-        <h4 className="text-xs font-bold text-foreground uppercase tracking-wider">Vincular Familiar</h4>
+        <h4 className="text-xs font-bold text-foreground">Vincular familiar</h4>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div className="space-y-1">
-          <Label htmlFor="memberDni" className="text-[11px] font-bold text-muted-foreground">DNI del Familiar</Label>
+          <Label htmlFor="memberDni" className="text-xs font-bold text-muted-foreground">DNI del familiar</Label>
           <Input
             id="memberDni"
-            placeholder="Ingrese DNI..."
+            placeholder="DNI del familiar"
             value={dni}
             onChange={(e) => setDni(e.target.value)}
             required
@@ -52,7 +52,7 @@ export function AddFamilyMemberForm({ personId }: { personId: string }) {
           />
         </div>
         <div className="space-y-1">
-          <Label htmlFor="relationship" className="text-[11px] font-bold text-muted-foreground">Parentesco / Vínculo</Label>
+          <Label htmlFor="relationship" className="text-xs font-bold text-muted-foreground">Parentesco / vínculo</Label>
           <select
             id="relationship"
             value={relationship}
@@ -60,19 +60,19 @@ export function AddFamilyMemberForm({ personId }: { personId: string }) {
             className="w-full h-9 px-3 rounded-xl bg-background border border-border/60 text-xs font-medium text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
           >
             <option value="Hijo/a">Hijo/a</option>
-            <option value="Cónyuge / Pareja">Cónyuge / Pareja</option>
-            <option value="Padre / Madre">Padre / Madre</option>
+            <option value="Cónyuge / Pareja">Cónyuge / pareja</option>
+            <option value="Padre / Madre">Padre / madre</option>
             <option value="Hermano/a">Hermano/a</option>
             <option value="Abuelo/a">Abuelo/a</option>
             <option value="Nieto/a">Nieto/a</option>
             <option value="Familiar a cargo">Familiar a cargo</option>
-            <option value="Tutor / Guardador">Tutor / Guardador</option>
+            <option value="Tutor / Guardador">Tutor / guardador</option>
           </select>
         </div>
       </div>
       <Button type="submit" disabled={loading} size="sm" className="w-full h-9 rounded-xl font-bold text-xs gap-2">
         {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <UserPlus className="h-3.5 w-3.5" />}
-        <span>{loading ? "Vincunlando..." : "Vincular Integrante al Grupo Familiar"}</span>
+        <span>{loading ? "Vinculando…" : "Vincular al grupo familiar"}</span>
       </Button>
     </form>
   );

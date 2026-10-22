@@ -60,7 +60,7 @@ export default function DashboardLayout({
                 <p className="text-sm font-semibold text-foreground truncate font-heading">
                   Desarrollo Humano y Hábitat
                 </p>
-                <p className="text-[11px] text-muted-foreground truncate hidden sm:block">
+                <p className="text-xs text-muted-foreground truncate hidden sm:block">
                   Municipalidad de Tres de Febrero
                 </p>
               </div>
@@ -84,7 +84,7 @@ export default function DashboardLayout({
           </div>
 
           <footer className="mt-auto border-t border-border/50 px-6 py-3 print:hidden">
-            <p className="text-center text-[11px] text-muted-foreground/80">
+            <p className="text-center text-xs text-muted-foreground">
               Municipalidad de Tres de Febrero · Secretaría de Desarrollo Humano y Hábitat
             </p>
           </footer>

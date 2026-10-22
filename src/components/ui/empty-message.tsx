@@ -25,7 +25,7 @@ function EmptyIllustration({ kind, icon: Icon, compact }: { kind: EmptyKind; ico
   const Glyph = kind === "search" ? Search : kind === "done" ? Check : Icon;
   const tone =
     kind === "done"
-      ? "text-emerald-600 dark:text-emerald-400"
+      ? "text-emerald-700 dark:text-emerald-400"
       : "text-primary dark:text-primary";
   return (
     <div className={cn("relative shrink-0", compact ? "h-16 w-24" : "h-24 w-36")} aria-hidden>

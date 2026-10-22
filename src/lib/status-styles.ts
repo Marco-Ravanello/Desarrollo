@@ -15,14 +15,14 @@ export const CASE_STATUS_CONFIG: Record<string, StatusStyleConfig> = {
     badgeClass: "bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-500/30 font-semibold",
   },
   EN_PROCESO: {
-    label: "En Proceso",
+    label: "En proceso",
     bgClass: "bg-amber-500/10 dark:bg-amber-500/20",
     textClass: "text-amber-700 dark:text-amber-300",
     borderClass: "border-amber-500/30",
     badgeClass: "bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/30 font-semibold",
   },
   EN_ESPERA: {
-    label: "En Espera",
+    label: "En espera",
     bgClass: "bg-purple-500/10 dark:bg-purple-500/20",
     textClass: "text-purple-700 dark:text-purple-300",
     borderClass: "border-purple-500/30",
@@ -84,7 +84,7 @@ export const ORDER_STATUS_CONFIG: Record<string, StatusStyleConfig> = {
     badgeClass: "bg-slate-500/10 text-slate-700 dark:text-slate-300 border-slate-500/30 font-medium",
   },
   PENDIENTE_APROBACION: {
-    label: "Pendiente Aprobación",
+    label: "Pendiente de aprobación",
     bgClass: "bg-amber-500/10 dark:bg-amber-500/20",
     textClass: "text-amber-700 dark:text-amber-300",
     borderClass: "border-amber-500/30",
@@ -105,7 +105,7 @@ export const ORDER_STATUS_CONFIG: Record<string, StatusStyleConfig> = {
     badgeClass: "bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/30 font-semibold",
   },
   CUMPLIDA: {
-    label: "Cumplida / Entregada",
+    label: "Cumplida / entregada",
     bgClass: "bg-blue-500/10 dark:bg-blue-500/20",
     textClass: "text-blue-700 dark:text-blue-300",
     borderClass: "border-blue-500/30",

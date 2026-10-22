@@ -303,7 +303,7 @@ export default function AssistantPage() {
           <div key={`table-${index}`} className="my-4 overflow-x-auto rounded-2xl border border-border/40 shadow-sm bg-card/60 backdrop-blur-sm">
             <table className="w-full text-xs text-left border-collapse">
               <thead>
-                <tr className="bg-muted/70 text-muted-foreground uppercase font-bold tracking-wider border-b border-border/40">
+                <tr className="bg-muted/70 text-muted-foreground font-bold border-b border-border/40">
                   {tableHeaders.map((header, hIdx) => <th key={hIdx} className="px-4 py-3 font-bold">{header}</th>)}
                 </tr>
               </thead>
@@ -323,7 +323,7 @@ export default function AssistantPage() {
       if (trimmed.startsWith("###")) {
         elements.push(<h3 key={index} className="text-lg font-bold tracking-tight mt-5 mb-2 text-foreground flex items-center gap-2">{trimmed.replace("###", "").trim()}</h3>);
       } else if (trimmed.startsWith("####")) {
-        elements.push(<h4 key={index} className="text-xs font-bold uppercase tracking-wider text-muted-foreground mt-4 mb-2">{trimmed.replace("####", "").trim()}</h4>);
+        elements.push(<h4 key={index} className="text-xs font-bold text-muted-foreground mt-4 mb-2">{trimmed.replace("####", "").trim()}</h4>);
       } else if (trimmed.startsWith("*   ") || trimmed.startsWith("-   ")) {
         elements.push(<li key={index} className="ml-5 list-disc text-xs text-foreground/90 my-1 font-medium leading-relaxed" dangerouslySetInnerHTML={{ __html: inlineMarkdown(trimmed.substring(4)) }} />);
       } else if (trimmed.startsWith("* ") || trimmed.startsWith("- ")) {
@@ -340,7 +340,7 @@ export default function AssistantPage() {
         <div key="table-final" className="my-4 overflow-x-auto rounded-2xl border border-border/40 shadow-sm bg-card/60 backdrop-blur-sm">
           <table className="w-full text-xs text-left border-collapse">
             <thead>
-              <tr className="bg-muted/70 text-muted-foreground uppercase font-bold tracking-wider border-b border-border/40">
+              <tr className="bg-muted/70 text-muted-foreground font-bold border-b border-border/40">
                 {tableHeaders.map((header, hIdx) => <th key={hIdx} className="px-4 py-3 font-bold">{header}</th>)}
               </tr>
             </thead>
@@ -373,12 +373,12 @@ export default function AssistantPage() {
     return (
       <div className="mt-4 p-5 rounded-2xl border border-border/40 shadow-sm bg-card/60 backdrop-blur-sm w-full min-h-[220px]">
         <div className="flex items-center justify-between mb-4">
-          <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{chartTitle}</p>
+          <p className="text-xs font-bold text-muted-foreground">{chartTitle}</p>
           <Button
             size="sm"
             variant="ghost"
             onClick={() => exportToCSV(chartTitle, chart.data)}
-            className="h-7 text-[10px] font-bold gap-1 text-primary hover:bg-primary/10 rounded-lg"
+            className="h-7 text-xs font-bold gap-1 text-primary hover:bg-primary/10 rounded-lg"
             title="Exportar datos del gráfico a CSV / Excel"
           >
             <Download className="h-3 w-3" /> Exportar CSV
@@ -460,7 +460,7 @@ export default function AssistantPage() {
                 />
               </PieChart>
             </ResponsiveContainer>
-            <div className="hidden sm:flex flex-col gap-1.5 ml-4 shrink-0 text-[10px] text-muted-foreground font-semibold">
+            <div className="hidden sm:flex flex-col gap-1.5 ml-4 shrink-0 text-xs text-muted-foreground font-semibold">
               {chart.data.map((entry: any, index: number) => (
                 <div key={index} className="flex items-center gap-1.5">
                   <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
@@ -485,10 +485,10 @@ export default function AssistantPage() {
           <Button
             variant="outline"
             onClick={clearChat}
-            className="rounded-xl text-xs font-bold uppercase tracking-wider h-9 flex items-center gap-2 border-border/60 hover:bg-muted/50 text-foreground"
+            className="rounded-xl text-xs font-bold h-9 flex items-center gap-2 border-border/60 hover:bg-muted/50 text-foreground"
           >
             <RefreshCw className="h-3.5 w-3.5" />
-            Limpiar Conversación
+            Limpiar conversación
           </Button>
         }
       />
@@ -497,8 +497,8 @@ export default function AssistantPage() {
         <div className="hidden lg:flex lg:col-span-1 flex-col gap-4 min-h-0 overflow-hidden">
           <Card className="bg-card text-card-foreground border border-border/60 shadow-sm h-full flex flex-col overflow-hidden rounded-2xl">
             <CardHeader className="pb-3 shrink-0">
-              <CardTitle className="text-xs font-bold uppercase tracking-wider text-foreground">Consultas Frecuentes</CardTitle>
-              <CardDescription className="text-[11px] text-muted-foreground">Selecciona un tema para consultar los datos reales al instante.</CardDescription>
+              <CardTitle className="text-xs font-bold text-foreground">Consultas frecuentes</CardTitle>
+              <CardDescription className="text-xs text-muted-foreground">Selecciona un tema para consultar los datos reales al instante.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-2.5 overflow-y-auto flex-1 min-h-0 pr-2 custom-scrollbar">
               {suggestions.map((s, idx) => (
@@ -513,7 +513,7 @@ export default function AssistantPage() {
                   </div>
                   <div className="space-y-0.5 min-w-0 flex-1">
                     <p className="text-xs font-bold text-foreground leading-tight">{s.label}</p>
-                    <p className="text-[10px] text-muted-foreground line-clamp-2 leading-relaxed">Ej: &ldquo;{s.query.substring(0, 40)}...&rdquo;</p>
+                    <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">Ej: &ldquo;{s.query.substring(0, 40)}...&rdquo;</p>
                   </div>
                 </button>
               ))}
@@ -530,7 +530,7 @@ export default function AssistantPage() {
                   key={idx}
                   onClick={() => handleQuery(s.query)}
                   disabled={loading}
-                  className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-border/50 bg-muted/40 text-[11px] font-semibold text-foreground disabled:opacity-50"
+                  className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-border/50 bg-muted/40 text-xs font-semibold text-foreground disabled:opacity-50"
                 >
                   <s.icon className={`h-3.5 w-3.5 ${s.color}`} />
                   {s.label}
@@ -565,9 +565,9 @@ export default function AssistantPage() {
                         {m.dataSummary?.chart && renderChart(m.dataSummary.chart)}
                         {m.dataSummary?.sources && m.dataSummary.sources.length > 0 && (
                           <div className="mt-4 pt-3 border-t border-border/20 space-y-2">
-                            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1 select-none">
+                            <p className="text-xs font-bold text-muted-foreground flex items-center gap-1 select-none">
                               <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
-                              Fuentes Verificadas de la BD Municipal
+                              Fuentes verificadas de la BD municipal
                             </p>
                             <div className="flex flex-wrap gap-2">
                               {m.dataSummary.sources.map((src: any, idx: number) => (
@@ -621,7 +621,7 @@ export default function AssistantPage() {
                           onClick={() => handleSpeakText(m.id, m.text)}
                           className={`p-1.5 rounded-xl transition-all ${
                             currentlySpeakingId === m.id
-                              ? "bg-rose-500/20 text-rose-500 animate-pulse"
+                              ? "bg-rose-500/20 text-rose-700 dark:text-rose-400 animate-pulse"
                               : "bg-muted/40 hover:bg-muted text-muted-foreground hover:text-foreground"
                           }`}
                           title={currentlySpeakingId === m.id ? "Detener lectura" : "Escuchar respuesta en voz alta"}
@@ -673,7 +673,8 @@ export default function AssistantPage() {
                 <Button
                   type="submit"
                   disabled={loading || !input.trim()}
-                  className="rounded-2xl h-11 px-5 font-bold text-xs uppercase tracking-wider bg-primary text-primary-foreground shadow-md shrink-0"
+                  aria-label="Enviar consulta"
+                  className="rounded-2xl h-11 px-5 font-bold text-xs bg-primary text-primary-foreground shadow-md shrink-0"
                 >
                   <Send className="h-4 w-4" />
                 </Button>

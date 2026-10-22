@@ -47,10 +47,15 @@ export function NotificationBell() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="relative text-foreground hover:bg-muted/50">
+        <Button
+          variant="ghost"
+          size="icon"
+          aria-label={unreadCount > 0 ? `Avisos (${unreadCount} sin leer)` : "Avisos"}
+          className="relative text-foreground hover:bg-muted/50"
+        >
           <Bell className="h-5 w-5" />
           {unreadCount > 0 && (
-            <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 bg-rose-500 border-2 border-background text-white font-bold text-[10px]">
+            <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 bg-rose-500 border-2 border-background text-white font-bold text-xs">
               {unreadCount}
             </Badge>
           )}
@@ -58,9 +63,9 @@ export function NotificationBell() {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-80 bg-card border-border/60 text-card-foreground shadow-xl rounded-2xl">
         <div className="flex items-center justify-between px-4 py-2.5 border-b border-border/40">
-          <span className="font-bold text-xs uppercase tracking-wider text-foreground">Notificaciones</span>
+          <span className="font-bold text-xs text-foreground">Notificaciones</span>
           {unreadCount > 0 && (
-            <Button variant="ghost" size="sm" className="text-[10px] h-auto p-1 font-bold text-primary hover:text-primary/80" onClick={handleMarkAllRead}>
+            <Button variant="ghost" size="sm" className="text-xs h-auto p-1 font-bold text-primary hover:text-primary/80" onClick={handleMarkAllRead}>
               Marcar todas leídas
             </Button>
           )}
@@ -99,13 +104,13 @@ export function NotificationBell() {
                 {n.link && (
                   <Link
                     href={n.link}
-                    className="text-[10px] text-primary font-bold hover:underline mt-1"
+                    className="text-xs text-primary font-bold hover:underline mt-1"
                     onClick={() => handleMarkRead(n.id)}
                   >
                     Ver detalles
                   </Link>
                 )}
-                <span className="text-[9px] text-muted-foreground/60 mt-1">{new Date(n.createdAt).toLocaleString()}</span>
+                <span className="text-xs text-muted-foreground mt-1">{new Date(n.createdAt).toLocaleString("es-AR")}</span>
               </DropdownMenuItem>
             ))
           )}
@@ -113,7 +118,7 @@ export function NotificationBell() {
         <DropdownMenuSeparator className="bg-border/40" />
         <div className="p-2">
           <Button variant="ghost" className="w-full text-xs text-muted-foreground h-8" disabled>
-            Historial de Notificaciones
+            Historial de notificaciones
           </Button>
         </div>
       </DropdownMenuContent>

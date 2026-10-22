@@ -557,6 +557,8 @@ model PadronUnificado {
   geo_actualizado       DateTime?
   /// ¿La dirección tiene calle y altura? La calcula la base (trigger) cada vez que cambia `direccion`.
   direccion_con_altura  Boolean?
+  /// Nombre comparable (sin tildes ni signos, palabras en orden alfabético) para buscar posibles duplicados. Lo calcula la base (trigger) cada vez que cambia `nombre_completo`.
+  nombre_clave          String?
   prog_centro_de_familia                                         Int @default(0)
   prog_tarjeta_alimentar                                         Int @default(0)
   prog_jardines_municipales                                      Int @default(0)
@@ -576,6 +578,7 @@ model PadronUnificado {
   prog_comedores_comunitarios_programa_fosc                      Int @default(0)
   prog_emergencia_climatica                                      Int @default(0)
 
+  @@index([nombre_clave])
   @@map("padron_unificado")
 }
 

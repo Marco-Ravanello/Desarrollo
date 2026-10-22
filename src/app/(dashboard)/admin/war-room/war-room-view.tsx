@@ -11,6 +11,7 @@ import {
   Radio, TrendingUp, Building2
 } from "lucide-react";
 import { MunicipalCrest } from "@/components/ui/municipal-crest";
+import { plural } from "@/lib/formato";
 
 interface WarRoomViewProps {
   initialData: {
@@ -116,7 +117,7 @@ export function WarRoomView({ initialData }: WarRoomViewProps) {
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
               </span>
-              <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-primary">
+              <span className="text-xs font-bold text-primary">
                 En vivo • Municipalidad de Tres de Febrero
               </span>
             </div>
@@ -132,13 +133,13 @@ export function WarRoomView({ initialData }: WarRoomViewProps) {
               <div className="text-lg font-bold font-mono tracking-widest text-foreground leading-none">
                 {currentTime || "12:00:00"}
               </div>
-              <div className="text-[10px] text-muted-foreground font-semibold capitalize mt-0.5">
+              <div className="text-xs text-muted-foreground font-semibold capitalize mt-0.5">
                 {currentDate || "Cargando fecha..."}
               </div>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Badge variant="outline" className="border-border/60 bg-muted/40 text-[10px] font-mono text-muted-foreground px-3 py-1.5 rounded-xl">
+            <Badge variant="outline" className="border-border/60 bg-muted/40 text-xs font-mono text-muted-foreground px-3 py-1.5 rounded-xl">
               <RefreshCw className="mr-1.5 h-3 w-3 animate-spin text-primary" /> Refresco en {countdown}s
             </Badge>
             <Button
@@ -158,22 +159,22 @@ export function WarRoomView({ initialData }: WarRoomViewProps) {
           <div className="flex items-center gap-3">
             <ShieldAlert className="h-6 w-6 text-amber-500 shrink-0" />
             <div>
-              <p className="font-bold text-sm uppercase tracking-wider text-amber-900 dark:text-amber-200">
-                CENTRO DE OPERACIONES DE EMERGENCIA CLIMÁTICA (COE) ACTIVADO
+              <p className="font-bold text-sm text-amber-900 dark:text-amber-200">
+                Centro de Operaciones de Emergencia (COE) activado
               </p>
               <p className="text-xs opacity-90 text-amber-800 dark:text-amber-300">
                 Protocolo de contingencia vigente para cuadrillas de guardia y centros de evacuación.
               </p>
             </div>
           </div>
-          <Badge className="bg-amber-500 text-black font-bold uppercase text-xs">Alerta Máxima</Badge>
+          <Badge className="bg-amber-500 text-black font-bold text-xs">Alerta máxima</Badge>
         </div>
       )}
       {/* 5 Tarjetas KPI Principales */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         <Card className="rounded-2xl border-border/60 bg-card text-card-foreground shadow-sm hover:shadow-md transition-all p-5 relative overflow-hidden">
           <div className="flex justify-between items-start mb-2">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Vecinos Registrados</span>
+            <span className="text-xs font-bold text-muted-foreground">Vecinos registrados</span>
             <div className="p-2 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-xl">
               <Users className="h-4 w-4" />
             </div>
@@ -181,63 +182,63 @@ export function WarRoomView({ initialData }: WarRoomViewProps) {
           <div className="text-3xl sm:text-4xl font-bold font-mono tracking-tight text-foreground">
             {initialData.totalCitizens.toLocaleString("es-AR")}
           </div>
-          <div className="flex items-center gap-1.5 text-[11px] text-emerald-600 dark:text-emerald-400 mt-2 font-bold">
+          <div className="flex items-center gap-1.5 text-xs text-emerald-700 dark:text-emerald-400 mt-2 font-bold">
             <TrendingUp className="h-3 w-3" /> Datos reales en sistema
           </div>
         </Card>
         <Card className="rounded-2xl border-border/60 bg-card text-card-foreground shadow-sm hover:shadow-md transition-all p-5 relative overflow-hidden">
           <div className="flex justify-between items-start mb-2">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Casos Críticos</span>
-            <div className="p-2 bg-rose-500/10 text-rose-600 dark:text-rose-400 rounded-xl">
+            <span className="text-xs font-bold text-muted-foreground">Casos críticos</span>
+            <div className="p-2 bg-rose-500/10 text-rose-700 dark:text-rose-400 rounded-xl">
               <ShieldAlert className="h-4 w-4" />
             </div>
           </div>
           <div className="text-3xl sm:text-4xl font-bold font-mono tracking-tight text-rose-600 dark:text-rose-400">
             {initialData.activeCriticalCases}
           </div>
-          <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground mt-2 font-semibold">
-            {initialData.resolvedToday} casilleros cerrados
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-2 font-semibold">
+            {plural(initialData.resolvedToday, "expediente cerrado hoy", "expedientes cerrados hoy")}
           </div>
         </Card>
         <Card className="rounded-2xl border-border/60 bg-card text-card-foreground shadow-sm hover:shadow-md transition-all p-5 relative overflow-hidden">
           <div className="flex justify-between items-start mb-2">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Flota Disponible</span>
-            <div className="p-2 bg-amber-500/10 text-amber-600 dark:text-amber-400 rounded-xl">
+            <span className="text-xs font-bold text-muted-foreground">Flota disponible</span>
+            <div className="p-2 bg-amber-500/10 text-amber-700 dark:text-amber-400 rounded-xl">
               <Car className="h-4 w-4" />
             </div>
           </div>
           <div className="text-3xl sm:text-4xl font-bold font-mono tracking-tight text-foreground">
             {initialData.activeVehicles} <span className="text-lg text-muted-foreground font-medium">/ {initialData.totalVehicles}</span>
           </div>
-          <div className="flex items-center gap-1.5 text-[11px] text-emerald-600 dark:text-emerald-400 mt-2 font-bold">
-            {initialData.totalVehicles > 0 ? `${Math.round((initialData.activeVehicles / initialData.totalVehicles) * 100)}% Operatividad` : "Sin Flota"}
+          <div className="flex items-center gap-1.5 text-xs text-emerald-700 dark:text-emerald-400 mt-2 font-bold">
+            {initialData.totalVehicles > 0 ? `${Math.round((initialData.activeVehicles / initialData.totalVehicles) * 100)} % disponible` : "Sin vehículos cargados"}
           </div>
         </Card>
         <Card className="rounded-2xl border-border/60 bg-card text-card-foreground shadow-sm hover:shadow-md transition-all p-5 relative overflow-hidden">
           <div className="flex justify-between items-start mb-2">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Nivel de Stock</span>
+            <span className="text-xs font-bold text-muted-foreground">Nivel de stock</span>
             <div className="p-2 bg-purple-500/10 text-purple-600 dark:text-purple-400 rounded-xl">
               <Package className="h-4 w-4" />
             </div>
           </div>
           <div className="text-3xl sm:text-4xl font-bold font-mono tracking-tight text-purple-600 dark:text-purple-400">
-            {initialData.emergencyStockPercent}%
+            {initialData.emergencyStockPercent} %
           </div>
-          <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground mt-2 font-semibold">
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-2 font-semibold">
             Insumos en depósitos
           </div>
         </Card>
         <Card className="rounded-2xl border-border/60 bg-card text-card-foreground shadow-sm hover:shadow-md transition-all p-5 relative overflow-hidden">
           <div className="flex justify-between items-start mb-2">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Presupuesto Adjudicado</span>
-            <div className="p-2 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-xl">
+            <span className="text-xs font-bold text-muted-foreground">Presupuesto adjudicado</span>
+            <div className="p-2 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 rounded-xl">
               <DollarSign className="h-4 w-4" />
             </div>
           </div>
-          <div className="text-2xl sm:text-3xl font-bold font-mono tracking-tight text-emerald-600 dark:text-emerald-400 truncate">
+          <div className="text-2xl sm:text-3xl font-bold font-mono tracking-tight text-emerald-700 dark:text-emerald-400 truncate">
             {initialData.committedBudgetFormatted}
           </div>
-          <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground mt-2 font-semibold">
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-2 font-semibold">
             Órdenes aprobadas
           </div>
         </Card>
@@ -253,7 +254,7 @@ export function WarRoomView({ initialData }: WarRoomViewProps) {
               </h2>
             </div>
             <Badge variant="outline" className="border-border/60 text-muted-foreground text-xs font-bold">
-              Base de Datos Oficial
+              Base de datos oficial
             </Badge>
           </div>
           <div className="space-y-3">
@@ -265,7 +266,7 @@ export function WarRoomView({ initialData }: WarRoomViewProps) {
                 >
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
-                      <Badge className={`text-[10px] font-bold uppercase border-none ${
+                      <Badge className={`text-xs font-bold border-none ${
                         alert.priority === 'URGENTE' || alert.priority === 'CRITICA' ? 'bg-rose-500 text-white' :
                         alert.priority === 'ALTA' ? 'bg-amber-500 text-black' : 'bg-primary text-primary-foreground'
                       }`}>
@@ -298,7 +299,7 @@ export function WarRoomView({ initialData }: WarRoomViewProps) {
                 <div key={area.id} className="p-3.5 rounded-2xl bg-muted/30 border border-border/40 space-y-2">
                   <div className="flex justify-between items-center">
                     <span className="font-bold text-foreground truncate max-w-[160px]">{area.name}</span>
-                    <Badge className="bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-none font-bold text-[10px]">{area.badgeText}</Badge>
+                    <Badge className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-none font-bold text-xs">{area.badgeText}</Badge>
                   </div>
                   <div className="w-full bg-muted h-2 rounded-full overflow-hidden">
                     <div className="bg-primary h-full transition-all duration-500" style={{ width: `${area.percentage}%` }} />

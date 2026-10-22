@@ -103,7 +103,7 @@ export function CreatePurchaseOrderForm({ providers, areas = [] }: { providers: 
     const orderTotal = parseFloat(orderData.amount) || 0;
 
     if (items.length > 0 && Math.abs(itemsTotal - orderTotal) > 0.01) {
-      toast.error(`El total de los ítems ($${itemsTotal.toLocaleString()}) no coincide con el total de la orden ($${orderTotal.toLocaleString()})`);
+      toast.error(`El total de los ítems ($${itemsTotal.toLocaleString("es-AR")}) no coincide con el total de la orden ($${orderTotal.toLocaleString("es-AR")})`);
       return;
     }
 
@@ -130,18 +130,18 @@ export function CreatePurchaseOrderForm({ providers, areas = [] }: { providers: 
   return (
     <Card className="bg-white/75 dark:bg-card/75 backdrop-blur-md border border-border/40 shadow-municipal">
       <CardHeader>
-        <CardTitle>Nueva Orden</CardTitle>
+        <CardTitle>Nueva orden</CardTitle>
       </CardHeader>
       <CardContent className="space-y-8">
         <div className="bg-slate-50/50 dark:bg-slate-900/30 p-4 rounded-2xl border border-slate-200/50 dark:border-slate-800/50">
-           <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-3">Asistente de Carga Rápida</h4>
-           <OCRScanner onScanComplete={handleScanComplete} />
+           <h4 className="text-xs font-bold text-muted-foreground mb-3">Asistente de carga rápida</h4>
+           <OCRScanner onScanComplete={handleScanComplete} label="Escanear la orden" />
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="number">Número de Orden</Label>
+              <Label htmlFor="number">Número de orden</Label>
               <Input
                 id="number"
                 name="number"
@@ -152,7 +152,7 @@ export function CreatePurchaseOrderForm({ providers, areas = [] }: { providers: 
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="areaId">Secretaría / Área Solicitante</Label>
+              <Label htmlFor="areaId">Secretaría / área solicitante</Label>
               <select
                 id="areaId"
                 name="areaId"
@@ -160,14 +160,14 @@ export function CreatePurchaseOrderForm({ providers, areas = [] }: { providers: 
                 onChange={(e) => setOrderData({ ...orderData, areaId: e.target.value })}
                 className="w-full flex h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
-                <option value="">Seleccione un área...</option>
+                <option value="">Elegí un área</option>
                 {areas.map((area: any) => (
                   <option key={area.id} value={area.id}>{area.name}</option>
                 ))}
               </select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="providerNumber">N° de Proveedor</Label>
+              <Label htmlFor="providerNumber">N° de proveedor</Label>
               <Input
                 id="providerNumber"
                 name="providerNumber"
@@ -177,7 +177,7 @@ export function CreatePurchaseOrderForm({ providers, areas = [] }: { providers: 
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="providerName">Nombre del Proveedor</Label>
+              <Label htmlFor="providerName">Nombre del proveedor</Label>
               <Input
                 id="providerName"
                 name="providerName"
@@ -189,7 +189,7 @@ export function CreatePurchaseOrderForm({ providers, areas = [] }: { providers: 
               <input type="hidden" name="providerId" value={orderData.providerId} />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="providerCuit">CUIT del Proveedor</Label>
+              <Label htmlFor="providerCuit">CUIT del proveedor</Label>
               <Input
                 id="providerCuit"
                 name="providerCuit"
@@ -212,7 +212,7 @@ export function CreatePurchaseOrderForm({ providers, areas = [] }: { providers: 
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="expediente">N° Expediente</Label>
+              <Label htmlFor="expediente">N° expediente</Label>
               <Input
                 id="expediente"
                 name="expediente"
@@ -222,7 +222,7 @@ export function CreatePurchaseOrderForm({ providers, areas = [] }: { providers: 
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="deliveryDate">Fecha Estimada de Entrega</Label>
+              <Label htmlFor="deliveryDate">Fecha estimada de entrega</Label>
               <Input
                 id="deliveryDate"
                 name="deliveryDate"
@@ -232,7 +232,7 @@ export function CreatePurchaseOrderForm({ providers, areas = [] }: { providers: 
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="deliveryPlace">Lugar de Entrega</Label>
+              <Label htmlFor="deliveryPlace">Lugar de entrega</Label>
               <Input
                 id="deliveryPlace"
                 name="deliveryPlace"
@@ -242,7 +242,7 @@ export function CreatePurchaseOrderForm({ providers, areas = [] }: { providers: 
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="paymentTerms">Condición de Pago</Label>
+              <Label htmlFor="paymentTerms">Condición de pago</Label>
               <Input
                 id="paymentTerms"
                 name="paymentTerms"
@@ -252,7 +252,7 @@ export function CreatePurchaseOrderForm({ providers, areas = [] }: { providers: 
               />
             </div>
             <div className="md:col-span-2 space-y-2">
-              <Label htmlFor="description">Descripción / Motivo</Label>
+              <Label htmlFor="description">Descripción / motivo</Label>
               <textarea
                 id="description"
                 name="description"
@@ -268,13 +268,13 @@ export function CreatePurchaseOrderForm({ providers, areas = [] }: { providers: 
           <div className="space-y-4">
              <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <h3 className="text-lg font-semibold">Ítems de la Orden</h3>
+                  <h3 className="text-lg font-semibold">Ítems de la orden</h3>
                   <div className="bg-blue-500/15 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded-full text-xs font-bold">
                     {items.length} {items.length === 1 ? 'renglón' : 'renglones'}
                   </div>
                 </div>
                 <Button type="button" variant="outline" size="sm" onClick={addItem} className="text-blue-600 border-blue-500/30">
-                  <Plus className="h-4 w-4 mr-1" /> Agregar Ítem
+                  <Plus className="h-4 w-4 mr-1" /> Agregar ítem
                 </Button>
              </div>
 
@@ -345,7 +345,7 @@ export function CreatePurchaseOrderForm({ providers, areas = [] }: { providers: 
                             type="button"
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-500/10"
+                            className="h-8 w-8 text-red-700 dark:text-red-400 hover:text-red-600 hover:bg-red-500/10"
                             onClick={() => removeItem(index)}
                            >
                              <Trash2 className="h-4 w-4" />
@@ -358,7 +358,7 @@ export function CreatePurchaseOrderForm({ providers, areas = [] }: { providers: 
                       <tr>
                         <td colSpan={4} className="p-3 text-right font-bold text-muted-foreground">Total Ítems:</td>
                         <td className="p-3 text-right font-bold text-blue-700 dark:text-blue-300">
-                          ${items.reduce((acc, item) => acc + (parseFloat(item.totalPrice) || 0), 0).toLocaleString()}
+                          ${items.reduce((acc, item) => acc + (parseFloat(item.totalPrice) || 0), 0).toLocaleString("es-AR")}
                         </td>
                         <td></td>
                       </tr>
@@ -372,7 +372,7 @@ export function CreatePurchaseOrderForm({ providers, areas = [] }: { providers: 
             <Button type="button" variant="outline" onClick={() => router.back()}>
               Cancelar
             </Button>
-            <Button type="submit" disabled={loading} className="bg-blue-600 hover:bg-blue-700">
+            <Button type="submit" disabled={loading}>
               {loading ? "Registrando..." : "Crear Orden"}
             </Button>
           </div>

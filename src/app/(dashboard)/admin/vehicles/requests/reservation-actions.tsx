@@ -25,7 +25,7 @@ export function ReservationActions({ reservationId }: { reservationId: string })
       <Button
         size="sm"
         variant="outline"
-        className="text-emerald-600 border-emerald-500/30 hover:bg-emerald-500/10"
+        className="text-emerald-700 dark:text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/10"
         onClick={() => handleAction('APROBADA')}
         disabled={loading}
       >

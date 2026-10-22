@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { StormVictimItem, SearchPersonSuggestion, EmergencyExtraItem } from "@/types/emergency";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { textoNormal } from "@/lib/formato";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -101,7 +102,7 @@ export function StormSheetTable({
 
   const handleFastAdd = async () => {
     if (!fastNombre.trim() || !fastDomicilio.trim()) {
-      toast.error("Complete 'Nombre y Apellido' y 'Domicilio' para agregar");
+      toast.error("Completá nombre y apellido y domicilio para agregar la fila");
       return;
     }
 
@@ -204,7 +205,7 @@ export function StormSheetTable({
           <Input
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Buscar por Nombre, DNI o Domicilio..."
+            placeholder="Buscar por nombre, DNI o domicilio..."
             className="pl-9 h-9 rounded-xl text-xs"
           />
         </div>
@@ -225,11 +226,12 @@ export function StormSheetTable({
             ))}
           </select>
           <select
+            aria-label="Filtrar por prioridad"
             value={priorityFilter}
             onChange={(e) => setPriorityFilter(e.target.value)}
             className="h-9 rounded-xl bg-background border border-border text-xs px-3 font-bold"
           >
-            <option value="ALL">Todas las Prioridades</option>
+            <option value="ALL">Todas las prioridades</option>
             <option value="ALTA">Prioridad ALTA</option>
             <option value="MEDIA">Prioridad MEDIA</option>
             <option value="BAJA">Prioridad BAJA</option>
@@ -243,30 +245,30 @@ export function StormSheetTable({
           <TableHeader className="bg-muted/50 border-b border-border/60">
             <TableRow className="hover:bg-transparent">
               <TableHead className="w-10 font-bold text-center border-r border-border/40" rowSpan={2}>#</TableHead>
-              <TableHead className="font-bold border-r border-border/40" rowSpan={2}>Nombre y Apellido</TableHead>
+              <TableHead className="font-bold border-r border-border/40" rowSpan={2}>Nombre y apellido</TableHead>
               <TableHead className="font-bold border-r border-border/40 w-28" rowSpan={2}>DNI</TableHead>
-              <TableHead className="font-bold border-r border-border/40 text-center w-20" rowSpan={2}>G. Fam.</TableHead>
+              <TableHead className="font-bold border-r border-border/40 text-center w-20" rowSpan={2}>G. fam.</TableHead>
               <TableHead className="font-bold border-r border-border/40 text-center w-16" rowSpan={2}>Niños</TableHead>
-              <TableHead className="font-bold border-r border-border/40" rowSpan={2}>Domicilio / Referencia</TableHead>
+              <TableHead className="font-bold border-r border-border/40" rowSpan={2}>Domicilio / referencia</TableHead>
 
               {/* Subencabezados Elementos */}
               <TableHead className="font-bold text-center border-r border-border/40 bg-amber-500/10" colSpan={8}>
-                ELEMENTOS (Consideración profesional)
+                Elementos (a criterio profesional)
               </TableHead>
 
-              <TableHead className="font-bold border-r border-border/40" rowSpan={2}>Observaciones / Contacto</TableHead>
+              <TableHead className="font-bold border-r border-border/40" rowSpan={2}>Observaciones / contacto</TableHead>
               <TableHead className="font-bold text-center w-28" rowSpan={2}>Acciones</TableHead>
             </TableRow>
 
             <TableRow className="hover:bg-transparent bg-amber-500/5">
-              <TableHead className="text-center font-bold text-[10px] border-r border-border/30 w-12">Colchón</TableHead>
-              <TableHead className="text-center font-bold text-[10px] border-r border-border/40 w-12">Cant.</TableHead>
-              <TableHead className="text-center font-bold text-[10px] border-r border-border/30 w-12">Cama</TableHead>
-              <TableHead className="text-center font-bold text-[10px] border-r border-border/40 w-12">Cant.</TableHead>
-              <TableHead className="text-center font-bold text-[10px] border-r border-border/30 w-12">Cucheta</TableHead>
-              <TableHead className="text-center font-bold text-[10px] border-r border-border/40 w-12">Cant.</TableHead>
-              <TableHead className="text-center font-bold text-[10px] border-r border-border/30 w-12">Frazada</TableHead>
-              <TableHead className="text-center font-bold text-[10px] border-r border-border/40 w-12">Cant.</TableHead>
+              <TableHead className="text-center font-bold text-xs border-r border-border/30 w-12">Colchón</TableHead>
+              <TableHead className="text-center font-bold text-xs border-r border-border/40 w-12">Cant.</TableHead>
+              <TableHead className="text-center font-bold text-xs border-r border-border/30 w-12">Cama</TableHead>
+              <TableHead className="text-center font-bold text-xs border-r border-border/40 w-12">Cant.</TableHead>
+              <TableHead className="text-center font-bold text-xs border-r border-border/30 w-12">Cucheta</TableHead>
+              <TableHead className="text-center font-bold text-xs border-r border-border/40 w-12">Cant.</TableHead>
+              <TableHead className="text-center font-bold text-xs border-r border-border/30 w-12">Frazada</TableHead>
+              <TableHead className="text-center font-bold text-xs border-r border-border/40 w-12">Cant.</TableHead>
             </TableRow>
           </TableHeader>
 
@@ -277,50 +279,50 @@ export function StormSheetTable({
                 <TableCell className="font-bold uppercase border-r border-border/40">{r.nombreApellido}</TableCell>
                 <TableCell className="font-mono border-r border-border/40">{r.dni || "-"}</TableCell>
                 <TableCell className="text-center border-r border-border/40">
-                  <Badge variant={r.grupoFamiliar ? "default" : "outline"} className="text-[10px]">
+                  <Badge variant={r.grupoFamiliar ? "default" : "outline"} className="text-xs">
                     {r.grupoFamiliar ? "Sí" : "No"}
                   </Badge>
                 </TableCell>
                 <TableCell className="text-center font-bold border-r border-border/40">{r.ninos || "0"}</TableCell>
                 <TableCell className="border-r border-border/40">
                   <div className="font-semibold">{r.domicilio}</div>
-                  {r.referencia && <div className="text-[10px] text-muted-foreground">Ref: {r.referencia}</div>}
-                  {r.barrio && <div className="text-[10px] text-primary font-bold">{r.barrio}</div>}
+                  {r.referencia && <div className="text-xs text-muted-foreground">Ref: {r.referencia}</div>}
+                  {r.barrio && <div className="text-xs text-primary font-bold">{r.barrio}</div>}
                 </TableCell>
 
                 {/* Elementos */}
                 <TableCell className="text-center border-r border-border/30">
-                  {r.requiereColchon ? <span className="font-bold text-amber-600">Sí</span> : <span className="text-muted-foreground">No</span>}
+                  {r.requiereColchon ? <span className="font-bold text-amber-700 dark:text-amber-400">Sí</span> : <span className="text-muted-foreground">No</span>}
                 </TableCell>
                 <TableCell className="text-center font-bold border-r border-border/40">{r.cantidadColchon || 0}</TableCell>
 
                 <TableCell className="text-center border-r border-border/30">
-                  {r.requiereCama ? <span className="font-bold text-amber-600">Sí</span> : <span className="text-muted-foreground">No</span>}
+                  {r.requiereCama ? <span className="font-bold text-amber-700 dark:text-amber-400">Sí</span> : <span className="text-muted-foreground">No</span>}
                 </TableCell>
                 <TableCell className="text-center font-bold border-r border-border/40">{r.cantidadCama || 0}</TableCell>
 
                 <TableCell className="text-center border-r border-border/30">
-                  {r.requiereCucheta ? <span className="font-bold text-amber-600">Sí</span> : <span className="text-muted-foreground">No</span>}
+                  {r.requiereCucheta ? <span className="font-bold text-amber-700 dark:text-amber-400">Sí</span> : <span className="text-muted-foreground">No</span>}
                 </TableCell>
                 <TableCell className="text-center font-bold border-r border-border/40">{r.cantidadCucheta || 0}</TableCell>
 
                 <TableCell className="text-center border-r border-border/30">
-                  {r.requiereFrazada ? <span className="font-bold text-amber-600">Sí</span> : <span className="text-muted-foreground">No</span>}
+                  {r.requiereFrazada ? <span className="font-bold text-amber-700 dark:text-amber-400">Sí</span> : <span className="text-muted-foreground">No</span>}
                 </TableCell>
                 <TableCell className="text-center font-bold border-r border-border/40">{r.cantidadFrazada || 0}</TableCell>
 
-                <TableCell className="border-r border-border/40 text-[11px]">
+                <TableCell className="border-r border-border/40 text-xs">
                   {Object.keys(r.otrosElementos || {}).length > 0 && (
-                    <div className="font-bold text-amber-600">
+                    <div className="font-bold text-amber-700 dark:text-amber-400">
                       Otros: {Object.entries(r.otrosElementos || {}).map(([id, n]) => extraQuantityText(id, n, extraNames)).join(", ")}
                     </div>
                   )}
                   {r.observaciones && <div>{r.observaciones}</div>}
                   {r.contacto && <div className="text-muted-foreground font-semibold">Tel: {r.contacto}</div>}
-                  <Badge variant="outline" className={`mt-1 text-[9px] font-bold ${
-                    r.prioridad === 'ALTA' ? 'bg-rose-500/10 text-rose-600 border-rose-500/30' : 'bg-amber-500/10 text-amber-600'
+                  <Badge variant="outline" className={`mt-1 text-xs font-bold ${
+                    r.prioridad === 'ALTA' ? 'bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/30' : 'bg-amber-500/10 text-amber-700 dark:text-amber-400'
                   }`}>
-                    {r.prioridad}
+                    {textoNormal(r.prioridad)}
                   </Badge>
                   <DeliveryBadge record={r} />
                 </TableCell>
@@ -331,7 +333,7 @@ export function StormSheetTable({
                       size="icon"
                       variant="ghost"
                       onClick={() => onOpenFicha(r)}
-                      title="Ver / Editar Ficha Tormenta"
+                      title="Ver / editar ficha tormenta"
                       className="h-8 w-8 rounded-lg hover:bg-primary/10 hover:text-primary"
                     >
                       <FileText className="h-4 w-4" />
@@ -368,8 +370,8 @@ export function StormSheetTable({
                 <Input
                   value={fastNombre}
                   onChange={(e) => handleSearchName(e.target.value)}
-                  placeholder="Tipec Nombre o DNI..."
-                  className="h-8 text-xs font-bold uppercase rounded-lg border-primary/40"
+                  placeholder="Escribí nombre o DNI…"
+                  className="h-8 text-xs font-bold rounded-lg border-primary/40"
                 />
                 {showSuggestions && suggestions.length > 0 && (
                   <div className="absolute left-0 bottom-10 z-50 w-72 bg-popover text-popover-foreground border border-border rounded-xl shadow-xl max-h-48 overflow-y-auto p-1">
@@ -396,6 +398,7 @@ export function StormSheetTable({
               </TableCell>
               <TableCell className="text-center">
                 <Checkbox
+                  aria-label="Grupo familiar"
                   checked={fastGrupoFam}
                   onCheckedChange={(c) => setFastGrupoFam(Boolean(c))}
                 />
@@ -403,6 +406,7 @@ export function StormSheetTable({
               <TableCell>
                 <Input
                   type="number"
+                  aria-label="Niños"
                   value={fastNinos}
                   onChange={(e) => setFastNinos(e.target.value)}
                   className="h-8 text-xs text-center rounded-lg"
@@ -413,11 +417,11 @@ export function StormSheetTable({
                 <Input
                   value={fastDomicilio}
                   onChange={(e) => setFastDomicilio(e.target.value)}
-                  placeholder="Domicilio / Referencia..."
+                  placeholder="Domicilio / referencia..."
                   className="h-8 text-xs rounded-lg"
                 />
                 <select
-                  aria-label="Barrio / Localidad"
+                  aria-label="Barrio / localidad"
                   value={fastBarrio}
                   onChange={(e) => setFastBarrio(e.target.value)}
                   className="mt-1 h-8 w-full rounded-lg border border-input bg-background px-2 text-xs"
@@ -431,31 +435,31 @@ export function StormSheetTable({
 
               {/* Checkbox y Cantidades Rápidas */}
               <TableCell className="text-center">
-                <Checkbox checked={fastReqColchon} onCheckedChange={(c) => { setFastReqColchon(Boolean(c)); if (c && fastCantColchon === 0) setFastCantColchon(1); }} />
+                <Checkbox aria-label="Pide colchones" checked={fastReqColchon} onCheckedChange={(c) => { setFastReqColchon(Boolean(c)); if (c && fastCantColchon === 0) setFastCantColchon(1); }} />
               </TableCell>
               <TableCell>
-                <Input type="number" value={fastCantColchon} onChange={(e) => setFastCantColchon(Number(e.target.value))} className="h-8 text-xs text-center p-0 rounded-lg" min="0" />
+                <Input type="number" aria-label="Cantidad de colchones" value={fastCantColchon} onChange={(e) => setFastCantColchon(Number(e.target.value))} className="h-8 text-xs text-center p-0 rounded-lg" min="0" />
               </TableCell>
 
               <TableCell className="text-center">
-                <Checkbox checked={fastReqCama} onCheckedChange={(c) => { setFastReqCama(Boolean(c)); if (c && fastCantCama === 0) setFastCantCama(1); }} />
+                <Checkbox aria-label="Pide camas" checked={fastReqCama} onCheckedChange={(c) => { setFastReqCama(Boolean(c)); if (c && fastCantCama === 0) setFastCantCama(1); }} />
               </TableCell>
               <TableCell>
-                <Input type="number" value={fastCantCama} onChange={(e) => setFastCantCama(Number(e.target.value))} className="h-8 text-xs text-center p-0 rounded-lg" min="0" />
+                <Input type="number" aria-label="Cantidad de camas" value={fastCantCama} onChange={(e) => setFastCantCama(Number(e.target.value))} className="h-8 text-xs text-center p-0 rounded-lg" min="0" />
               </TableCell>
 
               <TableCell className="text-center">
-                <Checkbox checked={fastReqCucheta} onCheckedChange={(c) => { setFastReqCucheta(Boolean(c)); if (c && fastCantCucheta === 0) setFastCantCucheta(1); }} />
+                <Checkbox aria-label="Pide cuchetas" checked={fastReqCucheta} onCheckedChange={(c) => { setFastReqCucheta(Boolean(c)); if (c && fastCantCucheta === 0) setFastCantCucheta(1); }} />
               </TableCell>
               <TableCell>
-                <Input type="number" value={fastCantCucheta} onChange={(e) => setFastCantCucheta(Number(e.target.value))} className="h-8 text-xs text-center p-0 rounded-lg" min="0" />
+                <Input type="number" aria-label="Cantidad de cuchetas" value={fastCantCucheta} onChange={(e) => setFastCantCucheta(Number(e.target.value))} className="h-8 text-xs text-center p-0 rounded-lg" min="0" />
               </TableCell>
 
               <TableCell className="text-center">
-                <Checkbox checked={fastReqFrazada} onCheckedChange={(c) => { setFastReqFrazada(Boolean(c)); if (c && fastCantFrazada === 0) setFastCantFrazada(1); }} />
+                <Checkbox aria-label="Pide frazadas" checked={fastReqFrazada} onCheckedChange={(c) => { setFastReqFrazada(Boolean(c)); if (c && fastCantFrazada === 0) setFastCantFrazada(1); }} />
               </TableCell>
               <TableCell>
-                <Input type="number" value={fastCantFrazada} onChange={(e) => setFastCantFrazada(Number(e.target.value))} className="h-8 text-xs text-center p-0 rounded-lg" min="0" />
+                <Input type="number" aria-label="Cantidad de frazadas" value={fastCantFrazada} onChange={(e) => setFastCantFrazada(Number(e.target.value))} className="h-8 text-xs text-center p-0 rounded-lg" min="0" />
               </TableCell>
 
               <TableCell>
@@ -496,7 +500,7 @@ export function DeliveryBadge({ record }: { record: StormVictimItem }) {
       ? "bg-sky-500/10 text-sky-700 border-sky-500/30"
       : "bg-muted text-muted-foreground";
   return (
-    <Badge variant="outline" className={`mt-1 ml-1 text-[9px] font-bold ${tone}`}>
+    <Badge variant="outline" className={`mt-1 ml-1 text-xs font-bold ${tone}`}>
       {DELIVERY_STATUS_LABEL[status]}
     </Badge>
   );

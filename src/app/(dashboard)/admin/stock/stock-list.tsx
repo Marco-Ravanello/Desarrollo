@@ -34,7 +34,7 @@ export function StockList({ supplies }: { supplies: any[] }) {
     const doc = new jsPDF() as any;
     doc.text("Reporte de Inventario - Municipio", 14, 15);
     doc.setFontSize(10);
-    doc.text(`Generado el: ${new Date().toLocaleString()}`, 14, 22);
+    doc.text(`Generado el: ${new Date().toLocaleString("es-AR")}`, 14, 22);
 
     const tableData = supplies.map(s => [
       s.name,
@@ -98,10 +98,10 @@ export function StockList({ supplies }: { supplies: any[] }) {
               <TableCell>
                 {item.stock <= item.minStock ? (
                   <Badge variant="destructive" className="flex items-center gap-1 w-fit">
-                    <AlertTriangle className="h-3 w-3" /> BAJO
+                    <AlertTriangle className="h-3 w-3" /> Bajo
                   </Badge>
                 ) : (
-                  <Badge variant="outline" className="text-emerald-600 border-emerald-600">OK</Badge>
+                  <Badge variant="outline" className="text-emerald-700 dark:text-emerald-400 border-emerald-600">OK</Badge>
                 )}
               </TableCell>
               <TableCell className="text-right">

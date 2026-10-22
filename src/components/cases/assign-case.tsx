@@ -52,7 +52,7 @@ export function AssignCaseControl({
   if (!canAssign) {
     if (!canTake || assigneeId) return null;
     return (
-      <Button size="sm" variant="outline" disabled={saving} onClick={() => save(currentUserId, "Quedaste a cargo del expediente.")} className="h-7 rounded-lg px-2 text-[11px] font-bold gap-1">
+      <Button size="sm" variant="outline" disabled={saving} onClick={() => save(currentUserId, "Quedaste a cargo del expediente.")} className="h-7 rounded-lg px-2 text-xs font-bold gap-1">
         {saving ? <Loader2 className="h-3 w-3 animate-spin" /> : <Hand className="h-3 w-3" />} Lo tomo yo
       </Button>
     );
@@ -70,7 +70,7 @@ export function AssignCaseControl({
       }}
     >
       <DialogTrigger asChild>
-        <Button size="sm" variant="outline" className="h-7 rounded-lg px-2 text-[11px] font-bold gap-1">
+        <Button size="sm" variant="outline" className="h-7 rounded-lg px-2 text-xs font-bold gap-1">
           <UserCog className="h-3 w-3" /> {assigneeId ? "Cambiar" : "Asignar"}
         </Button>
       </DialogTrigger>
@@ -115,7 +115,7 @@ export function AssignCaseControl({
               )}
             </select>
             {area.length === 0 && (
-              <p className="text-[11px] text-muted-foreground">No hay usuarios activos cargados en {areaLabel}.</p>
+              <p className="text-xs text-muted-foreground">No hay usuarios activos cargados en {areaLabel}.</p>
             )}
           </div>
           <DialogFooter>

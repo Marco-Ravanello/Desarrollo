@@ -123,7 +123,7 @@ export default async function DashboardPage({
       tone: stats.criticalCases > 0 ? "red" : "green",
       hint: stats.criticalCases > 0
         ? <span className="text-rose-600 dark:text-rose-400 font-medium">Requieren atención</span>
-        : <span className="text-emerald-600 dark:text-emerald-400 font-medium">Todo en orden</span>,
+        : <span className="text-emerald-700 dark:text-emerald-400 font-medium">Todo en orden</span>,
     },
     closedCases: {
       href: casesQuery({ status: "CERRADO" }),
@@ -148,7 +148,7 @@ export default async function DashboardPage({
       icon: CheckCircle2,
       tone: "orange",
       hint: highPriorityTasksCount > 0
-        ? <span className="text-orange-600 dark:text-orange-400 font-medium">{highPriorityTasksCount} de alta prioridad</span>
+        ? <span className="text-orange-700 dark:text-orange-400 font-medium">{highPriorityTasksCount} de alta prioridad</span>
         : "Ninguna de alta prioridad",
     },
   };
@@ -273,7 +273,7 @@ function CardHeaderRow({ icon: Icon, iconClass, title, href, linkLabel }: {
         <Icon className={`h-4 w-4 shrink-0 ${iconClass}`} />
         <h3 className="text-sm font-semibold text-foreground">{title}</h3>
       </div>
-      <Link href={href} className="text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-0.5 shrink-0">
+      <Link href={href} className="inline-flex items-center min-h-8 text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-0.5 shrink-0">
         {linkLabel} <ArrowUpRight className="h-3 w-3" />
       </Link>
     </div>
@@ -304,7 +304,7 @@ function AttentionCard({ items, viewAllHref }: { items: DashboardStats["attentio
               <span className={`w-2 h-2 rounded-full shrink-0 ${item.type === "case" ? "bg-rose-500" : "bg-amber-500"}`} />
               <div className="min-w-0">
                 <p className="text-xs font-medium text-foreground truncate group-hover:text-primary transition-colors">{item.title}</p>
-                <p className="text-[11px] text-muted-foreground truncate">{item.subtitle}</p>
+                <p className="text-xs text-muted-foreground truncate">{item.subtitle}</p>
               </div>
             </div>
             <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/50 group-hover:text-foreground group-hover:translate-x-0.5 transition-all shrink-0 ml-2" />
@@ -330,7 +330,7 @@ function BudgetCard({ stats, areaName }: { stats: DashboardStats; areaName?: str
           <h3 className="text-sm font-semibold text-foreground truncate">{areaName ? `Presupuesto del área` : "Presupuesto"}</h3>
         </div>
         <Link href="/admin/budget" className="flex items-center gap-1 shrink-0">
-          <span className={`text-[11px] font-medium rounded-full px-2 py-0.5 whitespace-nowrap ${hasBudget ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "bg-muted text-muted-foreground"}`}>
+          <span className={`text-xs font-medium rounded-full px-2 py-0.5 whitespace-nowrap ${hasBudget ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400" : "bg-muted text-muted-foreground"}`}>
             {hasBudget ? `${executionPercentage}% ejecutado` : "Sin cargar"}
           </span>
           <ChevronRight className="h-3 w-3 text-muted-foreground" />
@@ -340,15 +340,15 @@ function BudgetCard({ stats, areaName }: { stats: DashboardStats; areaName?: str
       <Link href="/admin/budget" className="grid grid-cols-3 gap-2 py-3.5 text-left border-b border-border/30 rounded-lg hover:bg-muted/20 transition-colors">
         <div>
           <p className="text-sm font-semibold text-foreground leading-tight">{money(executedAmount)}</p>
-          <p className="text-[11px] text-muted-foreground mt-0.5">Ejecutado</p>
+          <p className="text-xs text-muted-foreground mt-0.5">Ejecutado</p>
         </div>
         <div>
           <p className="text-sm font-semibold text-foreground leading-tight">{money(Math.max(0, totalBudget - executedAmount))}</p>
-          <p className="text-[11px] text-muted-foreground mt-0.5">Restante</p>
+          <p className="text-xs text-muted-foreground mt-0.5">Restante</p>
         </div>
         <div>
           <p className="text-sm font-semibold text-foreground leading-tight">{money(totalBudget)}</p>
-          <p className="text-[11px] text-muted-foreground mt-0.5">Total</p>
+          <p className="text-xs text-muted-foreground mt-0.5">Total</p>
         </div>
       </Link>
 
@@ -361,12 +361,12 @@ function BudgetCard({ stats, areaName }: { stats: DashboardStats; areaName?: str
 
       {hasBudget && stats.areaBudgetProgress.length > 0 && !areaName && (
         <div className="mt-4 space-y-3">
-          <span className="text-[11px] font-medium text-muted-foreground block">Distribución por área</span>
+          <span className="text-xs font-medium text-muted-foreground block">Distribución por área</span>
           {stats.areaBudgetProgress.map((a) => (
             <Link key={a.name} href="/admin/budget" className="block space-y-1 rounded-lg hover:bg-muted/20 transition-colors">
               <div className="flex justify-between items-center text-xs">
-                <span className="text-muted-foreground text-[11px]">{a.name}</span>
-                <span className="font-medium text-foreground text-[11px]">{a.percentage}%</span>
+                <span className="text-muted-foreground text-xs">{a.name}</span>
+                <span className="font-medium text-foreground text-xs">{a.percentage}%</span>
               </div>
               <div className="w-full h-1.5 rounded-full bg-muted/40 overflow-hidden">
                 <div className={`h-full rounded-full ${a.color}`} style={{ width: `${Math.min(100, Math.max(0, a.percentage))}%` }} />
@@ -385,7 +385,7 @@ function RecentCasesCard({ cases, viewAllHref }: { cases: DashboardStats["recent
       <CardHeaderRow icon={Users} iconClass="text-blue-600 dark:text-blue-400" title="Casos recientes" href={viewAllHref} linkLabel="Ver todos" />
       <div className="divide-y divide-border/20 mt-1">
         {cases.length === 0 && (
-          <p className="py-6 text-center text-[11px] text-muted-foreground">Todavía no hay casos cargados.</p>
+          <p className="py-6 text-center text-xs text-muted-foreground">Todavía no hay casos cargados.</p>
         )}
         {cases.map((c) => (
           <Link
@@ -395,16 +395,16 @@ function RecentCasesCard({ cases, viewAllHref }: { cases: DashboardStats["recent
           >
             <div className="min-w-0">
               <p className="text-xs font-medium text-foreground truncate group-hover:text-primary transition-colors">{c.citizenName}</p>
-              <p className="text-[11px] text-muted-foreground truncate">
+              <p className="text-xs text-muted-foreground truncate">
                 <span className="font-mono">{c.shortId}</span> · {c.type}
               </p>
             </div>
-            <span className={`inline-block shrink-0 px-2 py-0.5 rounded-full text-[10px] font-medium ${
+            <span className={`inline-block shrink-0 px-2 py-0.5 rounded-full text-xs font-medium ${
               c.statusVariant === "pending"
-                ? "bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                ? "bg-amber-500/10 text-amber-700 dark:text-amber-400"
                 : c.statusVariant === "in_progress"
                 ? "bg-blue-500/10 text-blue-600 dark:text-blue-400"
-                : "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                : "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
             }`}>
               {c.status}
             </span>
@@ -442,11 +442,11 @@ function MyCasesCard({ total, cases }: { total: number; cases: MyAssignedCase[] 
           >
             <div className="min-w-0">
               <p className="text-xs font-medium text-foreground truncate group-hover:text-primary transition-colors">{c.titular || c.title}</p>
-              <p className="text-[11px] text-muted-foreground truncate">{c.titular ? `${c.title} · ${c.status}` : c.status}</p>
+              <p className="text-xs text-muted-foreground truncate">{c.titular ? `${c.title} · ${c.status}` : c.status}</p>
             </div>
             <span
-              className={`inline-block shrink-0 px-2 py-0.5 rounded-full text-[10px] font-medium whitespace-nowrap ${
-                c.stale ? "bg-amber-500/15 text-amber-700 dark:text-amber-300" : "bg-muted text-muted-foreground"
+              className={`inline-block shrink-0 px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap ${
+                c.stale ? "bg-amber-500/15 text-amber-800 dark:text-amber-300" : "bg-muted text-muted-foreground"
               }`}
               title="Desde la última intervención o, si no tiene, desde que se abrió"
             >
@@ -456,7 +456,7 @@ function MyCasesCard({ total, cases }: { total: number; cases: MyAssignedCase[] 
         ))}
       </div>
       {total > cases.length && (
-        <p className="pt-2 text-[11px] text-muted-foreground">
+        <p className="pt-2 text-xs text-muted-foreground">
           Se muestran los {cases.length} que llevan más tiempo sin movimiento.
         </p>
       )}
@@ -468,10 +468,10 @@ function TasksCard({ tasks }: { tasks: { id: string; title: string; priority: st
   const upcoming = tasks.slice(0, 5);
   return (
     <Card className="rounded-2xl border border-border/60 bg-card p-5 shadow-sm h-full">
-      <CardHeaderRow icon={Calendar} iconClass="text-amber-600 dark:text-amber-400" title="Mis próximas tareas" href="/tasks" linkLabel="Ver todas" />
+      <CardHeaderRow icon={Calendar} iconClass="text-amber-700 dark:text-amber-400" title="Mis próximas tareas" href="/tasks" linkLabel="Ver todas" />
       <div className="divide-y divide-border/20 mt-1">
         {upcoming.length === 0 && (
-          <p className="py-6 text-center text-[11px] text-muted-foreground">No tenés tareas pendientes.</p>
+          <p className="py-6 text-center text-xs text-muted-foreground">No tenés tareas pendientes.</p>
         )}
         {upcoming.map((t) => {
           const priority = t.priority || "MEDIA";
@@ -484,16 +484,16 @@ function TasksCard({ tasks }: { tasks: { id: string; title: string; priority: st
             >
               <p className="text-xs font-medium text-foreground truncate group-hover:text-primary transition-colors">{t.title}</p>
               <div className="flex items-center gap-2 shrink-0">
-                <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-medium ${
+                <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${
                   high
-                    ? "bg-rose-500/10 text-rose-600 dark:text-rose-400"
+                    ? "bg-rose-500/10 text-rose-700 dark:text-rose-400"
                     : priority === "MEDIA"
-                    ? "bg-amber-500/10 text-amber-600 dark:text-amber-400"
-                    : "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                    ? "bg-amber-500/10 text-amber-700 dark:text-amber-400"
+                    : "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
                 }`}>
                   {priority}
                 </span>
-                <span className="text-muted-foreground font-mono text-[11px]">
+                <span className="text-muted-foreground font-mono text-xs">
                   {t.dueDate ? new Date(t.dueDate).toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit" }) : "S/D"}
                 </span>
               </div>
@@ -508,10 +508,10 @@ function TasksCard({ tasks }: { tasks: { id: string; title: string; priority: st
 function VehiclesCard({ vehicles }: { vehicles: DashboardStats["vehiclesList"] }) {
   return (
     <Card className="rounded-2xl border border-border/60 bg-card p-5 shadow-sm h-full">
-      <CardHeaderRow icon={Car} iconClass="text-emerald-600 dark:text-emerald-400" title="Vehículos y logística" href="/admin/vehicles" linkLabel="Ver flota" />
+      <CardHeaderRow icon={Car} iconClass="text-emerald-700 dark:text-emerald-400" title="Vehículos y logística" href="/admin/vehicles" linkLabel="Ver flota" />
       <div className="divide-y divide-border/20 mt-1">
         {vehicles.length === 0 && (
-          <p className="py-6 text-center text-[11px] text-muted-foreground">No hay vehículos cargados en la flota.</p>
+          <p className="py-6 text-center text-xs text-muted-foreground">No hay vehículos cargados en la flota.</p>
         )}
         {vehicles.map((v) => (
           <Link
@@ -521,13 +521,13 @@ function VehiclesCard({ vehicles }: { vehicles: DashboardStats["vehiclesList"] }
           >
             <div className="min-w-0">
               <p className="text-xs font-medium text-foreground truncate group-hover:text-primary transition-colors">{v.name}</p>
-              <p className="text-[11px] text-muted-foreground font-mono">{v.nextExpiry}</p>
+              <p className="text-xs text-muted-foreground font-mono">{v.nextExpiry}</p>
             </div>
-            <span className={`inline-block shrink-0 px-2 py-0.5 rounded-full text-[10px] font-medium ${
+            <span className={`inline-block shrink-0 px-2 py-0.5 rounded-full text-xs font-medium ${
               v.statusVariant === "active"
-                ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
                 : v.statusVariant === "maintenance"
-                ? "bg-sky-500/10 text-sky-600 dark:text-sky-400"
+                ? "bg-sky-500/10 text-sky-700 dark:text-sky-400"
                 : "bg-slate-500/10 text-slate-600 dark:text-slate-400"
             }`}>
               {v.status}

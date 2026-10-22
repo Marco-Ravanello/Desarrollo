@@ -32,7 +32,7 @@ export function CreateVehicleForm() {
   return (
     <Card className="max-w-2xl mx-auto shadow-xl border-t-4 border-t-primary rounded-2xl bg-card text-card-foreground">
       <CardHeader>
-        <CardTitle className="text-2xl text-foreground font-heading">Registrar Nueva Unidad</CardTitle>
+        <CardTitle className="text-2xl text-foreground font-heading">Registrar nueva unidad</CardTitle>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -40,11 +40,11 @@ export function CreateVehicleForm() {
             <div className="space-y-4">
               <h3 className="font-semibold text-foreground flex items-center gap-2">
                 <div className="w-1 h-4 bg-[#f5a623] rounded-full" />
-                Información Básica
+                Información básica
               </h3>
               <div className="space-y-2">
-                <Label htmlFor="plate">Patente / Dominio</Label>
-                <Input id="plate" name="plate" placeholder="Ej: AA123BB" required className="uppercase font-mono text-lg" />
+                <Label htmlFor="plate">Patente / dominio</Label>
+                <Input id="plate" name="plate" placeholder="Ej: AA123BB" required className="font-mono text-lg" />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="brand">Marca</Label>
@@ -59,7 +59,7 @@ export function CreateVehicleForm() {
             <div className="space-y-4">
               <h3 className="font-semibold text-foreground flex items-center gap-2">
                 <div className="w-1 h-4 bg-[#f5a623] rounded-full" />
-                Control y Combustible
+                Control y combustible
               </h3>
               <div className="space-y-2">
                 <Label htmlFor="fuelCardNumber">Tarjeta YPF en Ruta</Label>
@@ -70,7 +70,7 @@ export function CreateVehicleForm() {
                 <Input id="fuelMonthlyLimit" name="fuelMonthlyLimit" type="number" placeholder="0.00" defaultValue="0" />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="lastServiceKm">Kilometraje Último Service</Label>
+                <Label htmlFor="lastServiceKm">Kilometraje último service</Label>
                 <Input id="lastServiceKm" name="lastServiceKm" type="number" placeholder="0" defaultValue="0" />
               </div>
             </div>
@@ -81,7 +81,7 @@ export function CreateVehicleForm() {
           <div className="space-y-4">
             <h3 className="font-semibold text-foreground flex items-center gap-2">
               <div className="w-1 h-4 bg-[#f5a623] rounded-full" />
-              Vencimientos de Documentación
+              Vencimientos de documentación
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
@@ -89,7 +89,7 @@ export function CreateVehicleForm() {
                 <Input id="vtvExpiry" name="vtvExpiry" type="date" />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="insuranceExpiry">Vencimiento Seguro</Label>
+                <Label htmlFor="insuranceExpiry">Vencimiento seguro</Label>
                 <Input id="insuranceExpiry" name="insuranceExpiry" type="date" />
               </div>
             </div>

@@ -30,6 +30,7 @@ import { EmptyMessage } from "@/components/ui/empty-message";
 
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
+import { getAreaShortName } from "@/lib/area-theme";
 
 export const metadata = { title: "Recursos Humanos" };
 
@@ -121,21 +122,21 @@ export default async function HRPage({
               data={exportData}
               columns={exportColumns}
               filename="nomina_personal_municipal"
-              title="Nómina Oficial de Agentes Municipales"
+              title="Nómina oficial de agentes municipales"
               subtitle="RECURSOS HUMANOS Y LIQUIDACIÓN DE SUELDOS"
-              label="Exportar Nómina"
+              label="Exportar nómina"
               orientation="landscape"
            />
            <Sheet>
               <SheetTrigger asChild>
                 <Button className="rounded-2xl h-10 px-5 gap-2 bg-primary hover:bg-primary/90 text-primary-foreground font-bold shadow-md transition-all">
-                    <Plus className="h-4 w-4" /> Nuevo Agente
+                    <Plus className="h-4 w-4" /> Nuevo agente
                 </Button>
               </SheetTrigger>
               <SheetContent side="right" className="sm:max-w-xl w-full border-l border-border bg-background rounded-l-[2rem] shadow-2xl p-8 overflow-y-auto">
                 <SheetHeader className="mb-8">
-                  <SheetTitle className="text-2xl font-bold">Registrar Nuevo Agente</SheetTitle>
-                  <SheetDescription className="text-base font-medium">Complete los datos para crear el legajo municipal.</SheetDescription>
+                  <SheetTitle className="text-2xl font-bold">Registrar nuevo agente</SheetTitle>
+                  <SheetDescription className="text-base font-medium">Completá los datos para crear el legajo.</SheetDescription>
                 </SheetHeader>
                 <CreateHRForm areas={sanitizedAreas} />
               </SheetContent>
@@ -160,15 +161,15 @@ export default async function HRPage({
       {/* Area Budget Summary - New Section */}
       <Card className="rounded-2xl border border-border/60 shadow-xs bg-card text-card-foreground">
         <CardContent className="p-6">
-            <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground mb-6 flex items-center gap-2">
-                <PieChart className="h-4 w-4" /> Distribución Salarial por Área
+            <h3 className="text-sm font-bold text-muted-foreground mb-6 flex items-center gap-2">
+                <PieChart className="h-4 w-4" /> Distribución salarial por área
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
                 {sanitizedAreas.map(area => {
                     const areaBudget = stats.budgetByArea[area.id] || 0;
                     return (
                         <div key={area.id} className="bg-muted/30 p-4 rounded-2xl border border-border/40 shadow-xs">
-                            <p className="text-[9px] font-bold text-muted-foreground uppercase truncate mb-1" title={area.name}>{area.name}</p>
+                            <p className="text-xs font-semibold text-muted-foreground truncate mb-1" title={area.name}>{getAreaShortName(area.name)}</p>
                             <p className="text-sm font-bold text-card-foreground">${areaBudget.toLocaleString('es-AR')}</p>
                         </div>
                     )
@@ -184,7 +185,7 @@ export default async function HRPage({
           <TableHeader className="bg-muted/50">
             <TableRow className="hover:bg-transparent border-none">
               <TableHead className="font-bold py-5 px-6">Agente</TableHead>
-              <TableHead className="font-bold">Área / Cargo</TableHead>
+              <TableHead className="font-bold">Área / cargo</TableHead>
               <TableHead className="font-bold">Ingreso</TableHead>
               <TableHead className="font-bold">Estado</TableHead>
               <TableHead className="font-bold text-right pr-8">Acciones</TableHead>
@@ -220,7 +221,7 @@ export default async function HRPage({
                       </Avatar>
                       <div>
                         <p className="font-bold text-foreground group-hover:text-primary transition-colors">{r.firstName} {r.lastName}</p>
-                        <p className="text-[10px] font-bold text-muted-foreground tracking-widest flex items-center gap-2">
+                        <p className="text-xs font-bold text-muted-foreground tracking-widest flex items-center gap-2">
                            {r.fileNumber || 'S/L'} <span className="text-border">•</span> DNI {r.dni}
                         </p>
                       </div>
@@ -229,7 +230,7 @@ export default async function HRPage({
                   <TableCell>
                     <div className="space-y-0.5">
                       <p className="font-bold text-sm text-foreground">{r.area?.name || "Sin Área"}</p>
-                      <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-tighter">{r.position || "Sin Cargo"}</p>
+                      <p className="text-xs text-muted-foreground font-medium tracking-tighter">{r.position || "Sin Cargo"}</p>
                     </div>
                   </TableCell>
                   <TableCell>
@@ -239,11 +240,11 @@ export default async function HRPage({
                   </TableCell>
                   <TableCell>
                     <div className="flex flex-col gap-1">
-                      <Badge className={`rounded-full px-3 py-0.5 text-[10px] font-bold tracking-widest border-none w-fit ${
-                        r.status === 'ACTIVO' ? 'bg-emerald-500/10 text-emerald-600' :
-                        r.status === 'LICENCIA' ? 'bg-amber-500/10 text-amber-600' :
+                      <Badge className={`rounded-full px-3 py-0.5 text-xs font-bold tracking-widest border-none w-fit ${
+                        r.status === 'ACTIVO' ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400' :
+                        r.status === 'LICENCIA' ? 'bg-amber-500/10 text-amber-700 dark:text-amber-400' :
                         r.status === 'VACACIONES' ? 'bg-blue-500/10 text-blue-600' :
-                        'bg-rose-500/10 text-rose-600'
+                        'bg-rose-500/10 text-rose-700 dark:text-rose-400'
                       }`}>
                         <div className={`w-1.5 h-1.5 rounded-full mr-1.5 ${
                           r.status === 'ACTIVO' ? 'bg-emerald-600' :
@@ -254,7 +255,7 @@ export default async function HRPage({
                         {r.status || 'ACTIVO'}
                       </Badge>
                       {r.statusUntil && (
-                        <span className="text-[9px] font-bold text-muted-foreground flex items-center gap-0.5 italic">
+                        <span className="text-xs font-bold text-muted-foreground flex items-center gap-0.5 italic">
                            <Calendar className="h-2.5 w-2.5" /> Hasta {new Date(r.statusUntil).toLocaleDateString('es-AR')}
                         </span>
                       )}

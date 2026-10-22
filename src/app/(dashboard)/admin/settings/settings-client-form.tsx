@@ -49,7 +49,7 @@ export function MunicipalSettingsClient({
       const base64 = event.target?.result as string;
       setSettings((prev) => ({ ...prev, customLogoUrl: base64 }));
       toast.success("Logo cargado con éxito", {
-        description: "Recuerde hacer clic en 'Guardar Cambios' para aplicarlo en todo el sistema."
+        description: "Acordate de tocar \"Guardar cambios\" para que se aplique en toda la app."
       });
     };
     reader.readAsDataURL(file);
@@ -118,12 +118,12 @@ export function MunicipalSettingsClient({
             disabled={loading}
             className="rounded-2xl h-11 px-4 text-xs font-bold border-border/60"
           >
-            <RotateCcw className="mr-2 h-4 w-4" /> Restaurar Predeterminados
+            <RotateCcw className="mr-2 h-4 w-4" /> Restaurar predeterminados
           </Button>
           <Button
             onClick={handleSave}
             disabled={loading}
-            className="rounded-2xl h-11 px-5 font-bold text-xs uppercase tracking-wider bg-primary text-primary-foreground shadow-lg shadow-primary/20"
+            className="rounded-2xl h-11 px-5 font-bold text-xs bg-primary text-primary-foreground shadow-lg shadow-primary/20"
           >
             <Save className="mr-2 h-4 w-4" /> {loading ? "Guardando..." : "Guardar Cambios"}
           </Button>
@@ -141,7 +141,7 @@ export function MunicipalSettingsClient({
           }`}
         >
           <Building2 className="h-4 w-4" />
-          <span>Identidad y Logotipo</span>
+          <span>Identidad y logotipo</span>
         </button>
         <button
           onClick={() => setActiveTab("contact")}
@@ -152,7 +152,7 @@ export function MunicipalSettingsClient({
           }`}
         >
           <Phone className="h-4 w-4" />
-          <span>Contacto y Enlaces</span>
+          <span>Contacto y enlaces</span>
         </button>
         <button
           onClick={() => setActiveTab("preview")}
@@ -163,7 +163,7 @@ export function MunicipalSettingsClient({
           }`}
         >
           <FileText className="h-4 w-4" />
-          <span>Previsualización Membrete</span>
+          <span>Previsualización membrete</span>
         </button>
         <button
           onClick={() => setActiveTab("security")}
@@ -174,7 +174,7 @@ export function MunicipalSettingsClient({
           }`}
         >
           <Shield className="h-4 w-4" />
-          <span>Seguridad y Servidor</span>
+          <span>Seguridad y servidor</span>
         </button>
       </div>
 
@@ -185,15 +185,15 @@ export function MunicipalSettingsClient({
               <div className="flex items-start justify-between">
                 <div>
                   <h3 className="text-base font-bold text-foreground flex items-center gap-2">
-                    <ImageIcon className="h-4 w-4 text-primary" /> Escudo o Logotipo Municipal
+                    <ImageIcon className="h-4 w-4 text-primary" /> Escudo o logotipo municipal
                   </h3>
                   <p className="text-xs text-muted-foreground font-medium mt-0.5">
-                    Suba el escudo o logotipo oficial de Tres de Febrero (PNG transparente, JPG o SVG).
+                    Subí el escudo o logo oficial de Tres de Febrero (PNG transparente, JPG o SVG).
                   </p>
                 </div>
                 {settings.customLogoUrl && (
-                  <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 text-[10px] font-bold">
-                    Logo Personalizado Activo
+                  <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 text-xs font-bold">
+                    Logo personalizado activo
                   </Badge>
                 )}
               </div>
@@ -225,7 +225,7 @@ export function MunicipalSettingsClient({
                       onClick={() => fileInputRef.current?.click()}
                       className="rounded-xl h-10 px-4 text-xs font-bold bg-primary text-primary-foreground shadow-sm hover:scale-102 transition-transform"
                     >
-                      <Upload className="mr-2 h-4 w-4" /> Subir Imagen de Logo
+                      <Upload className="mr-2 h-4 w-4" /> Subir imagen de logo
                     </Button>
 
                     {settings.customLogoUrl && (
@@ -235,13 +235,13 @@ export function MunicipalSettingsClient({
                         onClick={handleRemoveLogo}
                         className="rounded-xl h-10 px-3 text-xs font-bold text-destructive hover:bg-destructive/10 border-border/60"
                       >
-                        <Trash2 className="mr-1.5 h-3.5 w-3.5" /> Quitar Logo
+                        <Trash2 className="mr-1.5 h-3.5 w-3.5" /> Quitar logo
                       </Button>
                     )}
                   </div>
 
                   <div className="space-y-1">
-                    <Label className="text-[11px] font-bold text-muted-foreground flex items-center gap-1 justify-center sm:justify-start">
+                    <Label className="text-xs font-bold text-muted-foreground flex items-center gap-1 justify-center sm:justify-start">
                       <LinkIcon className="h-3 w-3" /> O pegar enlace directo de la imagen (URL):
                     </Label>
                     <Input
@@ -257,7 +257,7 @@ export function MunicipalSettingsClient({
 
             <Card className="rounded-2xl border-border/60 shadow-sm bg-card p-6 space-y-6">
               <div>
-                <h3 className="text-base font-bold text-foreground">Datos del Distrito y Dependencia</h3>
+                <h3 className="text-base font-bold text-foreground">Datos del distrito y dependencia</h3>
                 <p className="text-xs text-muted-foreground font-medium">
                   Esta información figurará en el encabezado oficial, login y documentos PDF descargables.
                 </p>
@@ -266,7 +266,7 @@ export function MunicipalSettingsClient({
               <div className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-bold text-foreground">Nombre del Municipio / Distrito</Label>
+                    <Label className="text-xs font-bold text-foreground">Nombre del municipio / distrito</Label>
                     <Input
                       value={settings.municipalityName}
                       onChange={(e) => setSettings({ ...settings, municipalityName: e.target.value })}
@@ -275,7 +275,7 @@ export function MunicipalSettingsClient({
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-bold text-foreground">Provincia / Jurisdicción</Label>
+                    <Label className="text-xs font-bold text-foreground">Provincia / jurisdicción</Label>
                     <Input
                       value={settings.provinceName}
                       onChange={(e) => setSettings({ ...settings, provinceName: e.target.value })}
@@ -287,7 +287,7 @@ export function MunicipalSettingsClient({
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-bold text-foreground">Secretaría a Cargo</Label>
+                    <Label className="text-xs font-bold text-foreground">Secretaría a cargo</Label>
                     <Input
                       value={settings.secretariatName}
                       onChange={(e) => setSettings({ ...settings, secretariatName: e.target.value })}
@@ -308,7 +308,7 @@ export function MunicipalSettingsClient({
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-border/40">
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-bold text-foreground">Intendente / Jefe Comunal</Label>
+                    <Label className="text-xs font-bold text-foreground">Intendente / jefe comunal</Label>
                     <Input
                       value={settings.mayorName}
                       onChange={(e) => setSettings({ ...settings, mayorName: e.target.value })}
@@ -317,7 +317,7 @@ export function MunicipalSettingsClient({
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-bold text-foreground">Secretario / Autoridad de Firma</Label>
+                    <Label className="text-xs font-bold text-foreground">Secretario / autoridad de firma</Label>
                     <Input
                       value={settings.secretaryName}
                       onChange={(e) => setSettings({ ...settings, secretaryName: e.target.value })}
@@ -331,7 +331,7 @@ export function MunicipalSettingsClient({
           </div>
 
           <div className="space-y-4">
-            <h3 className="text-sm font-bold text-foreground uppercase tracking-wider">Vista Previa Institucional</h3>
+            <h3 className="text-sm font-bold text-foreground">Vista previa institucional</h3>
             <Card className="rounded-2xl border-border/60 shadow-sm bg-muted/20 p-6 space-y-4 text-center sticky top-24">
               <div className="mx-auto p-3 bg-card rounded-2xl border border-border/80 w-24 h-24 flex items-center justify-center shadow-sm">
                 {settings.customLogoUrl ? (
@@ -345,7 +345,7 @@ export function MunicipalSettingsClient({
                 )}
               </div>
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary">
+                <p className="text-xs font-bold text-primary">
                   {settings.provinceName}
                 </p>
                 <h4 className="text-lg font-bold text-foreground tracking-tight mt-1">
@@ -374,7 +374,7 @@ export function MunicipalSettingsClient({
       {activeTab === "contact" && (
         <Card className="rounded-2xl border-border/60 shadow-sm bg-card p-6 space-y-6 max-w-3xl animate-in fade-in duration-300">
           <div>
-            <h3 className="text-base font-bold text-foreground">Canales Oficiales y Mesa de Entradas</h3>
+            <h3 className="text-base font-bold text-foreground">Canales oficiales y Mesa de Entradas</h3>
             <p className="text-xs text-muted-foreground font-medium">
               Teléfonos de contacto y sedes oficiales de la Municipalidad de Tres de Febrero.
             </p>
@@ -384,7 +384,7 @@ export function MunicipalSettingsClient({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label className="text-xs font-bold text-foreground flex items-center gap-1.5">
-                  <Phone className="h-3.5 w-3.5 text-primary" /> Teléfono Conmutador Municipal
+                  <Phone className="h-3.5 w-3.5 text-primary" /> Teléfono conmutador municipal
                 </Label>
                 <Input
                   value={settings.mainPhone}
@@ -395,7 +395,7 @@ export function MunicipalSettingsClient({
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs font-bold text-foreground flex items-center gap-1.5">
-                  <Shield className="h-3.5 w-3.5 text-rose-500" /> Línea de Emergencias / Defensa Civil
+                  <Shield className="h-3.5 w-3.5 text-rose-500" /> Línea de emergencias / Defensa Civil
                 </Label>
                 <Input
                   value={settings.emergencyPhone}
@@ -409,7 +409,7 @@ export function MunicipalSettingsClient({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label className="text-xs font-bold text-foreground flex items-center gap-1.5">
-                  <Globe className="h-3.5 w-3.5 text-blue-500" /> Correo Electrónico Institucional
+                  <Globe className="h-3.5 w-3.5 text-blue-500" /> Correo electrónico institucional
                 </Label>
                 <Input
                   value={settings.officialEmail}
@@ -420,7 +420,7 @@ export function MunicipalSettingsClient({
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs font-bold text-foreground flex items-center gap-1.5">
-                  <Globe className="h-3.5 w-3.5 text-emerald-500" /> Portal Web Oficial
+                  <Globe className="h-3.5 w-3.5 text-emerald-500" /> Portal web oficial
                 </Label>
                 <Input
                   value={settings.officialWebsite}
@@ -433,7 +433,7 @@ export function MunicipalSettingsClient({
 
             <div className="space-y-1.5">
               <Label className="text-xs font-bold text-foreground flex items-center gap-1.5">
-                <MapPin className="h-3.5 w-3.5 text-primary" /> Domicilio del Palacio Municipal / Sede Central
+                <MapPin className="h-3.5 w-3.5 text-primary" /> Domicilio del palacio municipal / sede central
               </Label>
               <Input
                 value={settings.headquartersAddress}
@@ -455,7 +455,7 @@ export function MunicipalSettingsClient({
                   rel="noopener noreferrer"
                 >
                   <MapPin className="h-4 w-4 text-primary" />
-                  <span>Ver Sede Central en Google Maps</span>
+                  <span>Ver sede central en Google Maps</span>
                   <ExternalLink className="h-3.5 w-3.5 text-muted-foreground" />
                 </a>
               </Button>
@@ -469,13 +469,13 @@ export function MunicipalSettingsClient({
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border/40 pb-4">
             <div>
               <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
-                <FileText className="h-5 w-5 text-primary" /> Previsualización de Membrete Oficial
+                <FileText className="h-5 w-5 text-primary" /> Previsualización de membrete oficial
               </h3>
               <p className="text-xs text-muted-foreground mt-0.5">
                 Simulación en tiempo real de los encabezados e impresiones institucionales A4 de Tres de Febrero.
               </p>
             </div>
-            <PrintButton label="Probar Impresión Oficial" />
+            <PrintButton label="Probar impresión oficial" />
           </div>
 
           <div className="p-6 sm:p-8 rounded-2xl border border-border/60 bg-background shadow-inner space-y-6 relative overflow-hidden">
@@ -483,8 +483,8 @@ export function MunicipalSettingsClient({
 
             <div className="space-y-4 py-4 text-xs leading-relaxed text-foreground/90">
               <div className="p-4 rounded-2xl bg-muted/30 border border-border/40 space-y-2">
-                <p className="font-bold uppercase tracking-wider text-[11px] text-primary">
-                  Documento de Prueba de Identidad Municipal
+                <p className="font-bold text-xs text-primary">
+                  Documento de prueba de identidad municipal
                 </p>
                 <p>
                   El presente formato membretado aplica a constancias de subsidios, ordenes de compra, fichas sociales unificadas e informes técnicos emitidos desde la plataforma <b>MuniGestión</b>.
@@ -493,11 +493,11 @@ export function MunicipalSettingsClient({
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs pt-2">
                 <div className="p-3 rounded-xl bg-card border border-border/60 space-y-1">
-                  <span className="text-[10px] uppercase font-bold text-muted-foreground">Intendente Municipal</span>
+                  <span className="text-xs font-bold text-muted-foreground">Intendente municipal</span>
                   <p className="font-bold text-foreground">{settings.mayorName}</p>
                 </div>
                 <div className="p-3 rounded-xl bg-card border border-border/60 space-y-1">
-                  <span className="text-[10px] uppercase font-bold text-muted-foreground">Secretaría General</span>
+                  <span className="text-xs font-bold text-muted-foreground">Secretaría general</span>
                   <p className="font-bold text-foreground">{settings.secretaryName}</p>
                 </div>
               </div>
@@ -506,13 +506,13 @@ export function MunicipalSettingsClient({
             <div className="pt-6 border-t border-border/60 grid grid-cols-2 gap-8 text-center text-xs">
               <div className="space-y-1">
                 <div className="border-t border-foreground/40 w-36 mx-auto mb-1" />
-                <p className="font-bold uppercase text-[11px]">Firma Autorizada</p>
-                <p className="text-[10px] text-muted-foreground">{settings.directionName}</p>
+                <p className="font-bold text-xs">Firma autorizada</p>
+                <p className="text-xs text-muted-foreground">{settings.directionName}</p>
               </div>
               <div className="space-y-1">
                 <div className="border-t border-foreground/40 w-36 mx-auto mb-1" />
-                <p className="font-bold uppercase text-[11px]">Sello de Mesa de Entradas</p>
-                <p className="text-[10px] text-muted-foreground">{settings.municipalityName}</p>
+                <p className="font-bold text-xs">Sello de Mesa de Entradas</p>
+                <p className="text-xs text-muted-foreground">{settings.municipalityName}</p>
               </div>
             </div>
           </div>
@@ -523,51 +523,51 @@ export function MunicipalSettingsClient({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in duration-300">
           <Card className="rounded-2xl border-border/60 shadow-sm bg-card p-6 space-y-4">
             <h3 className="text-base font-bold text-foreground flex items-center gap-2">
-              <Database className="h-5 w-5 text-emerald-500" /> Estado del Servidor y Base de Datos
+              <Database className="h-5 w-5 text-emerald-500" /> Estado del servidor y base de datos
             </h3>
             <div className="space-y-3 text-xs">
               <div className="flex justify-between items-center p-3 rounded-2xl bg-muted/30">
                 <div>
-                  <p className="font-bold text-foreground">Motor de Base de Datos</p>
-                  <p className="text-[11px] text-muted-foreground">PostgreSQL Cloud (Neon Serverless)</p>
+                  <p className="font-bold text-foreground">Motor de base de datos</p>
+                  <p className="text-xs text-muted-foreground">PostgreSQL Cloud (Neon Serverless)</p>
                 </div>
-                <Badge className="bg-emerald-500/15 text-emerald-500 font-bold border-none">Conectado (Online)</Badge>
+                <Badge className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 font-bold border-none">Conectado (Online)</Badge>
               </div>
 
               <div className="flex justify-between items-center p-3 rounded-2xl bg-muted/30">
                 <div>
-                  <p className="font-bold text-foreground">Hospedaje de Aplicación</p>
-                  <p className="text-[11px] text-muted-foreground">Vercel Edge Network (iad1)</p>
+                  <p className="font-bold text-foreground">Hospedaje de aplicación</p>
+                  <p className="text-xs text-muted-foreground">Vercel Edge Network (iad1)</p>
                 </div>
-                <Badge className="bg-blue-500/10 text-blue-500 font-bold border-none">Activo (SSL HTTPS)</Badge>
+                <Badge className="bg-blue-500/10 text-blue-700 dark:text-blue-400 font-bold border-none">Activo (SSL HTTPS)</Badge>
               </div>
 
               <div className="flex justify-between items-center p-3 rounded-2xl bg-muted/30">
                 <div>
-                  <p className="font-bold text-foreground">Motor de Inteligencia Artificial</p>
-                  <p className="text-[11px] text-muted-foreground">Google Gemini con RAG Local</p>
+                  <p className="font-bold text-foreground">Motor de inteligencia artificial</p>
+                  <p className="text-xs text-muted-foreground">Google Gemini con RAG local</p>
                 </div>
-                <Badge className="bg-purple-500/10 text-purple-500 font-bold border-none">Operativo</Badge>
+                <Badge className="bg-purple-500/10 text-purple-700 dark:text-purple-400 font-bold border-none">Operativo</Badge>
               </div>
             </div>
           </Card>
 
           <Card className="rounded-2xl border-border/60 shadow-sm bg-card p-6 space-y-4">
             <h3 className="text-base font-bold text-foreground flex items-center gap-2">
-              <Shield className="h-5 w-5 text-primary" /> Políticas de Privacidad y Parámetros
+              <Shield className="h-5 w-5 text-primary" /> Políticas de privacidad y parámetros
             </h3>
             <div className="space-y-3">
               <div className="flex items-center justify-between p-3 rounded-2xl bg-muted/30">
                 <div>
                   <p className="text-xs font-bold text-foreground">Anonimización PII de IA</p>
-                  <p className="text-[11px] text-muted-foreground">Enmascara DNI y nombres antes de enviar a la nube</p>
+                  <p className="text-xs text-muted-foreground">Enmascara DNI y nombres antes de enviar a la nube</p>
                 </div>
                 <button
                   type="button"
                   onClick={() => setSettings((prev) => ({ ...prev, aiAnonymization: !prev.aiAnonymization }))}
                   className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-colors ${
                     settings.aiAnonymization
-                      ? "bg-emerald-500/15 text-emerald-500 border border-emerald-500/30"
+                      ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30"
                       : "bg-muted text-muted-foreground border border-border/60"
                   }`}
                 >
@@ -578,7 +578,7 @@ export function MunicipalSettingsClient({
               <div className="flex items-center justify-between p-3 rounded-2xl bg-muted/30">
                 <div>
                   <p className="text-xs font-bold text-foreground">Expiración de Sesión (Horas)</p>
-                  <p className="text-[11px] text-muted-foreground">Tiempo de inactividad de agente municipal</p>
+                  <p className="text-xs text-muted-foreground">Tiempo de inactividad de agente municipal</p>
                 </div>
                 <select
                   value={settings.sessionTimeout}
@@ -595,15 +595,15 @@ export function MunicipalSettingsClient({
 
               <div className="flex items-center justify-between p-3 rounded-2xl bg-muted/30">
                 <div>
-                  <p className="text-xs font-bold text-foreground">Modo Mantenimiento</p>
-                  <p className="text-[11px] text-muted-foreground">Bloqueo temporal de operaciones no críticas</p>
+                  <p className="text-xs font-bold text-foreground">Modo mantenimiento</p>
+                  <p className="text-xs text-muted-foreground">Bloqueo temporal de operaciones no críticas</p>
                 </div>
                 <button
                   type="button"
                   onClick={() => setSettings((prev) => ({ ...prev, maintenanceMode: !prev.maintenanceMode }))}
                   className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-colors ${
                     settings.maintenanceMode
-                      ? "bg-rose-500/15 text-rose-500 border border-rose-500/30"
+                      ? "bg-rose-500/15 text-rose-700 dark:text-rose-400 border border-rose-500/30"
                       : "bg-muted text-muted-foreground border border-border/60"
                   }`}
                 >

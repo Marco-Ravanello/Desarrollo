@@ -2,6 +2,13 @@ import { beforeAll, describe, expect, it } from "vitest";
 import prisma from "@/lib/prisma";
 import { getMapDataAction, getMapLayerAction, getMapLayerItemsAction } from "@/app/(dashboard)/maps/actions";
 import { createArea, createUser, loginAs } from "./helpers";
+import { unpackMapData } from "@/lib/map-points";
+
+/** Los puntos viajan como texto; para comparar se arman igual que en el navegador. */
+async function puntos(filters: Parameters<typeof getMapDataAction>[0]) {
+  const res = await getMapDataAction(filters);
+  return res.success ? { ...res, data: unpackMapData(res.data) } : res;
+}
 
 // Personas, expedientes y fichas inventados, solo en la base de prueba local.
 const CASEROS = { latitude: -34.6081, longitude: -58.5631 };
@@ -42,7 +49,7 @@ describe("Capas del Mapa Social", () => {
   });
 
   it("compara hasta tres programas y marca a cuál pertenece cada punto", async () => {
-    const res = await getMapDataAction({ programs: ["Envión", "Tarjeta Alimentar"] });
+    const res = await puntos({ programs: ["Envión", "Tarjeta Alimentar"] });
     expect(res.success).toBe(true);
     if (!res.success) return;
     expect(res.data.dnis).toEqual(["96000001", "96000002"]);
@@ -50,7 +57,7 @@ describe("Capas del Mapa Social", () => {
     expect(res.data.programMask).toEqual([3, 2]);
     expect(res.data.stats.total).toBe(2);
 
-    const sinProgramas = await getMapDataAction({});
+    const sinProgramas = await puntos({});
     expect(sinProgramas.success && sinProgramas.data.programMask).toBeUndefined();
   });
 

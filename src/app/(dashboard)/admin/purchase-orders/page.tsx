@@ -40,7 +40,7 @@ export default async function PurchaseOrdersPage({
         description={<>Módulo de Administración General • Seguimiento y adjudicación de compras públicas ({totalCount} registros).</>}
         icon={Briefcase}
         actions={
-          <Button asChild className="rounded-2xl h-11 px-5 font-bold text-xs uppercase tracking-wider bg-primary text-primary-foreground shadow-lg shadow-primary/20">
+          <Button asChild className="rounded-2xl h-11 px-5 font-bold text-xs bg-primary text-primary-foreground shadow-lg shadow-primary/20">
             <Link href="/admin/purchase-orders/new"><Plus className="mr-2 h-4 w-4"/> Nueva orden</Link>
           </Button>
         }
@@ -66,7 +66,7 @@ export default async function PurchaseOrdersPage({
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2 text-muted-foreground">
             <Filter className="h-4 w-4 text-primary" />
-            <span className="text-xs font-bold uppercase tracking-wider text-foreground">Estado</span>
+            <span className="text-xs font-bold text-foreground">Estado</span>
           </div>
           <TableFilter
             label="Estado"
@@ -88,11 +88,11 @@ export default async function PurchaseOrdersPage({
               <Table>
                 <TableHeader className="bg-muted/40">
                   <TableRow className="border-b border-border/60 hover:bg-transparent">
-                    <TableHead className="font-bold text-muted-foreground uppercase text-[10px] tracking-wider py-4 px-6">Número</TableHead>
-                    <TableHead className="font-bold text-muted-foreground uppercase text-[10px] tracking-wider py-4 px-6">Proveedor / CUIT</TableHead>
-                    <TableHead className="font-bold text-muted-foreground uppercase text-[10px] tracking-wider py-4 px-6">Monto Total</TableHead>
-                    <TableHead className="font-bold text-muted-foreground uppercase text-[10px] tracking-wider py-4 px-6">Estado</TableHead>
-                    <TableHead className="font-bold text-muted-foreground uppercase text-[10px] tracking-wider py-4 px-6 text-right">Acciones</TableHead>
+                    <TableHead className="font-bold text-muted-foreground text-xs py-4 px-6">Número</TableHead>
+                    <TableHead className="font-bold text-muted-foreground text-xs py-4 px-6">Proveedor / CUIT</TableHead>
+                    <TableHead className="font-bold text-muted-foreground text-xs py-4 px-6">Monto total</TableHead>
+                    <TableHead className="font-bold text-muted-foreground text-xs py-4 px-6">Estado</TableHead>
+                    <TableHead className="font-bold text-muted-foreground text-xs py-4 px-6 text-right">Acciones</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody className="divide-y divide-border/40">
@@ -142,7 +142,7 @@ export default async function PurchaseOrdersPage({
         <EmptyState
           type="orders"
           title={status || query ? "No se encontraron órdenes de compra" : undefined}
-          description={status || query ? "Intente ajustar los términos de búsqueda o los filtros activos." : undefined}
+          description={status || query ? "Probá con otras palabras o sacá algún filtro." : undefined}
           actionLabel={status || query ? "Limpiar Filtros" : "Crear Primera Orden"}
           actionHref={status || query ? "/admin/purchase-orders" : "/admin/purchase-orders/new"}
         />

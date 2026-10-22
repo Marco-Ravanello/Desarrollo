@@ -157,7 +157,7 @@ export function FollowUpList({ items, today, currentUserId }: { items: CaseFollo
                   <span className="text-xs font-bold text-foreground first-letter:uppercase">{fechaLarga(day)}</span>
                   {(isToday || f.overdue) && (
                     <span
-                      className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                      className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
                         f.overdue
                           ? "bg-rose-500/15 text-rose-700 dark:text-rose-300"
                           : "bg-amber-500/20 text-amber-800 dark:text-amber-200"
@@ -168,7 +168,7 @@ export function FollowUpList({ items, today, currentUserId }: { items: CaseFollo
                   )}
                 </div>
                 <p className="text-sm text-foreground break-words">{f.title}</p>
-                <p className="text-[11px] text-muted-foreground">{mine ? "Lo agendaste vos" : `Lo agendó ${f.userName || "otra persona"}`}</p>
+                <p className="text-xs text-muted-foreground">{mine ? "Lo agendaste vos" : `Lo agendó ${f.userName || "otra persona"}`}</p>
               </div>
               {mine && (
                 <Button

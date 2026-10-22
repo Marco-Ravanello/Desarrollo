@@ -51,17 +51,17 @@ export default async function AgreementDetailPage({ params }: { params: Promise<
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Info className="h-5 w-5 text-emerald-500" />
-              Detalles del Acuerdo
+              Detalles del acuerdo
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
             <div>
-              <Label className="text-xs text-muted-foreground uppercase font-bold text-[10px] tracking-widest">Partes Intervinientes</Label>
+              <Label className="text-xs text-muted-foreground font-bold text-xs">Partes intervinientes</Label>
               <p className="text-lg font-medium text-foreground">{agreement.parties || "No especificado"}</p>
             </div>
 
             <div className="space-y-2 border-t pt-4">
-              <Label className="text-xs text-muted-foreground uppercase font-bold text-[10px] tracking-widest">Descripción / Objeto</Label>
+              <Label className="text-xs text-muted-foreground font-bold text-xs">Descripción / objeto</Label>
               <div className="bg-muted/50 p-4 rounded-xl text-foreground whitespace-pre-wrap min-h-[100px]">
                 {agreement.description || "Sin descripción detallada."}
               </div>
@@ -71,7 +71,7 @@ export default async function AgreementDetailPage({ params }: { params: Promise<
               <div className="flex items-start gap-3">
                 <Calendar className="h-5 w-5 text-muted-foreground shrink-0 mt-1" />
                 <div>
-                  <Label className="text-xs text-muted-foreground uppercase font-bold text-[10px] tracking-widest">Vigencia</Label>
+                  <Label className="text-xs text-muted-foreground font-bold text-xs">Vigencia</Label>
                   <p className="font-medium">
                     {agreement.startDate ? format(new Date(agreement.startDate), "dd/MM/yyyy") : "---"}
                     {" al "}
@@ -82,7 +82,7 @@ export default async function AgreementDetailPage({ params }: { params: Promise<
               <div className="flex items-start gap-3">
                 <Building2 className="h-5 w-5 text-muted-foreground shrink-0 mt-1" />
                 <div>
-                  <Label className="text-xs text-muted-foreground uppercase font-bold text-[10px] tracking-widest">Área Responsable</Label>
+                  <Label className="text-xs text-muted-foreground font-bold text-xs">Área responsable</Label>
                   <p className="font-medium">{agreement.area?.name || "Global / Sin especificar"}</p>
                 </div>
               </div>
@@ -92,7 +92,7 @@ export default async function AgreementDetailPage({ params }: { params: Promise<
 
         <div className="space-y-6">
           <StatCard
-            label="Impacto Presupuestario"
+            label="Impacto presupuestario"
             value={<>${agreement.amount ? Number(agreement.amount).toLocaleString('es-AR') : "0"}</>}
             hint="Monto total del convenio"
             icon={Wallet}
@@ -101,13 +101,13 @@ export default async function AgreementDetailPage({ params }: { params: Promise<
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-xs uppercase font-bold text-muted-foreground tracking-widest">Documentación</CardTitle>
+              <CardTitle className="text-xs font-bold text-muted-foreground">Documentación</CardTitle>
             </CardHeader>
             <CardContent>
                {agreement.fileUrl ? (
                  <Button className="w-full" asChild>
                    <a href={agreement.fileUrl} target="_blank" rel="noopener noreferrer">
-                     <FileText className="mr-2 h-4 w-4" /> Ver Documento Original
+                     <FileText className="mr-2 h-4 w-4" /> Ver documento original
                    </a>
                  </Button>
                ) : (
@@ -123,9 +123,9 @@ export default async function AgreementDetailPage({ params }: { params: Promise<
 
           <Card className="bg-muted/50 border-dashed border-2">
             <CardHeader>
-              <CardTitle className="text-xs uppercase font-bold text-muted-foreground tracking-widest">Metadata</CardTitle>
+              <CardTitle className="text-xs font-bold text-muted-foreground">Metadata</CardTitle>
             </CardHeader>
-            <CardContent className="text-[11px] text-muted-foreground space-y-1">
+            <CardContent className="text-xs text-muted-foreground space-y-1">
               <p>ID Sistema: {agreement.id}</p>
               <p>Fecha Alta: {format(new Date(agreement.createdAt), "dd/MM/yyyy HH:mm")}</p>
               <p>Última Modificación: {format(new Date(agreement.updatedAt), "dd/MM/yyyy HH:mm")}</p>

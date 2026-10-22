@@ -107,7 +107,7 @@ export default async function ProviderDetailPage({ params }: { params: Promise<{
                         <TableCell className="text-xs">{new Date(o.createdAt).toLocaleDateString("es-AR")}</TableCell>
                         <TableCell className="hidden md:table-cell text-xs text-muted-foreground">{o.area?.name || "Sin área"}</TableCell>
                         <TableCell>
-                          <span className={`inline-block px-2 py-0.5 rounded-full text-[11px] border ${status.badgeClass}`}>{status.label}</span>
+                          <span className={`inline-block px-2 py-0.5 rounded-full text-xs border ${status.badgeClass}`}>{status.label}</span>
                         </TableCell>
                         <TableCell className="text-right">{money(Number(o.amount || 0))}</TableCell>
                       </TableRow>

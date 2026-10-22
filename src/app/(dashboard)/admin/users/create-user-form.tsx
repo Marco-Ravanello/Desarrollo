@@ -100,7 +100,7 @@ export function CreateUserForm({
           placeholder="Ej: maria.perez"
           className={`${fieldClass} font-mono`}
         />
-        <p className="text-[11px] text-muted-foreground">Con este nombre ingresa a la app. Sin espacios ni tildes.</p>
+        <p className="text-xs text-muted-foreground">Con este nombre ingresa a la app. Sin espacios ni tildes.</p>
       </div>
 
       <div className="space-y-1.5">
@@ -132,7 +132,7 @@ export function CreateUserForm({
             <Copy className="h-4 w-4" />
           </Button>
         </div>
-        <p className="text-[11px] text-muted-foreground">Copiala y pasásela a la persona. La cambia por una propia la primera vez que ingresa.</p>
+        <p className="text-xs text-muted-foreground">Copiala y pasásela a la persona. La cambia por una propia la primera vez que ingresa.</p>
       </div>
 
       <div className="space-y-1.5">
@@ -144,7 +144,7 @@ export function CreateUserForm({
             </option>
           ))}
         </select>
-        <p className="text-[11px] text-muted-foreground">{ROLE_INFO[role].description}</p>
+        <p className="text-xs text-muted-foreground">{ROLE_INFO[role].description}</p>
       </div>
 
       <div className="space-y-1.5">

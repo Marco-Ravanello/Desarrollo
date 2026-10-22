@@ -121,7 +121,7 @@ export function DashboardCharts({
     <div className="space-y-6">
       {/* Area Filter Tabs */}
       <div className="flex flex-wrap items-center gap-2 p-1.5 rounded-2xl bg-card border border-border/60 shadow-sm">
-        <span className="text-[10px] font-bold text-foreground uppercase tracking-widest px-3">
+        <span className="text-xs font-bold text-foreground px-3">
           Filtrar por Área:
         </span>
         {areaTabs.map((tab) => {
@@ -156,8 +156,8 @@ export function DashboardCharts({
                 <div className="p-2 rounded-xl bg-primary/10 text-primary">
                   <TrendingUp className="h-4 w-4" />
                 </div>
-                <h3 className="text-xs font-bold text-foreground uppercase tracking-widest">
-                  Evolución Semestral de Casos
+                <h3 className="text-xs font-bold text-foreground">
+                  Evolución semestral de casos
                 </h3>
               </div>
               <p className="text-xs text-muted-foreground mt-1">
@@ -168,13 +168,13 @@ export function DashboardCharts({
             <div className="flex items-center gap-4 bg-muted/40 p-2 rounded-2xl border border-border/60">
               <div className="flex items-center gap-2">
                 <span className="w-2.5 h-2.5 rounded-full bg-sky-600" />
-                <span className="text-[11px] font-bold text-foreground">
+                <span className="text-xs font-bold text-foreground">
                   {totalIngresadosSemestre} Ingresados
                 </span>
               </div>
               <div className="flex items-center gap-2 border-l border-border/60 pl-4">
                 <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-                <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
+                <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400">
                   {totalResueltosSemestre} Resueltos
                 </span>
               </div>
@@ -245,11 +245,11 @@ export function DashboardCharts({
         <div className="bg-card p-6 rounded-2xl border border-border/60 shadow-sm space-y-5 flex flex-col justify-between">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <div className="p-2 rounded-xl bg-amber-500/10 text-amber-500">
+              <div className="p-2 rounded-xl bg-amber-500/10 text-amber-700 dark:text-amber-400">
                 <Zap className="h-4 w-4" />
               </div>
-              <h3 className="text-xs font-bold text-foreground uppercase tracking-widest">
-                Eficiencia Operativa
+              <h3 className="text-xs font-bold text-foreground">
+                Eficiencia operativa
               </h3>
             </div>
             <p className="text-xs text-muted-foreground">
@@ -261,12 +261,12 @@ export function DashboardCharts({
             <div className="p-4 rounded-2xl bg-muted/40 border border-border/60 space-y-2">
               <div className="flex justify-between items-center text-xs font-bold">
                 <span className="text-foreground flex items-center gap-1.5">
-                  <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" /> Tasa de Resolución
+                  <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" /> Tasa de resolución
                 </span>
-                <span className="text-emerald-600 dark:text-emerald-400 font-mono text-sm font-bold">{resolutionRatePercent}%</span>
+                <span className="text-emerald-700 dark:text-emerald-400 font-mono text-sm font-bold">{resolutionRatePercent}%</span>
               </div>
               <Progress value={resolutionRatePercent} className="h-2.5 rounded-full bg-muted" />
-              <p className="text-[10px] text-muted-foreground font-semibold">
+              <p className="text-xs text-muted-foreground font-semibold">
                 {resolvedCasesCount} casos cerrados de {totalCasesCombined} tramitados.
               </p>
             </div>
@@ -274,9 +274,9 @@ export function DashboardCharts({
             <div className="p-4 rounded-2xl bg-muted/40 border border-border/60 space-y-2">
               <div className="flex justify-between items-center text-xs font-bold">
                 <span className="text-foreground flex items-center gap-1.5">
-                  <Car className="h-3.5 w-3.5 text-sky-500" /> Disponibilidad de Flota
+                  <Car className="h-3.5 w-3.5 text-sky-500" /> Disponibilidad de flota
                 </span>
-                <span className="text-sky-600 dark:text-sky-400 font-mono text-sm font-bold">
+                <span className="text-sky-700 dark:text-sky-400 font-mono text-sm font-bold">
                   {fleetPercent}%
                 </span>
               </div>
@@ -284,7 +284,7 @@ export function DashboardCharts({
                 value={fleetPercent}
                 className="h-2.5 rounded-full bg-muted"
               />
-              <p className="text-[10px] text-muted-foreground font-semibold">
+              <p className="text-xs text-muted-foreground font-semibold">
                 {vehicleStats.available} de {vehicleStats.total} vehículos listos para patrullaje/logística.
               </p>
             </div>
@@ -293,8 +293,8 @@ export function DashboardCharts({
               <div className="flex items-center gap-2">
                 <Activity className="h-4 w-4 text-sky-600 dark:text-sky-400" />
                 <div>
-                  <p className="text-xs font-bold text-foreground">Derivaciones Interáreas</p>
-                  <p className="text-[10px] text-muted-foreground">Pendientes de respuesta</p>
+                  <p className="text-xs font-bold text-foreground">Derivaciones interáreas</p>
+                  <p className="text-xs text-muted-foreground">Pendientes de respuesta</p>
                 </div>
               </div>
               <Badge className="bg-sky-500/20 text-sky-700 dark:text-sky-300 border-none font-bold text-xs font-mono">
@@ -308,8 +308,8 @@ export function DashboardCharts({
         <div className="bg-card p-6 rounded-2xl border border-border/60 shadow-sm col-span-full lg:col-span-2 space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <h3 className="text-xs font-bold text-foreground uppercase tracking-widest">
-                Distribución de Casos por Área Operativa
+              <h3 className="text-xs font-bold text-foreground">
+                Distribución de casos por área operativa
               </h3>
               <p className="text-xs text-muted-foreground mt-0.5">
                 Volumen de demanda territorial en secretarías.
@@ -323,7 +323,7 @@ export function DashboardCharts({
                 onClick={() => setViewMode("ranking")}
                 className="h-7 text-xs font-bold rounded-xl gap-1.5"
               >
-                <ListOrdered className="h-3.5 w-3.5" /> Ranking Horizontal
+                <ListOrdered className="h-3.5 w-3.5" /> Ranking horizontal
               </Button>
               <Button
                 variant={viewMode === "bars" ? "secondary" : "ghost"}
@@ -355,13 +355,13 @@ export function DashboardCharts({
                         </div>
                         <div>
                           <p className="text-xs font-bold text-foreground">{item.name}</p>
-                          <p className="text-[10px] text-muted-foreground font-mono font-semibold">{percentage}% de la demanda global</p>
+                          <p className="text-xs text-muted-foreground font-mono font-semibold">{percentage}% de la demanda global</p>
                         </div>
                       </div>
 
                       <div className="text-right">
                         <span className="text-sm font-bold font-mono text-foreground">{item.value}</span>
-                        <span className="text-[10px] text-muted-foreground ml-1">casos</span>
+                        <span className="text-xs text-muted-foreground ml-1">casos</span>
                       </div>
                     </div>
 
@@ -408,15 +408,15 @@ export function DashboardCharts({
           <div>
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2">
-                <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-500">
+                <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-700 dark:text-emerald-400">
                   <ShoppingBag className="h-4 w-4" />
                 </div>
-                <h3 className="text-xs font-bold text-foreground uppercase tracking-widest">
-                  Órdenes de Compra
+                <h3 className="text-xs font-bold text-foreground">
+                  Órdenes de compra
                 </h3>
               </div>
               <Link href="/admin/purchase-orders">
-                <Button variant="ghost" size="sm" className="h-7 text-[10px] font-bold text-primary gap-1 uppercase">
+                <Button variant="ghost" size="sm" className="h-7 text-xs font-bold text-primary gap-1">
                   Ver OC <ExternalLink className="h-3 w-3" />
                 </Button>
               </Link>
@@ -461,7 +461,7 @@ export function DashboardCharts({
               <span className="text-xl font-bold font-mono text-foreground tracking-tight">
                 ${formattedExecutedAmount}M
               </span>
-              <span className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">
+              <span className="text-xs font-bold text-muted-foreground">
                 {totalOrdersCount} Órdenes
               </span>
             </div>
@@ -475,12 +475,12 @@ export function DashboardCharts({
                     className="w-2.5 h-2.5 rounded-full shrink-0"
                     style={{ backgroundColor: status.fill || COLORS[idx % COLORS.length] }}
                   />
-                  <span className="font-bold text-foreground text-[11px] truncate">{status.name}</span>
+                  <span className="font-bold text-foreground text-xs truncate">{status.name}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="font-mono text-xs font-bold text-foreground">{status.value}</span>
                   {status.amount ? (
-                    <span className="font-mono text-[10px] text-muted-foreground font-semibold">
+                    <span className="font-mono text-xs text-muted-foreground font-semibold">
                       (${ (status.amount / 1000).toFixed(0) }k)
                     </span>
                   ) : null}

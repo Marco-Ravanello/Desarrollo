@@ -30,7 +30,7 @@ export function CreateCaseForm({ personId, areas }: { personId: string, areas: a
   if (!open) {
     return (
       <Button onClick={() => setOpen(true)} variant="outline" size="sm" className="w-full mt-4">
-        <Plus className="h-4 w-4 mr-2" /> Nuevo Caso
+        <Plus className="h-4 w-4 mr-2" /> Nuevo expediente
       </Button>
     );
   }
@@ -40,19 +40,19 @@ export function CreateCaseForm({ personId, areas }: { personId: string, areas: a
       <input type="hidden" name="personId" value={personId} />
 
       <div className="space-y-2">
-        <Label htmlFor="title">Título del Caso</Label>
+        <Label htmlFor="title">Título del caso</Label>
         <Input id="title" name="title" placeholder="Ej: Solicitud de materiales" required />
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="areaId">Área Responsable</Label>
+        <Label htmlFor="areaId">Área responsable</Label>
         <select
           id="areaId"
           name="areaId"
           required
           className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          <option value="">Seleccione un área</option>
+          <option value="">Elegí un área</option>
           {areas.map(a => (
             <option key={a.id} value={a.id}>{a.name}</option>
           ))}

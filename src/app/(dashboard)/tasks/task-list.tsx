@@ -44,7 +44,7 @@ export function TaskList({ initialTasks, userId }: { initialTasks: TaskItem[], u
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim()) {
-      toast.error("Por favor ingrese el título de la tarea");
+      toast.error("Escribí el título de la tarea");
       return;
     }
 
@@ -138,28 +138,28 @@ export function TaskList({ initialTasks, userId }: { initialTasks: TaskItem[], u
 
     if (diffDays < 0) {
       return (
-        <Badge variant="outline" className="bg-rose-500/10 text-rose-500 border-rose-500/30 text-[10px] font-bold gap-1">
+        <Badge variant="outline" className="bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/30 text-xs font-bold gap-1">
           <AlertTriangle className="h-3 w-3" />
           Venció el {formatted}
         </Badge>
       );
     } else if (diffDays === 0) {
       return (
-        <Badge variant="outline" className="bg-amber-500/10 text-amber-500 border-amber-500/30 text-[10px] font-bold gap-1">
+        <Badge variant="outline" className="bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30 text-xs font-bold gap-1">
           <Clock className="h-3 w-3" />
           Vence hoy
         </Badge>
       );
     } else if (diffDays === 1) {
       return (
-        <Badge variant="outline" className="bg-blue-500/10 text-blue-500 border-blue-500/30 text-[10px] font-bold gap-1">
+        <Badge variant="outline" className="bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/30 text-xs font-bold gap-1">
           <CalendarIcon className="h-3 w-3" />
           Vence mañana
         </Badge>
       );
     } else {
       return (
-        <Badge variant="outline" className="border-border/60 text-muted-foreground text-[10px] font-bold gap-1">
+        <Badge variant="outline" className="border-border/60 text-muted-foreground text-xs font-bold gap-1">
           <CalendarIcon className="h-3 w-3" />
           Vence el {formatted}
         </Badge>
@@ -172,25 +172,25 @@ export function TaskList({ initialTasks, userId }: { initialTasks: TaskItem[], u
     switch (val) {
       case "URGENTE":
         return (
-          <Badge className="bg-rose-500/15 text-rose-500 border border-rose-500/30 text-[10px] font-bold">
+          <Badge className="bg-rose-500/15 text-rose-700 dark:text-rose-400 border border-rose-500/30 text-xs font-bold">
             🔴 Urgente
           </Badge>
         );
       case "ALTA":
         return (
-          <Badge className="bg-amber-500/15 text-amber-500 border border-amber-500/30 text-[10px] font-bold">
+          <Badge className="bg-amber-500/15 text-amber-800 dark:text-amber-400 border border-amber-500/30 text-xs font-bold">
             🟠 Alta
           </Badge>
         );
       case "MEDIA":
         return (
-          <Badge className="bg-blue-500/15 text-blue-500 border border-blue-500/30 text-[10px] font-bold">
+          <Badge className="bg-blue-500/15 text-blue-700 dark:text-blue-400 border border-blue-500/30 text-xs font-bold">
             🟡 Normal
           </Badge>
         );
       case "BAJA":
         return (
-          <Badge className="bg-emerald-500/15 text-emerald-500 border border-emerald-500/30 text-[10px] font-bold">
+          <Badge className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 text-xs font-bold">
             🟢 Baja
           </Badge>
         );
@@ -212,10 +212,10 @@ export function TaskList({ initialTasks, userId }: { initialTasks: TaskItem[], u
               <Button
                 type="submit"
                 disabled={isPending}
-                className="h-11 px-5 rounded-2xl font-bold text-xs uppercase tracking-wider bg-primary hover:bg-primary/90 text-primary-foreground gap-2 shrink-0 shadow-sm"
+                className="h-11 px-5 rounded-2xl font-bold text-xs bg-primary hover:bg-primary/90 text-primary-foreground gap-2 shrink-0 shadow-sm"
               >
                 <Plus className="h-4 w-4" />
-                <span>Agregar Tarea</span>
+                <span>Agregar tarea</span>
               </Button>
             </div>
 
@@ -230,7 +230,7 @@ export function TaskList({ initialTasks, userId }: { initialTasks: TaskItem[], u
               </div>
 
               <div className="flex items-center gap-1.5">
-                <span className="text-[11px] font-bold text-muted-foreground uppercase shrink-0">Prioridad:</span>
+                <span className="text-xs font-bold text-muted-foreground shrink-0">Prioridad:</span>
                 <div className="flex items-center gap-1 bg-muted/30 p-1 rounded-xl border border-border/40 w-full justify-between">
                   {(["URGENTE", "ALTA", "MEDIA", "BAJA"] as PriorityType[]).map((p) => {
                     const isSel = priority === p;
@@ -245,7 +245,7 @@ export function TaskList({ initialTasks, userId }: { initialTasks: TaskItem[], u
                         key={p}
                         type="button"
                         onClick={() => setPriority(p)}
-                        className={`text-[10px] font-bold px-2 py-1 rounded-lg transition-all ${
+                        className={`text-xs font-bold px-2 py-1 rounded-lg transition-all ${
                           isSel
                             ? "bg-primary text-primary-foreground shadow-xs"
                             : "text-muted-foreground hover:text-foreground"
@@ -259,8 +259,9 @@ export function TaskList({ initialTasks, userId }: { initialTasks: TaskItem[], u
               </div>
 
               <div className="flex items-center gap-2">
-                <span className="text-[11px] font-bold text-muted-foreground uppercase shrink-0">Vencimiento:</span>
+                <span className="text-xs font-bold text-muted-foreground shrink-0">Vencimiento:</span>
                 <Input
+                  aria-label="Fecha de vencimiento"
                   type="date"
                   value={dueDate}
                   onChange={(e) => setDueDate(e.target.value)}
@@ -277,42 +278,42 @@ export function TaskList({ initialTasks, userId }: { initialTasks: TaskItem[], u
           <button
             type="button"
             onClick={() => setActiveTab("PENDIENTES")}
-            className={`text-xs px-3.5 py-1.5 rounded-xl font-bold transition-all flex items-center gap-1.5 ${
+            className={`text-xs px-3.5 py-2 sm:py-1.5 rounded-xl font-bold transition-all flex items-center gap-1.5 ${
               activeTab === "PENDIENTES"
                 ? "bg-card text-foreground shadow-xs border border-border/40"
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
             <span>Pendientes</span>
-            <Badge variant="secondary" className="text-[10px] px-1.5 py-0 rounded-md font-mono">
+            <Badge variant="secondary" className="text-xs px-1.5 py-0 rounded-md font-mono">
               {countPendientes}
             </Badge>
           </button>
           <button
             type="button"
             onClick={() => setActiveTab("REALIZADAS")}
-            className={`text-xs px-3.5 py-1.5 rounded-xl font-bold transition-all flex items-center gap-1.5 ${
+            className={`text-xs px-3.5 py-2 sm:py-1.5 rounded-xl font-bold transition-all flex items-center gap-1.5 ${
               activeTab === "REALIZADAS"
                 ? "bg-card text-foreground shadow-xs border border-border/40"
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
             <span>Realizadas</span>
-            <Badge variant="secondary" className="text-[10px] px-1.5 py-0 rounded-md font-mono">
+            <Badge variant="secondary" className="text-xs px-1.5 py-0 rounded-md font-mono">
               {countRealizadas}
             </Badge>
           </button>
           <button
             type="button"
             onClick={() => setActiveTab("TODAS")}
-            className={`text-xs px-3.5 py-1.5 rounded-xl font-bold transition-all flex items-center gap-1.5 ${
+            className={`text-xs px-3.5 py-2 sm:py-1.5 rounded-xl font-bold transition-all flex items-center gap-1.5 ${
               activeTab === "TODAS"
                 ? "bg-card text-foreground shadow-xs border border-border/40"
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
             <span>Todas</span>
-            <Badge variant="secondary" className="text-[10px] px-1.5 py-0 rounded-md font-mono">
+            <Badge variant="secondary" className="text-xs px-1.5 py-0 rounded-md font-mono">
               {countTodas}
             </Badge>
           </button>
@@ -330,6 +331,7 @@ export function TaskList({ initialTasks, userId }: { initialTasks: TaskItem[], u
           </div>
 
           <select
+            aria-label="Filtrar por prioridad"
             value={priorityFilter}
             onChange={(e) => setPriorityFilter(e.target.value)}
             className="h-9 px-3 rounded-xl bg-muted/20 border border-border/60 text-xs font-bold text-foreground focus:outline-none focus:ring-1 focus:ring-primary"

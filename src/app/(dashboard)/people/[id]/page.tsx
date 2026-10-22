@@ -1,18 +1,24 @@
 export const dynamic = "force-dynamic";
-import { getPersonById } from "@/services/people";
-import { interventionTypeLabel } from "@/lib/intervention-types";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { getPersonById, getRegistroFamilyMembers } from "@/services/people";
+import { getFichaSocialByDniFromDb } from "@/services/ficha-social-db";
+import { getFichaHistorial } from "@/services/ficha-historial";
+import { getGrupoFamiliar } from "@/services/grupo-familiar";
+import { cleanDni } from "@/services/ficha-social";
+import { Card } from "@/components/ui/card";
+import { TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { PersonTabs, TabShortcut } from "@/components/people/person-tabs";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Phone, MapPin, ShieldAlert, Mail, History, Eye, FileIcon, ExternalLink, Users, Network } from "lucide-react";
+import {
+  Calendar, Phone, MapPin, ShieldAlert, Mail, History, Eye, FileIcon, ExternalLink, Users,
+  Contact, Layers, FolderOpen, CheckCircle2, UserPlus,
+} from "lucide-react";
 import { notFound } from "next/navigation";
 import { auth } from "@/auth";
 import { getAreas } from "@/services/cases";
 import { CreateCaseForm } from "./create-case-form";
 import { UploadDocumentForm } from "./upload-document-form";
-import { CitizenTimeline } from "@/components/timeline/citizen-timeline";
 import { CloseCaseButton } from "./close-case-button";
 import { AddFamilyMemberForm } from "./add-family-member-form";
 import { EditPersonDialog } from "./edit-person-dialog";
@@ -21,294 +27,277 @@ import { PageBreadcrumbs } from "@/components/layout/breadcrumbs-context";
 import { RememberVisit } from "@/components/search/remember-visit";
 import { PageHeader } from "@/components/layout/page-header";
 import { EmptyMessage } from "@/components/ui/empty-message";
+import { ProgramasDetalle } from "@/components/people/programas-detalle";
+import { GrupoFamiliarLinks } from "@/components/people/grupo-familiar-links";
+import { FichaHistorialView } from "@/components/people/ficha-historial";
+import { plural } from "@/lib/formato";
+import { getCaseStatusConfig } from "@/lib/status-styles";
+import { isSensitiveArea } from "@/lib/sensitive-areas";
+import { canEditSocialRecords, hasPermission, PERMISSIONS } from "@/lib/permissions";
 
 export const metadata = { title: "Persona" };
 
-export default async function PersonDetailPage({ params }: { params: Promise<{ id: string }> }) {
+const TABS = ["datos", "programas", "expedientes", "familia", "historia", "documentos"] as const;
+type Tab = (typeof TABS)[number];
+
+const fecha = (d: Date | string) => new Date(d).toLocaleDateString("es-AR");
+
+function Dato({ icon: Icon, label, children }: { icon: React.ElementType; label: string; children: React.ReactNode }) {
+  return (
+    <div className="flex items-start gap-3">
+      <Icon className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+      <div className="min-w-0">
+        <p className="text-xs text-muted-foreground">{label}</p>
+        <p className="text-sm font-medium text-foreground break-words">{children}</p>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * La ficha de una persona: todo lo que hay de ella en un solo lugar (datos, programas,
+ * expedientes, familia, historia y documentos). Reemplaza al legajo y a la Ficha 360° separados.
+ */
+export default async function PersonDetailPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ tab?: string }>;
+}) {
   const session = await auth();
   const userRole = session?.user?.role;
+  const canEdit = canEditSocialRecords(userRole);
+  const canViewSensitive = hasPermission(userRole as any, PERMISSIONS.VIEW_SENSITIVE_CASES);
 
-  const { id } = await params;
-  const [person, areas] = await Promise.all([
-    getPersonById(id),
-    getAreas()
+  const [{ id: rawId }, { tab }] = await Promise.all([params, searchParams]);
+  const id = decodeURIComponent(rawId);
+  const person: any = await getPersonById(id);
+  const dni = person?.dni || cleanDni(id);
+  if (!dni) notFound();
+
+  const [ficha, historial, grupo, registroFamily, areas] = await Promise.all([
+    getFichaSocialByDniFromDb(dni),
+    getFichaHistorial(dni, { canViewSensitive }),
+    getGrupoFamiliar(dni, { canViewSensitive }),
+    getRegistroFamilyMembers(dni),
+    person && canEdit ? getAreas() : Promise.resolve([]),
   ]);
 
-  if (!person) notFound();
+  // Sin legajo ni padrón, pero con fichas de emergencia: se muestra lo que hay.
+  if (!person && historial.fichasTormenta.length === 0) notFound();
 
-  const isViolenceCase = (c: any) =>
-    c.area?.name === "Violencia de Género" ||
-    c.area?.name?.toLowerCase().includes("violencia");
+  const nombre = person ? `${person.lastName}, ${person.firstName}`.replace(/^,\s*|,\s*$/g, "") : historial.nombre || `DNI ${dni}`;
+  const enPadron = ficha.encontrado;
 
-  const allowedCases = (person.cases || []).filter(c => {
-    if (isViolenceCase(c)) {
-      return userRole === "SUPERADMIN" || userRole === "DIRECCION_GENERAL" || userRole === "VIOLENCIA_GENERO";
-    }
-    return true;
-  });
+  const allowedCases: any[] = (person?.cases || []).filter((c: any) => canViewSensitive || !isSensitiveArea(c.area?.name));
+  const allowedCaseIds = new Set(allowedCases.map((c) => c.id));
+  const activeCases = allowedCases.filter((c) => c.status !== "CERRADO");
+  const closedCases = allowedCases.filter((c) => c.status === "CERRADO");
+  const documents: any[] = (person?.documents || []).filter((d: any) => !d.caseId || allowedCaseIds.has(d.caseId));
 
-  const allowedCaseIds = new Set(allowedCases.map(c => c.id));
+  const programas: string[] = ficha.programas_activos || person?.programasActivos || [];
+  const totalProgramas = Object.keys(ficha.detalle_programas || {}).length || programas.length;
+  const historiaCount = historial.intervencionesTotal + historial.fichasTormenta.length;
+  const familiaCount = grupo.declarados.length + grupo.mismoDomicilio.length;
+  const activeTab: Tab = TABS.includes(tab as Tab) ? (tab as Tab) : "datos";
 
-  const activeCases = allowedCases.filter(c => c.status !== 'CERRADO');
-  const closedCases = allowedCases.filter(c => c.status === 'CERRADO');
-
-  const familyMembers = person.family?.members.filter(m => m.id !== person.id) || [];
-
-  const filteredInterventions = (person.interventions || []).filter((i: any) => !i.caseId || allowedCaseIds.has(i.caseId));
-  const filteredDocuments = (person.documents || []).filter((d: any) => !d.caseId || allowedCaseIds.has(d.caseId));
-
-  const timelineEvents: any[] = [
-    ...allowedCases.map(c => ({
-      id: `case-start-${c.id}`,
-      type: 'CASE_CREATED',
-      date: typeof c.createdAt === "string" ? c.createdAt : c.createdAt.toISOString(),
-      title: `Apertura de Expediente: ${c.title}`,
-      area: c.area.name,
-      description: c.description
-    })),
-    ...allowedCases.filter(c => c.status === 'CERRADO').map(c => ({
-        id: `case-end-${c.id}`,
-        type: 'CASE_CLOSED',
-        date: typeof c.updatedAt === "string" ? c.updatedAt : c.updatedAt.toISOString(),
-        title: `Cierre de Caso: ${c.title}`,
-        area: c.area.name
-    })),
-    ...filteredInterventions.map((i: any) => ({
-      id: i.id,
-      type: 'INTERVENTION',
-      date: typeof i.date === "string" ? i.date : (i.date instanceof Date ? i.date.toISOString() : String(i.date)),
-      title: interventionTypeLabel(i.type) || "Intervención Social",
-      area: i.area?.name,
-      description: i.description
-    })),
-    ...filteredDocuments.map(d => ({
-        id: d.id,
-        type: 'DOCUMENT',
-        date: typeof d.createdAt === "string" ? d.createdAt : d.createdAt.toISOString(),
-        title: `Documento Adjuntado: ${d.name}`
-    }))
-  ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-
-  const breadcrumbs = [
-    { label: "Registro Único", href: "/people" },
-    { label: `${person.lastName}, ${person.firstName}`, active: true }
-  ];
+  const edad = person?.birthDate
+    ? `${fecha(person.birthDate)}`
+    : person?.edadAprox && person.edadAprox !== "No registrada"
+      ? `${person.edadAprox} años (aprox.)`
+      : "Sin dato";
 
   return (
     <div className="space-y-6">
-      <PageBreadcrumbs items={breadcrumbs} />
-      <RememberVisit kind="person" id={id} />
+      <PageBreadcrumbs items={[{ label: "Registro Único", href: "/people" }, { label: nombre, active: true }]} />
+      {person && <RememberVisit kind="person" id={person.id} />}
 
       <div className="space-y-3">
         <PageHeader
-          title={<>{person.lastName}, {person.firstName}</>}
+          title={nombre}
           icon={Users}
-          actions={
-            <>
-              <Button variant="outline" asChild className="rounded-2xl border-border/60 text-xs font-bold gap-2 text-indigo-500 hover:text-indigo-600">
-                <Link href={`/ficha-social?dni=${person.dni}`}>
-                  <Network className="h-4 w-4" />
-                  Ver Ficha 360°
-                </Link>
-              </Button>
-              <EditPersonDialog person={person} />
-            </>
-          }
+          actions={person && canEdit ? <EditPersonDialog person={person} /> : undefined}
         />
         <div className="flex flex-wrap gap-2 items-center">
-          {(person as any).barrio && (
+          <Badge variant="outline" className="border-border text-foreground font-mono font-bold">DNI {dni}</Badge>
+          {person?.barrio && (
             <Badge variant="outline" className="border-primary/40 text-primary bg-primary/5 text-xs font-bold">
-              Barrio {(person as any).barrio}
+              Barrio {person.barrio}
             </Badge>
           )}
-          <Badge variant="outline" className="border-border text-foreground font-mono font-bold">DNI: {person.dni}</Badge>
-          {(person as any).programasActivos && (person as any).programasActivos.length > 0 && (
-            <Badge className="bg-emerald-500/15 text-emerald-500 border border-emerald-500/30 font-bold text-xs">
-              {(person as any).programasActivos.length} Programas Activos
+          {totalProgramas > 0 && (
+            <Badge className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 font-bold text-xs">
+              {plural(totalProgramas, "programa activo")}
             </Badge>
           )}
-          {person.email && <Badge variant="secondary" className="font-normal">{person.email}</Badge>}
+          {activeCases.length > 0 && (
+            <Badge className="bg-blue-500/15 text-blue-700 dark:text-blue-400 border border-blue-500/30 font-bold text-xs">
+              {plural(activeCases.length, "expediente abierto")}
+            </Badge>
+          )}
         </div>
       </div>
 
-      <div className="grid md:grid-cols-3 gap-6">
-        <Card className="col-span-1 border border-border/60 shadow-xs bg-card text-card-foreground rounded-2xl">
-          <CardHeader><CardTitle className="text-lg font-bold text-foreground">Datos de Contacto</CardTitle></CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex items-center gap-2 text-sm text-foreground"><MapPin className="h-4 w-4 text-muted-foreground"/> {person.address || 'Sin dirección'}</div>
-            <div className="flex items-center gap-2 text-sm text-foreground"><Phone className="h-4 w-4 text-muted-foreground"/> {person.phone || 'Sin teléfono'}</div>
-            {person.email && <div className="flex items-center gap-2 text-sm text-foreground"><Mail className="h-4 w-4 text-muted-foreground"/> {person.email}</div>}
-            <div className="flex items-center gap-2 text-sm text-foreground">
-              <Calendar className="h-4 w-4 text-muted-foreground"/>
-              {person.birthDate ? new Date(person.birthDate).toLocaleDateString('es-AR') : ((person as any).edadAprox ? `Edad aprox: ${(person as any).edadAprox}` : 'No registrada')}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="col-span-2 border border-border/60 shadow-xs bg-card text-card-foreground rounded-2xl overflow-hidden">
-          <Tabs defaultValue="timeline">
-            <TabsList className="m-4 bg-muted/40 p-1 border border-border/40 rounded-2xl">
-              <TabsTrigger value="timeline" className="rounded-xl text-xs font-bold uppercase tracking-wider">Línea de Tiempo</TabsTrigger>
-              <TabsTrigger value="cases" className="rounded-xl text-xs font-bold uppercase tracking-wider">Casos</TabsTrigger>
-              <TabsTrigger value="family" className="rounded-xl text-xs font-bold uppercase tracking-wider">Familia</TabsTrigger>
-              <TabsTrigger value="history" className="rounded-xl text-xs font-bold uppercase tracking-wider">Historial</TabsTrigger>
-              <TabsTrigger value="docs" className="rounded-xl text-xs font-bold uppercase tracking-wider">Documentos</TabsTrigger>
+      <Card className="border border-border/60 shadow-xs bg-card text-card-foreground rounded-2xl overflow-hidden">
+        <PersonTabs defaultTab={activeTab}>
+          <div className="px-4 pt-4 overflow-x-auto">
+            <TabsList className="bg-muted/40 p-1 border border-border/40 rounded-2xl">
+              <TabsTrigger value="datos" className="rounded-xl text-xs font-bold gap-1.5"><Contact className="h-3.5 w-3.5" />Datos</TabsTrigger>
+              <TabsTrigger value="programas" className="rounded-xl text-xs font-bold gap-1.5"><Layers className="h-3.5 w-3.5" />Programas ({totalProgramas})</TabsTrigger>
+              <TabsTrigger value="expedientes" className="rounded-xl text-xs font-bold gap-1.5"><FolderOpen className="h-3.5 w-3.5" />Expedientes ({allowedCases.length})</TabsTrigger>
+              <TabsTrigger value="familia" className="rounded-xl text-xs font-bold gap-1.5"><Users className="h-3.5 w-3.5" />Familia ({familiaCount})</TabsTrigger>
+              <TabsTrigger value="historia" className="rounded-xl text-xs font-bold gap-1.5"><History className="h-3.5 w-3.5" />Historia ({historiaCount})</TabsTrigger>
+              <TabsTrigger value="documentos" className="rounded-xl text-xs font-bold gap-1.5"><FileIcon className="h-3.5 w-3.5" />Documentos ({documents.length})</TabsTrigger>
             </TabsList>
+          </div>
 
-            <TabsContent value="timeline" className="p-6 pt-0">
-               <div className="flex justify-between items-center mb-6">
-                <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
-                   <History className="h-4 w-4" /> Evolución del Ciudadano
-                </h3>
+          <TabsContent value="datos" className="p-4 sm:p-6 space-y-6">
+            {!enPadron && (
+              <p className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-foreground">
+                No figura en el padrón de programas sociales.{" "}
+                {person ? "Sus datos son los cargados en el Registro Único." : "Solo hay fichas de emergencia con su DNI."}
+              </p>
+            )}
+            <div className="grid gap-6 lg:grid-cols-2">
+              <div className="space-y-4">
+                <h3 className="text-xs font-bold text-muted-foreground">Contacto</h3>
+                <Dato icon={MapPin} label="Domicilio">
+                  {person?.address || "Sin dirección"}
+                  {person?.localidad && !String(person.address || "").includes(person.localidad) ? ` · ${person.localidad}` : ""}
+                </Dato>
+                <Dato icon={Phone} label="Teléfono">{person?.phone || "Sin teléfono"}</Dato>
+                {person?.email && <Dato icon={Mail} label="Correo">{person.email}</Dato>}
+                <Dato icon={Calendar} label={person?.birthDate ? "Fecha de nacimiento" : "Edad"}>{edad}</Dato>
               </div>
-              <CitizenTimeline events={timelineEvents} />
-            </TabsContent>
+              <div className="space-y-4">
+                <h3 className="text-xs font-bold text-muted-foreground">Programas sociales</h3>
+                {programas.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No cobra ningún programa del padrón.</p>
+                ) : (
+                  <div className="flex flex-wrap gap-2">
+                    {programas.map((p) => (
+                      <Badge key={p} className="bg-primary/10 text-primary border border-primary/20 text-xs font-bold py-1 px-3 rounded-xl">
+                        <CheckCircle2 className="h-3.5 w-3.5 mr-1.5 text-emerald-600 dark:text-emerald-400" />
+                        {p}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+                {person?.roles && enPadron && <p className="text-xs text-muted-foreground">Rol en los programas: {person.roles}</p>}
+              </div>
+            </div>
+            <div className="space-y-3">
+              <h3 className="text-xs font-bold text-muted-foreground">Atención municipal</h3>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <TabShortcut value={activeCases.length} label={activeCases.length === 1 ? "expediente abierto" : "expedientes abiertos"} tab="expedientes" />
+                <TabShortcut value={historial.intervencionesTotal} label={historial.intervencionesTotal === 1 ? "intervención" : "intervenciones"} tab="historia" />
+                <TabShortcut value={historial.fichasTormenta.length} label={historial.fichasTormenta.length === 1 ? "ficha de emergencia" : "fichas de emergencia"} tab="historia" />
+                <TabShortcut value={familiaCount} label={familiaCount === 1 ? "familiar o conviviente" : "familiares y convivientes"} tab="familia" />
+              </div>
+            </div>
+          </TabsContent>
 
-            <TabsContent value="cases" className="p-4 pt-0">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Casos Activos</h3>
-              </div>
-              {activeCases.length === 0 ? <EmptyMessage compact title="No tiene expedientes abiertos" icon={FileIcon} className="rounded-2xl border border-dashed border-border/60" /> : (
-                <div className="space-y-3">
-                  {activeCases.map(c => (
-                    <div key={c.id} className="p-4 border border-border/60 rounded-2xl flex justify-between items-center bg-muted/20 shadow-xs hover:border-primary/50 transition-all">
-                      <div className="flex items-center gap-4">
-                        <div className={`p-2 rounded-full ${isViolenceCase(c) ? "bg-rose-500/10 text-rose-500" : "bg-blue-500/10 text-blue-500"}`}>
-                           {isViolenceCase(c) ? <ShieldAlert className="h-4 w-4" /> : <FileIcon className="h-4 w-4" />}
+          <TabsContent value="programas" className="p-4 sm:p-6">
+            <ProgramasDetalle detalle={ficha.detalle_programas} nombreTitular={ficha.nombre_detectado} />
+          </TabsContent>
+
+          <TabsContent value="expedientes" className="p-4 sm:p-6 space-y-6">
+            {allowedCases.length === 0 ? (
+              <EmptyMessage compact title="No tiene expedientes" icon={FolderOpen} className="rounded-2xl border border-dashed border-border/60" />
+            ) : (
+              <div className="space-y-3">
+                {[...activeCases, ...closedCases].map((c) => {
+                  const estado = getCaseStatusConfig(c.status);
+                  const sensible = isSensitiveArea(c.area?.name);
+                  return (
+                    <div key={c.id} className={`p-4 border border-border/60 rounded-2xl flex flex-wrap justify-between items-center gap-3 bg-muted/20 ${c.status === "CERRADO" ? "opacity-80" : "hover:border-primary/50"} transition-all`}>
+                      <div className="flex items-center gap-4 min-w-0">
+                        <div className={`p-2 rounded-full shrink-0 ${sensible ? "bg-rose-500/10 text-rose-700 dark:text-rose-400" : "bg-blue-500/10 text-blue-700 dark:text-blue-400"}`}>
+                          {sensible ? <ShieldAlert className="h-4 w-4" /> : <FileIcon className="h-4 w-4" />}
                         </div>
-                        <div>
-                          <p className="font-bold text-foreground leading-none">{c.title}</p>
-                          <p className="text-xs text-muted-foreground mt-1">{c.area.name} • {c.status}</p>
+                        <div className="min-w-0">
+                          <Link href={`/cases/${c.id}`} className="font-bold text-foreground leading-snug hover:underline">{c.title}</Link>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {c.area?.name} · abierto el {fecha(c.createdAt)}
+                            {c.status === "CERRADO" ? ` · cerrado el ${fecha(c.updatedAt)}` : ""}
+                          </p>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                         <Button variant="ghost" size="icon" asChild>
-                           <Link href={`/cases/${c.id}`}><Eye className="h-4 w-4 text-muted-foreground" /></Link>
-                         </Button>
-                         <CloseCaseButton caseId={c.id} />
+                        <Badge variant="outline" className={`text-xs ${estado.badgeClass}`}>{estado.label}</Badge>
+                        <Button variant="ghost" size="icon" asChild>
+                          <Link href={`/cases/${c.id}`} aria-label="Ver expediente"><Eye className="h-4 w-4 text-muted-foreground" /></Link>
+                        </Button>
+                        {c.status !== "CERRADO" && canEdit && <CloseCaseButton caseId={c.id} />}
                       </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-              <CreateCaseForm personId={person.id} areas={areas} />
-            </TabsContent>
-
-            <TabsContent value="family" className="p-4 pt-0">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Composición Familiar</h3>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                {familyMembers.length === 0 && !(person as any).familyId && (
-                  <EmptyMessage
-                    compact
-                    title="Todavía no hay familiares vinculados"
-                    icon={Users}
-                    className="md:col-span-2 rounded-2xl border border-dashed border-border/60"
-                  />
-                )}
-
-                {familyMembers.map((m: any) => {
-                  let rawName = m.firstName || "";
-                  let tagLabel = m.relationship || (m.lastName && m.lastName.startsWith("(") ? m.lastName.replace(/[()]/g, "") : null);
-
-                  const matchTag = rawName.match(/^(.*?)\s*[\(\[](.*?)[\)\]]$/);
-                  if (matchTag) {
-                    rawName = matchTag[1].trim();
-                    if (!tagLabel) tagLabel = matchTag[2].trim();
-                  }
-
-                  return (
-                    <div key={m.id} className="flex items-center justify-between p-3 border border-border/60 rounded-2xl bg-muted/20 hover:border-primary/50 transition-colors min-w-0 overflow-hidden gap-2">
-                      <Link href={`/people/${m.dni || m.id}`} className="flex items-center gap-3 min-w-0 flex-1">
-                        <div className="h-8 w-8 bg-muted rounded-full flex items-center justify-center text-xs font-bold text-foreground shrink-0">
-                          {rawName[0] || "F"}
-                        </div>
-                        <div className="flex flex-col min-w-0 flex-1">
-                          <div className="flex items-center gap-1.5 min-w-0">
-                            <span className="text-sm font-bold truncate text-foreground block min-w-0 flex-1">{rawName}</span>
-                            {tagLabel && (
-                              <Badge variant="outline" className="text-[9px] py-0 px-1 border-primary/30 text-primary shrink-0">
-                                {tagLabel}
-                              </Badge>
-                            )}
-                          </div>
-                          <span className="text-[10px] text-muted-foreground font-mono truncate">DNI: {m.dni || "N/R"}</span>
-                        </div>
-                      </Link>
-                      <RemoveFamilyMemberButton id={m.id} name={`${rawName} ${m.lastName && !m.lastName.startsWith("(") ? m.lastName : ""}`.trim() || "Este familiar"} />
                     </div>
                   );
                 })}
               </div>
+            )}
+            {person && canEdit && <CreateCaseForm personId={person.id} areas={areas} />}
+          </TabsContent>
 
-              <AddFamilyMemberForm personId={person.id} />
-            </TabsContent>
-
-            <TabsContent value="history" className="p-4 pt-0">
-               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Historial de Casos Cerrados</h3>
+          <TabsContent value="familia" className="p-4 sm:p-6 space-y-6">
+            <GrupoFamiliarLinks grupo={grupo} />
+            {person && canEdit && (
+              <div className="space-y-3 border-t border-border/40 pt-6">
+                <h3 className="text-xs font-bold text-muted-foreground flex items-center gap-2">
+                  <UserPlus className="h-4 w-4 text-primary" /> Grupo familiar cargado en el Registro Único
+                </h3>
+                {registroFamily.length > 0 && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {registroFamily.map((m) => (
+                      <div key={m.id} className="flex items-center justify-between gap-2 p-3 border border-border/60 rounded-2xl bg-muted/20 min-w-0">
+                        <Link href={`/people/${m.dni}`} className="min-w-0 flex-1">
+                          <p className="text-sm font-bold text-foreground truncate">{m.lastName}, {m.firstName}</p>
+                          <p className="text-xs text-muted-foreground font-mono">DNI {m.dni}</p>
+                        </Link>
+                        <RemoveFamilyMemberButton id={m.id} name={`${m.firstName} ${m.lastName}`.trim()} />
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <AddFamilyMemberForm personId={person.id} />
               </div>
-              {closedCases.length === 0 ? (
-                <EmptyMessage compact title="Todavía no tiene expedientes cerrados" icon={History} />
-              ) : (
-                <div className="space-y-3">
-                  {closedCases.map(c => (
-                    <div key={c.id} className="p-4 border border-border/60 rounded-2xl flex justify-between items-center bg-muted/20 opacity-80">
-                      <div className="flex items-center gap-4">
-                        <div className="p-2 rounded-full bg-muted text-muted-foreground">
-                           <History className="h-4 w-4" />
-                        </div>
-                        <div>
-                          <p className="font-bold text-foreground leading-none">{c.title}</p>
-                          <p className="text-xs text-muted-foreground mt-1">{c.area.name} • Finalizado el {new Date(c.updatedAt).toLocaleDateString()}</p>
+            )}
+          </TabsContent>
+
+          <TabsContent value="historia" className="p-4 sm:p-6">
+            <FichaHistorialView historial={historial} withCases={false} />
+          </TabsContent>
+
+          <TabsContent value="documentos" className="p-4 sm:p-6 space-y-6">
+            {documents.length === 0 ? (
+              <EmptyMessage compact title="Todavía no tiene documentos" icon={FileIcon} className="rounded-2xl border border-dashed border-border/60" />
+            ) : (
+              <div className="grid grid-cols-1 gap-2">
+                {documents.map((d) => {
+                  const href = d.url.startsWith("/api") ? d.url : `/api${d.url}`;
+                  return (
+                    <div key={d.id} className="p-3 border border-border/60 rounded-2xl flex justify-between items-center gap-2 bg-muted/20 hover:bg-muted/40 transition-colors">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <FileIcon className="h-4 w-4 text-muted-foreground shrink-0" />
+                        <div className="min-w-0">
+                          <p className="font-medium text-sm text-foreground truncate">{d.name}</p>
+                          <p className="text-xs text-muted-foreground">{fecha(d.createdAt)}</p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <Button variant="ghost" size="icon" asChild>
-                           <Link href={`/cases/${c.id}`}><Eye className="h-4 w-4 text-muted-foreground" /></Link>
-                        </Button>
-                        <Badge variant="outline" className="text-muted-foreground uppercase text-[10px]">Cerrado</Badge>
-                      </div>
+                      <Button variant="ghost" size="sm" asChild className="text-primary font-bold">
+                        <a href={href} target="_blank" rel="noopener noreferrer">
+                          <ExternalLink className="h-4 w-4 mr-1" /> Abrir
+                        </a>
+                      </Button>
                     </div>
-                  ))}
-                </div>
-              )}
-            </TabsContent>
-
-            <TabsContent value="docs" className="p-4 pt-0">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Documentación Adjunta</h3>
+                  );
+                })}
               </div>
-              {filteredDocuments.length === 0 ? <EmptyMessage compact title="Todavía no tiene documentos" icon={FileIcon} className="rounded-2xl border border-dashed border-border/60" /> : (
-                <div className="grid grid-cols-1 gap-2">
-                  {filteredDocuments.map(d => {
-                    const href = d.url.startsWith("/api") ? d.url : `/api${d.url}`;
-                    return (
-                      <div key={d.id} className="p-3 border border-border/60 rounded-2xl flex justify-between items-center bg-muted/20 hover:bg-muted/40 transition-colors">
-                        <div className="flex items-center gap-3">
-                          <FileIcon className="h-4 w-4 text-muted-foreground" />
-                          <div>
-                            <p className="font-medium text-sm text-foreground">{d.name}</p>
-                            <p className="text-[10px] text-muted-foreground">{new Date(d.createdAt).toLocaleDateString()}</p>
-                          </div>
-                        </div>
-                        <Button variant="ghost" size="sm" asChild className="text-primary font-bold">
-                          <a href={href} target="_blank" rel="noopener noreferrer">
-                            <ExternalLink className="h-4 w-4 mr-1" /> Abrir
-                          </a>
-                        </Button>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-              <UploadDocumentForm personId={person.id} />
-            </TabsContent>
-          </Tabs>
-        </Card>
-      </div>
+            )}
+            {person && canEdit && <UploadDocumentForm personId={person.id} />}
+          </TabsContent>
+        </PersonTabs>
+      </Card>
     </div>
   );
 }

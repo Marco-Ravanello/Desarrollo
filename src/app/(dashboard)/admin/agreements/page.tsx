@@ -25,9 +25,9 @@ export default async function AgreementsPage({ searchParams }: { searchParams: P
         description="Los convenios de la Muni, con su vigencia y su monto."
         icon={Landmark}
         actions={
-          <Button asChild className="bg-emerald-600 hover:bg-emerald-700">
+          <Button asChild>
             <Link href="/admin/agreements/new">
-              <Plus className="mr-2 h-4 w-4" /> Nuevo Convenio
+              <Plus className="mr-2 h-4 w-4" /> Nuevo convenio
             </Link>
           </Button>
         }
@@ -76,7 +76,7 @@ export default async function AgreementsPage({ searchParams }: { searchParams: P
                         ${Number(agreement.amount).toLocaleString('es-AR')}
                       </div>
                     )}
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-widest mt-1">
+                    <p className="text-xs text-muted-foreground mt-1">
                       Registrado el {new Date(agreement.createdAt).toLocaleDateString()}
                     </p>
                   </div>

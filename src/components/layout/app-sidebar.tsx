@@ -133,6 +133,7 @@ export function AppSidebar({ isMobile = false, onNavigate }: AppSidebarProps) {
           variant="ghost"
           size="icon"
           onClick={toggleSidebar}
+          aria-label={isCollapsed ? "Abrir menú" : "Achicar menú"}
           className={`absolute -right-3 top-20 h-6 w-6 rounded-full ${sidebarColor} hover:brightness-110 text-white border-none shadow-md z-50 print:hidden`}
         >
           {isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
@@ -144,7 +145,7 @@ export function AppSidebar({ isMobile = false, onNavigate }: AppSidebarProps) {
           <MunicipalCrest className="h-11 w-11 shadow-sm" />
           {!isCollapsed && (
             <div className="flex flex-col min-w-0 leading-tight">
-              <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground truncate">
+              <span className="text-xs font-semibold text-muted-foreground truncate">
                 Tres de Febrero
               </span>
               <span className="tracking-tight truncate font-bold text-[#163C68] dark:text-blue-300 text-lg font-heading">
@@ -158,7 +159,7 @@ export function AppSidebar({ isMobile = false, onNavigate }: AppSidebarProps) {
 
       <nav className="flex-1 min-h-0 px-3 space-y-1 overflow-y-auto custom-scrollbar">
         <div className="pb-2">
-          {!isCollapsed && navigation.length > 0 && <p className="px-3 text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-2 font-heading">Principal</p>}
+          {!isCollapsed && navigation.length > 0 && <p className="px-3 text-xs font-bold text-muted-foreground mb-2 font-heading">Principal</p>}
           {navigation.map((item) => {
             const isActive = pathname === item.url || (item.url !== "/dashboard" && pathname.startsWith(item.url));
             return (
@@ -190,7 +191,7 @@ export function AppSidebar({ isMobile = false, onNavigate }: AppSidebarProps) {
                   type="button"
                   onClick={() => toggleGroup(group.id)}
                   aria-expanded={isOpen}
-                  className="w-full flex items-center justify-between px-3 py-1.5 mb-1 rounded-lg text-[11px] font-bold text-muted-foreground uppercase tracking-wider font-heading hover:text-foreground hover:bg-muted/40 transition-colors"
+                  className="w-full flex items-center justify-between px-3 py-1.5 mb-1 rounded-lg text-xs font-bold text-muted-foreground font-heading hover:text-foreground hover:bg-muted/40 transition-colors"
                 >
                   {group.title}
                   <ChevronDown className={`h-3.5 w-3.5 transition-transform ${isOpen ? "" : "-rotate-90"}`} />
@@ -220,7 +221,7 @@ export function AppSidebar({ isMobile = false, onNavigate }: AppSidebarProps) {
         })}
 
         <div className="pt-3 pb-2">
-          {!isCollapsed && socialAreas.length > 0 && <p className="px-3 text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-2 font-heading">Áreas Sociales</p>}
+          {!isCollapsed && socialAreas.length > 0 && <p className="px-3 text-xs font-bold text-muted-foreground mb-2 font-heading">Áreas sociales</p>}
           {socialAreas.map((item) => (
             <Link
               key={item.title}

@@ -87,7 +87,7 @@ export default function ChangePasswordPage() {
                   className="h-11 rounded-xl"
                 />
                 {field === "next" && (
-                  <p className="text-[11px] text-muted-foreground">
+                  <p className="text-xs text-muted-foreground">
                     Al menos {PASSWORD_MIN_LENGTH} caracteres, con letras y números.
                   </p>
                 )}

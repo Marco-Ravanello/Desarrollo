@@ -139,7 +139,7 @@ export function UsersManagementView({
   }));
 
   const renderRoleBadge = (role: Role) => (
-    <Badge variant="outline" title={ROLE_INFO[role]?.description} className={`whitespace-nowrap font-bold text-[10px] ${ROLE_INFO[role]?.badgeClass ?? ""}`}>
+    <Badge variant="outline" title={ROLE_INFO[role]?.description} className={`whitespace-nowrap font-bold text-xs ${ROLE_INFO[role]?.badgeClass ?? ""}`}>
       {roleLabel(role)}
     </Badge>
   );
@@ -214,7 +214,7 @@ export function UsersManagementView({
             <button
               type="button"
               onClick={() => setStatusFilter("TODOS")}
-              className={`text-xs px-3.5 py-1.5 rounded-xl font-bold transition-all ${
+              className={`text-xs px-3.5 py-2 sm:py-1.5 rounded-xl font-bold transition-all ${
                 statusFilter === "TODOS"
                   ? "bg-card text-foreground shadow-xs border border-border/40"
                   : "text-muted-foreground hover:text-foreground"
@@ -225,7 +225,7 @@ export function UsersManagementView({
             <button
               type="button"
               onClick={() => setStatusFilter("ACTIVOS")}
-              className={`text-xs px-3.5 py-1.5 rounded-xl font-bold transition-all ${
+              className={`text-xs px-3.5 py-2 sm:py-1.5 rounded-xl font-bold transition-all ${
                 statusFilter === "ACTIVOS"
                   ? "bg-card text-foreground shadow-xs border border-border/40"
                   : "text-muted-foreground hover:text-foreground"
@@ -236,7 +236,7 @@ export function UsersManagementView({
             <button
               type="button"
               onClick={() => setStatusFilter("INACTIVOS")}
-              className={`text-xs px-3.5 py-1.5 rounded-xl font-bold transition-all ${
+              className={`text-xs px-3.5 py-2 sm:py-1.5 rounded-xl font-bold transition-all ${
                 statusFilter === "INACTIVOS"
                   ? "bg-card text-foreground shadow-xs border border-border/40"
                   : "text-muted-foreground hover:text-foreground"
@@ -258,6 +258,7 @@ export function UsersManagementView({
             </div>
 
             <select
+              aria-label="Filtrar por rol"
               value={roleFilter}
               onChange={(e) => setRoleFilter(e.target.value)}
               className="h-9 px-3 rounded-xl bg-muted/20 border border-border/60 text-xs font-bold text-foreground focus:outline-none focus:ring-1 focus:ring-primary w-full sm:w-auto"
@@ -283,7 +284,7 @@ export function UsersManagementView({
 
         <TableCards>
           <table className="w-full text-xs text-left">
-            <thead className="bg-muted/40 text-muted-foreground uppercase font-bold tracking-wider border-b border-border/40">
+            <thead className="bg-muted/40 text-muted-foreground font-bold border-b border-border/40">
               <tr>
                 <th className="px-5 py-3.5 min-w-[240px]">Persona</th>
                 <th className="px-4 py-3.5">Rol</th>
@@ -308,13 +309,13 @@ export function UsersManagementView({
                               {u.name || "Sin nombre"}
                             </p>
                             {u.username && (
-                              <p className="mt-0.5 truncate font-mono text-[11px] font-semibold text-foreground/80" title="Nombre de usuario para ingresar">{u.username}</p>
+                              <p className="mt-0.5 truncate font-mono text-xs font-semibold text-foreground/80" title="Nombre de usuario para ingresar">{u.username}</p>
                             )}
                             {u.email && (
-                              <p className="truncate font-mono text-[11px] font-normal text-muted-foreground" title={u.email}>{u.email}</p>
+                              <p className="truncate font-mono text-xs font-normal text-muted-foreground" title={u.email}>{u.email}</p>
                             )}
                             {isSelf && (
-                              <Badge variant="outline" className="text-[9px] font-bold border-primary/30 text-primary mt-0.5">
+                              <Badge variant="outline" className="text-xs font-bold border-primary/30 text-primary mt-0.5">
                                 Sos vos
                               </Badge>
                             )}
@@ -336,7 +337,7 @@ export function UsersManagementView({
                           disabled={isSelf || isPending}
                           onClick={() => handleToggleStatus(u.id, u.isActive)}
                           title={isSelf ? "No podés suspender tu propia cuenta" : u.isActive ? "Tocá para suspender la cuenta" : "Tocá para volver a activar la cuenta"}
-                          className={`px-2.5 py-1 rounded-xl text-[10px] font-bold border transition-all ${
+                          className={`px-2.5 py-1 rounded-xl text-xs font-bold border transition-all ${
                             u.isActive
                               ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30 hover:bg-rose-500/10 hover:text-rose-700 dark:hover:text-rose-300 hover:border-rose-500/30"
                               : "bg-rose-500/15 text-rose-700 dark:text-rose-300 border-rose-500/30 hover:bg-emerald-500/10 hover:text-emerald-700 dark:hover:text-emerald-300 hover:border-emerald-500/30"

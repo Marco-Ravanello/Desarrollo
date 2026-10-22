@@ -19,7 +19,7 @@ export default function SectionError({
 
   return (
     <div className="flex min-h-[50vh] flex-col items-center justify-center gap-4 p-6 text-center">
-      <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-rose-500/10 text-rose-600 dark:text-rose-400">
+      <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-rose-500/10 text-rose-700 dark:text-rose-400">
         <AlertTriangle className="h-7 w-7" />
       </div>
       <div className="max-w-md space-y-1">
@@ -28,7 +28,7 @@ export default function SectionError({
           Puede ser un problema momentáneo de conexión. Probá de nuevo en unos segundos.
         </p>
         {error.digest && (
-          <p className="pt-1 font-mono text-[11px] text-muted-foreground/70">Código: {error.digest}</p>
+          <p className="pt-1 font-mono text-xs text-muted-foreground">Código: {error.digest}</p>
         )}
       </div>
       <div className="flex flex-wrap justify-center gap-2 pt-1">

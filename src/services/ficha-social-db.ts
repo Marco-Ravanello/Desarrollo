@@ -7,7 +7,7 @@ import { cleanDni, type FichaSocialPersonaResponse, type RelacionFamiliar, type 
 export async function getFichaSocialByDniFromDb(rawDni: string): Promise<FichaSocialPersonaResponse> {
   const dni = cleanDni(rawDni);
   if (!dni) {
-    return { encontrado: false, mensaje: "Debe ingresar un DNI o CUIL válido." };
+    return { encontrado: false, mensaje: "Escribí un DNI o CUIL válido." };
   }
 
   try {

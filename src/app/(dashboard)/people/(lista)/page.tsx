@@ -5,7 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { Eye, Plus, Upload, Users, Calendar, Building2, MapPin, Phone, Network, RotateCcw, UserX, CopyCheck } from "lucide-react";
+import { Eye, Plus, Upload, Users, Calendar, Building2, MapPin, Phone, RotateCcw, UserX, CopyCheck } from "lucide-react";
 import Link from "next/link";
 import {
   Sheet,
@@ -25,6 +25,7 @@ import { PeoplePagination } from "@/components/people/people-pagination";
 import { PageHeader } from "@/components/layout/page-header";
 import { StatCard } from "@/components/ui/stat-card";
 import { EmptyMessage } from "@/components/ui/empty-message";
+import { PeopleHeaderActions } from "@/components/people/people-header-actions";
 
 export const metadata = { title: "Registro Único" };
 
@@ -68,38 +69,10 @@ export default async function PeoplePage({
         description="Las personas del padrón municipal. Buscá por nombre, DNI o dirección y entrá a su legajo."
         icon={Users}
         actions={
-          <>
-            <Button variant="outline" asChild className="rounded-2xl h-11 px-4 text-xs font-bold transition-all hover:bg-accent border-border/60 gap-2">
-              <Link href="/ficha-social">
-                <Network className="h-4 w-4 text-indigo-500" />
-                Ficha Social 360°
-              </Link>
-            </Button>
-            <Button variant="outline" asChild className="rounded-2xl h-11 px-4 text-xs font-bold transition-all hover:bg-accent border-border/60 gap-2">
-              <Link href="/ficha-social/cruces">
-                Cruces de programas
-              </Link>
-            </Button>
-            {canImport && (
-              <Button variant="outline" asChild className="rounded-2xl h-11 px-4 text-xs font-bold transition-all hover:bg-accent border-border/60 gap-2">
-                <Link href="/people/duplicados">
-                  <CopyCheck className="h-4 w-4 text-amber-500" />
-                  Posibles duplicados
-                </Link>
-              </Button>
-            )}
-            {canImport && (
-            <Sheet>
-              <SheetTrigger asChild>
-                <Button variant="outline" className="rounded-2xl h-11 px-4 text-xs font-bold transition-all hover:bg-accent border-border/60">
-                  <Upload className="mr-2 h-4 w-4"/> Importar
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="right" className="sm:max-w-xl w-full bg-card text-card-foreground rounded-l-[2rem] shadow-2xl p-8 overflow-y-auto border-l border-border">
-                <SheetHeader className="mb-6">
-                  <SheetTitle className="text-2xl font-bold">Importación Masiva</SheetTitle>
-                  <SheetDescription>Sumá personas al padrón o cargá intervenciones desde una planilla.</SheetDescription>
-                </SheetHeader>
+          <PeopleHeaderActions
+            canImport={canImport}
+            importContent={
+              canImport ? (
                 <Tabs defaultValue="padron">
                   <TabsList className="mb-6 w-full">
                     <TabsTrigger value="padron" className="flex-1">Personas al padrón</TabsTrigger>
@@ -112,27 +85,23 @@ export default async function PeoplePage({
                     <InterventionsAdminPage />
                   </TabsContent>
                 </Tabs>
-              </SheetContent>
-            </Sheet>
-            )}
-            <Button asChild className="rounded-2xl h-11 px-5 shadow-lg shadow-primary/20 transition-all hover:scale-105 bg-primary text-primary-foreground font-bold text-xs">
-              <Link href="/people/new"><Plus className="mr-2 h-4 w-4"/> Cargar persona</Link>
-            </Button>
-          </>
+              ) : undefined
+            }
+          />
         }
       />
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
         <StatCard
-          label="Padrón Unificado"
+          label="Padrón unificado"
           value={stats.total.toLocaleString("es-AR")}
           hint="Ciudadanos unificados con cruce de programas"
           icon={Users}
           tone="blue"
         />
         <StatCard
-          label="Edad Promedio"
+          label="Edad promedio"
           value={
             stats.avgAge > 0 ? (
               <>
@@ -148,7 +117,7 @@ export default async function PeoplePage({
         />
         <StatCard
           className="col-span-2 lg:col-span-1"
-          label="Barrio con Mayor Asistencia"
+          label="Barrio con mayor asistencia"
           value={
             <span className="line-clamp-1 text-xl" title={stats.topArea}>
               {stats.topArea && stats.topArea !== "Tres de Febrero" && stats.topArea !== "Sin datos" ? stats.topArea : "Sin registros"}
@@ -171,22 +140,22 @@ export default async function PeoplePage({
           <Table>
             <TableHeader className="bg-muted/40">
               <TableRow className="border-b border-border/60 hover:bg-transparent">
-                <TableHead className="font-bold text-muted-foreground uppercase text-[10px] tracking-wider py-4 px-6">
-                  Apellido y Nombre
+                <TableHead className="font-bold text-muted-foreground text-xs py-4 px-6">
+                  Apellido y nombre
                 </TableHead>
-                <TableHead className="font-bold text-muted-foreground uppercase text-[10px] tracking-wider py-4 px-6">
+                <TableHead className="font-bold text-muted-foreground text-xs py-4 px-6">
                   DNI
                 </TableHead>
-                <TableHead className="font-bold text-muted-foreground uppercase text-[10px] tracking-wider py-4 px-6">
-                  Programas Sociales Activos
+                <TableHead className="font-bold text-muted-foreground text-xs py-4 px-6">
+                  Programas sociales activos
                 </TableHead>
-                <TableHead className="font-bold text-muted-foreground uppercase text-[10px] tracking-wider py-4 px-6">
-                  Barrio / Domicilio
+                <TableHead className="font-bold text-muted-foreground text-xs py-4 px-6">
+                  Barrio / domicilio
                 </TableHead>
-                <TableHead className="font-bold text-muted-foreground uppercase text-[10px] tracking-wider py-4 px-6">
+                <TableHead className="font-bold text-muted-foreground text-xs py-4 px-6">
                   Contacto
                 </TableHead>
-                <TableHead className="font-bold text-muted-foreground uppercase text-[10px] tracking-wider py-4 px-6 text-right">
+                <TableHead className="font-bold text-muted-foreground text-xs py-4 px-6 text-right">
                   Acciones
                 </TableHead>
               </TableRow>
@@ -208,12 +177,12 @@ export default async function PeoplePage({
                         {p.programasActivos && p.programasActivos.length > 0 ? (
                           <>
                             {p.programasActivos.slice(0, 2).map((prog: string, idx: number) => (
-                              <Badge key={idx} variant="outline" className="text-[10px] font-bold border-primary/30 text-primary bg-primary/5 py-0 px-2 rounded-lg">
+                              <Badge key={idx} variant="outline" className="text-xs font-bold border-primary/30 text-primary bg-primary/5 py-0 px-2 rounded-lg">
                                 {prog}
                               </Badge>
                             ))}
                             {p.programasActivos.length > 2 && (
-                              <Badge variant="secondary" className="text-[9px] font-bold py-0 px-1.5 rounded-lg bg-muted text-muted-foreground">
+                              <Badge variant="secondary" className="text-xs font-bold py-0 px-1.5 rounded-lg bg-muted text-muted-foreground">
                                 +{p.programasActivos.length - 2} más
                               </Badge>
                             )}
@@ -238,21 +207,15 @@ export default async function PeoplePage({
                           <span className="font-mono">{p.phone}</span>
                         </span>
                       ) : (
-                        <span className="text-muted-foreground/40 italic">No registra</span>
+                        <span className="text-muted-foreground italic">No registra</span>
                       )}
                     </TableCell>
                     <TableCell className="text-right py-4 px-6">
                       <div className="flex items-center justify-end gap-1.5">
-                        <Button variant="ghost" size="sm" asChild className="rounded-xl h-8 px-2.5 text-[11px] font-bold hover:bg-primary hover:text-white transition-all text-primary gap-1">
-                          <Link href={`/people/${p.id}`} title="Ver expediente">
+                        <Button variant="ghost" size="sm" asChild className="rounded-xl h-8 px-2.5 text-xs font-bold hover:bg-primary hover:text-white transition-all text-primary gap-1">
+                          <Link href={`/people/${p.id}`}>
                             <Eye className="h-3.5 w-3.5"/>
-                            <span>Expediente</span>
-                          </Link>
-                        </Button>
-                        <Button variant="ghost" size="sm" asChild className="rounded-xl h-8 px-2.5 text-[11px] font-bold hover:bg-indigo-600 hover:text-white transition-all text-indigo-500 gap-1">
-                          <Link href={`/ficha-social?dni=${p.dni}`} title="Ver Ficha 360°">
-                            <Network className="h-3.5 w-3.5"/>
-                            <span>360°</span>
+                            <span>Ver ficha</span>
                           </Link>
                         </Button>
                       </div>

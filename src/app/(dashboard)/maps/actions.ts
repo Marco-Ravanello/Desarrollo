@@ -6,7 +6,7 @@ import { PERMISSIONS, canAccessPath, hasPermission } from "@/lib/permissions";
 import prisma from "@/lib/prisma";
 import type { MapFilters } from "@/lib/map-filters";
 import { normalizeMapFilters } from "@/lib/map-filters";
-import { getMapData, getMapExportRows, getMapPeople, type MapData, type MapExportRow, type MapPerson } from "@/services/map";
+import { getMapData, getMapExportRows, getMapPeople, type MapExportRow, type MapPerson, type PackedMapData } from "@/services/map";
 import {
   MAP_LAYER_KEYS, getMapCaseItems, getMapLayer, getMapStormItems,
   type MapCaseItem, type MapLayerKey, type MapLayerPoints, type MapStormItem,
@@ -20,7 +20,7 @@ async function mapSession() {
   return session;
 }
 
-export async function getMapDataAction(filters: MapFilters): Promise<{ success: true; data: MapData } | { success: false; error: string }> {
+export async function getMapDataAction(filters: MapFilters): Promise<{ success: true; data: PackedMapData } | { success: false; error: string }> {
   if (!(await mapSession())) return { success: false, error: DENIED };
   try {
     return { success: true, data: await getMapData(normalizeMapFilters(filters)) };

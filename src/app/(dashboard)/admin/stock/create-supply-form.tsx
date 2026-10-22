@@ -36,13 +36,13 @@ export function CreateSupplyForm({ areas }: { areas: any[] }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-lg">Nuevo Insumo</CardTitle>
+        <CardTitle className="text-lg">Nuevo insumo</CardTitle>
         <CardDescription>Agregar un nuevo artículo al inventario.</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="name">Nombre del Insumo</Label>
+            <Label htmlFor="name">Nombre del insumo</Label>
             <Input id="name" name="name" placeholder="Ej: Resmas A4" required />
           </div>
 
@@ -53,23 +53,23 @@ export function CreateSupplyForm({ areas }: { areas: any[] }) {
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="stock">Stock Inicial</Label>
+              <Label htmlFor="stock">Stock inicial</Label>
               <Input id="stock" name="stock" type="number" defaultValue="0" required />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="minStock">Stock Mínimo</Label>
+              <Label htmlFor="minStock">Stock mínimo</Label>
               <Input id="minStock" name="minStock" type="number" defaultValue="5" required />
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="areaId">Área Responsable</Label>
+            <Label htmlFor="areaId">Área responsable</Label>
             <select
               id="areaId"
               name="areaId"
               className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm"
             >
-              <option value="">Depósito General</option>
+              <option value="">Depósito general</option>
               {areas.map(a => (
                 <option key={a.id} value={a.id}>{a.name}</option>
               ))}
@@ -77,7 +77,7 @@ export function CreateSupplyForm({ areas }: { areas: any[] }) {
           </div>
 
           <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? "Registrando..." : <><Plus className="h-4 w-4 mr-2"/> Registrar Insumo</>}
+            {loading ? "Registrando..." : <><Plus className="h-4 w-4 mr-2"/> Registrar insumo</>}
           </Button>
         </form>
       </CardContent>

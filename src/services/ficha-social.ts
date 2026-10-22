@@ -174,7 +174,7 @@ export async function searchFichaSocialByDni(rawDni: string): Promise<FichaSocia
 
   const dni = cleanDni(rawDni);
   if (!dni) {
-    return { encontrado: false, mensaje: "Debe ingresar un DNI o CUIL válido." };
+    return { encontrado: false, mensaje: "Escribí un DNI o CUIL válido." };
   }
 
   try {

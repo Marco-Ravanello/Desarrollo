@@ -70,18 +70,19 @@ export function PeopleFilters({ barrios, programas }: PeopleFiltersProps) {
           <Input
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
-            placeholder="Buscar por DNI, Apellido, Nombre o Dirección..."
+            placeholder="Buscar por DNI, apellido, nombre o dirección..."
             className="pl-10 h-11 rounded-2xl border-border/60 bg-muted/20 text-xs font-semibold focus-visible:ring-primary"
           />
         </div>
 
         <div className="lg:col-span-3">
           <select
+            aria-label="Filtrar por barrio"
             value={currentBarrio}
             onChange={(e) => updateFilters({ barrio: e.target.value })}
             className="w-full h-11 px-3 rounded-2xl bg-muted/20 border border-border/60 text-xs font-bold text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
           >
-            <option value="all">Todas las Localidades / Barrios</option>
+            <option value="all">Todas las localidades / barrios</option>
             {barrios.map((b, idx) => (
               <option key={idx} value={b}>
                 {b}
@@ -92,11 +93,12 @@ export function PeopleFilters({ barrios, programas }: PeopleFiltersProps) {
 
         <div className="lg:col-span-3">
           <select
+            aria-label="Filtrar por programa"
             value={currentPrograma}
             onChange={(e) => updateFilters({ programa: e.target.value })}
             className="w-full h-11 px-3 rounded-2xl bg-muted/20 border border-border/60 text-xs font-bold text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
           >
-            <option value="all">Todos los Programas Sociales</option>
+            <option value="all">Todos los programas sociales</option>
             {programas.map((p, idx) => (
               <option key={idx} value={p}>
                 {p}
@@ -106,15 +108,15 @@ export function PeopleFilters({ barrios, programas }: PeopleFiltersProps) {
         </div>
 
         <div className="lg:col-span-1 flex items-center gap-2">
-          <Button type="submit" className="h-11 w-full rounded-2xl px-4 text-xs font-bold bg-primary text-primary-foreground">
-            <Search className="h-4 w-4" />
+          <Button type="submit" className="h-11 w-full rounded-2xl px-4 text-xs font-bold bg-primary text-primary-foreground gap-2">
+            <Search className="h-4 w-4" /> Buscar
           </Button>
         </div>
       </form>
 
       <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-border/40 text-xs">
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
+          <span className="text-xs font-bold text-muted-foreground flex items-center gap-1">
             <Filter className="h-3.5 w-3.5 text-primary" /> Filtros Activos:
           </span>
 
@@ -128,7 +130,7 @@ export function PeopleFilters({ barrios, programas }: PeopleFiltersProps) {
           )}
 
           {currentBarrio && currentBarrio !== "all" && (
-            <Badge variant="secondary" className="gap-1 rounded-xl text-xs bg-amber-500/10 text-amber-500 border border-amber-500/20 font-bold">
+            <Badge variant="secondary" className="gap-1 rounded-xl text-xs bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20 font-bold">
               Barrio: {currentBarrio}
               <button type="button" onClick={() => updateFilters({ barrio: null })} className="ml-1 hover:text-rose-500">
                 <X className="h-3 w-3" />
@@ -137,7 +139,7 @@ export function PeopleFilters({ barrios, programas }: PeopleFiltersProps) {
           )}
 
           {currentPrograma && currentPrograma !== "all" && (
-            <Badge variant="secondary" className="gap-1 rounded-xl text-xs bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 font-bold">
+            <Badge variant="secondary" className="gap-1 rounded-xl text-xs bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20 font-bold">
               Programa: {currentPrograma}
               <button type="button" onClick={() => updateFilters({ programa: null })} className="ml-1 hover:text-rose-500">
                 <X className="h-3 w-3" />
@@ -155,18 +157,19 @@ export function PeopleFilters({ barrios, programas }: PeopleFiltersProps) {
               variant="ghost"
               size="sm"
               onClick={clearAllFilters}
-              className="h-7 text-[11px] font-bold text-muted-foreground hover:text-destructive rounded-xl"
+              className="h-7 text-xs font-bold text-muted-foreground hover:text-destructive rounded-xl"
             >
-              <RotateCcw className="h-3 w-3 mr-1" /> Limpiar Todo
+              <RotateCcw className="h-3 w-3 mr-1" /> Limpiar todo
             </Button>
           )}
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="text-[11px] font-bold text-muted-foreground uppercase flex items-center gap-1">
+          <span className="text-xs font-bold text-muted-foreground flex items-center gap-1">
             <ListOrdered className="h-3.5 w-3.5" /> Filas:
           </span>
           <select
+            aria-label="Personas por página"
             value={currentLimit}
             onChange={(e) => updateFilters({ limit: e.target.value })}
             className="h-8 px-2 rounded-xl bg-muted/20 border border-border/60 text-xs font-bold text-foreground focus:outline-none"

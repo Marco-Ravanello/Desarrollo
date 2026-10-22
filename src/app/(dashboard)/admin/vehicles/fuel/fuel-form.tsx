@@ -68,8 +68,8 @@ export function FuelForm({ vehicles }: { vehicles: any[] }) {
   return (
     <div className="space-y-8">
       <div className="bg-amber-50 dark:bg-amber-950/20 p-4 rounded-2xl border border-amber-200 dark:border-amber-900/30">
-           <h4 className="text-xs font-bold text-amber-600 dark:text-amber-400 uppercase tracking-widest mb-3">Asistente de Carga Rápida (Foto Ticket)</h4>
-           <OCRScanner onScanComplete={handleScanComplete} />
+           <h4 className="text-xs font-bold text-amber-700 dark:text-amber-400 mb-3">Asistente de Carga Rápida (Foto Ticket)</h4>
+           <OCRScanner onScanComplete={handleScanComplete} label="Escanear el ticket" />
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
@@ -87,7 +87,7 @@ export function FuelForm({ vehicles }: { vehicles: any[] }) {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-2">
-          <Label htmlFor="date" className="font-semibold">Fecha de Carga</Label>
+          <Label htmlFor="date" className="font-semibold">Fecha de carga</Label>
           <Input
             id="date"
             name="date"
@@ -99,7 +99,7 @@ export function FuelForm({ vehicles }: { vehicles: any[] }) {
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="ticketNumber" className="font-semibold">N° de Ticket / Operación</Label>
+          <Label htmlFor="ticketNumber" className="font-semibold">N° de ticket / operación</Label>
           <Input
             id="ticketNumber"
             name="ticketNumber"
@@ -107,14 +107,14 @@ export function FuelForm({ vehicles }: { vehicles: any[] }) {
             required
             value={fuelData.ticketNumber}
             onChange={(e) => setFuelData({...fuelData, ticketNumber: e.target.value})}
-            className="rounded-xl font-mono uppercase"
+            className="rounded-xl font-mono"
           />
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-2">
-          <Label htmlFor="liters" className="font-semibold">Litros Cargados</Label>
+          <Label htmlFor="liters" className="font-semibold">Litros cargados</Label>
           <div className="relative">
             <Input
                 id="liters"
@@ -131,7 +131,7 @@ export function FuelForm({ vehicles }: { vehicles: any[] }) {
           </div>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="amount" className="font-semibold">Importe Total</Label>
+          <Label htmlFor="amount" className="font-semibold">Importe total</Label>
           <div className="relative">
              <span className="absolute left-3 top-2.5 text-muted-foreground text-sm font-bold">$</span>
              <Input

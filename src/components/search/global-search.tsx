@@ -110,7 +110,7 @@ export function GlobalSearch() {
       >
         <Search className="h-4 w-4 shrink-0 text-muted-foreground group-hover:text-primary transition-colors" />
         <span className="flex-1 text-left font-medium">Buscar o ir a…</span>
-        <kbd className="pointer-events-none hidden h-5 select-none items-center gap-1 rounded-md border border-border/60 bg-background/80 px-1.5 font-mono text-[10px] font-bold text-muted-foreground sm:flex">
+        <kbd className="pointer-events-none hidden h-5 select-none items-center gap-1 rounded-md border border-border/60 bg-background/80 px-1.5 font-mono text-xs font-bold text-muted-foreground sm:flex">
           <span className="text-xs">⌘</span>K
         </kbd>
       </button>
@@ -139,7 +139,7 @@ export function GlobalSearch() {
                   <Search className="h-6 w-6 text-muted-foreground opacity-30" />
                 </div>
                 <p className="font-semibold text-muted-foreground">No encontramos nada con &ldquo;{query}&rdquo;</p>
-                <p className="text-xs text-muted-foreground/60">Probá con el DNI, el apellido o el título del expediente.</p>
+                <p className="text-xs text-muted-foreground">Probá con el DNI, el apellido o el título del expediente.</p>
               </Command.Empty>
 
               {query.length < 2 && recent.length > 0 && (
@@ -153,7 +153,7 @@ export function GlobalSearch() {
                         className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-muted aria-selected:bg-muted transition-all group"
                       >
                         {r.kind === "case" ? (
-                          <div className="h-9 w-9 shrink-0 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 rounded-full flex items-center justify-center">
+                          <div className="h-9 w-9 shrink-0 bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 rounded-full flex items-center justify-center">
                             <FileText className="h-4 w-4" />
                           </div>
                         ) : (
@@ -163,7 +163,7 @@ export function GlobalSearch() {
                         )}
                         <div className="flex min-w-0 flex-1 flex-col">
                           <span className="truncate font-semibold text-sm text-foreground">{r.title}</span>
-                          <span className="truncate text-[11px] text-muted-foreground">
+                          <span className="truncate text-xs text-muted-foreground">
                             {r.kind === "case" ? "Expediente" : "Persona"}
                             {r.subtitle ? ` · ${r.subtitle}` : ""}
                           </span>
@@ -188,12 +188,12 @@ export function GlobalSearch() {
                           onSelect={() => navigate(c.url)}
                           className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-muted aria-selected:bg-muted transition-all group"
                         >
-                          <div className="h-9 w-9 bg-blue-500/15 text-blue-500 rounded-full flex items-center justify-center font-bold text-xs uppercase group-aria-selected:bg-blue-600 group-aria-selected:text-white transition-colors">
+                          <div className="h-9 w-9 bg-blue-500/15 text-blue-700 dark:text-blue-400 rounded-full flex items-center justify-center font-bold text-xs uppercase group-aria-selected:bg-blue-600 group-aria-selected:text-white transition-colors">
                             {c.title[0]}
                           </div>
                           <div className="flex flex-col">
                             <span className="font-semibold text-sm text-foreground">{c.title}</span>
-                            <span className="text-[10px] text-muted-foreground font-mono uppercase">{c.subtitle}</span>
+                            <span className="text-xs text-muted-foreground font-mono">{c.subtitle}</span>
                           </div>
                         </Command.Item>
                       ))}
@@ -208,12 +208,12 @@ export function GlobalSearch() {
                           onSelect={() => navigate(c.url)}
                           className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-muted aria-selected:bg-muted transition-all group"
                         >
-                          <div className="h-9 w-9 bg-emerald-500/15 text-emerald-500 rounded-full flex items-center justify-center group-aria-selected:bg-emerald-600 group-aria-selected:text-white transition-colors">
+                          <div className="h-9 w-9 bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 rounded-full flex items-center justify-center group-aria-selected:bg-emerald-600 group-aria-selected:text-white transition-colors">
                             <FileText className="h-4 w-4" />
                           </div>
                           <div className="flex flex-col">
                             <span className="font-semibold text-sm text-foreground">{c.title}</span>
-                            <span className="text-[10px] text-muted-foreground font-mono uppercase">{c.subtitle}</span>
+                            <span className="text-xs text-muted-foreground font-mono">{c.subtitle}</span>
                           </div>
                         </Command.Item>
                       ))}
@@ -228,12 +228,12 @@ export function GlobalSearch() {
                           onSelect={() => navigate(h.url)}
                           className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-muted aria-selected:bg-muted transition-all group"
                         >
-                          <div className="h-9 w-9 bg-purple-500/15 text-purple-500 rounded-full flex items-center justify-center group-aria-selected:bg-purple-600 group-aria-selected:text-white transition-colors">
+                          <div className="h-9 w-9 bg-purple-500/15 text-purple-700 dark:text-purple-400 rounded-full flex items-center justify-center group-aria-selected:bg-purple-600 group-aria-selected:text-white transition-colors">
                             <Users className="h-4 w-4" />
                           </div>
                           <div className="flex flex-col">
                             <span className="font-semibold text-sm text-foreground">{h.title}</span>
-                            <span className="text-[10px] text-muted-foreground font-mono uppercase">{h.subtitle}</span>
+                            <span className="text-xs text-muted-foreground font-mono">{h.subtitle}</span>
                           </div>
                         </Command.Item>
                       ))}
@@ -248,12 +248,12 @@ export function GlobalSearch() {
                           onSelect={() => navigate(a.url)}
                           className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-muted aria-selected:bg-muted transition-all group"
                         >
-                          <div className="h-9 w-9 bg-orange-500/15 text-orange-500 rounded-full flex items-center justify-center group-aria-selected:bg-orange-600 group-aria-selected:text-white transition-colors">
+                          <div className="h-9 w-9 bg-orange-500/15 text-orange-700 dark:text-orange-400 rounded-full flex items-center justify-center group-aria-selected:bg-orange-600 group-aria-selected:text-white transition-colors">
                             <Wallet className="h-4 w-4" />
                           </div>
                           <div className="flex flex-col">
                             <span className="font-semibold text-sm text-foreground">{a.title}</span>
-                            <span className="text-[10px] text-muted-foreground font-mono uppercase">{a.subtitle}</span>
+                            <span className="text-xs text-muted-foreground font-mono">{a.subtitle}</span>
                           </div>
                         </Command.Item>
                       ))}
@@ -273,12 +273,12 @@ export function GlobalSearch() {
                     onSelect={() => navigate("/people/new")}
                     className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-muted aria-selected:bg-muted transition-all"
                   >
-                    <div className="h-8 w-8 rounded-lg bg-blue-500/15 text-blue-500 flex items-center justify-center">
+                    <div className="h-8 w-8 rounded-lg bg-blue-500/15 text-blue-700 dark:text-blue-400 flex items-center justify-center">
                       <UserPlus className="h-4 w-4" />
                     </div>
                     <div className="flex flex-col">
                       <span className="font-semibold text-sm">Cargar persona</span>
-                      <span className="text-[10px] text-muted-foreground">Sumar a alguien al Registro Único</span>
+                      <span className="text-xs text-muted-foreground">Sumar a alguien al Registro Único</span>
                     </div>
                   </Command.Item>
                 )}
@@ -287,12 +287,12 @@ export function GlobalSearch() {
                     onSelect={() => navigate("/admin/purchase-orders/new")}
                     className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-muted aria-selected:bg-muted transition-all"
                   >
-                    <div className="h-8 w-8 rounded-lg bg-indigo-500/15 text-indigo-500 flex items-center justify-center">
+                    <div className="h-8 w-8 rounded-lg bg-indigo-500/15 text-indigo-700 dark:text-indigo-400 flex items-center justify-center">
                       <FilePlus className="h-4 w-4" />
                     </div>
                     <div className="flex flex-col">
                       <span className="font-semibold text-sm">Nueva orden de compra</span>
-                      <span className="text-[10px] text-muted-foreground">Cargar un pedido o leer un comprobante escaneado</span>
+                      <span className="text-xs text-muted-foreground">Cargar un pedido o leer un comprobante escaneado</span>
                     </div>
                   </Command.Item>
                 )}
@@ -301,12 +301,12 @@ export function GlobalSearch() {
                     onSelect={() => navigate("/admin/vehicles/reserve")}
                     className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-muted aria-selected:bg-muted transition-all"
                   >
-                    <div className="h-8 w-8 rounded-lg bg-teal-500/15 text-teal-500 flex items-center justify-center">
+                    <div className="h-8 w-8 rounded-lg bg-teal-500/15 text-teal-700 dark:text-teal-400 flex items-center justify-center">
                       <Car className="h-4 w-4" />
                     </div>
                     <div className="flex flex-col">
                       <span className="font-semibold text-sm">Reservar vehículo</span>
-                      <span className="text-[10px] text-muted-foreground">Pedir un vehículo para una fecha</span>
+                      <span className="text-xs text-muted-foreground">Pedir un vehículo para una fecha</span>
                     </div>
                   </Command.Item>
                 )}
@@ -315,12 +315,12 @@ export function GlobalSearch() {
                     onSelect={() => navigate("/admin/agreements/new")}
                     className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-muted aria-selected:bg-muted transition-all"
                   >
-                    <div className="h-8 w-8 rounded-lg bg-amber-500/15 text-amber-500 flex items-center justify-center">
+                    <div className="h-8 w-8 rounded-lg bg-amber-500/15 text-amber-800 dark:text-amber-400 flex items-center justify-center">
                       <Plus className="h-4 w-4" />
                     </div>
                     <div className="flex flex-col">
                       <span className="font-semibold text-sm">Nuevo convenio</span>
-                      <span className="text-[10px] text-muted-foreground">Cargar un convenio con otra institución</span>
+                      <span className="text-xs text-muted-foreground">Cargar un convenio con otra institución</span>
                     </div>
                   </Command.Item>
                 )}

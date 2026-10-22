@@ -83,7 +83,7 @@ export function DuplicatePairCard({ pair }: { pair: DuplicatePair }) {
       <div className="flex flex-wrap items-center gap-2">
         <p className="mr-auto text-sm font-bold text-foreground">{pair.a.nombre}</p>
         {pair.signals.map((s) => (
-          <Badge key={s} variant="outline" className="border-amber-500/30 bg-amber-500/10 text-[10px] font-bold text-amber-700 dark:text-amber-300">
+          <Badge key={s} variant="outline" className="border-amber-500/30 bg-amber-500/10 text-xs font-bold text-amber-700 dark:text-amber-300">
             {SIGNAL_LABELS[s]}
           </Badge>
         ))}

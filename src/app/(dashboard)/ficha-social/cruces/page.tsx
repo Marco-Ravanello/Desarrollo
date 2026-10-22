@@ -55,7 +55,7 @@ export default function CrucesSocialesPage() {
 
   const runCruce = () => {
     if (selectedPrograms.length === 0) {
-      toast.error("Seleccione al menos un programa social para cruzar.");
+      toast.error("Elegí al menos un programa.");
       return;
     }
 
@@ -126,11 +126,11 @@ export default function CrucesSocialesPage() {
         <CardHeader className="pb-3 border-b border-border/40 bg-muted/20">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div>
-              <CardTitle className="text-sm font-bold uppercase tracking-wider text-foreground flex items-center gap-2">
-                <Layers className="h-4 w-4 text-primary" /> Catálogo de Programas Sociales Disponibles
+              <CardTitle className="text-sm font-bold text-foreground flex items-center gap-2">
+                <Layers className="h-4 w-4 text-primary" /> Catálogo de programas sociales disponibles
               </CardTitle>
               <CardDescription className="text-xs text-muted-foreground">
-                Seleccione 2 o más programas para calcular la matriz de cruce en tiempo real.
+                Elegí 2 o más programas para ver quiénes están en todos (o en alguno).
               </CardDescription>
             </div>
             <div className="flex items-center gap-2 bg-background/60 p-1 rounded-xl border border-border/40">
@@ -181,14 +181,14 @@ export default function CrucesSocialesPage() {
                       <Square className="h-4 w-4 text-muted-foreground shrink-0" />
                     )}
                   </div>
-                  <p className="text-[10px] text-muted-foreground line-clamp-2 mt-1 mb-2 font-medium">{prog.descripcion}</p>
-                  <div className="flex items-center justify-between text-[10px] pt-2 border-t border-border/20">
+                  <p className="text-xs text-muted-foreground line-clamp-2 mt-1 mb-2 font-medium">{prog.descripcion}</p>
+                  <div className="flex items-center justify-between text-xs pt-2 border-t border-border/20">
                     <span className="text-muted-foreground">
                       {prog.total_personas === null
                         ? "Sin dato"
                         : `${prog.total_personas.toLocaleString("es-AR")} ${prog.total_personas === 1 ? "persona" : "personas"}`}
                     </span>
-                    <Badge variant="outline" className="text-[9px] py-0 border-border/40">
+                    <Badge variant="outline" className="text-xs py-0 border-border/40">
                       {prog.area.split(" ")[0]}
                     </Badge>
                   </div>
@@ -201,15 +201,15 @@ export default function CrucesSocialesPage() {
 
       <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
         <StatCard
-          label="Coincidencias Cruzadas"
-          value={cruceData?.total_coincidencias.toLocaleString() || 0}
-          hint={<>Modo: <b className="uppercase">{modo}</b></>}
+          label="Coincidencias cruzadas"
+          value={cruceData?.total_coincidencias.toLocaleString("es-AR") || 0}
+          hint={<>Modo: <b className="">{modo}</b></>}
           icon={Users}
           tone="blue"
         />
 
         <StatCard
-          label="Programas Seleccionados"
+          label="Programas seleccionados"
           value={selectedPrograms.length}
           hint="Bases de datos cruzadas"
           icon={Layers}
@@ -225,7 +225,7 @@ export default function CrucesSocialesPage() {
               placeholder="Filtrar por barrio, DNI o nombre..."
               className="h-10 text-xs rounded-xl bg-muted/30 border-border/60"
             />
-            <Button onClick={runCruce} size="sm" className="rounded-xl h-10 px-3">
+            <Button onClick={runCruce} size="sm" aria-label="Cruzar programas" className="rounded-xl h-10 px-3">
               <Search className="h-4 w-4" />
             </Button>
           </div>
@@ -236,10 +236,10 @@ export default function CrucesSocialesPage() {
         <Card className="bg-card text-card-foreground border border-border/60 shadow-xs rounded-2xl p-6">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-                <Building className="h-4 w-4 text-primary" /> Concentración Territorial por Barrio Popular
+              <h3 className="text-xs font-bold text-muted-foreground flex items-center gap-1.5">
+                <Building className="h-4 w-4 text-primary" /> Concentración territorial por barrio popular
               </h3>
-              <p className="text-[11px] text-muted-foreground">Distribución de personas alcanzadas por el cruce según barrio.</p>
+              <p className="text-xs text-muted-foreground">Distribución de personas alcanzadas por el cruce según barrio.</p>
             </div>
           </div>
           <ResponsiveContainer width="100%" height={200}>
@@ -267,8 +267,8 @@ export default function CrucesSocialesPage() {
 
       <Card className="bg-card text-card-foreground border border-border/60 shadow-xs rounded-2xl overflow-hidden">
         <div className="p-4 bg-muted/20 border-b border-border/40 flex items-center justify-between">
-          <span className="text-xs font-bold uppercase tracking-wider text-foreground">
-            Listado Nominal de Beneficiarios Cruzados
+          <span className="text-xs font-bold text-foreground">
+            Listado nominal de beneficiarios cruzados
           </span>
           <span className="text-xs text-muted-foreground font-mono">
             Mostrando {cruceData?.resultados.length || 0} registros
@@ -276,12 +276,12 @@ export default function CrucesSocialesPage() {
         </div>
         <TableCards>
           <table className="w-full text-xs text-left">
-            <thead className="bg-muted/40 text-muted-foreground uppercase font-bold tracking-wider border-b border-border/40">
+            <thead className="bg-muted/40 text-muted-foreground font-bold border-b border-border/40">
               <tr>
                 <th className="px-5 py-3">Ciudadano</th>
                 <th className="px-4 py-3">DNI</th>
-                <th className="px-4 py-3">Programas Activos</th>
-                <th className="px-4 py-3">Barrio / Localidad</th>
+                <th className="px-4 py-3">Programas activos</th>
+                <th className="px-4 py-3">Barrio / localidad</th>
                 <th className="px-4 py-3">Contacto</th>
                 <th className="px-4 py-3 text-right">Acción</th>
               </tr>
@@ -295,7 +295,7 @@ export default function CrucesSocialesPage() {
                     <td className="px-4 py-3.5">
                       <div className="flex flex-wrap gap-1">
                         {row.programas.map((p, pIdx) => (
-                          <Badge key={pIdx} variant="outline" className="text-[9px] border-primary/30 text-primary font-bold">
+                          <Badge key={pIdx} variant="outline" className="text-xs border-primary/30 text-primary font-bold">
                             {p}
                           </Badge>
                         ))}
@@ -308,9 +308,9 @@ export default function CrucesSocialesPage() {
                       {row.contacto?.telefono || "N/R"}
                     </td>
                     <td className="px-4 py-3.5 text-right">
-                      <Button variant="ghost" size="sm" asChild className="h-7 text-[11px] font-bold text-primary hover:bg-primary/10 rounded-lg">
-                        <Link href={`/ficha-social?dni=${row.dni}`}>
-                          Ver Ficha 360°
+                      <Button variant="ghost" size="sm" asChild className="h-7 text-xs font-bold text-primary hover:bg-primary/10 rounded-lg">
+                        <Link href={`/people/${row.dni}`}>
+                          Ver ficha
                         </Link>
                       </Button>
                     </td>

@@ -77,16 +77,16 @@ export function ReserveVehicleForm({ vehicleId, vehicles }: { vehicleId: string,
       <div className="lg:col-span-2">
         <Card className="bg-card text-card-foreground shadow-xs border border-border/60 rounded-2xl overflow-hidden">
           <CardHeader className="bg-muted/20 border-b border-border/40 p-6">
-            <CardTitle className="text-2xl font-bold text-foreground">Solicitar Vehículo</CardTitle>
+            <CardTitle className="text-2xl font-bold text-foreground">Solicitar vehículo</CardTitle>
             <CardDescription className="text-muted-foreground text-xs font-medium">
-              Complete los datos para que el área de Logística apruebe su solicitud de traslado.
+              Completá los datos para que Logística apruebe tu pedido de traslado.
             </CardDescription>
           </CardHeader>
           <CardContent className="pt-6 space-y-6">
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-2">
-                <Label htmlFor="vehicleId" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  Seleccionar Unidad Municipal
+                <Label htmlFor="vehicleId" className="text-xs font-bold text-muted-foreground">
+                  Seleccionar unidad municipal
                 </Label>
                 <Combobox
                   name="vehicleId"
@@ -99,13 +99,13 @@ export function ReserveVehicleForm({ vehicleId, vehicles }: { vehicleId: string,
                   onValueChange={(val: string) => setSelectedVehicleId(val)}
                   required
                 />
-                <p className="text-[10px] text-muted-foreground italic">Solo se muestran unidades disponibles y fuera de taller.</p>
+                <p className="text-xs text-muted-foreground italic">Solo se muestran unidades disponibles y fuera de taller.</p>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <Label htmlFor="startDate" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                    Fecha y Hora de Inicio
+                  <Label htmlFor="startDate" className="text-xs font-bold text-muted-foreground">
+                    Fecha y hora de inicio
                   </Label>
                   <Input
                     id="startDate"
@@ -121,8 +121,8 @@ export function ReserveVehicleForm({ vehicleId, vehicles }: { vehicleId: string,
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="endDate" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                    Fecha y Hora de Devolución
+                  <Label htmlFor="endDate" className="text-xs font-bold text-muted-foreground">
+                    Fecha y hora de devolución
                   </Label>
                   <Input
                     id="endDate"
@@ -140,23 +140,23 @@ export function ReserveVehicleForm({ vehicleId, vehicles }: { vehicleId: string,
 
               {conflictReservation && (
                 <div className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-600 dark:text-rose-400 space-y-2 animate-in fade-in duration-300">
-                  <div className="flex items-center gap-2 font-bold text-xs uppercase tracking-wider">
+                  <div className="flex items-center gap-2 font-bold text-xs">
                     <AlertTriangle className="h-4 w-4 shrink-0 text-rose-500" />
-                    ¡Conflicto de Horario Detectado!
+                    ¡Conflicto de horario detectado!
                   </div>
                   <p className="text-xs leading-relaxed">
                     Esta unidad ya cuenta con una reserva registrada por <b>{conflictReservation.user?.name || "otro agente"}</b> en el período seleccionado:
                   </p>
-                  <div className="p-2.5 rounded-xl bg-rose-500/15 font-mono text-[11px] font-bold">
+                  <div className="p-2.5 rounded-xl bg-rose-500/15 font-mono text-xs font-bold">
                     📅 {formatRange(conflictReservation.startDate, conflictReservation.endDate)} ({conflictReservation.status})
                   </div>
-                  <p className="text-[10px] italic">Por favor, modifique la fecha/hora o elija otro vehículo para continuar.</p>
+                  <p className="text-xs italic">Por favor, modifique la fecha/hora o elija otro vehículo para continuar.</p>
                 </div>
               )}
 
               <div className="space-y-2">
-                <Label htmlFor="reason" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  Motivo del Uso y Destino
+                <Label htmlFor="reason" className="text-xs font-bold text-muted-foreground">
+                  Motivo del uso y destino
                 </Label>
                 <Input
                   id="reason"
@@ -181,7 +181,7 @@ export function ReserveVehicleForm({ vehicleId, vehicles }: { vehicleId: string,
                 <Button
                   type="submit"
                   disabled={loading || Boolean(conflictReservation)}
-                  className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl shadow-md font-bold text-xs uppercase tracking-wider h-11"
+                  className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl shadow-md font-bold text-xs h-11"
                 >
                   {loading ? "Enviando Solicitud..." : "Enviar Solicitud de Reserva"}
                 </Button>
@@ -198,8 +198,8 @@ export function ReserveVehicleForm({ vehicleId, vehicles }: { vehicleId: string,
               <Calendar className="h-5 w-5" />
             </div>
             <div>
-              <h3 className="text-xs font-bold uppercase tracking-wider text-foreground">Horarios Ocupados</h3>
-              <p className="text-[10px] text-muted-foreground">Reservas activas para la unidad elegida</p>
+              <h3 className="text-xs font-bold text-foreground">Horarios ocupados</h3>
+              <p className="text-xs text-muted-foreground">Reservas activas para la unidad elegida</p>
             </div>
           </div>
 
@@ -207,14 +207,14 @@ export function ReserveVehicleForm({ vehicleId, vehicles }: { vehicleId: string,
             <div className="space-y-3">
               <div className="p-3 rounded-2xl bg-muted/40 border border-border/40 space-y-1">
                 <p className="text-xs font-bold text-foreground">{selectedVehicle.brand} {selectedVehicle.model}</p>
-                <Badge variant="outline" className="font-mono text-[10px] font-bold uppercase text-foreground border-border">{selectedVehicle.plate}</Badge>
+                <Badge variant="outline" className="font-mono text-xs font-bold text-foreground border-border">{selectedVehicle.plate}</Badge>
               </div>
 
               {existingReservations.length === 0 ? (
                 <div className="p-6 text-center text-muted-foreground space-y-2">
-                  <CheckCircle2 className="h-8 w-8 text-emerald-500 mx-auto" />
-                  <p className="text-xs font-bold">Unidad Sin Reservas Próximas</p>
-                  <p className="text-[10px] italic">Está completamente disponible en todos los horarios.</p>
+                  <CheckCircle2 className="h-8 w-8 text-emerald-700 dark:text-emerald-400 mx-auto" />
+                  <p className="text-xs font-bold">Unidad sin reservas próximas</p>
+                  <p className="text-xs italic">Está completamente disponible en todos los horarios.</p>
                 </div>
               ) : (
                 <div className="space-y-3 max-h-[400px] overflow-y-auto pr-1">
@@ -227,27 +227,27 @@ export function ReserveVehicleForm({ vehicleId, vehicles }: { vehicleId: string,
                       <div
                         key={r.id}
                         className={`p-3.5 rounded-2xl border transition-all text-xs space-y-2 ${
-                          isOngoing ? "bg-amber-500/10 border-amber-500/30 text-amber-600 dark:text-amber-300" :
-                          isApproved ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-300" :
+                          isOngoing ? "bg-amber-500/10 border-amber-500/30 text-amber-700 dark:text-amber-300" :
+                          isApproved ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-300" :
                           "bg-blue-500/10 border-blue-500/30 text-blue-600 dark:text-blue-300"
                         }`}
                       >
                         <div className="flex items-center justify-between">
-                          <span className="font-bold text-[10px] uppercase tracking-wider flex items-center gap-1">
+                          <span className="font-bold text-xs flex items-center gap-1">
                             <Clock className="h-3 w-3" />
                             {isOngoing ? "En Curso" : isApproved ? "Aprobada" : "Pendiente"}
                           </span>
-                          <Badge variant="secondary" className="text-[9px] font-bold uppercase">
+                          <Badge variant="secondary" className="text-xs font-bold">
                             {r.status}
                           </Badge>
                         </div>
 
-                        <div className="space-y-1 font-mono text-[11px] font-bold">
+                        <div className="space-y-1 font-mono text-xs font-bold">
                           <p>Inicio: {format(new Date(r.startDate), "dd/MM/yyyy HH:mm", { locale: es })} hs</p>
                           <p>Fin: {format(new Date(r.endDate), "dd/MM/yyyy HH:mm", { locale: es })} hs</p>
                         </div>
 
-                        <div className="pt-2 border-t border-border/20 flex items-center gap-1.5 text-[10px] font-medium opacity-90">
+                        <div className="pt-2 border-t border-border/20 flex items-center gap-1.5 text-xs font-medium opacity-90">
                           <User className="h-3 w-3 shrink-0" />
                           <span className="truncate">Reservado por: <b>{r.user?.name || "Agente Municipal"}</b></span>
                         </div>
@@ -258,7 +258,7 @@ export function ReserveVehicleForm({ vehicleId, vehicles }: { vehicleId: string,
               )}
             </div>
           ) : (
-            <p className="text-xs text-muted-foreground italic p-4 text-center">Seleccione un vehículo para ver sus reservas.</p>
+            <p className="text-xs text-muted-foreground italic p-4 text-center">Elegí un vehículo para ver sus reservas.</p>
           )}
         </Card>
       </div>

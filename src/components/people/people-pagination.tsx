@@ -64,7 +64,7 @@ export function PeoplePagination({
           onClick={() => goToPage(1)}
           disabled={currentPage <= 1}
           className="h-8 w-8 rounded-xl border-border/60"
-          title="Primera Página"
+          title="Primera página"
         >
           <ChevronsLeft className="h-4 w-4" />
         </Button>
@@ -75,7 +75,7 @@ export function PeoplePagination({
           onClick={() => goToPage(currentPage - 1)}
           disabled={currentPage <= 1}
           className="h-8 w-8 rounded-xl border-border/60"
-          title="Página Anterior"
+          title="Página anterior"
         >
           <ChevronLeft className="h-4 w-4" />
         </Button>
@@ -102,7 +102,7 @@ export function PeoplePagination({
           onClick={() => goToPage(currentPage + 1)}
           disabled={currentPage >= totalPages}
           className="h-8 w-8 rounded-xl border-border/60"
-          title="Página Siguiente"
+          title="Página siguiente"
         >
           <ChevronRight className="h-4 w-4" />
         </Button>
@@ -113,7 +113,7 @@ export function PeoplePagination({
           onClick={() => goToPage(totalPages)}
           disabled={currentPage >= totalPages}
           className="h-8 w-8 rounded-xl border-border/60"
-          title="Última Página"
+          title="Última página"
         >
           <ChevronsRight className="h-4 w-4" />
         </Button>

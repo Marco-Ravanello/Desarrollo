@@ -68,18 +68,18 @@ export function EditPersonDialog({ person }: EditPersonDialogProps) {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button variant="outline" size="sm" className="gap-2 rounded-2xl border-border/60 hover:bg-muted font-bold text-xs h-9">
-          <Edit className="h-3.5 w-3.5 text-primary" /> Editar Vecino
+          <Edit className="h-3.5 w-3.5 text-primary" /> Editar datos
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[500px] rounded-2xl bg-card border-border/60 p-6 shadow-2xl">
         <DialogHeader>
-          <DialogTitle className="text-xl font-bold text-foreground">Editar Datos del Ciudadano</DialogTitle>
+          <DialogTitle className="text-xl font-bold text-foreground">Editar datos del ciudadano</DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4 py-2">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <Label htmlFor="firstName" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Nombre *</Label>
+              <Label htmlFor="firstName" className="text-xs font-bold text-muted-foreground">Nombre *</Label>
               <Input
                 id="firstName"
                 required
@@ -90,7 +90,7 @@ export function EditPersonDialog({ person }: EditPersonDialogProps) {
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="lastName" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Apellido *</Label>
+              <Label htmlFor="lastName" className="text-xs font-bold text-muted-foreground">Apellido *</Label>
               <Input
                 id="lastName"
                 required
@@ -103,7 +103,7 @@ export function EditPersonDialog({ person }: EditPersonDialogProps) {
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <Label htmlFor="dni" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">DNI / Documento *</Label>
+              <Label htmlFor="dni" className="text-xs font-bold text-muted-foreground">DNI / documento *</Label>
               <Input
                 id="dni"
                 required
@@ -114,7 +114,7 @@ export function EditPersonDialog({ person }: EditPersonDialogProps) {
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="birthDate" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Fecha Nacimiento</Label>
+              <Label htmlFor="birthDate" className="text-xs font-bold text-muted-foreground">Fecha de nacimiento</Label>
               <Input
                 id="birthDate"
                 type="date"
@@ -126,7 +126,7 @@ export function EditPersonDialog({ person }: EditPersonDialogProps) {
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="address" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Dirección Residencial</Label>
+            <Label htmlFor="address" className="text-xs font-bold text-muted-foreground">Dirección residencial</Label>
             <Input
               id="address"
               value={formData.address}
@@ -137,7 +137,7 @@ export function EditPersonDialog({ person }: EditPersonDialogProps) {
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <Label htmlFor="phone" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Teléfono / Celular</Label>
+              <Label htmlFor="phone" className="text-xs font-bold text-muted-foreground">Teléfono / celular</Label>
               <Input
                 id="phone"
                 value={formData.phone}
@@ -147,7 +147,7 @@ export function EditPersonDialog({ person }: EditPersonDialogProps) {
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="email" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Correo Electrónico</Label>
+              <Label htmlFor="email" className="text-xs font-bold text-muted-foreground">Correo electrónico</Label>
               <Input
                 id="email"
                 type="email"

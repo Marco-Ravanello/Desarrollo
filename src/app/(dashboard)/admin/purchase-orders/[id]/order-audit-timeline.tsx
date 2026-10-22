@@ -13,7 +13,7 @@ export function OrderAuditTimeline({ logs }: { logs: any[] }) {
           <div className="absolute left-[-5px] top-0 w-2.5 h-2.5 rounded-full bg-border border-2 border-background" />
           <div className="flex flex-col gap-1">
             <div className="flex items-center justify-between">
-                <span className="text-[10px] font-bold uppercase text-muted-foreground">{format(new Date(log.createdAt), "dd MMM, HH:mm", { locale: es })}</span>
+                <span className="text-xs font-bold text-muted-foreground">{format(new Date(log.createdAt), "dd MMM, HH:mm", { locale: es })}</span>
             </div>
             <div className="flex items-center gap-2">
                 <div className="w-5 h-5 rounded-full bg-muted flex items-center justify-center text-muted-foreground">
@@ -26,7 +26,7 @@ export function OrderAuditTimeline({ logs }: { logs: any[] }) {
             </div>
             <div className="flex items-center gap-1 mt-0.5">
                 <User className="h-2.5 w-2.5 text-muted-foreground" />
-                <span className="text-[9px] font-medium text-muted-foreground">{log.user?.name || "Sistema"}</span>
+                <span className="text-xs font-medium text-muted-foreground">{log.user?.name || "Sistema"}</span>
             </div>
           </div>
         </div>

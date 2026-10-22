@@ -10,6 +10,8 @@ const Progress = React.forwardRef<
 >(({ className, value, ...props }, ref) => (
   <ProgressPrimitive.Root
     ref={ref}
+    value={value == null ? value : Math.min(Math.max(value, 0), 100)}
+    aria-label="Avance"
     className={cn(
       "relative h-2 w-full overflow-hidden rounded-full bg-primary/20",
       className

@@ -15,6 +15,7 @@ import {
   CheckCircle2, FileText, ArrowRight, Eye, Layers, Sparkles
 } from "lucide-react";
 import Link from "next/link";
+import { plural } from "@/lib/formato";
 
 interface CaseItem {
   id: string;
@@ -69,28 +70,28 @@ export function AreaDashboardView({
 
   const colorStyles = {
     emerald: {
-      bgAccent: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20",
+      bgAccent: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20",
       textAccent: "text-emerald-500",
-      badgeBg: "bg-emerald-500/15 text-emerald-500 border-emerald-500/30",
-      buttonBg: "bg-emerald-600 hover:bg-emerald-700 text-white"
+      badgeBg: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-emerald-500/30",
+      buttonBg: "bg-primary hover:bg-primary/90 text-primary-foreground"
     },
     blue: {
-      bgAccent: "bg-blue-500/10 text-blue-500 border-blue-500/20",
+      bgAccent: "bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20",
       textAccent: "text-blue-500",
-      badgeBg: "bg-blue-500/15 text-blue-500 border-blue-500/30",
-      buttonBg: "bg-blue-600 hover:bg-blue-700 text-white"
+      badgeBg: "bg-blue-500/15 text-blue-700 dark:text-blue-400 border-blue-500/30",
+      buttonBg: "bg-primary hover:bg-primary/90 text-primary-foreground"
     },
     amber: {
-      bgAccent: "bg-amber-500/10 text-amber-500 border-amber-500/20",
+      bgAccent: "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20",
       textAccent: "text-amber-500",
-      badgeBg: "bg-amber-500/15 text-amber-500 border-amber-500/30",
-      buttonBg: "bg-amber-600 hover:bg-amber-700 text-white"
+      badgeBg: "bg-amber-500/15 text-amber-800 dark:text-amber-400 border-amber-500/30",
+      buttonBg: "bg-primary hover:bg-primary/90 text-primary-foreground"
     },
     rose: {
-      bgAccent: "bg-rose-500/10 text-rose-500 border-rose-500/20",
+      bgAccent: "bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/20",
       textAccent: "text-rose-500",
-      badgeBg: "bg-rose-500/15 text-rose-500 border-rose-500/30",
-      buttonBg: "bg-rose-600 hover:bg-rose-700 text-white"
+      badgeBg: "bg-rose-500/15 text-rose-700 dark:text-rose-400 border-rose-500/30",
+      buttonBg: "bg-primary hover:bg-primary/90 text-primary-foreground"
     }
   }[themeColor];
 
@@ -138,30 +139,30 @@ export function AreaDashboardView({
   const renderStatusBadge = (status: string) => {
     switch (status) {
       case "ABIERTO":
-        return <Badge className="bg-blue-500/15 text-blue-500 border border-blue-500/30 font-bold text-[10px]">ABIERTO</Badge>;
+        return <Badge className="bg-blue-500/15 text-blue-700 dark:text-blue-400 border border-blue-500/30 font-bold text-xs">Abierto</Badge>;
       case "EN_PROCESO":
-        return <Badge className="bg-amber-500/15 text-amber-500 border border-amber-500/30 font-bold text-[10px]">EN PROCESO</Badge>;
+        return <Badge className="bg-amber-500/15 text-amber-800 dark:text-amber-400 border border-amber-500/30 font-bold text-xs">En proceso</Badge>;
       case "DERIVADO":
-        return <Badge className="bg-purple-500/15 text-purple-500 border border-purple-500/30 font-bold text-[10px]">DERIVADO</Badge>;
+        return <Badge className="bg-purple-500/15 text-purple-700 dark:text-purple-400 border border-purple-500/30 font-bold text-xs">Derivado</Badge>;
       case "CERRADO":
-        return <Badge className="bg-emerald-500/15 text-emerald-500 border border-emerald-500/30 font-bold text-[10px]">CERRADO</Badge>;
+        return <Badge className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 font-bold text-xs">Cerrado</Badge>;
       default:
-        return <Badge variant="outline" className="font-bold text-[10px]">{status}</Badge>;
+        return <Badge variant="outline" className="font-bold text-xs">{status}</Badge>;
     }
   };
 
   const renderPriorityBadge = (priority: string) => {
     switch (priority) {
       case "URGENTE":
-        return <Badge className="bg-rose-500/15 text-rose-500 border border-rose-500/30 font-bold text-[10px]">🔴 URGENTE</Badge>;
+        return <Badge className="bg-rose-500/15 text-rose-700 dark:text-rose-400 border border-rose-500/30 font-bold text-xs">🔴 Urgente</Badge>;
       case "ALTA":
-        return <Badge className="bg-amber-500/15 text-amber-500 border border-amber-500/30 font-bold text-[10px]">🟠 ALTA</Badge>;
+        return <Badge className="bg-amber-500/15 text-amber-800 dark:text-amber-400 border border-amber-500/30 font-bold text-xs">🟠 Alta</Badge>;
       case "MEDIA":
-        return <Badge className="bg-blue-500/15 text-blue-500 border border-blue-500/30 font-bold text-[10px]">🟡 MEDIA</Badge>;
+        return <Badge className="bg-blue-500/15 text-blue-700 dark:text-blue-400 border border-blue-500/30 font-bold text-xs">🟡 Media</Badge>;
       case "BAJA":
-        return <Badge className="bg-emerald-500/15 text-emerald-500 border border-emerald-500/30 font-bold text-[10px]">🟢 BAJA</Badge>;
+        return <Badge className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 font-bold text-xs">🟢 Baja</Badge>;
       default:
-        return <Badge variant="outline" className="font-bold text-[10px]">{priority}</Badge>;
+        return <Badge variant="outline" className="font-bold text-xs">{priority}</Badge>;
     }
   };
 
@@ -173,7 +174,7 @@ export function AreaDashboardView({
         icon={Layers}
         actions={
           area && (
-            <Button asChild className={`rounded-2xl h-11 px-5 font-bold text-xs uppercase tracking-wider ${colorStyles.buttonBg} shadow-md`}>
+            <Button asChild className={`rounded-2xl h-11 px-5 font-bold text-xs ${colorStyles.buttonBg} shadow-md`}>
               <Link href={`/cases/new${area?.id ? `?areaId=${area.id}` : ""}`}>
                 <FolderPlus className="mr-2 h-4 w-4" /> Nuevo expediente
               </Link>
@@ -183,12 +184,12 @@ export function AreaDashboardView({
       />
 
       {isSensitive && (
-        <Card className="bg-rose-500/10 border border-rose-500/30 rounded-2xl p-4 sm:p-5 text-rose-500">
+        <Card className="bg-rose-500/10 border border-rose-500/30 rounded-2xl p-4 sm:p-5 text-rose-700 dark:text-rose-400">
           <div className="flex items-start gap-3">
             <ShieldAlert className="h-5 w-5 shrink-0 mt-0.5" />
             <div className="text-xs space-y-1">
-              <p className="font-bold uppercase tracking-wider">Protocolo de Confidencialidad y Protección de Datos</p>
-              <p className="text-rose-500/90 leading-relaxed">
+              <p className="font-bold">Protocolo de confidencialidad y protección de datos</p>
+              <p className="text-rose-700 dark:text-rose-300 leading-relaxed">
                 Los legajos de esta dirección general contienen datos altamente sensibles amparados por la Ley 26.485 (Protección Integral a las Mujeres) y Ley 25.326 (Habeas Data). Todas las acciones y consultas quedan registradas en el Registro de Auditoría Unificado.
               </p>
             </div>
@@ -198,30 +199,30 @@ export function AreaDashboardView({
 
       <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         <StatCard
-          label="Casos Activos"
+          label="Casos activos"
           value={stats.activeCases}
           hint="En proceso o abiertos"
           icon={Clock}
           tone={statTone}
         />
         <StatCard
-          label="Urgencias Críticas"
+          label="Urgencias críticas"
           value={stats.urgentCases}
-          hint={<span className="font-bold text-amber-500">Prioridad Alta / Urgente</span>}
+          hint={<span className="font-bold text-amber-700 dark:text-amber-400">Prioridad alta / urgente</span>}
           icon={AlertTriangle}
           tone="orange"
         />
         <StatCard
-          label="Intervenciones Mes"
+          label="Intervenciones del mes"
           value={stats.monthlyInterventions}
           hint="Registradas en el mes"
           icon={FileText}
           tone="blue"
         />
         <StatCard
-          label="Familias Asistidas"
+          label="Familias asistidas"
           value={stats.uniquePersons}
-          hint={<span className="font-bold text-emerald-500">Titulares únicos en área</span>}
+          hint={<span className="font-bold text-emerald-700 dark:text-emerald-400">Titulares únicos en área</span>}
           icon={Users}
           tone="green"
         />
@@ -233,32 +234,32 @@ export function AreaDashboardView({
             <button
               type="button"
               onClick={() => setActiveTab("ACTIVOS")}
-              className={`text-xs px-3.5 py-1.5 rounded-xl font-bold transition-all flex items-center gap-1.5 ${
+              className={`text-xs px-3.5 py-2 sm:py-1.5 rounded-xl font-bold transition-all flex items-center gap-1.5 ${
                 activeTab === "ACTIVOS"
                   ? "bg-card text-foreground shadow-xs border border-border/40"
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
               <span>Activos</span>
-              <Badge variant="secondary" className="text-[10px] px-1.5 py-0 rounded-md font-mono">
+              <Badge variant="secondary" className="text-xs px-1.5 py-0 rounded-md font-mono">
                 {stats.activeCases}
               </Badge>
             </button>
             <button
               type="button"
               onClick={() => setActiveTab("EN_PROCESO")}
-              className={`text-xs px-3.5 py-1.5 rounded-xl font-bold transition-all ${
+              className={`text-xs px-3.5 py-2 sm:py-1.5 rounded-xl font-bold transition-all ${
                 activeTab === "EN_PROCESO"
                   ? "bg-card text-foreground shadow-xs border border-border/40"
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              En Proceso
+              En proceso
             </button>
             <button
               type="button"
               onClick={() => setActiveTab("DERIVADOS")}
-              className={`text-xs px-3.5 py-1.5 rounded-xl font-bold transition-all ${
+              className={`text-xs px-3.5 py-2 sm:py-1.5 rounded-xl font-bold transition-all ${
                 activeTab === "DERIVADOS"
                   ? "bg-card text-foreground shadow-xs border border-border/40"
                   : "text-muted-foreground hover:text-foreground"
@@ -269,7 +270,7 @@ export function AreaDashboardView({
             <button
               type="button"
               onClick={() => setActiveTab("CERRADOS")}
-              className={`text-xs px-3.5 py-1.5 rounded-xl font-bold transition-all ${
+              className={`text-xs px-3.5 py-2 sm:py-1.5 rounded-xl font-bold transition-all ${
                 activeTab === "CERRADOS"
                   ? "bg-card text-foreground shadow-xs border border-border/40"
                   : "text-muted-foreground hover:text-foreground"
@@ -280,7 +281,7 @@ export function AreaDashboardView({
             <button
               type="button"
               onClick={() => setActiveTab("TODOS")}
-              className={`text-xs px-3.5 py-1.5 rounded-xl font-bold transition-all ${
+              className={`text-xs px-3.5 py-2 sm:py-1.5 rounded-xl font-bold transition-all ${
                 activeTab === "TODOS"
                   ? "bg-card text-foreground shadow-xs border border-border/40"
                   : "text-muted-foreground hover:text-foreground"
@@ -302,6 +303,7 @@ export function AreaDashboardView({
             </div>
 
             <select
+              aria-label="Filtrar por prioridad"
               value={priorityFilter}
               onChange={(e) => setPriorityFilter(e.target.value)}
               className="h-9 px-3 rounded-xl bg-muted/20 border border-border/60 text-xs font-bold text-foreground focus:outline-none focus:ring-1 focus:ring-primary w-full sm:w-auto"
@@ -326,10 +328,10 @@ export function AreaDashboardView({
 
         <TableCards>
           <table className="w-full text-xs text-left">
-            <thead className="bg-muted/40 text-muted-foreground uppercase font-bold tracking-wider border-b border-border/40">
+            <thead className="bg-muted/40 text-muted-foreground font-bold border-b border-border/40">
               <tr>
-                <th className="px-5 py-3.5">Carátula / Asunto</th>
-                <th className="px-4 py-3.5">Titular / Vecino</th>
+                <th className="px-5 py-3.5">Carátula / asunto</th>
+                <th className="px-4 py-3.5">Titular / vecino</th>
                 <th className="px-4 py-3.5">DNI</th>
                 <th className="px-4 py-3.5">Estado</th>
                 <th className="px-4 py-3.5">Prioridad</th>
@@ -361,13 +363,13 @@ export function AreaDashboardView({
                       {renderPriorityBadge(c.priority)}
                     </td>
                     <td className="px-4 py-3.5 text-muted-foreground font-bold">
-                      {c._count?.interventions || 0} registro(s)
+                      {plural(c._count?.interventions || 0, "intervención")}
                     </td>
                     <td className="px-4 py-3.5 text-right">
                       <Button variant="ghost" size="sm" asChild className="h-8 text-xs font-bold text-primary hover:bg-primary/10 rounded-xl">
                         <Link href={`/cases/${c.id}`}>
                           <Eye className="h-3.5 w-3.5 mr-1" />
-                          <span>Ver Legajo</span>
+                          <span>Ver legajo</span>
                         </Link>
                       </Button>
                     </td>

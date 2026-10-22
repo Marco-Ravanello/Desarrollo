@@ -21,7 +21,7 @@ const PATH_DICTIONARY: Record<string, string> = {
   assistant: "Asistente de IA",
   users: "Usuarios",
   settings: "Configuración",
-  budget: "Presupuesto",
+  budget: "Presupuesto y convenios",
   reports: "Reportes",
   providers: "Proveedores",
   "purchase-orders": "Órdenes de compra",
@@ -55,6 +55,26 @@ const PATH_DICTIONARY: Record<string, string> = {
   requests: "Pedidos"
 };
 
+// Lo de /admin se muestra con el mismo grupo que tiene en el menú lateral.
+const ADMIN_MENU_GROUP: Record<string, string> = {
+  "war-room": "Operación diaria",
+  calendar: "Operación diaria",
+  assistant: "Operación diaria",
+  emergency: "Operación diaria",
+  "purchase-orders": "Compras y presupuesto",
+  providers: "Compras y presupuesto",
+  budget: "Compras y presupuesto",
+  agreements: "Compras y presupuesto",
+  reports: "Compras y presupuesto",
+  vehicles: "Recursos",
+  stock: "Recursos",
+  hr: "Recursos",
+  settings: "Sistema",
+  interventions: "Sistema",
+  users: "Sistema",
+  audit: "Sistema",
+};
+
 // Segmentos que agrupan secciones pero no tienen una página propia: se muestran sin link.
 const PATHS_WITHOUT_PAGE = new Set(["/admin", "/areas"]);
 
@@ -84,7 +104,12 @@ export function DashboardBreadcrumbs() {
     resolvedItems = segments.map((segment, idx) => {
       currentHref += `/${segment}`;
       const isLast = idx === segments.length - 1;
-      const dictLabel = segment === "new" ? NEW_LABELS[segments[idx - 1]] || "Nuevo" : PATH_DICTIONARY[segment];
+      const dictLabel =
+        segment === "new"
+          ? NEW_LABELS[segments[idx - 1]] || "Nuevo"
+          : segment === "admin"
+            ? ADMIN_MENU_GROUP[segments[idx + 1]] || PATH_DICTIONARY[segment]
+            : PATH_DICTIONARY[segment];
 
       let label = dictLabel || segment;
 
@@ -107,7 +132,7 @@ export function DashboardBreadcrumbs() {
     >
       <Link
         href="/dashboard"
-        className="flex items-center gap-1 hover:text-foreground font-bold transition-colors text-muted-foreground"
+        className="flex items-center gap-1 min-h-8 sm:min-h-0 hover:text-foreground font-bold transition-colors text-muted-foreground"
       >
         <Home className="h-3.5 w-3.5 text-primary" />
         <span className="sr-only">Inicio</span>
@@ -122,7 +147,7 @@ export function DashboardBreadcrumbs() {
             {item.href && !isLast ? (
               <Link
                 href={item.href}
-                className="hover:text-primary font-bold transition-colors truncate min-w-0 max-w-[160px]"
+                className="inline-flex items-center min-h-8 sm:min-h-0 hover:text-primary font-bold transition-colors truncate min-w-0 max-w-[160px]"
               >
                 {item.label}
               </Link>

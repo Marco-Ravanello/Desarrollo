@@ -97,17 +97,17 @@ export default async function AdminCalendarPage() {
         icon={CalendarIcon}
         actions={
           <>
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-blue-500/10 border border-blue-500/20 text-blue-500 text-xs font-bold">
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-blue-500/10 border border-blue-500/20 text-blue-700 dark:text-blue-400 text-xs font-bold">
               <Car className="h-3.5 w-3.5" />
               <span>{serializedReservations.length} Móviles en servicio</span>
             </div>
 
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 text-xs font-bold">
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-xs font-bold">
               <ShoppingBag className="h-3.5 w-3.5" />
               <span>{serializedOrders.length} Entregas de Compras</span>
             </div>
 
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-500 text-xs font-bold">
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-400 text-xs font-bold">
               <CheckSquare className="h-3.5 w-3.5" />
               <span>{serializedTasks.length} Tareas Compartidas</span>
             </div>

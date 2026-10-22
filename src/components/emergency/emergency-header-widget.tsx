@@ -81,17 +81,17 @@ export function EmergencyHeaderWidget() {
     <div className="flex items-center gap-3">
       {isEmergencyActive && !dismissBanner && (
         <div className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-amber-600 via-rose-600 to-amber-700 text-white py-2 px-4 shadow-xl flex items-center justify-between animate-in slide-in-from-top duration-300">
-          <div className="flex items-center gap-3 text-xs font-bold uppercase tracking-wider mx-auto">
+          <div className="flex items-center gap-3 text-xs font-bold mx-auto">
             <span className="relative flex h-3 w-3">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
               <span className="relative inline-flex rounded-full h-3 w-3 bg-white"></span>
             </span>
-            <span>🚨 PROTOCOLO DE EMERGENCIA CLIMÁTICA Y TEMPORAL ACTIVO</span>
+            <span>🚨 Emergencia climática activa</span>
             <span className="hidden md:inline text-white/80 font-normal">|</span>
             <span className="hidden md:inline text-white/90 font-bold">Cuadrillas operativas en territorio</span>
             <Link
               href="/admin/emergency"
-              className="bg-white/20 hover:bg-white text-white hover:text-slate-900 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest transition-all inline-flex items-center gap-1 shadow-sm"
+              className="bg-white/20 hover:bg-white text-white hover:text-slate-900 px-3 py-1 rounded-full text-xs font-bold transition-all inline-flex items-center gap-1 shadow-sm"
             >
               Ver emergencia climática <ChevronRight className="h-3 w-3" />
             </Link>
@@ -108,9 +108,9 @@ export function EmergencyHeaderWidget() {
 
       {canToggle && <button
         onClick={() => setConfirmOpen(true)}
-        className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold transition-all border shadow-sm ${
+        className={`flex items-center gap-2 px-3 py-2 sm:py-1.5 rounded-full text-xs font-bold transition-all border shadow-sm ${
           isEmergencyActive
-            ? "bg-rose-500/15 border-rose-500/40 text-rose-500 animate-pulse hover:bg-rose-500/25"
+            ? "bg-rose-500/15 border-rose-500/40 text-rose-700 dark:text-rose-400 animate-pulse hover:bg-rose-500/25"
             : "bg-muted/40 hover:bg-muted border-border/60 text-muted-foreground hover:text-foreground"
         }`}
         title={isEmergencyActive ? "Desactivar la emergencia climática" : "Activar la emergencia climática"}
@@ -132,7 +132,7 @@ export function EmergencyHeaderWidget() {
 
       {isEmergencyActive && (
         <Link href="/admin/emergency">
-          <Badge className="bg-amber-500 hover:bg-amber-600 text-white font-bold text-[10px] uppercase tracking-wider border-none px-2.5 py-1 hidden sm:inline-flex items-center gap-1 shadow-sm">
+          <Badge className="bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs border-none px-2.5 py-1 hidden sm:inline-flex items-center gap-1 shadow-sm">
             <AlertTriangle className="h-3 w-3" /> Operaciones
           </Badge>
         </Link>

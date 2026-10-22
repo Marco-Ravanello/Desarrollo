@@ -1,4 +1,6 @@
 import prisma from "@/lib/prisma";
+import { todayInArgentina } from "@/lib/follow-up-dates";
+import { plural } from "@/lib/formato";
 
 function formatRelativeTime(date: Date) {
   const now = new Date();
@@ -38,8 +40,9 @@ export async function getWarRoomData() {
           status: { in: ['ABIERTO', 'EN_PROCESO', 'PENDIENTE'] }
         }
       }).catch(() => 0),
+      // Cerrados hoy (día de Argentina): antes contaba todos los cerrados de la historia.
       prisma.case.count({
-        where: { status: 'CERRADO' }
+        where: { status: 'CERRADO', updatedAt: { gte: new Date(`${todayInArgentina()}T00:00:00-03:00`) } }
       }).catch(() => 0),
       prisma.vehicle.count({ where: { status: 'DISPONIBLE' } }).catch(() => 0),
       prisma.vehicle.count().catch(() => 0),
@@ -97,7 +100,7 @@ export async function getWarRoomData() {
         name: a.name,
         activeCases: activeCount,
         percentage,
-        badgeText: activeCount > 0 ? `${activeCount} Casos en Proceso` : "Operativo sin Demora"
+        badgeText: activeCount > 0 ? plural(activeCount, "expediente abierto") : "Sin expedientes abiertos"
       };
     });
 

@@ -76,11 +76,11 @@ export function TemporaryPasswordButton({
                 <Copy className="h-3.5 w-3.5" /> Copiar
               </Button>
             </div>
-            <p className="text-[11px] text-muted-foreground">No se guarda en ningún lado y no se vuelve a mostrar. Si se pierde, generá otra.</p>
+            <p className="text-xs text-muted-foreground">No se guarda en ningún lado y no se vuelve a mostrar. Si se pierde, generá otra.</p>
           </div>
         ) : (
           !isActive && (
-            <p className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-2.5 text-[11px] font-semibold text-amber-800 dark:text-amber-300">
+            <p className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-2.5 text-xs font-semibold text-amber-800 dark:text-amber-300">
               La cuenta está suspendida: para que pueda ingresar, también hay que activarla.
             </p>
           )

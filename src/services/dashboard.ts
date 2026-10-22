@@ -141,7 +141,7 @@ async function loadDashboardStats(scope: DashboardScope) {
     shortId: `#${c.id.substring(0, 6)}`,
     citizenName: c.person ? `${c.person.lastName}, ${c.person.firstName}` : "S/D",
     type: c.area?.name || "General",
-    status: c.status === "CERRADO" ? "Resuelto" : c.status === "EN_PROCESO" ? "En Proceso" : "Abierto",
+    status: c.status === "CERRADO" ? "Resuelto" : c.status === "EN_PROCESO" ? "En proceso" : "Abierto",
     statusVariant: c.status === "CERRADO" ? "resolved" : c.status === "EN_PROCESO" ? "in_progress" : "pending",
   }));
 

@@ -66,11 +66,11 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
     if (!canView) {
       return (
         <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
-          <ShieldAlert className="h-16 w-16 text-rose-500 animate-pulse" />
-          <h2 className="text-2xl font-bold text-foreground">Acceso Restringido</h2>
+          <ShieldAlert className="h-16 w-16 text-rose-700 dark:text-rose-400 animate-pulse" />
+          <h2 className="text-2xl font-bold text-foreground">Acceso restringido</h2>
           <p className="text-muted-foreground max-w-md">No tiene los permisos necesarios para visualizar la información de este caso debido a su naturaleza sensible.</p>
           <Button asChild variant="outline">
-            <Link href="/people">Volver al Registro</Link>
+            <Link href="/people">Volver al registro</Link>
           </Button>
         </div>
       );
@@ -114,7 +114,7 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
   const historyCount = interventions.length + events.length;
 
   const breadcrumbs = [
-    { label: "Áreas", href: "/areas/social" },
+    { label: "Expedientes", href: "/cases" },
     { label: areaLabel, href: areaUrl },
     { label: `Expediente ${shownTitle.title.substring(0, 20)}...`, active: true }
   ];
@@ -244,7 +244,7 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
                       </div>
                       {person.dni && !isProvisionalDni(person.dni) && (
                         <Button variant="outline" size="sm" asChild className="w-full rounded-xl font-bold">
-                          <Link href={`/ficha-social?dni=${person.dni}`}>Ver Ficha Social 360°</Link>
+                          <Link href={`/people/${person.dni}`}>Ver ficha de la persona</Link>
                         </Button>
                       )}
                     </>
@@ -291,7 +291,7 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
                         <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
                         <div className="min-w-0">
                           <p className="truncate font-medium text-sm text-foreground">{d.name}</p>
-                          <p className="text-[10px] text-muted-foreground">{fechaCorta(d.createdAt)}</p>
+                          <p className="text-xs text-muted-foreground">{fechaCorta(d.createdAt)}</p>
                         </div>
                       </div>
                       <Button variant="ghost" size="sm" asChild className="shrink-0 text-primary font-bold">
