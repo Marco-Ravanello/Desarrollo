@@ -18,7 +18,7 @@ import {
 import { MUNICIPAL_LOCALITIES } from "@/lib/constants/localities";
 import { MAP_MAX_PROGRAMS, type MapFilters } from "@/lib/map-filters";
 import { PROGRAM_COLORS } from "@/lib/map-colors";
-import type { MapData } from "@/services/map";
+import { emptyMapData, unpackMapData, type MapData, type MapStats } from "@/lib/map-points";
 import type { MapLayerKey, MapLayerPoints } from "@/services/map-layers";
 import type { MapLayerToggles } from "@/components/maps/map-view";
 import { getMapDataAction, getMapExportAction, getMapLayerAction } from "@/app/(dashboard)/maps/actions";
@@ -32,7 +32,8 @@ const DynamicMapView = dynamic(
 );
 
 interface SocialMapDashboardProps {
-  initialData: MapData;
+  /** Cifras del padrón sin filtros; los puntos se piden al abrir la página. */
+  initialStats: MapStats;
   /** Programas del padrón, para el filtro. */
   programs: string[];
   /** Personas del padrón que todavía no tienen un punto en el mapa. */
@@ -45,18 +46,17 @@ interface SocialMapDashboardProps {
 
 const fmt = (n: number) => n.toLocaleString("es-AR");
 
-export function SocialMapDashboard({ initialData, programs, unlocated = 0, canLocate = false, canExport = false }: SocialMapDashboardProps) {
+export function SocialMapDashboard({ initialStats, programs, unlocated = 0, canLocate = false, canExport = false }: SocialMapDashboardProps) {
   const [selectedLocalityId, setSelectedLocalityId] = useState<string>("all");
   const [selectedPrograms, setSelectedPrograms] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [debouncedQuery, setDebouncedQuery] = useState<string>("");
   const [viewMode, setViewMode] = useState<string>("markers");
-  const [data, setData] = useState<MapData>(initialData);
+  const [data, setData] = useState<MapData>(() => emptyMapData(initialStats));
   // Los programas con los que se armaron los datos que se ven (los colores siguen a esta lista).
   const [dataPrograms, setDataPrograms] = useState<string[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const requestRef = useRef(0);
-  const firstRender = useRef(true);
   const [toggles, setToggles] = useState<MapLayerToggles>({ padron: true, cases: false, storm: false });
   const [layers, setLayers] = useState<Record<MapLayerKey, { points: MapLayerPoints | null; loading: boolean }>>({
     cases: { points: null, loading: false },
@@ -80,19 +80,16 @@ export function SocialMapDashboard({ initialData, programs, unlocated = 0, canLo
     return () => clearTimeout(t);
   }, [searchQuery]);
 
-  // Los filtros se resuelven en el servidor; si llegan dos respuestas, vale la última.
+  // Los puntos se piden al abrir la página y cada vez que cambian los filtros (se resuelven
+  // en el servidor); si llegan dos respuestas, vale la última.
   useEffect(() => {
-    if (firstRender.current) {
-      firstRender.current = false;
-      return;
-    }
     const request = ++requestRef.current;
     setLoading(true);
     getMapDataAction(filters)
       .then((res) => {
         if (request !== requestRef.current) return;
         if (res.success) {
-          setData(res.data);
+          setData(unpackMapData(res.data));
           setDataPrograms(filters.programs ?? []);
         } else toast.error(res.error);
       })

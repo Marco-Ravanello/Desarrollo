@@ -4,7 +4,7 @@ import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import prisma from "@/lib/prisma";
 import { MANAGEMENT_ROLES, PERMISSIONS, hasPermission } from "@/lib/permissions";
-import { getMapData, getMapPrograms } from "@/services/map";
+import { getMapPrograms, getMapStats } from "@/services/map";
 import { SocialMapDashboard } from "@/components/maps/social-map-dashboard";
 
 export const metadata = { title: "Mapa Social" };
@@ -13,8 +13,9 @@ export default async function MapsPage() {
   const session = await auth();
   if (!session?.user?.id) redirect("/login");
 
-  const [data, programs, unlocated] = await Promise.all([
-    getMapData({}),
+  // Las cifras salen enseguida; los puntos (todo el padrón) los pide el mapa después.
+  const [stats, programs, unlocated] = await Promise.all([
+    getMapStats({}),
     getMapPrograms().catch(() => []),
     // Personas del padrón que todavía no tienen un punto en el mapa
     prisma.padronUnificado.count({ where: { latitude: null } }).catch(() => 0),
@@ -22,7 +23,7 @@ export default async function MapsPage() {
 
   return (
     <SocialMapDashboard
-      initialData={data}
+      initialStats={stats}
       programs={programs}
       unlocated={unlocated}
       canLocate={MANAGEMENT_ROLES.includes(session.user.role)}

@@ -2,6 +2,13 @@ import { beforeAll, describe, expect, it } from "vitest";
 import prisma from "@/lib/prisma";
 import { getMapDataAction, getMapExportAction, getMapPeopleAction } from "@/app/(dashboard)/maps/actions";
 import { createUser, loginAs } from "./helpers";
+import { unpackMapData } from "@/lib/map-points";
+
+/** Los puntos viajan como texto; para comparar se arman igual que en el navegador. */
+async function puntos(filters: Parameters<typeof getMapDataAction>[0]) {
+  const res = await getMapDataAction(filters);
+  return res.success ? { ...res, data: unpackMapData(res.data) } : res;
+}
 
 // Personas inventadas, solo en la base de prueba local.
 const CASEROS = { latitude: -34.6081, longitude: -58.5631 }; // al lado del centro de Caseros
@@ -21,7 +28,7 @@ describe("Mapa Social", () => {
   });
 
   it("cuenta a todo el padrón y a las personas ubicadas, sin tope", async () => {
-    const res = await getMapDataAction({});
+    const res = await puntos({});
     expect(res.success).toBe(true);
     if (!res.success) return;
     expect(res.data.stats).toEqual({ total: 4, located: 3, approximate: 1, topBarrio: "Caseros", topProgram: "Envión" });
@@ -32,21 +39,21 @@ describe("Mapa Social", () => {
   });
 
   it("la localidad cuenta lo escrito en la dirección y a quienes viven cerca de su centro", async () => {
-    const res = await getMapDataAction({ localityId: "caseros" });
+    const res = await puntos({ localityId: "caseros" });
     expect(res.success && res.data.stats).toMatchObject({ total: 3, located: 2 });
     expect(res.success && res.data.dnis).toEqual(["97000001", "97000002"]);
   });
 
   it("el programa tiene que coincidir completo", async () => {
-    const res = await getMapDataAction({ program: "Envión" });
+    const res = await puntos({ program: "Envión" });
     expect(res.success && res.data.stats).toMatchObject({ total: 2, located: 1 });
   });
 
   it("busca por nombre o DNI", async () => {
-    const porNombre = await getMapDataAction({ query: "carla" });
+    const porNombre = await puntos({ query: "carla" });
     expect(porNombre.success && porNombre.data.dnis).toEqual(["97000003"]);
     expect(porNombre.success && porNombre.data.exactCount).toBe(0);
-    const porDni = await getMapDataAction({ query: "97.000.002" });
+    const porDni = await puntos({ query: "97.000.002" });
     expect(porDni.success && porDni.data.dnis).toEqual(["97000002"]);
   });
 

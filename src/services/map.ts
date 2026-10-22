@@ -1,6 +1,7 @@
 import prisma from "@/lib/prisma";
 import { buildMapWhere, normalizeMapFilters, type MapFilters } from "@/lib/map-filters";
 import { APPROXIMATE_POINT_SQL, isApproximatePoint } from "@/lib/geocoding";
+import type { MapStats, PackedMapData } from "@/lib/map-points";
 
 // Datos del Mapa Social. Al navegador viajan solo los puntos (DNI y coordenadas);
 // el nombre, la dirección y los programas se piden al tocar un punto.
@@ -8,28 +9,7 @@ import { APPROXIMATE_POINT_SQL, isApproximatePoint } from "@/lib/geocoding";
 /** Tope de seguridad: alcanza para todo el padrón actual con margen. */
 export const MAP_POINTS_LIMIT = 200000;
 
-export interface MapStats {
-  /** Personas del padrón que cumplen los filtros (tengan o no punto). */
-  total: number;
-  /** De esas, cuántas tienen un punto en el mapa. */
-  located: number;
-  /** De las ubicadas, cuántas tienen un punto aproximado (la dirección solo tiene el barrio). */
-  approximate: number;
-  topBarrio: string;
-  topProgram: string;
-}
-
-export interface MapData {
-  /** DNI de cada punto, en el mismo orden que `coords`. Primero los exactos, después los aproximados. */
-  dnis: string[];
-  /** Con programas elegidos: a cuáles pertenece cada punto (bit k = programa k), en el orden de `dnis`. */
-  programMask?: number[];
-  /** Los primeros `exactCount` puntos son exactos; el resto, aproximados (solo barrio). */
-  exactCount: number;
-  /** Coordenadas planas: [lat0, lon0, lat1, lon1, ...] (5 decimales, ~1 m). */
-  coords: number[];
-  stats: MapStats;
-}
+export type { MapData, MapStats, PackedMapData } from "@/lib/map-points";
 
 export interface MapPerson {
   dni: string;
@@ -45,17 +25,17 @@ export interface MapPerson {
 
 const round5 = (n: number) => Math.round(n * 1e5) / 1e5;
 
-export async function getMapData(filters: MapFilters): Promise<MapData> {
+/** Las cifras de arriba del mapa. Son rápidas: la página las muestra enseguida y los puntos llegan después. */
+export async function getMapStats(filters: MapFilters): Promise<MapStats> {
   const { where, params } = buildMapWhere(filters);
-  const withMask = buildMapWhere(filters, { withMask: true });
-  const comparing = normalizeMapFilters(filters).programs.length > 0;
-  const [points, totals, barrios, programs] = await Promise.all([
-    prisma.$queryRawUnsafe<{ dni: string; latitude: number; longitude: number; approx: boolean; mask: number }[]>(
-      `SELECT dni, latitude, longitude, ${APPROXIMATE_POINT_SQL} AS approx, (${withMask.mask})::int AS mask FROM padron_unificado
-       WHERE ${withMask.where} AND latitude IS NOT NULL AND longitude IS NOT NULL ORDER BY approx, dni LIMIT ${MAP_POINTS_LIMIT}`,
-      ...withMask.params
+  const [totals, barrios, programs] = await Promise.all([
+    prisma.$queryRawUnsafe<{ total: number; located: number; approximate: number }[]>(
+      `SELECT COUNT(*)::int AS total,
+              COUNT(*) FILTER (WHERE latitude IS NOT NULL AND longitude IS NOT NULL)::int AS located,
+              COUNT(*) FILTER (WHERE latitude IS NOT NULL AND longitude IS NOT NULL AND ${APPROXIMATE_POINT_SQL})::int AS approximate
+       FROM padron_unificado WHERE ${where}`,
+      ...params
     ),
-    prisma.$queryRawUnsafe<{ total: number }[]>(`SELECT COUNT(*)::int AS total FROM padron_unificado WHERE ${where}`, ...params),
     prisma.$queryRawUnsafe<{ name: string }[]>(
       `SELECT COALESCE(NULLIF(trim(barrio), ''), NULLIF(trim(localidad), '')) AS name
        FROM padron_unificado WHERE ${where} AND COALESCE(NULLIF(trim(barrio), ''), NULLIF(trim(localidad), '')) IS NOT NULL
@@ -70,31 +50,44 @@ export async function getMapData(filters: MapFilters): Promise<MapData> {
       ...params
     ),
   ]);
-
-  const dnis: string[] = new Array(points.length);
-  const coords: number[] = new Array(points.length * 2);
-  const programMask: number[] | undefined = comparing ? new Array(points.length) : undefined;
-  let exactCount = 0;
-  points.forEach((p, i) => {
-    if (!p.approx) exactCount++;
-    dnis[i] = p.dni;
-    if (programMask) programMask[i] = Number(p.mask) || 0;
-    coords[i * 2] = round5(Number(p.latitude));
-    coords[i * 2 + 1] = round5(Number(p.longitude));
-  });
-
+  const located = Math.min(totals[0]?.located ?? 0, MAP_POINTS_LIMIT);
   return {
-    dnis,
-    ...(programMask ? { programMask } : {}),
-    exactCount,
-    coords,
-    stats: {
-      total: totals[0]?.total ?? 0,
-      located: points.length,
-      approximate: points.length - exactCount,
-      topBarrio: barrios[0]?.name || "Sin datos",
-      topProgram: programs[0]?.name || "Sin datos",
-    },
+    total: totals[0]?.total ?? 0,
+    located,
+    approximate: Math.min(totals[0]?.approximate ?? 0, located),
+    topBarrio: barrios[0]?.name || "Sin datos",
+    topProgram: programs[0]?.name || "Sin datos",
+  };
+}
+
+/**
+ * Puntos y cifras del mapa con los filtros. La base arma directamente el texto que viaja
+ * al navegador (ver lib/map-points.ts): con todo el padrón es mucho más rápido que leer fila por fila.
+ */
+export async function getMapData(filters: MapFilters): Promise<PackedMapData> {
+  const withMask = buildMapWhere(filters, { withMask: true });
+  const comparing = normalizeMapFilters(filters).programs.length > 0;
+  const [points, stats] = await Promise.all([
+    prisma.$queryRawUnsafe<{ exact: number; dnis: string; coords: string; masks: string | null }[]>(
+      `SELECT COUNT(*) FILTER (WHERE NOT approx)::int AS exact,
+              COALESCE(string_agg(dni, ',' ORDER BY approx, dni), '') AS dnis,
+              COALESCE(string_agg(round(latitude * 100000)::int || ',' || round(longitude * 100000)::int, ',' ORDER BY approx, dni), '') AS coords,
+              ${comparing ? `COALESCE(string_agg(mask::text, ',' ORDER BY approx, dni), '')` : "NULL"} AS masks
+       FROM (
+         SELECT dni, latitude, longitude, ${APPROXIMATE_POINT_SQL} AS approx, (${withMask.mask})::int AS mask FROM padron_unificado
+         WHERE ${withMask.where} AND latitude IS NOT NULL AND longitude IS NOT NULL ORDER BY approx, dni LIMIT ${MAP_POINTS_LIMIT}
+       ) AS puntos`,
+      ...withMask.params
+    ),
+    getMapStats(filters),
+  ]);
+  const row = points[0];
+  return {
+    dnis: row?.dnis ?? "",
+    coords: row?.coords ?? "",
+    ...(comparing ? { programMask: row?.masks ?? "" } : {}),
+    exactCount: row?.exact ?? 0,
+    stats,
   };
 }
 

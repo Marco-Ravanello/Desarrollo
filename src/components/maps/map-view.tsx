@@ -705,7 +705,9 @@ export function MapView({
               {localityName}
             </p>
             <p className="text-xs font-bold text-foreground mt-0.5">
-              {onlyPadron || isHeat
+              {loading && dnis.length === 0
+                ? "Cargando las personas…"
+                : onlyPadron || isHeat
                 ? `${dnis.length.toLocaleString("es-AR")} ${dnis.length === 1 ? "persona" : "personas"} en el mapa`
                 : `${visibleCount.toLocaleString("es-AR")} puntos en el mapa`}
             </p>

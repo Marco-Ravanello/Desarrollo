@@ -41,31 +41,24 @@ const splitPrograms = (s?: string | null) => (s || "").split("|").map((p) => p.t
 export const MAX_NAME_GROUP = 40;
 
 /**
- * La base agrupa por nombre (sin tildes, signos ni orden de las palabras) y devuelve
- * solo los nombres que aparecen con más de un DNI; acá se decide qué pares parecen la misma persona.
+ * La base agrupa por `nombre_clave` (el nombre sin tildes, signos ni orden de las palabras,
+ * con índice) y devuelve solo los nombres que aparecen con más de un DNI; acá se decide
+ * qué pares parecen la misma persona.
  */
 export async function findPadronDuplicates(
   opts: { limit?: number } = {}
 ): Promise<{ pairs: DuplicatePair[]; total: number; skippedNames: number }> {
   const groups = await prisma.$queryRawUnsafe<{ size: number; rows: Row[] | null }[]>(`
-    WITH n AS (
-      SELECT dni, nombre_completo, direccion, barrio, localidad, telefono, fecha_nacimiento, programas_activos,
-             array_to_string(ARRAY(
-               SELECT w FROM unnest(regexp_split_to_array(
-                 regexp_replace(translate(upper(nombre_completo), 'ÁÉÍÓÚÜÑÀÈÌÒÙÂÊÎÔÛ', 'AEIOUUNAEIOUAEIOU'), '[^A-Z]+', ' ', 'g'), ' ')) AS w
-               WHERE w <> '' ORDER BY w), ' ') AS nkey
-      FROM padron_unificado
-      WHERE nombre_completo IS NOT NULL AND length(trim(nombre_completo)) > 3
-    )
     SELECT count(*)::int AS size,
            CASE WHEN count(*) <= ${MAX_NAME_GROUP} THEN json_agg(json_build_object(
              'dni', dni, 'nombre_completo', nombre_completo, 'direccion', direccion, 'barrio', barrio,
              'localidad', localidad, 'telefono', telefono, 'fecha_nacimiento', fecha_nacimiento,
              'programas_activos', programas_activos) ORDER BY dni) END AS rows
-    FROM n
-    WHERE position(' ' in nkey) > 0
-    GROUP BY nkey
-    HAVING count(*) > 1
+    FROM padron_unificado
+    WHERE nombre_clave IN (
+      SELECT nombre_clave FROM padron_unificado WHERE nombre_clave IS NOT NULL GROUP BY nombre_clave HAVING count(*) > 1
+    )
+    GROUP BY nombre_clave
   `);
 
   const dismissed = new Set(
