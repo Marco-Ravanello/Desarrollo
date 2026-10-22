@@ -68,7 +68,7 @@ export function EditPersonDialog({ person }: EditPersonDialogProps) {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button variant="outline" size="sm" className="gap-2 rounded-2xl border-border/60 hover:bg-muted font-bold text-xs h-9">
-          <Edit className="h-3.5 w-3.5 text-primary" /> Editar vecino
+          <Edit className="h-3.5 w-3.5 text-primary" /> Editar datos
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[500px] rounded-2xl bg-card border-border/60 p-6 shadow-2xl">

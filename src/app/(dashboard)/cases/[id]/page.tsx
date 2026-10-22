@@ -244,7 +244,7 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
                       </div>
                       {person.dni && !isProvisionalDni(person.dni) && (
                         <Button variant="outline" size="sm" asChild className="w-full rounded-xl font-bold">
-                          <Link href={`/ficha-social?dni=${person.dni}`}>Ver Ficha Social 360°</Link>
+                          <Link href={`/people/${person.dni}`}>Ver ficha de la persona</Link>
                         </Button>
                       )}
                     </>

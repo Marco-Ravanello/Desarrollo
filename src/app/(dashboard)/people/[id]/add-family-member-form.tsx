@@ -72,7 +72,7 @@ export function AddFamilyMemberForm({ personId }: { personId: string }) {
       </div>
       <Button type="submit" disabled={loading} size="sm" className="w-full h-9 rounded-xl font-bold text-xs gap-2">
         {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <UserPlus className="h-3.5 w-3.5" />}
-        <span>{loading ? "Vincunlando..." : "Vincular Integrante al Grupo Familiar"}</span>
+        <span>{loading ? "Vinculando…" : "Vincular al grupo familiar"}</span>
       </Button>
     </form>
   );

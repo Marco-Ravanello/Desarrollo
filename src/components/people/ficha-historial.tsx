@@ -31,12 +31,13 @@ export function historialCount(h?: FichaHistorial) {
   return h ? h.expedientes.length + h.intervencionesTotal + h.fichasTormenta.length : 0;
 }
 
-export function FichaHistorialView({ historial }: { historial: FichaHistorial }) {
+/** Con `withCases={false}` muestra solo intervenciones y fichas de emergencia (los expedientes van en su propia pestaña). */
+export function FichaHistorialView({ historial, withCases = true }: { historial: FichaHistorial; withCases?: boolean }) {
   const [showAll, setShowAll] = useState(false);
   const { expedientes, intervenciones, intervencionesTotal, fichasTormenta } = historial;
   const visibleInterventions = showAll ? intervenciones : intervenciones.slice(0, 8);
 
-  if (historialCount(historial) === 0) {
+  if ((withCases ? historialCount(historial) : intervencionesTotal + fichasTormenta.length) === 0) {
     return (
       <EmptyMessage
         compact
@@ -50,35 +51,37 @@ export function FichaHistorialView({ historial }: { historial: FichaHistorial })
 
   return (
     <div className="space-y-8">
-      <section className="space-y-3">
-        <SectionTitle icon={FolderOpen}>Expedientes ({expedientes.length})</SectionTitle>
-        {expedientes.length === 0 ? (
-          <p className="text-xs text-muted-foreground">No tiene expedientes.</p>
-        ) : (
-          <ul className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {expedientes.map((c) => {
-              const estado = ESTADO[c.estado] || { label: c.estado, className: "" };
-              return (
-                <li key={c.id}>
-                  <Link
-                    href={`/cases/${c.id}`}
-                    className="block h-full rounded-2xl border border-border/50 bg-muted/30 p-4 transition-colors hover:border-primary/40"
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <p className="text-sm font-bold text-foreground leading-snug">{c.titulo}</p>
-                      <Badge variant="outline" className={`shrink-0 text-xs font-bold ${estado.className}`}>{estado.label}</Badge>
-                    </div>
-                    <p className="mt-1.5 text-xs text-muted-foreground">
-                      {c.area} · Prioridad {c.prioridad.toLowerCase()} · abierto el {fecha(c.abierto)}
-                      {c.estado !== "CERRADO" ? ` · último movimiento ${fecha(c.actualizado)}` : ""}
-                    </p>
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </section>
+      {withCases && (
+        <section className="space-y-3">
+          <SectionTitle icon={FolderOpen}>Expedientes ({expedientes.length})</SectionTitle>
+          {expedientes.length === 0 ? (
+            <p className="text-xs text-muted-foreground">No tiene expedientes.</p>
+          ) : (
+            <ul className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {expedientes.map((c) => {
+                const estado = ESTADO[c.estado] || { label: c.estado, className: "" };
+                return (
+                  <li key={c.id}>
+                    <Link
+                      href={`/cases/${c.id}`}
+                      className="block h-full rounded-2xl border border-border/50 bg-muted/30 p-4 transition-colors hover:border-primary/40"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <p className="text-sm font-bold text-foreground leading-snug">{c.titulo}</p>
+                        <Badge variant="outline" className={`shrink-0 text-xs font-bold ${estado.className}`}>{estado.label}</Badge>
+                      </div>
+                      <p className="mt-1.5 text-xs text-muted-foreground">
+                        {c.area} · Prioridad {c.prioridad.toLowerCase()} · abierto el {fecha(c.abierto)}
+                        {c.estado !== "CERRADO" ? ` · último movimiento ${fecha(c.actualizado)}` : ""}
+                      </p>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </section>
+      )}
 
       <section className="space-y-3">
         <SectionTitle icon={MessageSquareText}>Intervenciones ({intervencionesTotal})</SectionTitle>

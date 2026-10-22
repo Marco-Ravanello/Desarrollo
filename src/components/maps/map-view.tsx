@@ -278,17 +278,11 @@ function PersonCard({ person }: { person: MapPerson }) {
         </div>
       )}
 
-      <div className="pt-2 grid grid-cols-2 gap-1.5">
-        <Button asChild variant="outline" size="sm" className="h-7 text-xs font-bold rounded-xl p-0">
+      <div className="pt-2">
+        <Button asChild variant="default" size="sm" className="h-7 w-full text-xs font-bold rounded-xl !text-primary-foreground">
           <Link href={`/people/${person.dni}`}>
-            <ExternalLink className="h-3 w-3 mr-1 text-primary" />
-            Expediente
-          </Link>
-        </Button>
-        <Button asChild variant="default" size="sm" className="h-7 text-xs font-bold rounded-xl p-0 !text-primary-foreground">
-          <Link href={`/ficha-social?dni=${person.dni}`}>
             <Network className="h-3 w-3 mr-1" />
-            Ficha 360°
+            Ver ficha
           </Link>
         </Button>
       </div>
@@ -352,8 +346,8 @@ function StormCard({ item }: { item: MapStormItem }) {
       </div>
       {item.dni && (
         <Button asChild size="sm" className="h-7 w-full text-xs font-bold rounded-xl !text-primary-foreground">
-          <Link href={`/ficha-social?dni=${item.dni}`}>
-            <Network className="h-3 w-3 mr-1" /> Ficha 360°
+          <Link href={`/people/${item.dni}`}>
+            <Network className="h-3 w-3 mr-1" /> Ver ficha
           </Link>
         </Button>
       )}
@@ -429,7 +423,7 @@ function SelectionContent({ selection }: { selection: Selection }) {
           }))
         : loaded.items.map((f) => ({
             key: f.id,
-            href: f.dni ? `/ficha-social?dni=${f.dni}` : null,
+            href: f.dni ? `/people/${f.dni}` : null,
             title: f.nombre,
             detail: `${shortDate(f.fecha)} · ${f.entrega}`,
           }));

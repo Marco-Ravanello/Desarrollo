@@ -2,6 +2,7 @@ import prisma from "@/lib/prisma";
 import { z } from "zod";
 import { MUNICIPAL_LOCALITIES } from "@/lib/constants/localities";
 import { normalizeDni } from "@/lib/padron-import";
+import { personAddress } from "@/lib/person-display";
 
 export const CreatePersonSchema = z.object({
   dni: z.string().min(1),
@@ -474,7 +475,7 @@ export async function getPersonById(id: string) {
         dni: p.dni,
         firstName,
         lastName,
-        address: p.direccion ? `${p.direccion}${p.barrio ? ` - Barrio ${p.barrio}` : ""}` : (p.barrio || p.localidad || "Sin dirección"),
+        address: personAddress(p.direccion, p.barrio, p.localidad),
         phone: p.telefono || null,
         email: p.email || null,
         gender: p.genero || "No especificado",
@@ -498,8 +499,8 @@ export async function getPersonById(id: string) {
     console.error("Error consultando padron_unificado en getPersonById:", err);
   }
 
-  return await prisma.person.findUnique({
-    where: { id },
+  return await prisma.person.findFirst({
+    where: { OR: [{ id }, { dni: id }] },
     include: {
       family: { include: { members: true } },
       cases: { include: { area: true } },
@@ -818,5 +819,16 @@ export async function updatePerson(id: string, rawData: z.infer<typeof UpdatePer
       email: data.email || null,
       ...(coords ? { latitude: coords.lat, longitude: coords.lng } : {})
     }
+  });
+}
+
+/** Integrantes del grupo familiar cargado en el Registro Único (los que se pueden desvincular). */
+export async function getRegistroFamilyMembers(dni: string) {
+  const person = await prisma.person.findUnique({ where: { dni }, select: { id: true, familyId: true } });
+  if (!person?.familyId) return [];
+  return prisma.person.findMany({
+    where: { familyId: person.familyId, NOT: { id: person.id } },
+    select: { id: true, dni: true, firstName: true, lastName: true },
+    orderBy: { lastName: "asc" },
   });
 }

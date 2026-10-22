@@ -30,7 +30,7 @@ export function CreateCaseForm({ personId, areas }: { personId: string, areas: a
   if (!open) {
     return (
       <Button onClick={() => setOpen(true)} variant="outline" size="sm" className="w-full mt-4">
-        <Plus className="h-4 w-4 mr-2" /> Nuevo caso
+        <Plus className="h-4 w-4 mr-2" /> Nuevo expediente
       </Button>
     );
   }

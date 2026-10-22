@@ -5,7 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { Eye, Plus, Upload, Users, Calendar, Building2, MapPin, Phone, Network, RotateCcw, UserX, CopyCheck } from "lucide-react";
+import { Eye, Plus, Upload, Users, Calendar, Building2, MapPin, Phone, RotateCcw, UserX, CopyCheck } from "lucide-react";
 import Link from "next/link";
 import {
   Sheet,
@@ -213,15 +213,9 @@ export default async function PeoplePage({
                     <TableCell className="text-right py-4 px-6">
                       <div className="flex items-center justify-end gap-1.5">
                         <Button variant="ghost" size="sm" asChild className="rounded-xl h-8 px-2.5 text-xs font-bold hover:bg-primary hover:text-white transition-all text-primary gap-1">
-                          <Link href={`/people/${p.id}`} title="Ver expediente">
+                          <Link href={`/people/${p.id}`}>
                             <Eye className="h-3.5 w-3.5"/>
-                            <span>Expediente</span>
-                          </Link>
-                        </Button>
-                        <Button variant="ghost" size="sm" asChild className="rounded-xl h-8 px-2.5 text-xs font-bold hover:bg-indigo-600 hover:text-white transition-all text-indigo-700 dark:text-indigo-400 gap-1">
-                          <Link href={`/ficha-social?dni=${p.dni}`} title="Ver Ficha 360°">
-                            <Network className="h-3.5 w-3.5"/>
-                            <span>360°</span>
+                            <span>Ver ficha</span>
                           </Link>
                         </Button>
                       </div>
