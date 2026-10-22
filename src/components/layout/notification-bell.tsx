@@ -105,7 +105,7 @@ export function NotificationBell() {
                     Ver detalles
                   </Link>
                 )}
-                <span className="text-[9px] text-muted-foreground/60 mt-1">{new Date(n.createdAt).toLocaleString()}</span>
+                <span className="text-[9px] text-muted-foreground/60 mt-1">{new Date(n.createdAt).toLocaleString("es-AR")}</span>
               </DropdownMenuItem>
             ))
           )}

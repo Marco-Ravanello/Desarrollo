@@ -115,13 +115,13 @@ export function EmergencyView({ initialData, deniedAccess }: EmergencyViewProps)
             <Button
               onClick={handleExportExcel}
               variant="outline"
-              className="bg-emerald-600 hover:bg-emerald-700 text-white hover:text-white border-none rounded-2xl h-11 px-5 font-bold text-xs"
+              className="rounded-2xl h-11 px-5 font-bold text-xs"
             >
               <Download className="mr-2 h-4 w-4" /> Exportar Excel Oficial
             </Button>
             {viewer.canEdit && <Button
               onClick={handleOpenNewFicha}
-              className="bg-amber-500 hover:bg-amber-600 text-black font-bold rounded-2xl h-11 px-5 text-xs shadow-lg"
+              className="font-bold rounded-2xl h-11 px-5 text-xs shadow-lg"
             >
               <Plus className="mr-2 h-4 w-4" /> Nueva Ficha Tormenta
             </Button>}
@@ -335,7 +335,7 @@ export function EmergencyView({ initialData, deniedAccess }: EmergencyViewProps)
                 {viewer.canDeliver && r.fromTable && ["PENDIENTE", "PARCIAL"].includes(deliveryStatus(r)) && (
                   <Button
                     onClick={() => setDeliveryRecord(r)}
-                    className="w-full rounded-xl text-xs font-bold h-9 bg-emerald-600 hover:bg-emerald-700 text-white"
+                    className="w-full rounded-xl text-xs font-bold h-9"
                   >
                     <PackageCheck className="mr-2 h-3.5 w-3.5" /> Registrar entrega
                   </Button>

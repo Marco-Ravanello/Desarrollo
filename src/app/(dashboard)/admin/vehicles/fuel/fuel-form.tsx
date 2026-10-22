@@ -69,7 +69,7 @@ export function FuelForm({ vehicles }: { vehicles: any[] }) {
     <div className="space-y-8">
       <div className="bg-amber-50 dark:bg-amber-950/20 p-4 rounded-2xl border border-amber-200 dark:border-amber-900/30">
            <h4 className="text-xs font-bold text-amber-600 dark:text-amber-400 uppercase tracking-widest mb-3">Asistente de Carga Rápida (Foto Ticket)</h4>
-           <OCRScanner onScanComplete={handleScanComplete} />
+           <OCRScanner onScanComplete={handleScanComplete} label="Escanear el ticket" />
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">

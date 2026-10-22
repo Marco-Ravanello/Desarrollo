@@ -7,9 +7,11 @@ import { toast } from "sonner";
 
 interface OCRScannerProps {
   onScanComplete: (data: any) => void;
+  /** Texto del botón: qué se escanea en este formulario. */
+  label?: string;
 }
 
-export function OCRScanner({ onScanComplete }: OCRScannerProps) {
+export function OCRScanner({ onScanComplete, label = "Escanear documento" }: OCRScannerProps) {
   const [isScanning, setIsScanning] = useState(false);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -72,12 +74,12 @@ export function OCRScanner({ onScanComplete }: OCRScannerProps) {
           {isScanning ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin text-primary" />
-              <span>Extrayendo Datos...</span>
+              <span>Leyendo el documento…</span>
             </>
           ) : (
             <>
               <Sparkles className="h-4 w-4 text-primary" />
-              <span>Escanear Orden (OCR IA)</span>
+              <span>{label}</span>
             </>
           )}
         </label>

@@ -116,13 +116,13 @@ export function FuelReportView({ vehicles }: { vehicles: any[] }) {
                          <TableCell>{new Date(r.date).toLocaleDateString()}</TableCell>
                          <TableCell className="font-mono text-xs">{r.ticketNumber}</TableCell>
                          <TableCell>{Number(r.liters).toFixed(2)} L</TableCell>
-                         <TableCell className="text-right font-bold">${Number(r.amount).toLocaleString()}</TableCell>
+                         <TableCell className="text-right font-bold">${Number(r.amount).toLocaleString("es-AR")}</TableCell>
                        </TableRow>
                      ))}
                      <TableRow className="bg-slate-50 dark:bg-slate-900 font-bold">
                         <TableCell colSpan={2}>TOTAL DEL MES</TableCell>
                         <TableCell>{totalLiters.toFixed(2)} L</TableCell>
-                        <TableCell className="text-right">${totalSpent.toLocaleString()}</TableCell>
+                        <TableCell className="text-right">${totalSpent.toLocaleString("es-AR")}</TableCell>
                      </TableRow>
                    </TableBody>
                  </Table>

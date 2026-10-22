@@ -15,6 +15,7 @@ import {
   CheckCircle2, FileText, ArrowRight, Eye, Layers, Sparkles
 } from "lucide-react";
 import Link from "next/link";
+import { plural } from "@/lib/formato";
 
 interface CaseItem {
   id: string;
@@ -72,25 +73,25 @@ export function AreaDashboardView({
       bgAccent: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20",
       textAccent: "text-emerald-500",
       badgeBg: "bg-emerald-500/15 text-emerald-500 border-emerald-500/30",
-      buttonBg: "bg-emerald-600 hover:bg-emerald-700 text-white"
+      buttonBg: "bg-primary hover:bg-primary/90 text-primary-foreground"
     },
     blue: {
       bgAccent: "bg-blue-500/10 text-blue-500 border-blue-500/20",
       textAccent: "text-blue-500",
       badgeBg: "bg-blue-500/15 text-blue-500 border-blue-500/30",
-      buttonBg: "bg-blue-600 hover:bg-blue-700 text-white"
+      buttonBg: "bg-primary hover:bg-primary/90 text-primary-foreground"
     },
     amber: {
       bgAccent: "bg-amber-500/10 text-amber-500 border-amber-500/20",
       textAccent: "text-amber-500",
       badgeBg: "bg-amber-500/15 text-amber-500 border-amber-500/30",
-      buttonBg: "bg-amber-600 hover:bg-amber-700 text-white"
+      buttonBg: "bg-primary hover:bg-primary/90 text-primary-foreground"
     },
     rose: {
       bgAccent: "bg-rose-500/10 text-rose-500 border-rose-500/20",
       textAccent: "text-rose-500",
       badgeBg: "bg-rose-500/15 text-rose-500 border-rose-500/30",
-      buttonBg: "bg-rose-600 hover:bg-rose-700 text-white"
+      buttonBg: "bg-primary hover:bg-primary/90 text-primary-foreground"
     }
   }[themeColor];
 
@@ -361,7 +362,7 @@ export function AreaDashboardView({
                       {renderPriorityBadge(c.priority)}
                     </td>
                     <td className="px-4 py-3.5 text-muted-foreground font-bold">
-                      {c._count?.interventions || 0} registro(s)
+                      {plural(c._count?.interventions || 0, "intervención")}
                     </td>
                     <td className="px-4 py-3.5 text-right">
                       <Button variant="ghost" size="sm" asChild className="h-8 text-xs font-bold text-primary hover:bg-primary/10 rounded-xl">

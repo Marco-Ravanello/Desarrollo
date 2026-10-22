@@ -333,7 +333,7 @@ export function PadronImport() {
             <li className="rounded-xl bg-muted/50 p-3"><span className="block text-lg font-bold">{preview.counts.joined}</span>se suman a {programLabel}</li>
             <li className="rounded-xl bg-muted/50 p-3"><span className="block text-lg font-bold">{preview.counts.alreadyInProgram}</span>ya figuraban en el programa</li>
           </ul>
-          <Button type="button" onClick={handleImport} disabled={busy || Boolean(nothingToDo)} className="w-full rounded-xl bg-emerald-600 hover:bg-emerald-700">
+          <Button type="button" onClick={handleImport} disabled={busy || Boolean(nothingToDo)} className="w-full rounded-xl">
             {progress !== null ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
             {nothingToDo ? "No hay nada para importar" : "Importar al padrón"}
           </Button>

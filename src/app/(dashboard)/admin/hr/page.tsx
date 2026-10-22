@@ -30,6 +30,7 @@ import { EmptyMessage } from "@/components/ui/empty-message";
 
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
+import { getAreaShortName } from "@/lib/area-theme";
 
 export const metadata = { title: "Recursos Humanos" };
 
@@ -161,14 +162,14 @@ export default async function HRPage({
       <Card className="rounded-2xl border border-border/60 shadow-xs bg-card text-card-foreground">
         <CardContent className="p-6">
             <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground mb-6 flex items-center gap-2">
-                <PieChart className="h-4 w-4" /> Distribución Salarial por Área
+                <PieChart className="h-4 w-4" /> Distribución salarial por área
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
                 {sanitizedAreas.map(area => {
                     const areaBudget = stats.budgetByArea[area.id] || 0;
                     return (
                         <div key={area.id} className="bg-muted/30 p-4 rounded-2xl border border-border/40 shadow-xs">
-                            <p className="text-[9px] font-bold text-muted-foreground uppercase truncate mb-1" title={area.name}>{area.name}</p>
+                            <p className="text-xs font-semibold text-muted-foreground truncate mb-1" title={area.name}>{getAreaShortName(area.name)}</p>
                             <p className="text-sm font-bold text-card-foreground">${areaBudget.toLocaleString('es-AR')}</p>
                         </div>
                     )

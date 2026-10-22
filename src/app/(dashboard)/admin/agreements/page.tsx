@@ -25,7 +25,7 @@ export default async function AgreementsPage({ searchParams }: { searchParams: P
         description="Los convenios de la Muni, con su vigencia y su monto."
         icon={Landmark}
         actions={
-          <Button asChild className="bg-emerald-600 hover:bg-emerald-700">
+          <Button asChild>
             <Link href="/admin/agreements/new">
               <Plus className="mr-2 h-4 w-4" /> Nuevo Convenio
             </Link>

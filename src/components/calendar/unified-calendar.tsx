@@ -295,8 +295,8 @@ export function UnifiedCalendar({ reservations = [], purchaseOrders = [], tasks 
   const timeLinePercentage = (timeLineMinutesFrom7 / totalMinutesInGrid) * 100;
 
   return (
-    <div className="grid grid-cols-1 xl:grid-cols-4 gap-8">
-      <div className="xl:col-span-1 space-y-6">
+    <div className="grid grid-cols-1 xl:grid-cols-[17rem_minmax(0,1fr)] gap-6">
+      <div className="space-y-6 min-w-0">
         <Card className="bg-card text-card-foreground border border-border/60 shadow-xs p-5 space-y-5 rounded-2xl">
           <div className="space-y-3">
             <div className="flex items-center justify-between">
@@ -370,7 +370,8 @@ export function UnifiedCalendar({ reservations = [], purchaseOrders = [], tasks 
 
           <div className="pt-2 border-t border-border/40">
             <Input
-              placeholder="Buscar compromiso en agenda..."
+              placeholder="Buscar en la agenda"
+              aria-label="Buscar en la agenda"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="bg-muted/30 border-border/60 text-foreground rounded-xl text-xs h-9"
@@ -454,15 +455,15 @@ export function UnifiedCalendar({ reservations = [], purchaseOrders = [], tasks 
           <div className="pt-2 border-t border-border/40">
             <Button
               onClick={() => setShowAddModal(true)}
-              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-2xl gap-2 font-bold text-xs uppercase tracking-wider h-11 shadow-sm"
+              className="w-full h-auto min-h-11 whitespace-normal rounded-2xl gap-2 font-bold text-sm shadow-sm"
             >
-              <Plus className="h-4 w-4" /> Nueva Tarea Compartida
+              <Plus className="h-4 w-4 shrink-0" /> Nueva tarea compartida
             </Button>
           </div>
         </Card>
       </div>
 
-      <div className="xl:col-span-3 space-y-6">
+      <div className="space-y-6 min-w-0">
         <Card className="bg-card text-card-foreground border border-border/60 shadow-xs overflow-hidden rounded-2xl">
           <div className="p-5 border-b border-border/40 flex flex-col md:flex-row justify-between items-center gap-4 bg-muted/20">
             <div className="flex items-center gap-3">
@@ -603,8 +604,8 @@ export function UnifiedCalendar({ reservations = [], purchaseOrders = [], tasks 
 
           {view === "week" && (
             <div className="overflow-x-auto custom-scrollbar">
-              <div className="min-w-[850px] relative">
-                <div className="grid grid-cols-8 border-b border-border/40 bg-muted/30 py-3 text-center">
+              <div className="min-w-[640px] relative">
+                <div className="grid grid-cols-[3.5rem_repeat(7,minmax(0,1fr))] border-b border-border/40 bg-muted/30 py-3 text-center">
                   <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground border-r border-border/40">
                     Horario
                   </div>
@@ -658,7 +659,7 @@ export function UnifiedCalendar({ reservations = [], purchaseOrders = [], tasks 
                       return (
                         <div
                           key={timeStr}
-                          className={`grid grid-cols-8 hover:bg-muted/20 ${
+                          className={`grid grid-cols-[3.5rem_repeat(7,minmax(0,1fr))] hover:bg-muted/20 ${
                             isFullHour ? "border-b border-border/40" : "border-b border-dashed border-border/20"
                           }`}
                         >

@@ -202,7 +202,7 @@ export default function CrucesSocialesPage() {
       <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
         <StatCard
           label="Coincidencias Cruzadas"
-          value={cruceData?.total_coincidencias.toLocaleString() || 0}
+          value={cruceData?.total_coincidencias.toLocaleString("es-AR") || 0}
           hint={<>Modo: <b className="uppercase">{modo}</b></>}
           icon={Users}
           tone="blue"

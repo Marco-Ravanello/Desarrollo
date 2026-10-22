@@ -147,7 +147,7 @@ export function DerivationAnswer({ derivationId }: { derivationId: string }) {
 
   return (
     <div className="flex flex-wrap gap-2">
-      <Button size="sm" disabled={saving !== null} onClick={() => answer(true)} className="rounded-xl font-bold gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white">
+      <Button size="sm" disabled={saving !== null} onClick={() => answer(true)} className="rounded-xl font-bold gap-1.5">
         {saving === "accept" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />} Aceptar
       </Button>
       <Button size="sm" variant="outline" disabled={saving !== null} onClick={() => setRejecting(true)} className="rounded-xl font-bold gap-1.5">

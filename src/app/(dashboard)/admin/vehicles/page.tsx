@@ -133,7 +133,7 @@ export default async function VehiclesPage() {
           </div>
           <div className="text-right hidden md:block">
             <p className="text-xs text-muted-foreground">Gasto Combustible (Mes)</p>
-            <p className="text-lg font-bold text-emerald-500">${totalFuelSpentMonth.toLocaleString()}</p>
+            <p className="text-lg font-bold text-emerald-500">${totalFuelSpentMonth.toLocaleString("es-AR")}</p>
           </div>
         </CardHeader>
         <CardContent className="p-0">
@@ -171,7 +171,7 @@ export default async function VehiclesPage() {
                       <TableCell>
                         <div className="flex flex-col">
                           <span className="font-medium text-foreground">{v.brand} {v.model}</span>
-                          <span className="text-xs text-muted-foreground">KM Service: {v.lastServiceKm?.toLocaleString() || 0} km</span>
+                          <span className="text-xs text-muted-foreground">KM Service: {v.lastServiceKm?.toLocaleString("es-AR") || 0} km</span>
                         </div>
                       </TableCell>
                       <TableCell>
@@ -189,8 +189,8 @@ export default async function VehiclesPage() {
                       <TableCell className="w-[200px]">
                         <div className="space-y-1">
                           <div className="flex justify-between text-[10px] font-medium">
-                            <span className="text-muted-foreground">${monthlyFuel.toLocaleString()}</span>
-                            <span className="text-muted-foreground/80">lim. ${fuelLimit.toLocaleString()}</span>
+                            <span className="text-muted-foreground">${monthlyFuel.toLocaleString("es-AR")}</span>
+                            <span className="text-muted-foreground/80">lim. ${fuelLimit.toLocaleString("es-AR")}</span>
                           </div>
                           <Progress value={fuelPercent} className="h-1.5 bg-muted" />
                         </div>

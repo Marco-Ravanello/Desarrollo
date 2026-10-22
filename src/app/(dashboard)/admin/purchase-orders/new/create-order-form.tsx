@@ -103,7 +103,7 @@ export function CreatePurchaseOrderForm({ providers, areas = [] }: { providers: 
     const orderTotal = parseFloat(orderData.amount) || 0;
 
     if (items.length > 0 && Math.abs(itemsTotal - orderTotal) > 0.01) {
-      toast.error(`El total de los ítems ($${itemsTotal.toLocaleString()}) no coincide con el total de la orden ($${orderTotal.toLocaleString()})`);
+      toast.error(`El total de los ítems ($${itemsTotal.toLocaleString("es-AR")}) no coincide con el total de la orden ($${orderTotal.toLocaleString("es-AR")})`);
       return;
     }
 
@@ -135,7 +135,7 @@ export function CreatePurchaseOrderForm({ providers, areas = [] }: { providers: 
       <CardContent className="space-y-8">
         <div className="bg-slate-50/50 dark:bg-slate-900/30 p-4 rounded-2xl border border-slate-200/50 dark:border-slate-800/50">
            <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-3">Asistente de Carga Rápida</h4>
-           <OCRScanner onScanComplete={handleScanComplete} />
+           <OCRScanner onScanComplete={handleScanComplete} label="Escanear la orden" />
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -358,7 +358,7 @@ export function CreatePurchaseOrderForm({ providers, areas = [] }: { providers: 
                       <tr>
                         <td colSpan={4} className="p-3 text-right font-bold text-muted-foreground">Total Ítems:</td>
                         <td className="p-3 text-right font-bold text-blue-700 dark:text-blue-300">
-                          ${items.reduce((acc, item) => acc + (parseFloat(item.totalPrice) || 0), 0).toLocaleString()}
+                          ${items.reduce((acc, item) => acc + (parseFloat(item.totalPrice) || 0), 0).toLocaleString("es-AR")}
                         </td>
                         <td></td>
                       </tr>
@@ -372,7 +372,7 @@ export function CreatePurchaseOrderForm({ providers, areas = [] }: { providers: 
             <Button type="button" variant="outline" onClick={() => router.back()}>
               Cancelar
             </Button>
-            <Button type="submit" disabled={loading} className="bg-blue-600 hover:bg-blue-700">
+            <Button type="submit" disabled={loading}>
               {loading ? "Registrando..." : "Crear Orden"}
             </Button>
           </div>

@@ -66,7 +66,7 @@ export default async function VehicleDetailPage({ params }: { params: Promise<{ 
             <CardContent className="space-y-4 pt-6">
               <div className="flex justify-between items-center">
                 <span className="text-sm text-muted-foreground">Último Service</span>
-                <span className="font-bold text-foreground">{vehicle.lastServiceKm?.toLocaleString() || 0} KM</span>
+                <span className="font-bold text-foreground">{vehicle.lastServiceKm?.toLocaleString("es-AR") || 0} KM</span>
               </div>
               <Separator />
               <div className="flex justify-between items-center">
@@ -76,7 +76,7 @@ export default async function VehicleDetailPage({ params }: { params: Promise<{ 
               <Separator />
               <div className="flex justify-between items-center">
                 <span className="text-sm text-muted-foreground">Cupo Mensual</span>
-                <span className="font-bold text-emerald-600 dark:text-emerald-400">${Number(vehicle.fuelMonthlyLimit || 0).toLocaleString()}</span>
+                <span className="font-bold text-emerald-600 dark:text-emerald-400">${Number(vehicle.fuelMonthlyLimit || 0).toLocaleString("es-AR")}</span>
               </div>
             </CardContent>
           </Card>
@@ -190,7 +190,7 @@ export default async function VehicleDetailPage({ params }: { params: Promise<{ 
                         {new Date(fuel.date).toLocaleDateString()}
                       </TableCell>
                       <TableCell className="font-bold text-emerald-600 dark:text-emerald-400">
-                        ${Number(fuel.amount).toLocaleString()}
+                        ${Number(fuel.amount).toLocaleString("es-AR")}
                       </TableCell>
                       <TableCell className="text-sm font-semibold text-foreground">
                         {Number(fuel.liters).toFixed(2)} L

@@ -114,7 +114,7 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
   const historyCount = interventions.length + events.length;
 
   const breadcrumbs = [
-    { label: "Áreas", href: "/areas/social" },
+    { label: "Expedientes", href: "/cases" },
     { label: areaLabel, href: areaUrl },
     { label: `Expediente ${shownTitle.title.substring(0, 20)}...`, active: true }
   ];

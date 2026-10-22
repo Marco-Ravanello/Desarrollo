@@ -196,7 +196,7 @@ export function StormDeliveryDialog({ record, stock, onOpenChange, onDelivered }
           <Button variant="outline" onClick={() => onOpenChange(false)} className="rounded-xl text-xs font-bold">
             Cancelar
           </Button>
-          <Button onClick={handleSave} disabled={saving} className="rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white">
+          <Button onClick={handleSave} disabled={saving} className="rounded-xl text-xs font-bold">
             <PackageCheck className="mr-2 h-4 w-4" />
             {saving ? "Registrando..." : "Registrar entrega"}
           </Button>

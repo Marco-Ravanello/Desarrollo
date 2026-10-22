@@ -21,6 +21,7 @@ import { PageBreadcrumbs } from "@/components/layout/breadcrumbs-context";
 import { RememberVisit } from "@/components/search/remember-visit";
 import { PageHeader } from "@/components/layout/page-header";
 import { EmptyMessage } from "@/components/ui/empty-message";
+import { plural } from "@/lib/formato";
 
 export const metadata = { title: "Persona" };
 
@@ -124,7 +125,7 @@ export default async function PersonDetailPage({ params }: { params: Promise<{ i
           <Badge variant="outline" className="border-border text-foreground font-mono font-bold">DNI: {person.dni}</Badge>
           {(person as any).programasActivos && (person as any).programasActivos.length > 0 && (
             <Badge className="bg-emerald-500/15 text-emerald-500 border border-emerald-500/30 font-bold text-xs">
-              {(person as any).programasActivos.length} Programas Activos
+              {plural((person as any).programasActivos.length, "programa activo")}
             </Badge>
           )}
           {person.email && <Badge variant="secondary" className="font-normal">{person.email}</Badge>}

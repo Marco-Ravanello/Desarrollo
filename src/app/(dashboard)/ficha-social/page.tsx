@@ -26,6 +26,7 @@ import { FichaHistorialView, historialCount } from "@/components/people/ficha-hi
 import { GrupoFamiliarView, grupoFamiliarCount } from "@/components/people/grupo-familiar";
 import { FichaSkeleton, LoadingPage, SkeletonHeader } from "@/components/layout/page-skeletons";
 import { Skeleton } from "@/components/ui/skeleton";
+import { plural } from "@/lib/formato";
 
 function FichaSocialContent() {
   const searchParams = useSearchParams();
@@ -180,11 +181,11 @@ function FichaSocialContent() {
                         DNI / CUIL: {ficha.dni}
                       </Badge>
                       <Badge className="bg-emerald-500/15 text-emerald-500 border border-emerald-500/30 text-xs font-bold">
-                        {ficha.total_programas} Programas Activos
+                        {plural(ficha.total_programas, "programa activo")}
                       </Badge>
                       {ficha.historial && ficha.historial.expedientes.length > 0 && (
                         <Badge className="bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/30 text-xs font-bold">
-                          {ficha.historial.expedientes.length} {ficha.historial.expedientes.length === 1 ? "Expediente" : "Expedientes"}
+                          {plural(ficha.historial.expedientes.length, "expediente")}
                         </Badge>
                       )}
                       {ficha.historial && ficha.historial.fichasTormenta.length > 0 && (
@@ -264,13 +265,15 @@ function FichaSocialContent() {
                           </div>
                           <div>
                             <h3 className="text-sm font-bold text-foreground leading-tight">{progName}</h3>
-                            <p className="text-[10px] text-muted-foreground font-medium">
-                              Roles: {detalle.roles.join(", ")}
-                            </p>
+                            {detalle.roles.filter(Boolean).length > 0 && (
+                              <p className="text-[11px] text-muted-foreground font-medium">
+                                Rol: {detalle.roles.filter(Boolean).join(", ")}
+                              </p>
+                            )}
                           </div>
                         </div>
                         <Badge variant="outline" className="text-[10px] border-border/60 font-bold">
-                          {detalle.cantidad_registros} registro(s)
+                          {plural(detalle.cantidad_registros, "registro")}
                         </Badge>
                       </div>
                       <CardContent className="p-4 space-y-3">

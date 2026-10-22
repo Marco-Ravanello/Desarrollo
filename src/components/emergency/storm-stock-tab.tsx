@@ -250,7 +250,7 @@ export function StormStockTab({ stock, onRefresh }: StormStockTabProps) {
                       <Button
                         onClick={() => handleSaveEdit(item)}
                         disabled={savingEdit}
-                        className="flex-1 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white h-9"
+                        className="flex-1 rounded-xl text-xs font-bold h-9"
                       >
                         <Check className="mr-1 h-4 w-4" /> {savingEdit ? "Guardando..." : "Guardar"}
                       </Button>
@@ -349,7 +349,7 @@ export function StormStockTab({ stock, onRefresh }: StormStockTabProps) {
                             onClick={() => handleSaveEdit(item)}
                             disabled={savingEdit}
                             aria-label="Guardar"
-                            className="rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white h-7 px-2"
+                            className="rounded-lg text-xs font-bold h-7 px-2"
                           >
                             <Check className="h-3.5 w-3.5" />
                           </Button>
@@ -443,7 +443,7 @@ export function StormStockTab({ stock, onRefresh }: StormStockTabProps) {
             <Button variant="outline" onClick={() => setConfigOpen(false)} className="rounded-xl font-bold text-xs">
               Cancelar
             </Button>
-            <Button onClick={handleSaveBulkConfig} className="rounded-xl font-bold text-xs bg-emerald-600 hover:bg-emerald-700 text-white">
+            <Button onClick={handleSaveBulkConfig} className="rounded-xl font-bold text-xs">
               <Save className="mr-1.5 h-3.5 w-3.5" /> Guardar Stock Real
             </Button>
           </DialogFooter>

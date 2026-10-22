@@ -34,7 +34,7 @@ export function StockList({ supplies }: { supplies: any[] }) {
     const doc = new jsPDF() as any;
     doc.text("Reporte de Inventario - Municipio", 14, 15);
     doc.setFontSize(10);
-    doc.text(`Generado el: ${new Date().toLocaleString()}`, 14, 22);
+    doc.text(`Generado el: ${new Date().toLocaleString("es-AR")}`, 14, 22);
 
     const tableData = supplies.map(s => [
       s.name,

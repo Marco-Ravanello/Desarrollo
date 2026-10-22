@@ -74,7 +74,7 @@ export function CreateAgreementForm({ areas }: { areas: any[] }) {
       <CardContent className="space-y-8">
         <div className="bg-slate-50 dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800">
            <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-3">Asistente de Carga (OCR)</h4>
-           <OCRScanner onScanComplete={handleScanComplete} />
+           <OCRScanner onScanComplete={handleScanComplete} label="Escanear el convenio" />
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -173,7 +173,7 @@ export function CreateAgreementForm({ areas }: { areas: any[] }) {
             <Button type="button" variant="outline" onClick={() => router.back()}>
               Cancelar
             </Button>
-            <Button type="submit" disabled={loading} className="bg-emerald-600 hover:bg-emerald-700">
+            <Button type="submit" disabled={loading}>
               {loading ? "Registrando..." : "Guardar Convenio"}
             </Button>
           </div>

@@ -86,7 +86,7 @@ export function CreatePersonForm() {
             <Button type="button" variant="outline" onClick={() => router.back()}>
               Cancelar
             </Button>
-            <Button type="submit" disabled={loading} className="bg-blue-600 hover:bg-blue-700 text-white">
+            <Button type="submit" disabled={loading}>
               {loading ? "Registrando..." : "Registrar Persona"}
             </Button>
           </div>

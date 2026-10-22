@@ -88,7 +88,7 @@ export function OrderItemsTable({ orderId, orderStatus, items }: OrderItemsTable
                     </td>
                     <td className="py-4 px-4 text-center align-top">
                       <span className="font-bold text-foreground text-base tabular-nums">
-                        {q.toLocaleString()}
+                        {q.toLocaleString("es-AR")}
                       </span>
                     </td>
                     <td className="py-4 px-4 text-center align-top">
@@ -105,7 +105,7 @@ export function OrderItemsTable({ orderId, orderStatus, items }: OrderItemsTable
                       <div className="space-y-1.5 min-w-[180px]">
                         <div className="flex justify-between text-[11px] font-bold uppercase tracking-tight">
                           <span className={isFulfilled ? "text-emerald-600 dark:text-emerald-400" : "text-blue-600 dark:text-blue-400"}>
-                            {f.toLocaleString()} de {q.toLocaleString()}
+                            {f.toLocaleString("es-AR")} de {q.toLocaleString("es-AR")}
                           </span>
                           <span className={isFulfilled ? "text-emerald-500 font-bold" : "text-muted-foreground"}>
                             {Math.round(progress)}%

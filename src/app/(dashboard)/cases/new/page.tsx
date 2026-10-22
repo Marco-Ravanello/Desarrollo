@@ -52,7 +52,7 @@ export default async function NewCasePage({
     : null;
 
   const breadcrumbs = [
-    { label: "Áreas", href: "/areas/social" },
+    { label: "Expedientes", href: "/cases" },
     { label: "Nuevo expediente", active: true }
   ];
 
@@ -66,7 +66,7 @@ export default async function NewCasePage({
         icon={FolderPlus}
         actions={
           <Button variant="ghost" size="icon" asChild className="rounded-xl h-10 w-10 shrink-0">
-            <Link href="/areas/social" aria-label="Volver">
+            <Link href="/cases" aria-label="Volver">
               <ArrowLeft className="h-5 w-5 text-muted-foreground" />
             </Link>
           </Button>

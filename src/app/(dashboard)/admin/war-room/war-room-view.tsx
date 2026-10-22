@@ -11,6 +11,7 @@ import {
   Radio, TrendingUp, Building2
 } from "lucide-react";
 import { MunicipalCrest } from "@/components/ui/municipal-crest";
+import { plural } from "@/lib/formato";
 
 interface WarRoomViewProps {
   initialData: {
@@ -196,7 +197,7 @@ export function WarRoomView({ initialData }: WarRoomViewProps) {
             {initialData.activeCriticalCases}
           </div>
           <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground mt-2 font-semibold">
-            {initialData.resolvedToday} casilleros cerrados
+            {plural(initialData.resolvedToday, "expediente cerrado hoy", "expedientes cerrados hoy")}
           </div>
         </Card>
         <Card className="rounded-2xl border-border/60 bg-card text-card-foreground shadow-sm hover:shadow-md transition-all p-5 relative overflow-hidden">
@@ -210,7 +211,7 @@ export function WarRoomView({ initialData }: WarRoomViewProps) {
             {initialData.activeVehicles} <span className="text-lg text-muted-foreground font-medium">/ {initialData.totalVehicles}</span>
           </div>
           <div className="flex items-center gap-1.5 text-[11px] text-emerald-600 dark:text-emerald-400 mt-2 font-bold">
-            {initialData.totalVehicles > 0 ? `${Math.round((initialData.activeVehicles / initialData.totalVehicles) * 100)}% Operatividad` : "Sin Flota"}
+            {initialData.totalVehicles > 0 ? `${Math.round((initialData.activeVehicles / initialData.totalVehicles) * 100)} % disponible` : "Sin vehículos cargados"}
           </div>
         </Card>
         <Card className="rounded-2xl border-border/60 bg-card text-card-foreground shadow-sm hover:shadow-md transition-all p-5 relative overflow-hidden">
@@ -221,7 +222,7 @@ export function WarRoomView({ initialData }: WarRoomViewProps) {
             </div>
           </div>
           <div className="text-3xl sm:text-4xl font-bold font-mono tracking-tight text-purple-600 dark:text-purple-400">
-            {initialData.emergencyStockPercent}%
+            {initialData.emergencyStockPercent} %
           </div>
           <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground mt-2 font-semibold">
             Insumos en depósitos

@@ -98,7 +98,7 @@ export default function InterventionsAdminPage() {
             <Button
               onClick={handleExport}
               disabled={exporting}
-              className="w-full bg-emerald-600 hover:bg-emerald-700 rounded-xl"
+              className="w-full rounded-xl"
             >
               {exporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileSpreadsheet className="mr-2 h-4 w-4" />}
               Descargar Planilla

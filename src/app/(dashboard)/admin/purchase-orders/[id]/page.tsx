@@ -100,7 +100,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                     <Badge variant="secondary" className="bg-blue-500/10 text-blue-500 border-none font-bold text-[10px]">PRESUPUESTO</Badge>
                 </div>
                 <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1">Monto Total Adjudicado</span>
-                <p className="text-2xl font-bold text-foreground">${totalAmount.toLocaleString()}</p>
+                <p className="text-2xl font-bold text-foreground">${totalAmount.toLocaleString("es-AR")}</p>
                 <div className="mt-4 pt-4 border-t border-border/40 flex items-center justify-between">
                     <span className="text-[10px] font-bold text-muted-foreground uppercase">Moneda</span>
                     <span className="text-[10px] font-bold text-foreground">ARS</span>
@@ -115,7 +115,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                     <Badge variant="secondary" className="bg-emerald-500/10 text-emerald-500 border-none font-bold text-[10px]">EJECUTADO</Badge>
                 </div>
                 <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1">Total Recibido (Devengado)</span>
-                <p className="text-2xl font-bold text-foreground">${executedAmount.toLocaleString()}</p>
+                <p className="text-2xl font-bold text-foreground">${executedAmount.toLocaleString("es-AR")}</p>
                 <div className="mt-4 space-y-1">
                     <Progress value={globalProgress} className="h-1.5 [&>div]:bg-emerald-500 bg-emerald-500/10" />
                     <p className="text-[10px] text-emerald-500 font-bold uppercase text-right">{Math.round(globalProgress)}% COMPLETADO</p>
@@ -130,7 +130,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                     <Badge variant="secondary" className="bg-orange-500/10 text-orange-500 border-none font-bold text-[10px]">FINANZAS</Badge>
                 </div>
                 <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1">Saldo Pendiente de Entrega</span>
-                <p className="text-2xl font-bold text-foreground">${(totalAmount - executedAmount).toLocaleString()}</p>
+                <p className="text-2xl font-bold text-foreground">${(totalAmount - executedAmount).toLocaleString("es-AR")}</p>
                 <div className="mt-4 pt-4 border-t border-border/40 flex items-center justify-between">
                     <span className="text-[10px] font-bold text-muted-foreground uppercase">Finanzas</span>
                     <span className={`text-[10px] font-bold uppercase ${financialStatus === 'Pagada' ? 'text-emerald-500' : financialStatus === 'Parcialmente Pagada' ? 'text-blue-500' : 'text-orange-500'}`}>
@@ -278,7 +278,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                               <Link key={o.id} href={`/admin/purchase-orders/${o.id}`} className="block group">
                                   <div className="flex items-center justify-between text-[10px]">
                                       <span className="font-bold text-foreground group-hover:text-primary transition-colors">#{o.number}</span>
-                                      <span className="text-muted-foreground">${Number(o.amount).toLocaleString()}</span>
+                                      <span className="text-muted-foreground">${Number(o.amount).toLocaleString("es-AR")}</span>
                                   </div>
                               </Link>
                           ))}

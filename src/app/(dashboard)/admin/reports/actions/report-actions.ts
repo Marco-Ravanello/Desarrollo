@@ -45,6 +45,6 @@ export async function getWeeklyExecutiveData() {
     totalSpent,
     pendingAmount,
     criticalCases,
-    timestamp: new Date().toLocaleString()
+    timestamp: new Date().toLocaleString("es-AR")
   };
 }
