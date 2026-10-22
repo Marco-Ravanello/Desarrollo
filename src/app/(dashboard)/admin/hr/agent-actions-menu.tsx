@@ -55,12 +55,12 @@ export function AgentActionsMenu({ agent, areas }: AgentActionsMenuProps) {
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon" className="rounded-xl hover:bg-primary hover:text-white transition-all">
+          <Button variant="ghost" size="icon" aria-label="Acciones del agente" className="rounded-xl hover:bg-primary hover:text-white transition-all">
              <MoreHorizontal className="h-5 w-5" />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-56 rounded-2xl p-2 shadow-2xl border-border/50">
-          <DropdownMenuLabel className="px-3 py-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">Opciones de Legajo</DropdownMenuLabel>
+          <DropdownMenuLabel className="px-3 py-2 text-xs font-bold text-muted-foreground">Opciones de legajo</DropdownMenuLabel>
           <DropdownMenuSeparator className="bg-border/50" />
 
           <DropdownMenuItem
@@ -71,7 +71,7 @@ export function AgentActionsMenu({ agent, areas }: AgentActionsMenuProps) {
               setOpen(true);
             }}
           >
-            <Eye className="h-4 w-4" /> Ver Detalles
+            <Eye className="h-4 w-4" /> Ver detalles
           </DropdownMenuItem>
 
           <DropdownMenuItem
@@ -82,7 +82,7 @@ export function AgentActionsMenu({ agent, areas }: AgentActionsMenuProps) {
               setOpen(true);
             }}
           >
-            <Edit className="h-4 w-4" /> Editar Legajo
+            <Edit className="h-4 w-4" /> Editar legajo
           </DropdownMenuItem>
 
           <DropdownMenuSeparator className="bg-border/50" />

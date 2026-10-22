@@ -241,7 +241,7 @@ export function PadronImport() {
             <p className="text-xs font-bold flex-1 min-w-[180px]">3. Qué columna es cada dato</p>
             {workbook.sheets.length > 1 && (
               <div className="space-y-1">
-                <Label htmlFor="padron-sheet" className="text-[10px] uppercase text-muted-foreground font-bold">Hoja</Label>
+                <Label htmlFor="padron-sheet" className="text-xs text-muted-foreground font-bold">Hoja</Label>
                 <select id="padron-sheet" className={selectClass} value={sheet} disabled={busy} onChange={(e) => chooseSheet(e.target.value)}>
                   {workbook.sheets.map((s) => (
                     <option key={s} value={s}>{s}</option>
@@ -250,7 +250,7 @@ export function PadronImport() {
               </div>
             )}
             <div className="space-y-1">
-              <Label htmlFor="padron-header-row" className="text-[10px] uppercase text-muted-foreground font-bold">Encabezados en la fila</Label>
+              <Label htmlFor="padron-header-row" className="text-xs text-muted-foreground font-bold">Encabezados en la fila</Label>
               <select
                 id="padron-header-row"
                 className={selectClass}
@@ -282,7 +282,7 @@ export function PadronImport() {
                       {field.label}
                       {field.key === "dni" && <span className="text-destructive"> *</span>}
                     </Label>
-                    {example && <p className="text-[11px] text-muted-foreground truncate">Ej.: {example}</p>}
+                    {example && <p className="text-xs text-muted-foreground truncate">Ej.: {example}</p>}
                   </div>
                   <select
                     id={`padron-col-${field.key}`}

@@ -106,7 +106,7 @@ export function MiniHeatmapWidget({ peopleLocations = [] }: MiniHeatmapWidgetPro
             <Flame className="h-4 w-4 text-rose-400 animate-pulse" />
           </div>
           <div>
-            <CardTitle className="text-sm font-bold text-foreground">Densidad Socio-Barrial</CardTitle>
+            <CardTitle className="text-sm font-bold text-foreground">Densidad socio-barrial</CardTitle>
             <CardDescription className="text-xs">
               Distribución territorial de demandas en las 13 localidades.
             </CardDescription>
@@ -119,7 +119,7 @@ export function MiniHeatmapWidget({ peopleLocations = [] }: MiniHeatmapWidgetPro
             size="sm"
             className="h-8 text-xs gap-1 border-white/10 hover:bg-accent hover:text-accent-foreground"
           >
-            <span>Ver Mapa Completo</span>
+            <span>Ver mapa completo</span>
             <ArrowUpRight className="h-3.5 w-3.5" />
           </Button>
         </Link>
@@ -130,7 +130,7 @@ export function MiniHeatmapWidget({ peopleLocations = [] }: MiniHeatmapWidgetPro
           <DynamicMiniHeatmap locations={peopleLocations} />
 
           {/* Floating Badge for Georeferenced Point Count */}
-          <div className="absolute top-2 right-2 z-[400] flex items-center gap-1.5 px-3 py-1 rounded-full bg-background/85 backdrop-blur-md border border-border/60 text-[10px] font-bold uppercase text-foreground shadow-md">
+          <div className="absolute top-2 right-2 z-[400] flex items-center gap-1.5 px-3 py-1 rounded-full bg-background/85 backdrop-blur-md border border-border/60 text-xs font-bold text-foreground shadow-md">
             <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping" />
             <span>● {pointCount} Puntos Georreferenciados</span>
           </div>
@@ -138,10 +138,10 @@ export function MiniHeatmapWidget({ peopleLocations = [] }: MiniHeatmapWidgetPro
 
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
-              Concentración por Localidad 3F
+            <p className="text-xs font-bold text-muted-foreground">
+              Concentración por localidad 3F
             </p>
-            <Link href="/maps" className="text-[10px] font-bold text-primary hover:underline flex items-center gap-0.5">
+            <Link href="/maps" className="text-xs font-bold text-primary hover:underline flex items-center gap-0.5">
               Filtro GIS <Layers className="h-3 w-3" />
             </Link>
           </div>
@@ -150,12 +150,12 @@ export function MiniHeatmapWidget({ peopleLocations = [] }: MiniHeatmapWidgetPro
             <div className="flex flex-wrap gap-1.5">
               {sortedLocalities.map(([loc, count], idx) => {
                 const colorClass = idx === 0
-                  ? "bg-rose-500/10 text-rose-400 border-rose-500/20 hover:bg-rose-500/20"
+                  ? "bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/20 hover:bg-rose-500/20"
                   : idx === 1
-                  ? "bg-amber-500/10 text-amber-400 border-amber-500/20 hover:bg-amber-500/20"
+                  ? "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20 hover:bg-amber-500/20"
                   : idx === 2
-                  ? "bg-blue-500/10 text-blue-400 border-blue-500/20 hover:bg-blue-500/20"
-                  : "bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20";
+                  ? "bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20 hover:bg-blue-500/20"
+                  : "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20";
 
                 return (
                   <Badge
@@ -172,7 +172,7 @@ export function MiniHeatmapWidget({ peopleLocations = [] }: MiniHeatmapWidgetPro
           ) : (
             <div className="p-3 rounded-xl bg-muted/30 border border-border/40 text-center space-y-1">
               <p className="text-xs font-semibold text-muted-foreground">Sin registros geolocalizados en la BD</p>
-              <p className="text-[10px] text-muted-foreground/60">
+              <p className="text-xs text-muted-foreground">
                 Al registrar ciudadanos con dirección o coordenadas GPS, las zonas de mayor demanda se calcularán automáticamente.
               </p>
             </div>

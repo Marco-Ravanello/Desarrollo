@@ -40,7 +40,7 @@ export function CreateHRForm({ areas }: { areas: any[] }) {
   return (
     <form onSubmit={handleSubmit} className="space-y-6 py-4">
       <div className="space-y-4">
-        <h4 className="text-sm font-bold uppercase tracking-widest text-primary">Información Personal</h4>
+        <h4 className="text-sm font-bold text-primary">Información personal</h4>
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label htmlFor="firstName" className="font-bold text-foreground">Nombre</Label>
@@ -58,7 +58,7 @@ export function CreateHRForm({ areas }: { areas: any[] }) {
             <Input id="dni" name="dni" placeholder="Sin puntos" required />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="fileNumber" className="font-bold text-foreground">N° Legajo / CUIT</Label>
+            <Label htmlFor="fileNumber" className="font-bold text-foreground">N° legajo / CUIT</Label>
             <Input id="fileNumber" name="fileNumber" placeholder="Legajo municipal" />
           </div>
         </div>
@@ -72,10 +72,10 @@ export function CreateHRForm({ areas }: { areas: any[] }) {
       <Separator />
 
       <div className="space-y-4">
-        <h4 className="text-sm font-bold uppercase tracking-widest text-primary">Situación Revista y Salarial</h4>
+        <h4 className="text-sm font-bold text-primary">Situación revista y salarial</h4>
 
         <div className="space-y-2">
-          <Label className="font-bold text-foreground">Área de Pertenencia</Label>
+          <Label className="font-bold text-foreground">Área de pertenencia</Label>
           <Combobox
             name="areaId"
             placeholder="Seleccionar área..."
@@ -86,18 +86,18 @@ export function CreateHRForm({ areas }: { areas: any[] }) {
 
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="position" className="font-bold text-foreground">Cargo / Función</Label>
+            <Label htmlFor="position" className="font-bold text-foreground">Cargo / función</Label>
             <Input id="position" name="position" placeholder="Ej: Inspector / Administrativo" required />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="startDate" className="font-bold text-foreground">Fecha de Ingreso</Label>
+            <Label htmlFor="startDate" className="font-bold text-foreground">Fecha de ingreso</Label>
             <Input id="startDate" name="startDate" type="date" />
           </div>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="contractType" className="font-bold text-foreground">Tipo de Contrato</Label>
+            <Label htmlFor="contractType" className="font-bold text-foreground">Tipo de contrato</Label>
             <select
               id="contractType"
               name="contractType"
@@ -107,8 +107,8 @@ export function CreateHRForm({ areas }: { areas: any[] }) {
               required
             >
               <option value="MENSUALIZADO">Mensualizado</option>
-              <option value="PLANTA_PERMANENTE">Planta Permanente</option>
-              <option value="MONOTRIBUTISTA">Monotributista / Contratado</option>
+              <option value="PLANTA_PERMANENTE">Planta permanente</option>
+              <option value="MONOTRIBUTISTA">Monotributista / contratado</option>
             </select>
           </div>
 
@@ -120,7 +120,7 @@ export function CreateHRForm({ areas }: { areas: any[] }) {
           ) : (
             <div className="space-y-2 opacity-50">
               <Label className="font-bold text-muted-foreground">Categoría</Label>
-              <Input placeholder="No aplica a Monotributistas" disabled className="bg-muted/40 cursor-not-allowed" />
+              <Input placeholder="No aplica a monotributistas" disabled className="bg-muted/40 cursor-not-allowed" />
             </div>
           )}
         </div>
@@ -131,14 +131,14 @@ export function CreateHRForm({ areas }: { areas: any[] }) {
             <Input id="salary" name="salary" type="number" step="0.01" placeholder="Ej: 450000" />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="schedule" className="font-bold text-foreground">Horario de Trabajo</Label>
+            <Label htmlFor="schedule" className="font-bold text-foreground">Horario de trabajo</Label>
             <Input id="schedule" name="schedule" placeholder="Ej: 08:00 a 14:00 hs" />
           </div>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="status" className="font-bold text-foreground">Estado Actual</Label>
+            <Label htmlFor="status" className="font-bold text-foreground">Estado actual</Label>
             <select
               id="status"
               name="status"
@@ -148,14 +148,14 @@ export function CreateHRForm({ areas }: { areas: any[] }) {
               required
             >
               <option value="ACTIVO">Activo</option>
-              <option value="LICENCIA">Licencia Médica</option>
+              <option value="LICENCIA">Licencia médica</option>
               <option value="VACACIONES">Vacaciones</option>
-              <option value="BAJA">Baja / Inactivo</option>
+              <option value="BAJA">Baja / inactivo</option>
             </select>
           </div>
           {status === "LICENCIA" && (
             <div className="space-y-2">
-              <Label htmlFor="statusUntil" className="font-bold text-foreground">Licencia Hasta</Label>
+              <Label htmlFor="statusUntil" className="font-bold text-foreground">Licencia hasta</Label>
               <Input id="statusUntil" name="statusUntil" type="date" />
             </div>
           )}
@@ -165,13 +165,13 @@ export function CreateHRForm({ areas }: { areas: any[] }) {
       <Separator />
 
       <div className="space-y-4">
-        <h4 className="text-sm font-bold uppercase tracking-widest text-primary">Legajo Digital Unificado</h4>
+        <h4 className="text-sm font-bold text-primary">Legajo digital unificado</h4>
         <div className="space-y-2">
-          <Label htmlFor="tasks" className="font-bold text-foreground">📋 Funciones y Tareas del Puesto</Label>
+          <Label htmlFor="tasks" className="font-bold text-foreground">📋 Funciones y tareas del puesto</Label>
           <Textarea id="tasks" name="tasks" placeholder="Ej: Relevamientos territoriales y atención al ciudadano." rows={2} />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="healthNotes" className="font-bold text-foreground">🩺 Salud, Carpetas Médicas y Aptitud Física</Label>
+          <Label htmlFor="healthNotes" className="font-bold text-foreground">🩺 Salud, carpetas médicas y aptitud física</Label>
           <Textarea id="healthNotes" name="healthNotes" placeholder="Ej: Examen pre-ocupacional aprobado." rows={2} />
         </div>
 
@@ -190,7 +190,7 @@ export function CreateHRForm({ areas }: { areas: any[] }) {
           </div>
           {hasAcademicStatus && (
             <div className="space-y-2 pt-1 animate-in fade-in duration-200">
-              <Label htmlFor="education" className="text-xs font-bold text-muted-foreground">Detalle de Título, Carrera o Alumno Regular</Label>
+              <Label htmlFor="education" className="text-xs font-bold text-muted-foreground">Detalle de título, carrera o alumno regular</Label>
               <Textarea
                 id="education"
                 name="education"
@@ -216,7 +216,7 @@ export function CreateHRForm({ areas }: { areas: any[] }) {
           </div>
           {hasDrivingPermit && (
             <div className="space-y-2 pt-1 animate-in fade-in duration-200">
-              <Label htmlFor="drivingLicense" className="text-xs font-bold text-muted-foreground">Detalle de Licencia y Habilitación</Label>
+              <Label htmlFor="drivingLicense" className="text-xs font-bold text-muted-foreground">Detalle de licencia y habilitación</Label>
               <Input id="drivingLicense" name="drivingLicense" placeholder="Ej: Licencia Profesional Clase B2 / C" />
             </div>
           )}

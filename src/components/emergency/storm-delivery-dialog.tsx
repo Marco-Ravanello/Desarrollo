@@ -149,7 +149,7 @@ export function StormDeliveryDialog({ record, stock, onOpenChange, onDelivered }
         </DialogHeader>
 
         <div className="space-y-3">
-          <div className="grid grid-cols-[minmax(0,1fr)_repeat(3,2.75rem)_4rem] sm:grid-cols-[minmax(0,1fr)_repeat(3,3.5rem)_5rem] gap-2 text-[11px] font-bold uppercase text-muted-foreground px-1">
+          <div className="grid grid-cols-[minmax(0,1fr)_repeat(3,2.75rem)_4rem] sm:grid-cols-[minmax(0,1fr)_repeat(3,3.5rem)_5rem] gap-2 text-xs font-bold text-muted-foreground px-1">
             <span>Elemento</span>
             <span className="text-center">Pedido</span>
             <span className="text-center">Falta</span>
@@ -160,7 +160,7 @@ export function StormDeliveryDialog({ record, stock, onOpenChange, onDelivered }
             <div key={c.id} className="grid grid-cols-[minmax(0,1fr)_repeat(3,2.75rem)_4rem] sm:grid-cols-[minmax(0,1fr)_repeat(3,3.5rem)_5rem] items-center gap-2 rounded-xl border border-border/60 px-3 py-2 text-sm">
               <span className="font-semibold min-w-0 break-words">
                 {c.title}
-                {c.delivered > 0 && <span className="block text-[11px] font-normal text-muted-foreground">ya entregados: {c.delivered}</span>}
+                {c.delivered > 0 && <span className="block text-xs font-normal text-muted-foreground">ya entregados: {c.delivered}</span>}
               </span>
               <span className="text-center">{c.requested}</span>
               <span className="text-center font-bold">{c.pending}</span>
@@ -187,7 +187,7 @@ export function StormDeliveryDialog({ record, stock, onOpenChange, onDelivered }
               className="h-10 rounded-xl text-sm mt-1"
             />
           </div>
-          <p className="text-[11px] text-muted-foreground">
+          <p className="text-xs text-muted-foreground">
             Lo que registres se descuenta del stock del depósito y queda anotado en el expediente de la familia.
           </p>
         </div>

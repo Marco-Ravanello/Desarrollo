@@ -9,7 +9,7 @@ import { actionErrorMessage } from "@/lib/action-error";
 
 const ProviderSchema = z.object({
   id: z.string().optional(),
-  name: z.string().trim().min(2, "Ingrese la razón social"),
+  name: z.string().trim().min(2, "Escribí la razón social"),
   cuit: z.string().trim().refine((v) => normalizeCuit(v).length === 11, "El CUIT debe tener 11 dígitos"),
   address: z.string().trim().optional(),
   phone: z.string().trim().optional(),

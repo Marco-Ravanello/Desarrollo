@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatNumber, formatPercent, formatPesos, plural } from "@/lib/formato";
+import { formatNumber, formatPercent, formatPesos, plural, textoNormal } from "@/lib/formato";
 
 describe("formato de números", () => {
   it("usa punto de miles y coma decimal", () => {
@@ -20,5 +20,13 @@ describe("plural", () => {
     expect(plural(2, "intervención")).toBe("2 intervenciones");
     expect(plural(1200, "persona")).toBe("1.200 personas");
     expect(plural(2, "expediente cerrado hoy", "expedientes cerrados hoy")).toBe("2 expedientes cerrados hoy");
+  });
+});
+
+describe("textoNormal", () => {
+  it("pasa valores en mayúsculas a texto normal", () => {
+    expect(textoNormal("MEDIA")).toBe("Media");
+    expect(textoNormal("EN_PROCESO")).toBe("En proceso");
+    expect(textoNormal(null)).toBe("");
   });
 });

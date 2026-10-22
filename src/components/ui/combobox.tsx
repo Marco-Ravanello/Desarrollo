@@ -35,6 +35,7 @@ export function Combobox({ options, placeholder = "Seleccionar...", name, value:
         type="button"
         variant="outline"
         role="combobox"
+        id={name}
         aria-expanded={open}
         className="w-full justify-between"
         onClick={() => setOpen(!open)}

@@ -40,7 +40,7 @@ function FichaSocialContent() {
   const handleSearch = (dniToSearch?: string) => {
     const term = dniToSearch || searchTerm;
     if (!term || term.trim().length < 4) {
-      toast.error("Por favor ingrese un DNI o CUIL válido");
+      toast.error("Escribí un DNI o CUIL válido");
       return;
     }
     setShowSuggestions(false);
@@ -123,7 +123,7 @@ function FichaSocialContent() {
               />
               {showSuggestions && suggestions.length > 0 && (
                 <div className="absolute top-full left-0 right-0 mt-2 bg-card border border-border/60 rounded-2xl shadow-xl z-50 overflow-hidden divide-y divide-border/40">
-                  <div className="p-2 bg-muted/40 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                  <div className="p-2 bg-muted/40 text-xs font-bold text-muted-foreground">
                     Sugerencias encontradas en bases
                   </div>
                   {suggestions.map((sugg, idx) => (
@@ -140,10 +140,10 @@ function FichaSocialContent() {
                         <User className="h-4 w-4 text-primary shrink-0" />
                         <div>
                           <span className="font-bold text-foreground group-hover:text-primary">{sugg.nombre}</span>
-                          <span className="text-muted-foreground ml-2 font-mono text-[11px]">DNI: {sugg.dni}</span>
+                          <span className="text-muted-foreground ml-2 font-mono text-xs">DNI: {sugg.dni}</span>
                         </div>
                       </div>
-                      <Badge variant="outline" className="text-[9px] border-border/60 text-muted-foreground truncate max-w-[200px]">
+                      <Badge variant="outline" className="text-xs border-border/60 text-muted-foreground truncate max-w-[200px]">
                         {sugg.origen}
                       </Badge>
                     </button>
@@ -154,7 +154,7 @@ function FichaSocialContent() {
             <Button
               type="submit"
               disabled={isPending}
-              className="h-12 px-6 rounded-2xl font-bold text-xs uppercase tracking-wider bg-primary hover:bg-primary/90 text-primary-foreground gap-2 shrink-0 shadow-sm"
+              className="h-12 px-6 rounded-2xl font-bold text-xs bg-primary hover:bg-primary/90 text-primary-foreground gap-2 shrink-0 shadow-sm"
             >
               {isPending ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
               <span>Consultar Ficha 360°</span>
@@ -180,7 +180,7 @@ function FichaSocialContent() {
                       <Badge variant="outline" className="font-mono text-xs border-border/60 font-bold">
                         DNI / CUIL: {ficha.dni}
                       </Badge>
-                      <Badge className="bg-emerald-500/15 text-emerald-500 border border-emerald-500/30 text-xs font-bold">
+                      <Badge className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 text-xs font-bold">
                         {plural(ficha.total_programas, "programa activo")}
                       </Badge>
                       {ficha.historial && ficha.historial.expedientes.length > 0 && (
@@ -189,7 +189,7 @@ function FichaSocialContent() {
                         </Badge>
                       )}
                       {ficha.historial && ficha.historial.fichasTormenta.length > 0 && (
-                        <Badge className="bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 text-xs font-bold">
+                        <Badge className="bg-amber-500/15 text-amber-800 dark:text-amber-400 border border-amber-500/30 text-xs font-bold">
                           {ficha.historial.fichasTormenta.length === 1 ? "1 Ficha de tormenta" : `${ficha.historial.fichasTormenta.length} Fichas de tormenta`}
                         </Badge>
                       )}
@@ -213,7 +213,7 @@ function FichaSocialContent() {
               )}
 
               <div className="mt-5 pt-4 border-t border-border/30 flex flex-wrap items-center gap-2">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mr-1">
+                <span className="text-xs font-bold text-muted-foreground mr-1">
                   Programas Sociales Detectados:
                 </span>
                 {ficha.programas_activos?.map((prog, idx) => (
@@ -266,13 +266,13 @@ function FichaSocialContent() {
                           <div>
                             <h3 className="text-sm font-bold text-foreground leading-tight">{progName}</h3>
                             {detalle.roles.filter(Boolean).length > 0 && (
-                              <p className="text-[11px] text-muted-foreground font-medium">
+                              <p className="text-xs text-muted-foreground font-medium">
                                 Rol: {detalle.roles.filter(Boolean).join(", ")}
                               </p>
                             )}
                           </div>
                         </div>
-                        <Badge variant="outline" className="text-[10px] border-border/60 font-bold">
+                        <Badge variant="outline" className="text-xs border-border/60 font-bold">
                           {plural(detalle.cantidad_registros, "registro")}
                         </Badge>
                       </div>
@@ -291,7 +291,7 @@ function FichaSocialContent() {
                             )}
 
                             {reg.datos_contacto && (
-                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] text-muted-foreground">
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-muted-foreground">
                                 {reg.datos_contacto.telefono && (
                                   <div className="flex items-center gap-1.5">
                                     <Phone className="h-3 w-3 text-primary shrink-0" />
@@ -314,7 +314,7 @@ function FichaSocialContent() {
                             )}
 
                             {reg.datos_adicionales && Object.keys(reg.datos_adicionales).length > 0 && (
-                              <div className="pt-2 border-t border-border/20 grid grid-cols-2 gap-1.5 text-[10px]">
+                              <div className="pt-2 border-t border-border/20 grid grid-cols-2 gap-1.5 text-xs">
                                 {Object.entries(reg.datos_adicionales).map(([k, v], vIdx) => (
                                   <div key={vIdx} className="bg-background/40 px-2 py-1 rounded-lg">
                                     <span className="text-muted-foreground font-semibold">{k}:</span>{" "}
@@ -372,10 +372,10 @@ function FichaSocialContent() {
             </div>
             <div>
               <h3 className="text-xl font-bold text-foreground tracking-tight">
-                Consulta de Ficha Social Unificada 360°
+                Consulta de ficha social unificada 360°
               </h3>
               <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
-                Ingrese un DNI, CUIL, Nombre o Apellido en la barra superior para consolidar en tiempo real los programas sociales activos, intervenciones municipales y vínculos familiares del ciudadano.
+                Buscá a una persona por DNI, CUIL, nombre o apellido para ver juntos sus programas, la atención municipal que recibió y su familia.
               </p>
             </div>
 

@@ -152,11 +152,11 @@ export function StormStockTab({ stock, onRefresh }: StormStockTabProps) {
             onClick={() => setAddSupplyOpen(true)}
             className="rounded-xl font-bold text-xs bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm"
           >
-            <Plus className="mr-1.5 h-3.5 w-3.5" /> Agregar Insumo
+            <Plus className="mr-1.5 h-3.5 w-3.5" /> Agregar insumo
           </Button>
           <Button asChild variant="outline" className="rounded-xl font-bold text-xs">
             <Link href="/admin/stock">
-              Ver Depósito Completo <ArrowUpRight className="ml-1 h-3.5 w-3.5" />
+              Ver depósito completo <ArrowUpRight className="ml-1 h-3.5 w-3.5" />
             </Link>
           </Button>
         </div>
@@ -179,20 +179,20 @@ export function StormStockTab({ stock, onRefresh }: StormStockTabProps) {
                 <div className="flex justify-between items-center">
                   <Badge
                     variant="outline"
-                    className={`text-[10px] font-bold uppercase ${
+                    className={`text-xs font-bold ${
                       item.status === "CRITICO"
-                        ? "bg-rose-500/10 text-rose-600 border-rose-500/30"
-                        : "bg-emerald-500/10 text-emerald-600 border-emerald-500/30"
+                        ? "bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/30"
+                        : "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30"
                     }`}
                   >
                     {item.status}
                   </Badge>
-                  <span className="text-[11px] font-bold text-muted-foreground">{item.unit}</span>
+                  <span className="text-xs font-bold text-muted-foreground">{item.unit}</span>
                 </div>
 
                 {isEditingThisCard ? (
                   <div className="space-y-1">
-                    <Label className="text-[10px] text-muted-foreground uppercase font-bold">Nombre del insumo</Label>
+                    <Label className="text-xs text-muted-foreground font-bold">Nombre del insumo</Label>
                     <Input
                       value={editingName}
                       onChange={(e) => setEditingName(e.target.value)}
@@ -211,7 +211,7 @@ export function StormStockTab({ stock, onRefresh }: StormStockTabProps) {
 
                 <div className="grid grid-cols-2 gap-2 pt-2 border-t border-border/40 text-xs">
                   <div>
-                    <span className="text-[10px] text-muted-foreground uppercase font-bold">Stock Disponible</span>
+                    <span className="text-xs text-muted-foreground font-bold">Stock disponible</span>
                     {isEditingThisCard ? (
                       <div className="flex items-center gap-1 mt-1">
                         <Input
@@ -228,13 +228,13 @@ export function StormStockTab({ stock, onRefresh }: StormStockTabProps) {
                     )}
                   </div>
                   <div>
-                    <span className="text-[10px] text-muted-foreground uppercase font-bold">Falta entregar</span>
-                    <p className="text-lg font-bold text-amber-600">{item.demandedQuantity}</p>
+                    <span className="text-xs text-muted-foreground font-bold">Falta entregar</span>
+                    <p className="text-lg font-bold text-amber-700 dark:text-amber-400">{item.demandedQuantity}</p>
                   </div>
                 </div>
 
                 <div className="space-y-1">
-                    <div className="flex justify-between text-[10px] font-bold text-muted-foreground">
+                    <div className="flex justify-between text-xs font-bold text-muted-foreground">
                       <span>Cobertura de lo que falta entregar</span>
                       <span>{percentage}%</span>
                     </div>
@@ -282,7 +282,7 @@ export function StormStockTab({ stock, onRefresh }: StormStockTabProps) {
       {stock.some((s) => s.category === "GENERAL") && (
         <Card className="rounded-2xl border-border/60 shadow-sm bg-card p-6 space-y-4">
           <div>
-            <h4 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Otros insumos del depósito</h4>
+            <h4 className="text-sm font-bold text-muted-foreground">Otros insumos del depósito</h4>
             <p className="text-xs text-muted-foreground mt-1">Cargados desde la pantalla de Depósito. Los que agregues acá arriba van con los de emergencia.</p>
           </div>
 
@@ -308,15 +308,15 @@ export function StormStockTab({ stock, onRefresh }: StormStockTabProps) {
                       ) : (
                         <div>
                           <h5 className="text-xs font-bold text-foreground">{item.name}</h5>
-                          <p className="text-[11px] text-muted-foreground mt-0.5">{item.description}</p>
+                          <p className="text-xs text-muted-foreground mt-0.5">{item.description}</p>
                         </div>
                       )}
                       <Badge
                         variant="outline"
-                        className={`text-[9px] font-bold shrink-0 ${
+                        className={`text-xs font-bold shrink-0 ${
                           item.status === "CRITICO"
-                            ? "bg-rose-500/10 text-rose-600 border-rose-500/30"
-                            : "bg-emerald-500/10 text-emerald-600 border-emerald-500/30"
+                            ? "bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/30"
+                            : "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30"
                         }`}
                       >
                         {item.status}
@@ -325,7 +325,7 @@ export function StormStockTab({ stock, onRefresh }: StormStockTabProps) {
 
                     <div className="flex items-center justify-between pt-2 border-t border-border/40">
                       <div>
-                        <span className="text-[10px] text-muted-foreground uppercase font-bold">Disponible</span>
+                        <span className="text-xs text-muted-foreground font-bold">Disponible</span>
                         {isEditingThisCard ? (
                           <Input
                             type="number"
@@ -337,7 +337,7 @@ export function StormStockTab({ stock, onRefresh }: StormStockTabProps) {
                           />
                         ) : (
                           <p className="text-sm font-bold text-foreground">
-                            {item.availableStock} <span className="text-[10px] font-normal text-muted-foreground">{item.unit}</span>
+                            {item.availableStock} <span className="text-xs font-normal text-muted-foreground">{item.unit}</span>
                           </p>
                         )}
                       </div>
@@ -387,7 +387,7 @@ export function StormStockTab({ stock, onRefresh }: StormStockTabProps) {
           <DialogHeader>
             <DialogTitle className="text-lg font-bold flex items-center gap-2">
               <Warehouse className="h-5 w-5 text-emerald-600" />
-              Configuración de Stock Real en Depósito
+              Configuración de stock real en depósito
             </DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground">
               Ingresa la cantidad física exacta de unidades disponibles actualmente en los galpones de Desarrollo Humano.
@@ -444,7 +444,7 @@ export function StormStockTab({ stock, onRefresh }: StormStockTabProps) {
               Cancelar
             </Button>
             <Button onClick={handleSaveBulkConfig} className="rounded-xl font-bold text-xs">
-              <Save className="mr-1.5 h-3.5 w-3.5" /> Guardar Stock Real
+              <Save className="mr-1.5 h-3.5 w-3.5" /> Guardar stock real
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -456,7 +456,7 @@ export function StormStockTab({ stock, onRefresh }: StormStockTabProps) {
           <DialogHeader>
             <DialogTitle className="text-base font-bold flex items-center gap-2">
               <Plus className="h-5 w-5 text-primary" />
-              Agregar Nuevo Insumo de Contingencia
+              Agregar nuevo insumo de contingencia
             </DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground">
               Registra un nuevo elemento para el stock de emergencia climática (ej: Chapas de zinc, Tirantes, Nylon, Bidones).
@@ -465,7 +465,7 @@ export function StormStockTab({ stock, onRefresh }: StormStockTabProps) {
 
           <div className="space-y-3 py-2">
             <div className="space-y-1.5">
-              <Label className="text-xs font-bold">Nombre del Insumo *</Label>
+              <Label className="text-xs font-bold">Nombre del insumo *</Label>
               <Input
                 placeholder="Ej: Chapas de zinc 3.66m / Tirantes de pino"
                 value={newSupplyName}
@@ -476,7 +476,7 @@ export function StormStockTab({ stock, onRefresh }: StormStockTabProps) {
 
             <div className="grid grid-cols-3 gap-3">
               <div className="space-y-1.5">
-                <Label className="text-xs font-bold">Stock Inicial</Label>
+                <Label className="text-xs font-bold">Stock inicial</Label>
                 <Input
                   type="number"
                   min="0"
@@ -486,7 +486,7 @@ export function StormStockTab({ stock, onRefresh }: StormStockTabProps) {
                 />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs font-bold">Unidad Medida</Label>
+                <Label className="text-xs font-bold">Unidad de medida</Label>
                 <Input
                   placeholder="Unidades, mts, bidones..."
                   value={newSupplyUnit}
@@ -495,7 +495,7 @@ export function StormStockTab({ stock, onRefresh }: StormStockTabProps) {
                 />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs font-bold">Stock Mín. Alerta</Label>
+                <Label className="text-xs font-bold">Stock mín. alerta</Label>
                 <Input
                   type="number"
                   min="1"
@@ -507,7 +507,7 @@ export function StormStockTab({ stock, onRefresh }: StormStockTabProps) {
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-xs font-bold">Descripción / Especificación Técnica</Label>
+              <Label className="text-xs font-bold">Descripción / especificación técnica</Label>
               <Input
                 placeholder="Ej: Chapas galvanizadas N28 para reparación rápida de techos"
                 value={newSupplyDescription}
@@ -522,7 +522,7 @@ export function StormStockTab({ stock, onRefresh }: StormStockTabProps) {
               Cancelar
             </Button>
             <Button onClick={handleCreateNewSupply} className="rounded-xl font-bold text-xs bg-primary text-primary-foreground">
-              <Save className="mr-1.5 h-3.5 w-3.5" /> Guardar Insumo
+              <Save className="mr-1.5 h-3.5 w-3.5" /> Guardar insumo
             </Button>
           </DialogFooter>
         </DialogContent>

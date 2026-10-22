@@ -24,14 +24,14 @@ export function OrderTableRow({ o }: { o: any }) {
       <TableCell className="font-mono">
         <div className="flex flex-col">
           <span className="font-bold text-foreground">{o.number}</span>
-          {o.expediente && <span className="text-[10px] text-muted-foreground uppercase">Exp: {o.expediente}</span>}
+          {o.expediente && <span className="text-xs text-muted-foreground">Exp: {o.expediente}</span>}
         </div>
       </TableCell>
       <TableCell className="font-medium">
         <div className="flex flex-col">
           <span>{o.provider?.name || o.providerName || "No especificado"}</span>
           {(o.provider?.cuit || o.providerCuit) && (
-            <span className="text-[10px] text-muted-foreground font-mono">CUIT: {o.provider?.cuit || o.providerCuit}</span>
+            <span className="text-xs text-muted-foreground font-mono">CUIT: {o.provider?.cuit || o.providerCuit}</span>
           )}
         </div>
       </TableCell>

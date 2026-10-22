@@ -216,8 +216,8 @@ export function SocialMapDashboard({ initialData, programs, unlocated = 0, canLo
       <Card className="bg-card text-card-foreground border border-border/60 shadow-xs rounded-2xl p-5">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           <div className="space-y-1">
-            <label htmlFor="mapa-localidad" className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
-              <MapPin className="h-3.5 w-3.5 text-primary" /> Localidad Oficial
+            <label htmlFor="mapa-localidad" className="text-xs font-bold text-muted-foreground flex items-center gap-1">
+              <MapPin className="h-3.5 w-3.5 text-primary" /> Localidad oficial
             </label>
             <select
               id="mapa-localidad"
@@ -234,7 +234,7 @@ export function SocialMapDashboard({ initialData, programs, unlocated = 0, canLo
           </div>
 
           <div className="space-y-1">
-            <label htmlFor="mapa-programa" className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
+            <label htmlFor="mapa-programa" className="text-xs font-bold text-muted-foreground flex items-center gap-1">
               <HeartHandshake className="h-3.5 w-3.5 text-emerald-500" /> Programas (hasta {MAP_MAX_PROGRAMS})
             </label>
             <select
@@ -262,8 +262,8 @@ export function SocialMapDashboard({ initialData, programs, unlocated = 0, canLo
           </div>
 
           <div className="space-y-1">
-            <label htmlFor="mapa-busqueda" className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
-              <Search className="h-3.5 w-3.5 text-blue-500" /> Búsqueda por Texto
+            <label htmlFor="mapa-busqueda" className="text-xs font-bold text-muted-foreground flex items-center gap-1">
+              <Search className="h-3.5 w-3.5 text-blue-500" /> Búsqueda por texto
             </label>
             <Input
               id="mapa-busqueda"
@@ -281,13 +281,13 @@ export function SocialMapDashboard({ initialData, programs, unlocated = 0, canLo
               onClick={handleResetFilters}
               className="w-full h-10 rounded-2xl text-xs font-bold border-border/60 gap-1.5"
             >
-              <RotateCcw className="h-3.5 w-3.5 text-muted-foreground" /> Restablecer Filtros
+              <RotateCcw className="h-3.5 w-3.5 text-muted-foreground" /> Restablecer filtros
             </Button>
           </div>
         </div>
         {selectedPrograms.length > 0 && (
           <div className="mt-3 flex flex-wrap items-center gap-2">
-            <span className="text-[11px] font-semibold text-muted-foreground">Comparando:</span>
+            <span className="text-xs font-semibold text-muted-foreground">Comparando:</span>
             {selectedPrograms.map((prog, k) => (
               <span
                 key={prog}
@@ -311,7 +311,7 @@ export function SocialMapDashboard({ initialData, programs, unlocated = 0, canLo
 
       <div className={`grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4 transition-opacity ${loading ? "opacity-60" : ""}`} aria-busy={loading}>
         <StatCard
-          label="Vecinos en Zona"
+          label="Vecinos en zona"
           value={<span className="font-mono">{fmt(stats.total)}</span>}
           hint="Personas del padrón con estos filtros"
           icon={Users}
@@ -319,14 +319,14 @@ export function SocialMapDashboard({ initialData, programs, unlocated = 0, canLo
         />
 
         <StatCard
-          label="Puntos GPS Activos"
+          label="Puntos GPS activos"
           value={<span className="font-mono">{fmt(stats.located)}</span>}
           hint={
             stats.total > 0 ? (
               <span className="block">
-                <span className="font-bold text-emerald-500">{locatedPct}% ubicadas en el mapa</span>
+                <span className="font-bold text-emerald-700 dark:text-emerald-400">{locatedPct}% ubicadas en el mapa</span>
                 {stats.approximate > 0 && (
-                  <span className="block font-semibold text-amber-600 dark:text-amber-400">
+                  <span className="block font-semibold text-amber-700 dark:text-amber-400">
                     {fmt(stats.approximate)} aproximadas (solo barrio)
                   </span>
                 )}
@@ -340,7 +340,7 @@ export function SocialMapDashboard({ initialData, programs, unlocated = 0, canLo
         />
 
         <StatCard
-          label="Sector Dominante"
+          label="Sector dominante"
           value={<span className="block truncate text-base sm:text-lg" title={stats.topBarrio}>{stats.topBarrio}</span>}
           hint="Barrio con más personas"
           icon={Building2}
@@ -348,9 +348,9 @@ export function SocialMapDashboard({ initialData, programs, unlocated = 0, canLo
         />
 
         <StatCard
-          label="Programa Principal"
+          label="Programa principal"
           value={<span className="block truncate text-base sm:text-lg" title={stats.topProgram}>{stats.topProgram}</span>}
-          hint={<span className="font-bold text-blue-500">Cobertura socio-asistencial</span>}
+          hint={<span className="font-bold text-blue-700 dark:text-blue-400">Cobertura socio-asistencial</span>}
           icon={Sparkles}
           tone="purple"
         />

@@ -20,7 +20,7 @@ export default async function FuelRecordPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Nueva Carga</CardTitle>
+          <CardTitle>Nueva carga</CardTitle>
         </CardHeader>
         <CardContent>
           <FuelForm vehicles={vehicles} />

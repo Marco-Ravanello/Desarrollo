@@ -67,17 +67,17 @@ export default function NotFoundPage() {
         <div className="flex flex-col items-center space-y-3">
           <div className="p-4 rounded-2xl bg-card border border-border/80 shadow-xl relative group">
             <MunicipalCrest className="h-16 w-16" />
-            <div className="absolute -bottom-2 -right-2 p-1.5 rounded-xl bg-amber-500 text-slate-950 font-bold text-[10px] shadow-sm flex items-center gap-1">
+            <div className="absolute -bottom-2 -right-2 p-1.5 rounded-xl bg-amber-500 text-slate-950 font-bold text-xs shadow-sm flex items-center gap-1">
               <FileQuestion className="h-3.5 w-3.5" /> 404
             </div>
           </div>
 
           <div>
-            <p className="text-[11px] font-bold uppercase tracking-[0.25em] text-primary">
+            <p className="text-xs font-bold text-primary">
               MUNICIPALIDAD DE TRES DE FEBRERO
             </p>
             <h1 className="text-3xl sm:text-4xl font-bold text-foreground tracking-tight mt-1">
-              Recurso No Encontrado
+              Recurso no encontrado
             </h1>
             <p className="text-xs sm:text-sm text-muted-foreground font-semibold mt-1 max-w-md mx-auto leading-relaxed">
               La dirección web ingresada no corresponde a una vista activa o la carátula solicitada fue reubicada en la plataforma.
@@ -88,17 +88,17 @@ export default function NotFoundPage() {
         <Card className="bg-card text-card-foreground border border-border/60 shadow-lg rounded-2xl p-5 sm:p-6 text-left">
           <CardContent className="p-0 space-y-4">
             <form onSubmit={handleSearchSubmit} className="space-y-2">
-              <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-                <Search className="h-3.5 w-3.5 text-primary" /> Búsqueda Rápida en Padrón Municipal
+              <label className="text-xs font-bold text-muted-foreground flex items-center gap-1.5">
+                <Search className="h-3.5 w-3.5 text-primary" /> Búsqueda rápida en padrón municipal
               </label>
               <div className="flex gap-2">
                 <Input
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Escriba DNI, Apellido o Expediente (ej: 34438385)..."
+                  placeholder="Buscá por DNI, apellido o expediente"
                   className="h-11 text-xs sm:text-sm rounded-2xl bg-muted/30 border-border/60 text-foreground font-medium"
                 />
-                <Button type="submit" className="h-11 px-5 rounded-2xl font-bold text-xs uppercase tracking-wider bg-primary text-primary-foreground gap-2 shrink-0">
+                <Button type="submit" className="h-11 px-5 rounded-2xl font-bold text-xs bg-primary text-primary-foreground gap-2 shrink-0">
                   <Search className="h-4 w-4" />
                   <span className="hidden sm:inline">Buscar</span>
                 </Button>
@@ -109,10 +109,10 @@ export default function NotFoundPage() {
               <Button
                 variant="default"
                 asChild
-                className="rounded-2xl h-11 px-5 text-xs font-bold uppercase tracking-wider bg-primary text-primary-foreground gap-2"
+                className="rounded-2xl h-11 px-5 text-xs font-bold bg-primary text-primary-foreground gap-2"
               >
                 <Link href="/dashboard">
-                  <Home className="h-4 w-4" /> Ir al Panel Principal
+                  <Home className="h-4 w-4" /> Ir al panel principal
                 </Link>
               </Button>
 
@@ -131,15 +131,15 @@ export default function NotFoundPage() {
                 onClick={() => router.back()}
                 className="rounded-2xl h-11 px-4 text-xs font-bold text-muted-foreground hover:text-foreground gap-1.5"
               >
-                <ArrowLeft className="h-4 w-4" /> Volver Atrás
+                <ArrowLeft className="h-4 w-4" /> Volver atrás
               </Button>
             </div>
           </CardContent>
         </Card>
 
         <div className="space-y-2 text-left">
-          <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground pl-1">
-            Accesos Directos Módulos Oficiales
+          <p className="text-xs font-bold text-muted-foreground pl-1">
+            Accesos directos módulos oficiales
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {shortcuts.map((s, idx) => (
@@ -155,7 +155,7 @@ export default function NotFoundPage() {
                   <p className="text-xs font-bold text-foreground group-hover:text-primary transition-colors leading-tight">
                     {s.title}
                   </p>
-                  <p className="text-[10px] text-muted-foreground line-clamp-1 leading-relaxed">
+                  <p className="text-xs text-muted-foreground line-clamp-1 leading-relaxed">
                     {s.desc}
                   </p>
                 </div>

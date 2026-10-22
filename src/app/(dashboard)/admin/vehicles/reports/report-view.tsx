@@ -60,6 +60,7 @@ export function FuelReportView({ vehicles }: { vehicles: any[] }) {
       <div className="flex justify-between items-center print:hidden">
         <div className="flex gap-2 items-center">
           <input
+            aria-label="Mes del reporte"
             type="month"
             value={selectedMonth}
             onChange={(e) => setSelectedMonth(e.target.value)}
@@ -94,7 +95,7 @@ export function FuelReportView({ vehicles }: { vehicles: any[] }) {
              <Card key={v.id} className="print:shadow-none print:border-slate-300">
                <CardHeader className="bg-slate-50 dark:bg-slate-900 border-b">
                  <div className="flex justify-between items-center">
-                   <CardTitle className="text-lg">{v.brand} {v.model} - <span className="font-mono uppercase">{v.plate}</span></CardTitle>
+                   <CardTitle className="text-lg">{v.brand} {v.model} - <span className="font-mono">{v.plate}</span></CardTitle>
                    <div className="text-right">
                      <p className="text-xs text-muted-foreground">Tarjeta: {v.fuelCardNumber || "N/A"}</p>
                    </div>
@@ -120,7 +121,7 @@ export function FuelReportView({ vehicles }: { vehicles: any[] }) {
                        </TableRow>
                      ))}
                      <TableRow className="bg-slate-50 dark:bg-slate-900 font-bold">
-                        <TableCell colSpan={2}>TOTAL DEL MES</TableCell>
+                        <TableCell colSpan={2}>Total del mes</TableCell>
                         <TableCell>{totalLiters.toFixed(2)} L</TableCell>
                         <TableCell className="text-right">${totalSpent.toLocaleString("es-AR")}</TableCell>
                      </TableRow>

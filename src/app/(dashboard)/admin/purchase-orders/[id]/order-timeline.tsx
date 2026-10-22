@@ -42,7 +42,7 @@ export function OrderTimeline({ currentStatus }: { currentStatus: string }) {
             </div>
             <div className="mt-2 text-center">
               <p className={cn(
-                "text-[10px] font-bold uppercase tracking-widest",
+                "text-xs font-bold",
                 stage.status === 'completed' ? "text-primary" :
                 stage.status === 'current' ? "text-primary" :
                 "text-muted-foreground"
@@ -50,7 +50,7 @@ export function OrderTimeline({ currentStatus }: { currentStatus: string }) {
                 {stage.name}
               </p>
               {stage.status === 'current' && (
-                 <span className="text-[8px] font-bold text-primary/80 uppercase animate-pulse">En proceso</span>
+                 <span className="text-xs font-bold text-primary/80 animate-pulse">En proceso</span>
               )}
             </div>
           </div>

@@ -31,11 +31,11 @@ function eventIcon(e: CaseEvent) {
   if (e.kind === "CIERRE") return { Icon: Lock, className: "bg-muted text-muted-foreground" };
   if (e.kind === "REAPERTURA") return { Icon: RotateCcw, className: "bg-blue-500/15 text-blue-600 dark:text-blue-400" };
   if (e.kind === "ASIGNACION") return { Icon: UserCheck, className: "bg-teal-500/15 text-teal-700 dark:text-teal-300" };
-  if (e.kind === "SEGUIMIENTO") return { Icon: CalendarClock, className: "bg-amber-500/15 text-amber-700 dark:text-amber-300" };
+  if (e.kind === "SEGUIMIENTO") return { Icon: CalendarClock, className: "bg-amber-500/15 text-amber-800 dark:text-amber-300" };
   if (e.kind === "RESPUESTA")
     return e.outcome === "RECHAZADA"
       ? { Icon: X, className: "bg-rose-500/15 text-rose-600 dark:text-rose-400" }
-      : { Icon: Check, className: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400" };
+      : { Icon: Check, className: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400" };
   return { Icon: ArrowRightLeft, className: "bg-purple-500/15 text-purple-600 dark:text-purple-400" };
 }
 
@@ -43,20 +43,20 @@ function EventCard({ e }: { e: CaseEvent }) {
   const { fecha, hora } = fechaHora(e.date);
   return (
     <div className="flex flex-col gap-2 sm:flex-row sm:gap-4 p-4 rounded-2xl border border-border/60 bg-muted/10">
-      <div className="text-[11px] font-mono font-bold text-muted-foreground flex items-baseline gap-2 sm:min-w-[92px] sm:flex-col sm:items-start sm:justify-center sm:gap-0 sm:border-r sm:border-border/40 sm:pr-3">
+      <div className="text-xs font-mono font-bold text-muted-foreground flex items-baseline gap-2 sm:min-w-[92px] sm:flex-col sm:items-start sm:justify-center sm:gap-0 sm:border-r sm:border-border/40 sm:pr-3">
         <span>{fecha}</span>
-        <span className="text-[10px] opacity-70">{hora}</span>
+        <span className="text-xs text-muted-foreground">{hora}</span>
       </div>
       <div className="flex-1 min-w-0 space-y-1">
         <p className="text-sm font-bold text-foreground">{e.title}</p>
         {e.author && (
-          <p className="flex items-center gap-1 text-[11px] font-semibold text-muted-foreground">
+          <p className="flex items-center gap-1 text-xs font-semibold text-muted-foreground">
             <User className="h-3 w-3" /> {e.author}
           </p>
         )}
         {e.detail && <p className="text-xs text-foreground whitespace-pre-line">{e.detail}</p>}
         {e.kind === "DERIVACION" && e.outcome === "PENDIENTE" && (
-          <p className="flex items-center gap-1 text-[11px] font-semibold text-amber-700 dark:text-amber-300">
+          <p className="flex items-center gap-1 text-xs font-semibold text-amber-700 dark:text-amber-300">
             <Clock className="h-3 w-3" /> Esperando respuesta
           </p>
         )}

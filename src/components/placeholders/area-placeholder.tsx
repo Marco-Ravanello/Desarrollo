@@ -10,7 +10,7 @@ export default function AreaPlaceholder({ title, description }: { title: string,
       <PageHeader title={title} description={description} icon={ClipboardList} />
 
       <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
-        <StatCard label="Casos Activos" value={0} icon={ClipboardList} tone="blue" />
+        <StatCard label="Casos activos" value={0} icon={ClipboardList} tone="blue" />
         <StatCard label="Intervenciones este mes" value={0} icon={Users} tone="purple" />
         <StatCard label="Pendientes" value={0} icon={AlertCircle} tone="orange" />
       </div>

@@ -29,16 +29,16 @@ export function OrderItemsTable({ orderId, orderStatus, items }: OrderItemsTable
             <ClipboardList className="h-5 w-5" />
           </div>
           <div>
-            <h3 className="text-sm font-bold text-foreground uppercase tracking-wider">Renglones Detallados</h3>
-            <p className="text-[11px] text-muted-foreground font-bold uppercase">
+            <h3 className="text-sm font-bold text-foreground">Renglones detallados</h3>
+            <p className="text-xs text-muted-foreground font-bold">
               {totalItems} renglones adjudicados • {fulfilledItems} completados
             </p>
           </div>
         </div>
 
         {orderStatus === "CUMPLIDA" && (
-          <div className="flex items-center gap-1.5 text-[11px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-3.5 py-1.5 rounded-full border border-emerald-500/20 uppercase tracking-wider">
-            <PackageCheck className="h-3.5 w-3.5" /> ORDEN TOTALMENTE CUMPLIDA
+          <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 px-3.5 py-1.5 rounded-full border border-emerald-500/20">
+            <PackageCheck className="h-3.5 w-3.5" /> Orden totalmente cumplida
           </div>
         )}
       </div>
@@ -48,25 +48,25 @@ export function OrderItemsTable({ orderId, orderStatus, items }: OrderItemsTable
           <table className="w-full text-sm min-w-[960px] table-auto border-collapse">
             <thead>
               <tr className="bg-muted/40 border-b border-border/60">
-                <th className="w-16 text-center py-4 px-4 font-bold text-muted-foreground uppercase text-[10px] tracking-wider">
+                <th className="w-16 text-center py-4 px-4 font-bold text-muted-foreground text-xs">
                   Reng.
                 </th>
-                <th className="w-24 text-center py-4 px-4 font-bold text-muted-foreground uppercase text-[10px] tracking-wider">
+                <th className="w-24 text-center py-4 px-4 font-bold text-muted-foreground text-xs">
                   Cant.
                 </th>
-                <th className="w-28 text-center py-4 px-4 font-bold text-muted-foreground uppercase text-[10px] tracking-wider">
+                <th className="w-28 text-center py-4 px-4 font-bold text-muted-foreground text-xs">
                   Unidad
                 </th>
-                <th className="text-left py-4 px-6 font-bold text-muted-foreground uppercase text-[10px] tracking-wider min-w-[300px]">
-                  Descripción del Bien / Servicio
+                <th className="text-left py-4 px-6 font-bold text-muted-foreground text-xs min-w-[300px]">
+                  Descripción del bien / servicio
                 </th>
-                <th className="w-52 text-left py-4 px-5 font-bold text-muted-foreground uppercase text-[10px] tracking-wider">
-                  Avance de Entrega
+                <th className="w-52 text-left py-4 px-5 font-bold text-muted-foreground text-xs">
+                  Avance de entrega
                 </th>
-                <th className="w-36 text-right py-4 px-5 font-bold text-muted-foreground uppercase text-[10px] tracking-wider">
-                  P. Unitario
+                <th className="w-36 text-right py-4 px-5 font-bold text-muted-foreground text-xs">
+                  P. unitario
                 </th>
-                <th className="w-40 text-right py-4 px-6 font-bold text-muted-foreground uppercase text-[10px] tracking-wider">
+                <th className="w-40 text-right py-4 px-6 font-bold text-muted-foreground text-xs">
                   Subtotal
                 </th>
                 {canEdit && <th className="w-32 py-4 px-4 text-center"></th>}
@@ -92,7 +92,7 @@ export function OrderItemsTable({ orderId, orderStatus, items }: OrderItemsTable
                       </span>
                     </td>
                     <td className="py-4 px-4 text-center align-top">
-                      <Badge variant="secondary" className="bg-blue-500/10 text-blue-600 dark:text-blue-400 border-none font-bold text-[10px] uppercase px-2.5 py-0.5">
+                      <Badge variant="secondary" className="bg-blue-500/10 text-blue-600 dark:text-blue-400 border-none font-bold text-xs px-2.5 py-0.5">
                         {item.unitOfMeasure || "UNIDAD"}
                       </Badge>
                     </td>
@@ -103,11 +103,11 @@ export function OrderItemsTable({ orderId, orderStatus, items }: OrderItemsTable
                     </td>
                     <td className="py-4 px-5 align-top">
                       <div className="space-y-1.5 min-w-[180px]">
-                        <div className="flex justify-between text-[11px] font-bold uppercase tracking-tight">
-                          <span className={isFulfilled ? "text-emerald-600 dark:text-emerald-400" : "text-blue-600 dark:text-blue-400"}>
+                        <div className="flex justify-between text-xs font-bold tracking-tight">
+                          <span className={isFulfilled ? "text-emerald-700 dark:text-emerald-400" : "text-blue-600 dark:text-blue-400"}>
                             {f.toLocaleString("es-AR")} de {q.toLocaleString("es-AR")}
                           </span>
-                          <span className={isFulfilled ? "text-emerald-500 font-bold" : "text-muted-foreground"}>
+                          <span className={isFulfilled ? "text-emerald-700 dark:text-emerald-400 font-bold" : "text-muted-foreground"}>
                             {Math.round(progress)}%
                           </span>
                         </div>
@@ -122,7 +122,7 @@ export function OrderItemsTable({ orderId, orderStatus, items }: OrderItemsTable
                       </div>
                     </td>
                     <td className="py-4 px-5 text-right tabular-nums text-muted-foreground font-semibold align-top text-xs">
-                      <span className="text-[10px] mr-0.5">$</span>
+                      <span className="text-xs mr-0.5">$</span>
                       {Number(item.unitPrice).toLocaleString("es-AR", { minimumFractionDigits: 2 })}
                     </td>
                     <td className="py-4 px-6 text-right tabular-nums font-bold text-foreground align-top text-sm">
@@ -135,7 +135,7 @@ export function OrderItemsTable({ orderId, orderStatus, items }: OrderItemsTable
                           <Button
                             variant="outline"
                             size="sm"
-                            className="h-8 px-3 text-[10px] font-bold uppercase tracking-wider border-blue-200 text-blue-600 hover:bg-blue-600 hover:text-white dark:border-blue-800 dark:text-blue-400 transition-all rounded-xl"
+                            className="h-8 px-3 text-xs font-bold border-blue-200 text-blue-600 hover:bg-blue-600 hover:text-white dark:border-blue-800 dark:text-blue-400 transition-all rounded-xl"
                             onClick={() => {
                               setSelectedItem(item);
                               setIsSheetOpen(true);
@@ -144,8 +144,8 @@ export function OrderItemsTable({ orderId, orderStatus, items }: OrderItemsTable
                             Registrar
                           </Button>
                         ) : (
-                          <div className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-bold text-[10px] uppercase bg-emerald-500/10 py-1.5 px-3 rounded-xl border border-emerald-500/20">
-                            <PackageCheck className="h-3.5 w-3.5" /> LISTO
+                          <div className="inline-flex items-center gap-1 text-emerald-700 dark:text-emerald-400 font-bold text-xs bg-emerald-500/10 py-1.5 px-3 rounded-xl border border-emerald-500/20">
+                            <PackageCheck className="h-3.5 w-3.5" /> Listo
                           </div>
                         )}
                       </td>
@@ -156,7 +156,7 @@ export function OrderItemsTable({ orderId, orderStatus, items }: OrderItemsTable
             </tbody>
             <tfoot className="bg-muted/30 border-t border-border/60">
               <tr>
-                <td colSpan={canEdit ? 6 : 5} className="py-5 px-6 text-right font-bold text-muted-foreground uppercase text-xs tracking-wider">
+                <td colSpan={canEdit ? 6 : 5} className="py-5 px-6 text-right font-bold text-muted-foreground text-xs">
                   Suma Total de Renglones:
                 </td>
                 <td className="py-5 px-6 text-right font-bold text-xl text-foreground tabular-nums">

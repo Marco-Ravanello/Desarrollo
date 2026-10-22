@@ -60,7 +60,7 @@ export default function LoginPage() {
         <div className="relative flex items-center gap-3">
           <MunicipalCrest className="h-12 w-12 shadow-lg ring-1 ring-white/20" forceDefault />
           <div className="leading-tight">
-            <p className="text-xs font-semibold uppercase tracking-widest text-[#B8D0EB]">Municipalidad de</p>
+            <p className="text-xs font-semibold text-[#B8D0EB]">Municipalidad de</p>
             <p className="font-heading text-lg font-bold">Tres de Febrero</p>
           </div>
         </div>

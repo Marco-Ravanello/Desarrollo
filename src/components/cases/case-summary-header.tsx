@@ -34,7 +34,7 @@ function Tile({
       }`}
     >
       <p
-        className={`flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider ${
+        className={`flex items-center gap-1.5 text-xs font-bold ${
           warn ? "text-amber-800 dark:text-amber-300" : "text-muted-foreground"
         }`}
       >
@@ -98,7 +98,7 @@ export function CaseSummaryHeader({
             <Badge variant="outline" className={`text-xs font-bold ${statusStyle.badgeClass}`}>
               {CASE_STATUS_LABEL[status] ?? status}
             </Badge>
-            <Badge variant="outline" className={`text-[10px] font-bold ${PRIORITY_CLASS[priority] ?? PRIORITY_CLASS.MEDIA}`}>
+            <Badge variant="outline" className={`text-xs font-bold ${PRIORITY_CLASS[priority] ?? PRIORITY_CLASS.MEDIA}`}>
               {CASE_PRIORITY_LABEL[priority] ?? priority}
             </Badge>
           </div>

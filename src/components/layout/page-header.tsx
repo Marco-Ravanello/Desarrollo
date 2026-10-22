@@ -37,7 +37,7 @@ export function PageHeader({ title, description, icon: Icon, badge, actions, cla
               {title}
             </h1>
             {badge && (
-              <span className="hidden items-center rounded-full border border-accent/30 bg-accent/10 px-2.5 py-0.5 text-[11px] font-semibold text-orange-700 dark:text-orange-300 sm:inline-flex">
+              <span className="hidden items-center rounded-full border border-accent/30 bg-accent/10 px-2.5 py-0.5 text-xs font-semibold text-orange-700 dark:text-orange-300 sm:inline-flex">
                 {badge}
               </span>
             )}

@@ -28,8 +28,9 @@ export function TableFilter({
 
   return (
     <div className="flex flex-col gap-1.5 min-w-[150px]">
-      <Label className="text-[10px] uppercase text-muted-foreground font-bold px-1">{label}</Label>
+      <Label className="text-xs text-muted-foreground font-bold px-1">{label}</Label>
       <select
+        aria-label={label}
         className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-xs shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
         onChange={(e) => handleChange(e.target.value)}
         value={searchParams.get(param) || ""}

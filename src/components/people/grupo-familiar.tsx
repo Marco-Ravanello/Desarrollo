@@ -37,13 +37,13 @@ function MiembroCard({ m, onOpen }: { m: MiembroFamiliar; onOpen: (dni: string) 
             {m.dni ? `DNI ${m.dni}` : "Sin DNI cargado"}
             {m.edad !== null ? ` · ${m.edad} ${m.edad === 1 ? "año" : "años"}` : ""}
           </p>
-          <Badge variant="outline" className="border-indigo-500/30 bg-indigo-500/10 text-[10px] font-bold text-indigo-700 dark:text-indigo-300">
+          <Badge variant="outline" className="border-indigo-500/30 bg-indigo-500/10 text-xs font-bold text-indigo-700 dark:text-indigo-300">
             {m.vinculo}
           </Badge>
         </div>
       </div>
 
-      <div className="space-y-1 text-[11px]">
+      <div className="space-y-1 text-xs">
         <p className="font-semibold text-muted-foreground">Programas</p>
         {programas.length ? (
           <div className="flex flex-wrap gap-1">
@@ -59,7 +59,7 @@ function MiembroCard({ m, onOpen }: { m: MiembroFamiliar; onOpen: (dni: string) 
         )}
       </div>
 
-      <div className="space-y-1 border-t border-border/30 pt-2 text-[11px]">
+      <div className="space-y-1 border-t border-border/30 pt-2 text-xs">
         <p className="font-semibold text-muted-foreground">En la municipalidad</p>
         <p className={atencion.length ? "font-semibold text-foreground" : "text-muted-foreground"}>
           {atencion.length ? atencion.join(" · ") : "Sin atención registrada"}
@@ -96,7 +96,7 @@ export function GrupoFamiliarView({ grupo, onOpen }: { grupo: GrupoFamiliar; onO
       </p>
 
       <section className="space-y-3">
-        <h3 className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+        <h3 className="flex items-center gap-2 text-xs font-bold text-muted-foreground">
           <Users className="h-4 w-4" /> Familiares cargados ({grupo.declarados.length})
         </h3>
         {grupo.declarados.length ? (
@@ -109,7 +109,7 @@ export function GrupoFamiliarView({ grupo, onOpen }: { grupo: GrupoFamiliar; onO
       </section>
 
       <section className="space-y-3">
-        <h3 className="flex flex-wrap items-center gap-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+        <h3 className="flex flex-wrap items-center gap-2 text-xs font-bold text-muted-foreground">
           <Home className="h-4 w-4" /> Viven en el mismo domicilio ({grupo.mismoDomicilio.length})
           {grupo.domicilio && <span className="normal-case tracking-normal font-semibold text-foreground">{grupo.domicilio}</span>}
         </h3>

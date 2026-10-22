@@ -51,8 +51,8 @@ export default async function VehicleRequestsPage() {
 
       <Card className="rounded-2xl border border-border/60 shadow-xs overflow-hidden bg-card text-card-foreground">
         <CardHeader className="bg-muted/30 border-b border-border/40">
-          <CardTitle className="font-heading">Pendientes de Aprobación</CardTitle>
-          <CardDescription className="text-muted-foreground">Revise las solicitudes antes de confirmar la reserva.</CardDescription>
+          <CardTitle className="font-heading">Pendientes de aprobación</CardTitle>
+          <CardDescription className="text-muted-foreground">Revisá los pedidos antes de confirmar la reserva.</CardDescription>
         </CardHeader>
         <CardContent className="p-0">
           <Table>
@@ -84,7 +84,7 @@ export default async function VehicleRequestsPage() {
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-col">
-                        <span className="font-mono font-bold text-primary uppercase">{req.vehiclePlate}</span>
+                        <span className="font-mono font-bold text-primary">{req.vehiclePlate}</span>
                         <span className="text-xs text-muted-foreground">{req.vehicleInfo}</span>
                       </div>
                     </TableCell>

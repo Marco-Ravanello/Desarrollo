@@ -46,7 +46,7 @@ function EditForm({ row, onDone }: { row: InterventionRow; onDone: () => void })
             role="radio"
             aria-checked={type === t.value}
             onClick={() => setType(t.value)}
-            className={`rounded-full border px-2.5 py-0.5 text-[11px] font-semibold ${
+            className={`rounded-full border px-2.5 py-0.5 text-xs font-semibold ${
               type === t.value ? "border-primary bg-primary text-primary-foreground" : "border-border/60 bg-muted/30 text-foreground"
             }`}
           >
@@ -81,20 +81,20 @@ export function InterventionItem({ row }: { row: InterventionRow }) {
 
   return (
     <div className="flex flex-col gap-2 sm:flex-row sm:gap-4 p-4 rounded-2xl border border-border/60 bg-muted/20 hover:border-border transition-colors">
-      <div className="text-[11px] font-mono font-bold text-muted-foreground flex items-baseline gap-2 sm:min-w-[92px] sm:flex-col sm:items-start sm:justify-center sm:gap-0 sm:border-r sm:border-border/40 sm:pr-3">
+      <div className="text-xs font-mono font-bold text-muted-foreground flex items-baseline gap-2 sm:min-w-[92px] sm:flex-col sm:items-start sm:justify-center sm:gap-0 sm:border-r sm:border-border/40 sm:pr-3">
         <span>{fecha}</span>
-        <span className="text-[10px] opacity-70">{hora}</span>
+        <span className="text-xs text-muted-foreground">{hora}</span>
       </div>
       <div className="flex-1 min-w-0 space-y-2">
         <div className="flex items-start gap-2">
           <div className="flex flex-1 flex-wrap items-center gap-2">
             {typeLabel && (
-              <Badge variant="outline" className="border-primary/30 bg-primary/10 text-[10px] font-bold text-primary">
+              <Badge variant="outline" className="border-primary/30 bg-primary/10 text-xs font-bold text-primary">
                 {typeLabel}
               </Badge>
             )}
             {row.author && (
-              <span className="flex items-center gap-1 text-[11px] font-semibold text-muted-foreground">
+              <span className="flex items-center gap-1 text-xs font-semibold text-muted-foreground">
                 <User className="h-3 w-3" /> {row.author}
               </span>
             )}
@@ -102,14 +102,14 @@ export function InterventionItem({ row }: { row: InterventionRow }) {
               <button
                 type="button"
                 onClick={() => setShowHistory((v) => !v)}
-                className="flex items-center gap-1 text-[11px] font-semibold text-amber-700 hover:underline dark:text-amber-300"
+                className="flex items-center gap-1 text-xs font-semibold text-amber-700 hover:underline dark:text-amber-300"
               >
                 <History className="h-3 w-3" /> Corregida {showHistory ? "· ocultar versiones anteriores" : "· ver qué decía antes"}
               </button>
             )}
           </div>
           {row.canEdit && !editing && (
-            <Button size="sm" variant="ghost" onClick={() => setEditing(true)} className="h-7 shrink-0 gap-1 rounded-lg px-2 text-[11px] font-bold">
+            <Button size="sm" variant="ghost" onClick={() => setEditing(true)} className="h-7 shrink-0 gap-1 rounded-lg px-2 text-xs font-bold">
               <Pencil className="h-3 w-3" /> Corregir
             </Button>
           )}

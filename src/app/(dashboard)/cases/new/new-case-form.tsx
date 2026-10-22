@@ -132,7 +132,7 @@ export function NewCaseForm({
     e.preventDefault();
 
     if (!selectedPerson) {
-      toast.error("Por favor seleccione un ciudadano del padrón");
+      toast.error("Elegí a la persona del padrón");
       return;
     }
 
@@ -142,7 +142,7 @@ export function NewCaseForm({
     }
 
     if (!title.trim()) {
-      toast.error("Ingrese el título o carátula del expediente");
+      toast.error("Escribí la carátula del expediente");
       return;
     }
 
@@ -174,10 +174,10 @@ export function NewCaseForm({
       <Card className="bg-card text-card-foreground border border-border/60 shadow-xs rounded-2xl overflow-visible">
         <CardContent className="p-6 space-y-4">
           <div className="flex items-center gap-2 border-b border-border/40 pb-3">
-            <Badge className="bg-primary/20 text-primary border border-primary/30 text-[10px] font-bold">
-              PASO 1
+            <Badge className="bg-primary/20 text-primary border border-primary/30 text-xs font-bold">
+              Paso 1
             </Badge>
-            <h3 className="text-sm font-bold text-foreground uppercase tracking-wider">
+            <h3 className="text-sm font-bold text-foreground">
               Titular del Expediente (Búsqueda en Padrón Municipal)
             </h3>
           </div>
@@ -189,7 +189,7 @@ export function NewCaseForm({
                 <Input
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Escriba DNI, Apellido o Nombre del ciudadano..."
+                  placeholder="Buscá por DNI, apellido o nombre"
                   className="pl-11 pr-10 h-12 rounded-2xl text-xs sm:text-sm bg-muted/30 border-border/60 focus-visible:ring-primary text-foreground font-medium"
                 />
                 {isSearching && (
@@ -199,7 +199,7 @@ export function NewCaseForm({
 
               {suggestions.length > 0 && (
                 <div className="absolute top-full left-0 right-0 mt-2 bg-card border border-border/60 rounded-2xl shadow-2xl z-50 overflow-hidden divide-y divide-border/40">
-                  <div className="p-2 bg-muted/40 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                  <div className="p-2 bg-muted/40 text-xs font-bold text-muted-foreground">
                     Ciudadanos coincidentes en padrón
                   </div>
                   {suggestions.map((item) => (
@@ -221,12 +221,12 @@ export function NewCaseForm({
                           <p className="font-bold text-foreground group-hover:text-primary transition-colors">
                             {item.lastName}, {item.firstName}
                           </p>
-                          <p className="text-muted-foreground text-[11px] font-mono mt-0.5">
+                          <p className="text-muted-foreground text-xs font-mono mt-0.5">
                             DNI: {item.dni} {item.barrio ? `• Barrio ${item.barrio}` : ""}
                           </p>
                         </div>
                       </div>
-                      <Badge variant="outline" className="text-[10px] font-bold border-border/60">
+                      <Badge variant="outline" className="text-xs font-bold border-border/60">
                         Seleccionar
                       </Badge>
                     </button>
@@ -236,9 +236,9 @@ export function NewCaseForm({
 
               <div className="pt-2 flex items-center justify-between text-xs text-muted-foreground">
                 <span>¿El vecino no figura registrado en el padrón?</span>
-                <Button variant="outline" size="sm" asChild className="rounded-xl h-8 text-[11px] font-bold border-border/60">
+                <Button variant="outline" size="sm" asChild className="rounded-xl h-8 text-xs font-bold border-border/60">
                   <Link href="/people/new">
-                    <Plus className="h-3.5 w-3.5 mr-1 text-primary" /> Registrar Nuevo Vecino
+                    <Plus className="h-3.5 w-3.5 mr-1 text-primary" /> Registrar nuevo vecino
                   </Link>
                 </Button>
               </div>
@@ -273,7 +273,7 @@ export function NewCaseForm({
                 onClick={() => setSelectedPerson(null)}
                 className="rounded-xl h-9 text-xs font-bold border-border/60 text-muted-foreground hover:text-foreground shrink-0"
               >
-                <X className="h-3.5 w-3.5 mr-1" /> Cambiar Titular
+                <X className="h-3.5 w-3.5 mr-1" /> Cambiar titular
               </Button>
             </div>
           )}
@@ -283,17 +283,17 @@ export function NewCaseForm({
       <Card className="bg-card text-card-foreground border border-border/60 shadow-xs rounded-2xl overflow-hidden">
         <CardContent className="p-6 space-y-5">
           <div className="flex items-center gap-2 border-b border-border/40 pb-3">
-            <Badge className="bg-primary/20 text-primary border border-primary/30 text-[10px] font-bold">
-              PASO 2
+            <Badge className="bg-primary/20 text-primary border border-primary/30 text-xs font-bold">
+              Paso 2
             </Badge>
-            <h3 className="text-sm font-bold text-foreground uppercase tracking-wider">
-              Área Responsable y Prioridad Operativa
+            <h3 className="text-sm font-bold text-foreground">
+              Área responsable y prioridad operativa
             </h3>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <div className="space-y-1.5">
-              <Label className="text-xs font-bold text-foreground">Área Municipal Competente</Label>
+              <Label className="text-xs font-bold text-foreground">Área municipal competente</Label>
               <select
                 value={areaId}
                 onChange={(e) => setAreaId(e.target.value)}
@@ -312,15 +312,15 @@ export function NewCaseForm({
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-xs font-bold text-foreground">Nivel de Prioridad / Severidad</Label>
+              <Label className="text-xs font-bold text-foreground">Nivel de prioridad / severidad</Label>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {(["BAJA", "MEDIA", "ALTA", "URGENTE"] as PriorityType[]).map((p) => {
                   const isSel = priority === p;
                   const config: Record<PriorityType, { label: string; activeClass: string }> = {
-                    BAJA: { label: "🟢 BAJA", activeClass: "bg-emerald-500/20 text-emerald-500 border-emerald-500/40" },
-                    MEDIA: { label: "🟡 MEDIA", activeClass: "bg-blue-500/20 text-blue-500 border-blue-500/40" },
-                    ALTA: { label: "🟠 ALTA", activeClass: "bg-amber-500/20 text-amber-500 border-amber-500/40" },
-                    URGENTE: { label: "🔴 URGENTE", activeClass: "bg-rose-500/20 text-rose-500 border-rose-500/40 animate-pulse" }
+                    BAJA: { label: "🟢 BAJA", activeClass: "bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border-emerald-500/40" },
+                    MEDIA: { label: "🟡 MEDIA", activeClass: "bg-blue-500/20 text-blue-700 dark:text-blue-400 border-blue-500/40" },
+                    ALTA: { label: "🟠 ALTA", activeClass: "bg-amber-500/20 text-amber-800 dark:text-amber-400 border-amber-500/40" },
+                    URGENTE: { label: "🔴 URGENTE", activeClass: "bg-rose-500/20 text-rose-700 dark:text-rose-400 border-rose-500/40 animate-pulse" }
                   };
 
                   return (
@@ -343,11 +343,11 @@ export function NewCaseForm({
           </div>
 
           {isViolenceArea && (
-            <div className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-500 flex items-start gap-3 text-xs">
+            <div className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-700 dark:text-rose-400 flex items-start gap-3 text-xs">
               <ShieldAlert className="h-5 w-5 shrink-0 mt-0.5" />
               <div>
-                <p className="font-bold uppercase tracking-wider">Manejo Confidencial de Expediente</p>
-                <p className="text-rose-500/90 leading-relaxed mt-0.5">
+                <p className="font-bold">Manejo confidencial de expediente</p>
+                <p className="text-rose-700 dark:text-rose-300 leading-relaxed mt-0.5">
                   Este expediente quedará restringido a agentes autorizados de Violencia de Género y Dirección General, bajo leyes 26.485 y 25.326.
                 </p>
               </div>
@@ -359,17 +359,17 @@ export function NewCaseForm({
       <Card className="bg-card text-card-foreground border border-border/60 shadow-xs rounded-2xl overflow-hidden">
         <CardContent className="p-6 space-y-5">
           <div className="flex items-center gap-2 border-b border-border/40 pb-3">
-            <Badge className="bg-primary/20 text-primary border border-primary/30 text-[10px] font-bold">
-              PASO 3
+            <Badge className="bg-primary/20 text-primary border border-primary/30 text-xs font-bold">
+              Paso 3
             </Badge>
-            <h3 className="text-sm font-bold text-foreground uppercase tracking-wider">
-              Carátula y Nota Inicial de Intervención
+            <h3 className="text-sm font-bold text-foreground">
+              Carátula y nota inicial de intervención
             </h3>
           </div>
 
           <div className="space-y-4">
             <div className="space-y-1.5">
-              <Label className="text-xs font-bold text-foreground">Asunto / Carátula del Expediente *</Label>
+              <Label className="text-xs font-bold text-foreground">Asunto / carátula del expediente *</Label>
               <Input
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
@@ -378,7 +378,7 @@ export function NewCaseForm({
               />
 
               <div className="pt-2">
-                <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-1.5 flex items-center gap-1">
+                <p className="text-xs font-bold text-muted-foreground mb-1.5 flex items-center gap-1">
                   <Sparkles className="h-3.5 w-3.5 text-primary" /> Sugerencias rápidas para el área elegida:
                 </p>
                 <div className="flex flex-wrap gap-1.5">
@@ -387,7 +387,7 @@ export function NewCaseForm({
                       key={idx}
                       type="button"
                       onClick={() => setTitle(sugg)}
-                      className="text-[10px] font-bold px-2.5 py-1 rounded-xl bg-muted/40 hover:bg-primary/10 text-muted-foreground hover:text-primary border border-border/40 transition-colors"
+                      className="text-xs font-bold px-2.5 py-1 rounded-xl bg-muted/40 hover:bg-primary/10 text-muted-foreground hover:text-primary border border-border/40 transition-colors"
                     >
                       + {sugg}
                     </button>
@@ -402,7 +402,7 @@ export function NewCaseForm({
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 rows={4}
-                placeholder="Detalle los antecedentes sociales, solicitudes del vecino, composición familiar o acciones inmediatas tomadas..."
+                placeholder="Contá los antecedentes, qué pide la persona, cómo está compuesta la familia o qué se hizo hasta ahora"
                 className="w-full p-3 rounded-2xl bg-muted/30 border border-border/60 text-xs text-foreground font-medium focus:outline-none focus:ring-2 focus:ring-primary"
               />
             </div>
@@ -424,14 +424,14 @@ export function NewCaseForm({
         <Button
           type="submit"
           disabled={isPending || !selectedPerson}
-          className="rounded-2xl h-12 px-8 font-bold text-xs uppercase tracking-wider bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20 gap-2"
+          className="rounded-2xl h-12 px-8 font-bold text-xs bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20 gap-2"
         >
           {isPending ? (
             <RefreshCw className="h-4 w-4 animate-spin" />
           ) : (
             <FolderPlus className="h-4 w-4" />
           )}
-          <span>{isPending ? "Generando Expediente..." : "Abrir Expediente Social"}</span>
+          <span>{isPending ? "Abriendo el expediente…" : "Abrir expediente"}</span>
         </Button>
       </div>
     </form>

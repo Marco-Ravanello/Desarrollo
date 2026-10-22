@@ -45,18 +45,18 @@ export function CreatePersonForm() {
       <CardHeader>
         <CardTitle className="text-xl flex items-center gap-2">
           <MapPin className="h-5 w-5 text-blue-500" />
-          Información Personal
+          Información personal
         </CardTitle>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="dni">DNI / Identificación</Label>
+              <Label htmlFor="dni">DNI / identificación</Label>
               <Input id="dni" name="dni" placeholder="Ej: 12345678" required className="bg-background" />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="birthDate">Fecha de Nacimiento</Label>
+              <Label htmlFor="birthDate">Fecha de nacimiento</Label>
               <Input id="birthDate" name="birthDate" type="date" required className="bg-background" />
             </div>
             <div className="space-y-2">
@@ -76,9 +76,9 @@ export function CreatePersonForm() {
               <Input id="phone" name="phone" placeholder="Ej: 011 4444-5555" required className="bg-background" />
             </div>
             <div className="md:col-span-2 space-y-2">
-              <Label htmlFor="address">Dirección / Domicilio</Label>
+              <Label htmlFor="address">Dirección / domicilio</Label>
               <Input id="address" name="address" placeholder="Ej: Calle Falsa 123, Localidad" required className="bg-background" />
-              <p className="text-[10px] text-muted-foreground italic">La ubicación en el mapa se generará automáticamente a partir de la dirección.</p>
+              <p className="text-xs text-muted-foreground italic">La ubicación en el mapa se generará automáticamente a partir de la dirección.</p>
             </div>
           </div>
 

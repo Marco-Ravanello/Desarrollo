@@ -117,7 +117,7 @@ export function UniversalExportMenu({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56 rounded-2xl bg-card border-border/60 shadow-xl p-1">
-        <DropdownMenuLabel className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-2 py-1.5">
+        <DropdownMenuLabel className="text-xs font-bold text-muted-foreground px-2 py-1.5">
           Opciones de Exportación
         </DropdownMenuLabel>
         <DropdownMenuSeparator className="bg-border/40" />

@@ -69,18 +69,18 @@ export function CreateAgreementForm({ areas }: { areas: any[] }) {
   return (
     <Card className="max-w-4xl mx-auto">
       <CardHeader>
-        <CardTitle>Nuevo Convenio</CardTitle>
+        <CardTitle>Nuevo convenio</CardTitle>
       </CardHeader>
       <CardContent className="space-y-8">
         <div className="bg-slate-50 dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800">
-           <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-3">Asistente de Carga (OCR)</h4>
+           <h4 className="text-xs font-bold text-muted-foreground mb-3">Asistente de Carga (OCR)</h4>
            <OCRScanner onScanComplete={handleScanComplete} label="Escanear el convenio" />
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="md:col-span-2 space-y-2">
-              <Label htmlFor="title">Título / Objeto del Convenio</Label>
+              <Label htmlFor="title">Título / objeto del convenio</Label>
               <Input
                 id="title"
                 name="title"
@@ -91,7 +91,7 @@ export function CreateAgreementForm({ areas }: { areas: any[] }) {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="number">Número de Convenio / Registro</Label>
+              <Label htmlFor="number">Número de convenio / registro</Label>
               <Input
                 id="number"
                 name="number"
@@ -101,7 +101,7 @@ export function CreateAgreementForm({ areas }: { areas: any[] }) {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="parties">Partes Intervinientes</Label>
+              <Label htmlFor="parties">Partes intervinientes</Label>
               <Input
                 id="parties"
                 name="parties"
@@ -123,7 +123,7 @@ export function CreateAgreementForm({ areas }: { areas: any[] }) {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="areaId">Área Responsable</Label>
+              <Label htmlFor="areaId">Área responsable</Label>
               <select
                 id="areaId"
                 name="areaId"
@@ -136,7 +136,7 @@ export function CreateAgreementForm({ areas }: { areas: any[] }) {
               </select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="startDate">Fecha de Inicio</Label>
+              <Label htmlFor="startDate">Fecha de inicio</Label>
               <Input
                 id="startDate"
                 name="startDate"
@@ -146,7 +146,7 @@ export function CreateAgreementForm({ areas }: { areas: any[] }) {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="endDate">Fecha de Vencimiento</Label>
+              <Label htmlFor="endDate">Fecha de vencimiento</Label>
               <Input
                 id="endDate"
                 name="endDate"
@@ -156,7 +156,7 @@ export function CreateAgreementForm({ areas }: { areas: any[] }) {
               />
             </div>
             <div className="md:col-span-2 space-y-2">
-              <Label htmlFor="description">Detalles Adicionales</Label>
+              <Label htmlFor="description">Detalles adicionales</Label>
               <textarea
                 id="description"
                 name="description"

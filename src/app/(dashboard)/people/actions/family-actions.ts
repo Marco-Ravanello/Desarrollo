@@ -23,7 +23,7 @@ export async function addFamilyMember(
 
   const cleanDni = memberDni.trim().replace(/[^0-9]/g, "");
   if (!cleanDni) {
-    return { success: false, error: "Debe ingresar un DNI válido" };
+    return { success: false, error: "Escribí un DNI válido" };
   }
 
   // 1. Asegurar que ambos ciudadanos existan en la tabla Person

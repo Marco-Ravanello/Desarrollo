@@ -20,7 +20,7 @@ export default async function ReportsPage() {
         icon={Fuel}
         actions={
           <Button variant="ghost" size="icon" asChild>
-            <Link href="/admin/vehicles"><ArrowLeft className="h-4 w-4" /></Link>
+            <Link href="/admin/vehicles" aria-label="Volver a vehículos"><ArrowLeft className="h-4 w-4" /></Link>
           </Button>
         }
       />

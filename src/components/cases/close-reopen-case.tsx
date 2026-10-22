@@ -71,7 +71,7 @@ export function CloseReopenCaseButton({
           <Button
             variant="outline"
             size="sm"
-            className="h-7 text-xs border-green-500/30 text-green-600 hover:bg-green-500/10 hover:text-green-700 dark:text-green-300"
+            className="h-7 text-xs border-green-500/30 text-green-700 hover:bg-green-500/10 hover:text-green-700 dark:text-green-300"
           >
             <Icon className="h-3 w-3 mr-1" /> {t.short}
           </Button>

@@ -12,15 +12,15 @@ const fecha = (iso: string) => new Date(iso).toLocaleDateString("es-AR", { day: 
 
 const ESTADO: Record<string, { label: string; className: string }> = {
   ABIERTO: { label: "Abierto", className: "bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/30" },
-  EN_PROCESO: { label: "En proceso", className: "bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30" },
+  EN_PROCESO: { label: "En proceso", className: "bg-amber-500/15 text-amber-800 dark:text-amber-400 border-amber-500/30" },
   DERIVADO: { label: "Derivado", className: "bg-purple-500/15 text-purple-600 dark:text-purple-400 border-purple-500/30" },
-  PENDIENTE: { label: "Pendiente", className: "bg-orange-500/15 text-orange-600 dark:text-orange-400 border-orange-500/30" },
+  PENDIENTE: { label: "Pendiente", className: "bg-orange-500/15 text-orange-700 dark:text-orange-400 border-orange-500/30" },
   CERRADO: { label: "Cerrado", className: "bg-muted text-muted-foreground border-border/60" },
 };
 
 function SectionTitle({ icon: Icon, children }: { icon: React.ElementType; children: React.ReactNode }) {
   return (
-    <h3 className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+    <h3 className="flex items-center gap-2 text-xs font-bold text-muted-foreground">
       <Icon className="h-4 w-4 text-primary" /> {children}
     </h3>
   );
@@ -66,9 +66,9 @@ export function FichaHistorialView({ historial }: { historial: FichaHistorial })
                   >
                     <div className="flex items-start justify-between gap-2">
                       <p className="text-sm font-bold text-foreground leading-snug">{c.titulo}</p>
-                      <Badge variant="outline" className={`shrink-0 text-[10px] font-bold ${estado.className}`}>{estado.label}</Badge>
+                      <Badge variant="outline" className={`shrink-0 text-xs font-bold ${estado.className}`}>{estado.label}</Badge>
                     </div>
-                    <p className="mt-1.5 text-[11px] text-muted-foreground">
+                    <p className="mt-1.5 text-xs text-muted-foreground">
                       {c.area} · Prioridad {c.prioridad.toLowerCase()} · abierto el {fecha(c.abierto)}
                       {c.estado !== "CERRADO" ? ` · último movimiento ${fecha(c.actualizado)}` : ""}
                     </p>
@@ -90,7 +90,7 @@ export function FichaHistorialView({ historial }: { historial: FichaHistorial })
               {visibleInterventions.map((i) => (
                 <li key={i.id} className="relative">
                   <span className="absolute -left-[25px] top-1 h-2.5 w-2.5 rounded-full bg-primary ring-4 ring-background" />
-                  <p className="text-[11px] font-bold text-muted-foreground">
+                  <p className="text-xs font-bold text-muted-foreground">
                     {fecha(i.fecha)}
                     {i.tipo ? ` · ${i.tipo}` : ""}
                     {i.area ? ` · ${i.area}` : ""}
@@ -98,7 +98,7 @@ export function FichaHistorialView({ historial }: { historial: FichaHistorial })
                   </p>
                   <p className="mt-0.5 text-xs text-foreground leading-relaxed whitespace-pre-line">{i.descripcion}</p>
                   {i.expediente && (
-                    <Link href={`/cases/${i.expedienteId}`} className="mt-1 inline-block text-[11px] font-semibold text-primary hover:underline">
+                    <Link href={`/cases/${i.expedienteId}`} className="mt-1 inline-block text-xs font-semibold text-primary hover:underline">
                       {i.expediente}
                     </Link>
                   )}
@@ -111,7 +111,7 @@ export function FichaHistorialView({ historial }: { historial: FichaHistorial })
               </Button>
             )}
             {intervencionesTotal > intervenciones.length && (
-              <p className="text-[11px] text-muted-foreground">
+              <p className="text-xs text-muted-foreground">
                 Se muestran las {intervenciones.length} más recientes de {intervencionesTotal}. Las demás están en cada expediente.
               </p>
             )}
@@ -130,18 +130,18 @@ export function FichaHistorialView({ historial }: { historial: FichaHistorial })
                 <div className="flex flex-wrap items-start justify-between gap-2">
                   <div>
                     <p className="text-sm font-bold text-foreground">Ficha de tormenta del {fecha(f.fecha)}</p>
-                    <p className="mt-0.5 flex items-center gap-1 text-[11px] text-muted-foreground">
+                    <p className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
                       <MapPin className="h-3 w-3 shrink-0" /> {f.domicilio}
                       {f.relevadoPor ? ` · relevó ${f.relevadoPor}` : ""}
                     </p>
                   </div>
-                  <Badge variant="outline" className="text-[10px] font-bold">Prioridad {f.prioridad.toLowerCase()}</Badge>
+                  <Badge variant="outline" className="text-xs font-bold">Prioridad {f.prioridad.toLowerCase()}</Badge>
                 </div>
                 <p className="text-xs text-foreground">
                   <span className="font-semibold text-muted-foreground">Pidió:</span> {f.pedido}
                 </p>
                 {f.entregas.length === 0 ? (
-                  <p className="text-xs font-semibold text-amber-600 dark:text-amber-400">Todavía no recibió entregas.</p>
+                  <p className="text-xs font-semibold text-amber-700 dark:text-amber-400">Todavía no recibió entregas.</p>
                 ) : (
                   <ul className="space-y-1.5">
                     {f.entregas.map((e) => (

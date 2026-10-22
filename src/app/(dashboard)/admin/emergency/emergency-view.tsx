@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { EmergencyOperationsData, StormVictimItem } from "@/types/emergency";
 import { Card } from "@/components/ui/card";
+import { textoNormal } from "@/lib/formato";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -117,13 +118,13 @@ export function EmergencyView({ initialData, deniedAccess }: EmergencyViewProps)
               variant="outline"
               className="rounded-2xl h-11 px-5 font-bold text-xs"
             >
-              <Download className="mr-2 h-4 w-4" /> Exportar Excel Oficial
+              <Download className="mr-2 h-4 w-4" /> Exportar Excel oficial
             </Button>
             {viewer.canEdit && <Button
               onClick={handleOpenNewFicha}
               className="font-bold rounded-2xl h-11 px-5 text-xs shadow-lg"
             >
-              <Plus className="mr-2 h-4 w-4" /> Nueva Ficha Tormenta
+              <Plus className="mr-2 h-4 w-4" /> Nueva ficha tormenta
             </Button>}
           </>
         }
@@ -133,11 +134,11 @@ export function EmergencyView({ initialData, deniedAccess }: EmergencyViewProps)
       <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs text-muted-foreground">
         <div className="bg-muted/50 px-3.5 py-1.5 rounded-xl border border-border/60 flex items-center gap-2">
           <UserCheck className="h-4 w-4 text-amber-500" />
-          <span>RESPONSABLE: <b className="text-foreground uppercase">{operator.name}</b></span>
+          <span>Responsable: <b className="text-foreground">{operator.name}</b></span>
         </div>
         <div className="bg-muted/50 px-3.5 py-1.5 rounded-xl border border-border/60 flex items-center gap-2">
           <ShieldAlert className="h-4 w-4 text-emerald-500" />
-          <span>ÁREA: <b className="text-foreground uppercase">{operator.areaName}</b></span>
+          <span>Área: <b className="text-foreground">{operator.areaName}</b></span>
         </div>
       </div>
 
@@ -170,14 +171,14 @@ export function EmergencyView({ initialData, deniedAccess }: EmergencyViewProps)
             tone="purple"
           />
           <StatCard
-            label="Colchones / Frazadas"
+            label="Colchones / frazadas"
             value={`${metrics.totalColchones} / ${metrics.totalFrazadas}`}
             hint="Pedidos en tus fichas"
             icon={Package}
             tone="orange"
           />
           <StatCard
-            label="Camas / Cuchetas"
+            label="Camas / cuchetas"
             value={`${metrics.totalCamas} / ${metrics.totalCuchetas}`}
             hint="Pedidos en tus fichas"
             icon={Package}
@@ -194,21 +195,21 @@ export function EmergencyView({ initialData, deniedAccess }: EmergencyViewProps)
             tone="blue"
           />
           <StatCard
-            label="Niños Afectados"
+            label="Niños afectados"
             value={metrics.totalChildren}
             hint="Menores contabilizados"
             icon={Baby}
             tone="purple"
           />
           <StatCard
-            label="Colchones / Frazadas"
+            label="Colchones / frazadas"
             value={`${metrics.totalColchones} / ${metrics.totalFrazadas}`}
             hint="Unidades requeridas"
             icon={Package}
             tone="orange"
           />
           <StatCard
-            label="Prioridad Alta"
+            label="Prioridad alta"
             value={metrics.highPriorityCount}
             hint="Urgencias territoriales"
             icon={ShieldAlert}
@@ -240,7 +241,7 @@ export function EmergencyView({ initialData, deniedAccess }: EmergencyViewProps)
           }`}
         >
           <FileText className="h-4 w-4" />
-          <span>Fichas Tormenta</span>
+          <span>Fichas tormenta</span>
         </button>
 
         {!surveyor && <button
@@ -264,7 +265,7 @@ export function EmergencyView({ initialData, deniedAccess }: EmergencyViewProps)
           }`}
         >
           <Package className="h-4 w-4" />
-          <span>Stock de Contingencia</span>
+          <span>Stock de contingencia</span>
         </button>}
       </div>
 
@@ -289,14 +290,14 @@ export function EmergencyView({ initialData, deniedAccess }: EmergencyViewProps)
       {activeTab === "fichas" && (
         <div className="space-y-4 animate-in fade-in duration-300">
           <div className="flex justify-between items-center">
-            <h3 className="text-sm font-bold text-foreground uppercase tracking-wider">
+            <h3 className="text-sm font-bold text-foreground">
               Fichas Individuales Generadas ({records.length})
             </h3>
             {viewer.canEdit && <Button
               onClick={handleOpenNewFicha}
               className="rounded-xl h-10 px-4 text-xs font-bold bg-primary text-primary-foreground"
             >
-              <Plus className="mr-2 h-4 w-4" /> Cargar Nueva Ficha
+              <Plus className="mr-2 h-4 w-4" /> Cargar nueva ficha
             </Button>}
           </div>
 
@@ -304,12 +305,12 @@ export function EmergencyView({ initialData, deniedAccess }: EmergencyViewProps)
             {records.map((r, idx) => (
               <Card key={r.id || idx} className="rounded-2xl border-border/60 shadow-sm bg-card p-5 space-y-3">
                 <div className="flex justify-between items-start">
-                  <Badge variant="outline" className={`text-[10px] font-bold uppercase ${
-                    r.prioridad === 'ALTA' ? 'bg-rose-500/10 text-rose-600 border-rose-500/30' : 'bg-amber-500/10 text-amber-600'
+                  <Badge variant="outline" className={`text-xs font-bold ${
+                    r.prioridad === 'ALTA' ? 'bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/30' : 'bg-amber-500/10 text-amber-700 dark:text-amber-400'
                   }`}>
-                    Prioridad {r.prioridad}
+                    Prioridad {textoNormal(r.prioridad).toLowerCase()}
                   </Badge>
-                  <span className="text-[10px] font-mono text-muted-foreground">Ficha #{idx + 1}</span>
+                  <span className="text-xs font-mono text-muted-foreground">Ficha #{idx + 1}</span>
                 </div>
 
                 <div>
@@ -321,12 +322,12 @@ export function EmergencyView({ initialData, deniedAccess }: EmergencyViewProps)
                 <div className="pt-2 border-t border-border/40 text-xs space-y-1">
                   <p className="font-bold text-muted-foreground">Elementos Asignados:</p>
                   <div className="flex flex-wrap gap-1">
-                    {r.cantidadColchon > 0 && <Badge variant="secondary" className="text-[9px]">{r.cantidadColchon} Colchones</Badge>}
-                    {r.cantidadCama > 0 && <Badge variant="secondary" className="text-[9px]">{r.cantidadCama} Camas</Badge>}
-                    {r.cantidadCucheta > 0 && <Badge variant="secondary" className="text-[9px]">{r.cantidadCucheta} Cuchetas</Badge>}
-                    {r.cantidadFrazada > 0 && <Badge variant="secondary" className="text-[9px]">{r.cantidadFrazada} Frazadas</Badge>}
+                    {r.cantidadColchon > 0 && <Badge variant="secondary" className="text-xs">{r.cantidadColchon} Colchones</Badge>}
+                    {r.cantidadCama > 0 && <Badge variant="secondary" className="text-xs">{r.cantidadCama} Camas</Badge>}
+                    {r.cantidadCucheta > 0 && <Badge variant="secondary" className="text-xs">{r.cantidadCucheta} Cuchetas</Badge>}
+                    {r.cantidadFrazada > 0 && <Badge variant="secondary" className="text-xs">{r.cantidadFrazada} Frazadas</Badge>}
                     {Object.entries(r.otrosElementos || {}).map(([id, n]) => (
-                      <Badge key={id} variant="secondary" className="text-[9px]">{extraQuantityText(id, n, extraNames)}</Badge>
+                      <Badge key={id} variant="secondary" className="text-xs">{extraQuantityText(id, n, extraNames)}</Badge>
                     ))}
                   </div>
                   <DeliveryBadge record={r} />
@@ -346,7 +347,7 @@ export function EmergencyView({ initialData, deniedAccess }: EmergencyViewProps)
                   variant="outline"
                   className="w-full rounded-xl text-xs font-bold h-9 mt-2"
                 >
-                  <FileText className="mr-2 h-3.5 w-3.5" /> Abrir / Imprimir Ficha
+                  <FileText className="mr-2 h-3.5 w-3.5" /> Abrir / imprimir ficha
                 </Button>
               </Card>
             ))}

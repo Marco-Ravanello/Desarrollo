@@ -56,7 +56,7 @@ export function OrderStatusActions({ orderId, currentStatus }: { orderId: string
         <Button
           size="sm"
           variant="outline"
-          className="h-8 text-xs font-bold text-emerald-600 hover:text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/10 border-emerald-500/30 rounded-xl"
+          className="h-8 text-xs font-bold text-emerald-700 hover:text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/10 border-emerald-500/30 rounded-xl"
           onClick={() => handleUpdate("APROBADA")}
           disabled={loading}
         >
@@ -86,7 +86,7 @@ export function OrderStatusActions({ orderId, currentStatus }: { orderId: string
           onClick={() => handleUpdate("CANCELADA")}
           disabled={loading}
         >
-          <Ban className="h-3.5 w-3.5 mr-1" /> Cancelar Adjudicación
+          <Ban className="h-3.5 w-3.5 mr-1" /> Cancelar adjudicación
         </Button>
       </div>
     );

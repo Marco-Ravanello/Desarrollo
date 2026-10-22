@@ -140,11 +140,11 @@ export function OfflineFichasPanel({ userId, pending, online, syncing, onSyncNow
             <li key={item.clientId} className="flex flex-wrap items-center justify-between gap-2 px-3 py-2.5">
               <div className="min-w-0">
                 <p className="text-xs font-bold uppercase text-foreground truncate">{item.payload.nombreApellido || "Sin nombre"}</p>
-                <p className="text-[11px] text-muted-foreground truncate">
+                <p className="text-xs text-muted-foreground truncate">
                   {item.payload.domicilio || "Sin domicilio"} · guardada el{" "}
                   {new Date(item.savedAt).toLocaleString("es-AR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}
                 </p>
-                {item.lastError && <p className="text-[11px] font-semibold text-rose-600">No se envió: {item.lastError}</p>}
+                {item.lastError && <p className="text-xs font-semibold text-rose-600">No se envió: {item.lastError}</p>}
               </div>
               <div className="flex items-center gap-1">
                 <Button

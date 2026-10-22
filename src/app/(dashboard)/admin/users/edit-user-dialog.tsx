@@ -139,7 +139,7 @@ export function EditUserDialog({
                 {user?.username || "Sin usuario"}
               </p>
             )}
-            <p className="text-[11px] text-muted-foreground">
+            <p className="text-xs text-muted-foreground">
               {isSuperadmin ? "Con este nombre ingresa a la app. Si lo cambiás, avisale a la persona." : "Con este nombre ingresa a la app. Solo lo cambia el Superadmin."}
             </p>
           </div>
@@ -193,12 +193,12 @@ export function EditUserDialog({
 
           <div className="p-3 rounded-2xl bg-muted/30 border border-border/40 space-y-1 text-xs">
             <span className="font-bold text-primary">{ROLE_INFO[role]?.label}</span>
-            <p className="text-[11px] text-muted-foreground leading-relaxed">
+            <p className="text-xs text-muted-foreground leading-relaxed">
               {ROLE_INFO[role]?.description}
             </p>
           </div>
 
-          <div className="p-3 rounded-2xl bg-muted/30 border border-border/40 flex items-center gap-2 text-[11px] text-muted-foreground">
+          <div className="p-3 rounded-2xl bg-muted/30 border border-border/40 flex items-center gap-2 text-xs text-muted-foreground">
             <Lock className="h-3.5 w-3.5 shrink-0" />
             <span>
               {isSuperadmin && !isSelf
@@ -212,7 +212,7 @@ export function EditUserDialog({
           <div className="p-3.5 rounded-2xl bg-muted/30 border border-border/40 flex items-center justify-between gap-3">
             <div>
               <p className="text-xs font-bold text-foreground">Estado de la cuenta</p>
-              <p className="text-[11px] text-muted-foreground">
+              <p className="text-xs text-muted-foreground">
                 {isActive ? "Puede ingresar a la app." : "No puede ingresar hasta que se active."}
               </p>
             </div>
@@ -232,7 +232,7 @@ export function EditUserDialog({
           </div>
 
           {isSelf && (
-            <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-800 dark:text-amber-300 text-[11px] font-bold flex items-center gap-2">
+            <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-800 dark:text-amber-300 text-xs font-bold flex items-center gap-2">
               <AlertTriangle className="h-4 w-4 shrink-0" />
               <span>Es tu propia cuenta: no la podés suspender.</span>
             </div>

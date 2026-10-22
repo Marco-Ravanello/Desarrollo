@@ -18,7 +18,7 @@ import type { DerivationRow } from "@/services/derivations";
 const fecha = (iso: string) => new Date(iso).toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", year: "numeric" });
 
 const ESTADO: Record<DerivationRow["status"], { label: string; className: string }> = {
-  PENDIENTE: { label: "Esperando respuesta", className: "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30" },
+  PENDIENTE: { label: "Esperando respuesta", className: "bg-amber-500/15 text-amber-800 dark:text-amber-300 border-amber-500/30" },
   ACEPTADA: { label: "Aceptada", className: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30" },
   RECHAZADA: { label: "Rechazada", className: "bg-rose-500/15 text-rose-700 dark:text-rose-300 border-rose-500/30" },
   COMPLETADA: { label: "Completada", className: "bg-muted text-muted-foreground border-border/60" },
@@ -168,15 +168,15 @@ export function DerivationCard({ d, canRespond, showCase }: { d: DerivationRow; 
               {d.caseTitle}
             </Link>
           )}
-          {showCase && d.person && <p className="text-[11px] text-muted-foreground">{d.person}</p>}
+          {showCase && d.person && <p className="text-xs text-muted-foreground">{d.person}</p>}
           <p className="text-xs font-bold text-foreground mt-0.5">
             {d.fromArea} <ArrowRightLeft className="inline h-3 w-3 mx-1 text-muted-foreground" /> {d.toArea}
           </p>
-          <p className="text-[11px] text-muted-foreground">
+          <p className="text-xs text-muted-foreground">
             Derivado el {fecha(d.createdAt)}{d.createdBy ? ` por ${d.createdBy}` : ""}
           </p>
         </div>
-        <Badge variant="outline" className={`shrink-0 text-[10px] font-bold ${estado.className}`}>
+        <Badge variant="outline" className={`shrink-0 text-xs font-bold ${estado.className}`}>
           {d.status === "PENDIENTE" && <Clock className="h-3 w-3 mr-1" />}
           {estado.label}
         </Badge>
@@ -194,7 +194,7 @@ export function DerivationCard({ d, canRespond, showCase }: { d: DerivationRow; 
       )}
       {d.status === "PENDIENTE" && canRespond && <DerivationAnswer derivationId={d.id} />}
       {d.status === "PENDIENTE" && !canRespond && (
-        <p className="text-[11px] font-semibold text-amber-700 dark:text-amber-300">Esperando que {d.toArea} la acepte o la rechace.</p>
+        <p className="text-xs font-semibold text-amber-700 dark:text-amber-300">Esperando que {d.toArea} la acepte o la rechace.</p>
       )}
     </div>
   );

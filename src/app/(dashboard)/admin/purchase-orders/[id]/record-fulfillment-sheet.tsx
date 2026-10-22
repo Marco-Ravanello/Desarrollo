@@ -48,7 +48,7 @@ export function RecordFulfillmentSheet({
     const amount = parseFloat(newFulfillment);
 
     if (isNaN(amount) || amount <= 0) {
-      toast.error("Ingrese una cantidad válida");
+      toast.error("Escribí una cantidad válida");
       return;
     }
 
@@ -78,7 +78,7 @@ export function RecordFulfillmentSheet({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="sm:max-w-md">
         <SheetHeader>
-          <SheetTitle>Registrar Entrega</SheetTitle>
+          <SheetTitle>Registrar entrega</SheetTitle>
           <SheetDescription>
             Actualiza la cantidad recibida para este renglón.
           </SheetDescription>
@@ -86,28 +86,28 @@ export function RecordFulfillmentSheet({
 
         <form onSubmit={handleSubmit} className="space-y-6 py-6">
           <div className="space-y-1">
-            <Label className="text-xs uppercase font-bold text-muted-foreground">Renglón</Label>
+            <Label className="text-xs font-bold text-muted-foreground">Renglón</Label>
             <p className="font-medium text-foreground line-clamp-2">{item.description}</p>
           </div>
 
           <div className="grid grid-cols-3 gap-4 bg-muted/50 p-4 rounded-2xl border border-border/60">
             <div className="text-center">
-              <p className="text-[10px] uppercase font-bold text-muted-foreground">Total</p>
-              <p className="text-lg font-bold">{item.quantity} <span className="text-[10px] text-muted-foreground font-normal">{item.unitOfMeasure}</span></p>
+              <p className="text-xs font-bold text-muted-foreground">Total</p>
+              <p className="text-lg font-bold">{item.quantity} <span className="text-xs text-muted-foreground font-normal">{item.unitOfMeasure}</span></p>
             </div>
             <div className="text-center border-x">
-              <p className="text-[10px] uppercase font-bold text-muted-foreground">Recibido</p>
+              <p className="text-xs font-bold text-muted-foreground">Recibido</p>
               <p className="text-lg font-bold text-blue-600">{item.fulfilledQuantity}</p>
             </div>
             <div className="text-center">
-              <p className="text-[10px] uppercase font-bold text-muted-foreground">Pendiente</p>
-              <p className="text-lg font-bold text-orange-600">{remaining}</p>
+              <p className="text-xs font-bold text-muted-foreground">Pendiente</p>
+              <p className="text-lg font-bold text-orange-700 dark:text-orange-400">{remaining}</p>
             </div>
           </div>
 
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="fulfilled">Cantidad Entregada Ahora</Label>
+              <Label htmlFor="fulfilled">Cantidad entregada ahora</Label>
               <div className="relative">
                 <Input
                   id="fulfilled"
@@ -119,7 +119,7 @@ export function RecordFulfillmentSheet({
                   onChange={(e) => setNewFulfillment(e.target.value)}
                   className="pr-16 text-lg font-bold h-12"
                 />
-                <div className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-muted-foreground uppercase">
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-muted-foreground">
                   {item.unitOfMeasure}
                 </div>
               </div>

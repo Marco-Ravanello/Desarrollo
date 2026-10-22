@@ -3,9 +3,9 @@ import { cn } from "@/lib/utils";
 
 const tones = {
   blue: "bg-blue-500/10 text-blue-600 dark:text-blue-300",
-  orange: "bg-orange-500/10 text-orange-600 dark:text-orange-300",
-  green: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-300",
-  red: "bg-rose-500/10 text-rose-600 dark:text-rose-300",
+  orange: "bg-orange-500/10 text-orange-700 dark:text-orange-300",
+  green: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
+  red: "bg-rose-500/10 text-rose-700 dark:text-rose-400",
   purple: "bg-violet-500/10 text-violet-600 dark:text-violet-300",
   slate: "bg-muted text-muted-foreground",
 } as const;

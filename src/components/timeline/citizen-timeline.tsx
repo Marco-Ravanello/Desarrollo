@@ -82,10 +82,10 @@ export function CitizenTimeline({ events }: { events: TimelineEvent[] }) {
         return (
           <div key={event.id} className="relative flex items-start gap-4 sm:gap-6 group">
             <div className={`mt-0.5 flex h-9 w-9 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-full border-4 border-background shadow-xs transition-all group-hover:scale-105 z-10 ${
-              event.type === 'INTERVENTION' ? 'bg-blue-500/15 text-blue-500' :
-              event.type === 'CASE_CREATED' ? 'bg-emerald-500/15 text-emerald-500' :
+              event.type === 'INTERVENTION' ? 'bg-blue-500/15 text-blue-700 dark:text-blue-400' :
+              event.type === 'CASE_CREATED' ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400' :
               event.type === 'CASE_CLOSED' ? 'bg-muted text-muted-foreground' :
-              'bg-amber-500/15 text-amber-500'
+              'bg-amber-500/15 text-amber-800 dark:text-amber-400'
             }`}>
                {event.type === 'INTERVENTION' && <ActivityIcon className="h-4 w-4" />}
                {event.type === 'CASE_CREATED' && <FileText className="h-4 w-4" />}
@@ -102,14 +102,14 @@ export function CitizenTimeline({ events }: { events: TimelineEvent[] }) {
                    {showAreaBadge && (
                       <Badge
                         variant="outline"
-                        className="text-[10px] font-semibold px-2.5 py-0.5 rounded-full border-border/70 bg-muted/40 text-muted-foreground shrink-0 leading-normal"
+                        className="text-xs font-semibold px-2.5 py-0.5 rounded-full border-border/70 bg-muted/40 text-muted-foreground shrink-0 leading-normal"
                         title={event.area}
                       >
                           {event.area}
                       </Badge>
                    )}
                 </div>
-                <time className="text-[11px] font-medium text-muted-foreground flex items-center gap-1 shrink-0 ml-auto sm:ml-0">
+                <time className="text-xs font-medium text-muted-foreground flex items-center gap-1 shrink-0 ml-auto sm:ml-0">
                   <Calendar className="h-3 w-3 text-muted-foreground/70" />
                   {formatTimelineDate(event.date)}
                 </time>
@@ -124,7 +124,7 @@ export function CitizenTimeline({ events }: { events: TimelineEvent[] }) {
                           key={idx}
                           className="flex flex-col justify-between p-2.5 px-3 rounded-xl bg-muted/20 border border-border/50 hover:bg-muted/30 transition-colors"
                         >
-                          <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/80">
+                          <span className="text-xs font-bold text-muted-foreground">
                             {item.label}
                           </span>
                           <span className="text-xs font-semibold text-foreground mt-1 break-words leading-snug">

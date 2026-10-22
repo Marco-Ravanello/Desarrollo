@@ -132,7 +132,7 @@ export function DashboardBreadcrumbs() {
     >
       <Link
         href="/dashboard"
-        className="flex items-center gap-1 hover:text-foreground font-bold transition-colors text-muted-foreground"
+        className="flex items-center gap-1 min-h-8 sm:min-h-0 hover:text-foreground font-bold transition-colors text-muted-foreground"
       >
         <Home className="h-3.5 w-3.5 text-primary" />
         <span className="sr-only">Inicio</span>
@@ -147,7 +147,7 @@ export function DashboardBreadcrumbs() {
             {item.href && !isLast ? (
               <Link
                 href={item.href}
-                className="hover:text-primary font-bold transition-colors truncate min-w-0 max-w-[160px]"
+                className="inline-flex items-center min-h-8 sm:min-h-0 hover:text-primary font-bold transition-colors truncate min-w-0 max-w-[160px]"
               >
                 {item.label}
               </Link>

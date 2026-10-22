@@ -106,7 +106,7 @@ export default async function PersonDetailPage({ params }: { params: Promise<{ i
           icon={Users}
           actions={
             <>
-              <Button variant="outline" asChild className="rounded-2xl border-border/60 text-xs font-bold gap-2 text-indigo-500 hover:text-indigo-600">
+              <Button variant="outline" asChild className="rounded-2xl border-border/60 text-xs font-bold gap-2 text-indigo-700 dark:text-indigo-400 hover:text-indigo-600">
                 <Link href={`/ficha-social?dni=${person.dni}`}>
                   <Network className="h-4 w-4" />
                   Ver Ficha 360°
@@ -124,7 +124,7 @@ export default async function PersonDetailPage({ params }: { params: Promise<{ i
           )}
           <Badge variant="outline" className="border-border text-foreground font-mono font-bold">DNI: {person.dni}</Badge>
           {(person as any).programasActivos && (person as any).programasActivos.length > 0 && (
-            <Badge className="bg-emerald-500/15 text-emerald-500 border border-emerald-500/30 font-bold text-xs">
+            <Badge className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 font-bold text-xs">
               {plural((person as any).programasActivos.length, "programa activo")}
             </Badge>
           )}
@@ -134,7 +134,7 @@ export default async function PersonDetailPage({ params }: { params: Promise<{ i
 
       <div className="grid md:grid-cols-3 gap-6">
         <Card className="col-span-1 border border-border/60 shadow-xs bg-card text-card-foreground rounded-2xl">
-          <CardHeader><CardTitle className="text-lg font-bold text-foreground">Datos de Contacto</CardTitle></CardHeader>
+          <CardHeader><CardTitle className="text-lg font-bold text-foreground">Datos de contacto</CardTitle></CardHeader>
           <CardContent className="space-y-3">
             <div className="flex items-center gap-2 text-sm text-foreground"><MapPin className="h-4 w-4 text-muted-foreground"/> {person.address || 'Sin dirección'}</div>
             <div className="flex items-center gap-2 text-sm text-foreground"><Phone className="h-4 w-4 text-muted-foreground"/> {person.phone || 'Sin teléfono'}</div>
@@ -149,17 +149,17 @@ export default async function PersonDetailPage({ params }: { params: Promise<{ i
         <Card className="col-span-2 border border-border/60 shadow-xs bg-card text-card-foreground rounded-2xl overflow-hidden">
           <Tabs defaultValue="timeline">
             <TabsList className="m-4 bg-muted/40 p-1 border border-border/40 rounded-2xl">
-              <TabsTrigger value="timeline" className="rounded-xl text-xs font-bold uppercase tracking-wider">Línea de Tiempo</TabsTrigger>
-              <TabsTrigger value="cases" className="rounded-xl text-xs font-bold uppercase tracking-wider">Casos</TabsTrigger>
-              <TabsTrigger value="family" className="rounded-xl text-xs font-bold uppercase tracking-wider">Familia</TabsTrigger>
-              <TabsTrigger value="history" className="rounded-xl text-xs font-bold uppercase tracking-wider">Historial</TabsTrigger>
-              <TabsTrigger value="docs" className="rounded-xl text-xs font-bold uppercase tracking-wider">Documentos</TabsTrigger>
+              <TabsTrigger value="timeline" className="rounded-xl text-xs font-bold">Línea de tiempo</TabsTrigger>
+              <TabsTrigger value="cases" className="rounded-xl text-xs font-bold">Casos</TabsTrigger>
+              <TabsTrigger value="family" className="rounded-xl text-xs font-bold">Familia</TabsTrigger>
+              <TabsTrigger value="history" className="rounded-xl text-xs font-bold">Historial</TabsTrigger>
+              <TabsTrigger value="docs" className="rounded-xl text-xs font-bold">Documentos</TabsTrigger>
             </TabsList>
 
             <TabsContent value="timeline" className="p-6 pt-0">
                <div className="flex justify-between items-center mb-6">
-                <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
-                   <History className="h-4 w-4" /> Evolución del Ciudadano
+                <h3 className="text-xs font-bold text-muted-foreground flex items-center gap-2">
+                   <History className="h-4 w-4" /> Evolución del ciudadano
                 </h3>
               </div>
               <CitizenTimeline events={timelineEvents} />
@@ -167,14 +167,14 @@ export default async function PersonDetailPage({ params }: { params: Promise<{ i
 
             <TabsContent value="cases" className="p-4 pt-0">
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Casos Activos</h3>
+                <h3 className="text-xs font-bold text-muted-foreground">Casos activos</h3>
               </div>
               {activeCases.length === 0 ? <EmptyMessage compact title="No tiene expedientes abiertos" icon={FileIcon} className="rounded-2xl border border-dashed border-border/60" /> : (
                 <div className="space-y-3">
                   {activeCases.map(c => (
                     <div key={c.id} className="p-4 border border-border/60 rounded-2xl flex justify-between items-center bg-muted/20 shadow-xs hover:border-primary/50 transition-all">
                       <div className="flex items-center gap-4">
-                        <div className={`p-2 rounded-full ${isViolenceCase(c) ? "bg-rose-500/10 text-rose-500" : "bg-blue-500/10 text-blue-500"}`}>
+                        <div className={`p-2 rounded-full ${isViolenceCase(c) ? "bg-rose-500/10 text-rose-700 dark:text-rose-400" : "bg-blue-500/10 text-blue-700 dark:text-blue-400"}`}>
                            {isViolenceCase(c) ? <ShieldAlert className="h-4 w-4" /> : <FileIcon className="h-4 w-4" />}
                         </div>
                         <div>
@@ -184,7 +184,7 @@ export default async function PersonDetailPage({ params }: { params: Promise<{ i
                       </div>
                       <div className="flex items-center gap-2">
                          <Button variant="ghost" size="icon" asChild>
-                           <Link href={`/cases/${c.id}`}><Eye className="h-4 w-4 text-muted-foreground" /></Link>
+                           <Link href={`/cases/${c.id}`} aria-label="Ver expediente"><Eye className="h-4 w-4 text-muted-foreground" /></Link>
                          </Button>
                          <CloseCaseButton caseId={c.id} />
                       </div>
@@ -197,7 +197,7 @@ export default async function PersonDetailPage({ params }: { params: Promise<{ i
 
             <TabsContent value="family" className="p-4 pt-0">
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Composición Familiar</h3>
+                <h3 className="text-xs font-bold text-muted-foreground">Composición familiar</h3>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
@@ -230,12 +230,12 @@ export default async function PersonDetailPage({ params }: { params: Promise<{ i
                           <div className="flex items-center gap-1.5 min-w-0">
                             <span className="text-sm font-bold truncate text-foreground block min-w-0 flex-1">{rawName}</span>
                             {tagLabel && (
-                              <Badge variant="outline" className="text-[9px] py-0 px-1 border-primary/30 text-primary shrink-0">
+                              <Badge variant="outline" className="text-xs py-0 px-1 border-primary/30 text-primary shrink-0">
                                 {tagLabel}
                               </Badge>
                             )}
                           </div>
-                          <span className="text-[10px] text-muted-foreground font-mono truncate">DNI: {m.dni || "N/R"}</span>
+                          <span className="text-xs text-muted-foreground font-mono truncate">DNI: {m.dni || "N/R"}</span>
                         </div>
                       </Link>
                       <RemoveFamilyMemberButton id={m.id} name={`${rawName} ${m.lastName && !m.lastName.startsWith("(") ? m.lastName : ""}`.trim() || "Este familiar"} />
@@ -249,7 +249,7 @@ export default async function PersonDetailPage({ params }: { params: Promise<{ i
 
             <TabsContent value="history" className="p-4 pt-0">
                <div className="flex justify-between items-center mb-4">
-                <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Historial de Casos Cerrados</h3>
+                <h3 className="text-xs font-bold text-muted-foreground">Historial de casos cerrados</h3>
               </div>
               {closedCases.length === 0 ? (
                 <EmptyMessage compact title="Todavía no tiene expedientes cerrados" icon={History} />
@@ -268,9 +268,9 @@ export default async function PersonDetailPage({ params }: { params: Promise<{ i
                       </div>
                       <div className="flex items-center gap-2">
                         <Button variant="ghost" size="icon" asChild>
-                           <Link href={`/cases/${c.id}`}><Eye className="h-4 w-4 text-muted-foreground" /></Link>
+                           <Link href={`/cases/${c.id}`} aria-label="Ver expediente"><Eye className="h-4 w-4 text-muted-foreground" /></Link>
                         </Button>
-                        <Badge variant="outline" className="text-muted-foreground uppercase text-[10px]">Cerrado</Badge>
+                        <Badge variant="outline" className="text-muted-foreground text-xs">Cerrado</Badge>
                       </div>
                     </div>
                   ))}
@@ -280,7 +280,7 @@ export default async function PersonDetailPage({ params }: { params: Promise<{ i
 
             <TabsContent value="docs" className="p-4 pt-0">
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Documentación Adjunta</h3>
+                <h3 className="text-xs font-bold text-muted-foreground">Documentación adjunta</h3>
               </div>
               {filteredDocuments.length === 0 ? <EmptyMessage compact title="Todavía no tiene documentos" icon={FileIcon} className="rounded-2xl border border-dashed border-border/60" /> : (
                 <div className="grid grid-cols-1 gap-2">
@@ -292,7 +292,7 @@ export default async function PersonDetailPage({ params }: { params: Promise<{ i
                           <FileIcon className="h-4 w-4 text-muted-foreground" />
                           <div>
                             <p className="font-medium text-sm text-foreground">{d.name}</p>
-                            <p className="text-[10px] text-muted-foreground">{new Date(d.createdAt).toLocaleDateString()}</p>
+                            <p className="text-xs text-muted-foreground">{new Date(d.createdAt).toLocaleDateString()}</p>
                           </div>
                         </div>
                         <Button variant="ghost" size="sm" asChild className="text-primary font-bold">

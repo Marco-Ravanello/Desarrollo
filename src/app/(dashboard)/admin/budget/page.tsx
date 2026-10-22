@@ -47,7 +47,7 @@ export default async function BudgetPage() {
   // Semáforo porcentual (sin presupuesto cargado no hay semáforo: no se puede calcular)
   let healthBadge: { label: string; color: string } | null = {
     label: "Saludable",
-    color: "text-emerald-500 bg-emerald-500/10 border-emerald-500/20"
+    color: "text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 border-emerald-500/20"
   };
 
   if (totalBudget <= 0) {
@@ -55,12 +55,12 @@ export default async function BudgetPage() {
   } else if (globalPercentage > 85) {
     healthBadge = {
       label: "Crítico",
-      color: "text-rose-500 bg-rose-500/10 border-rose-500/20"
+      color: "text-rose-700 dark:text-rose-400 bg-rose-500/10 border-rose-500/20"
     };
   } else if (globalPercentage > 65) {
     healthBadge = {
       label: "Moderado",
-      color: "text-amber-500 bg-amber-500/10 border-amber-500/20"
+      color: "text-amber-700 dark:text-amber-400 bg-amber-500/10 border-amber-500/20"
     };
   }
 
@@ -164,7 +164,7 @@ export default async function BudgetPage() {
                     variant="ghost"
                     size="sm"
                     asChild
-                    className="text-xs h-8 gap-1.5 font-bold hover:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 transition-colors"
+                    className="text-xs h-8 gap-1.5 font-bold hover:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 transition-colors"
                  >
                     <Link href={`/admin/agreements?areaId=${area.id}`}>
                       <ExternalLink className="h-3.5 w-3.5" /> Ver convenios del área

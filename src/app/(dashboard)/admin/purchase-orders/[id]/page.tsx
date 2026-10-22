@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import {
   ChevronLeft, Calendar, MapPin, CreditCard, FileText,
   User, TrendingUp, Wallet, CheckCircle2, History,
-  Paperclip, Building2, Info, ArrowUpRight, DollarSign, Briefcase
+  Paperclip, Building2, Info, DollarSign, Briefcase
 } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
 import { EmptyMessage } from "@/components/ui/empty-message";
@@ -63,7 +63,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
         actions={
           <>
             <Badge
-              className="text-xs px-3 py-0.5 rounded-full font-bold uppercase tracking-widest"
+              className="text-xs px-3 py-0.5 rounded-full font-bold"
               variant={order.status === 'APROBADA' ? 'default' : order.status === 'RECHAZADA' ? 'destructive' : order.status === 'CUMPLIDA' ? 'outline' : 'secondary'}
             >
               {order.status.replace('_', ' ')}
@@ -94,46 +94,46 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="bg-card text-card-foreground p-6 rounded-2xl border border-border/60 shadow-xs flex flex-col">
                 <div className="flex justify-between items-start mb-4">
-                    <div className="w-10 h-10 rounded-2xl bg-blue-500/10 flex items-center justify-center text-blue-500">
+                    <div className="w-10 h-10 rounded-2xl bg-blue-500/10 flex items-center justify-center text-blue-700 dark:text-blue-400">
                         <Wallet className="h-5 w-5" />
                     </div>
-                    <Badge variant="secondary" className="bg-blue-500/10 text-blue-500 border-none font-bold text-[10px]">PRESUPUESTO</Badge>
+                    <Badge variant="secondary" className="bg-blue-500/10 text-blue-700 dark:text-blue-400 border-none font-bold text-xs">Presupuesto</Badge>
                 </div>
-                <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1">Monto Total Adjudicado</span>
+                <span className="text-xs font-bold text-muted-foreground mb-1">Monto total adjudicado</span>
                 <p className="text-2xl font-bold text-foreground">${totalAmount.toLocaleString("es-AR")}</p>
                 <div className="mt-4 pt-4 border-t border-border/40 flex items-center justify-between">
-                    <span className="text-[10px] font-bold text-muted-foreground uppercase">Moneda</span>
-                    <span className="text-[10px] font-bold text-foreground">ARS</span>
+                    <span className="text-xs font-bold text-muted-foreground">Moneda</span>
+                    <span className="text-xs font-bold text-foreground">ARS</span>
                 </div>
               </div>
 
               <div className="bg-card text-card-foreground p-6 rounded-2xl border border-border/60 shadow-xs flex flex-col">
                 <div className="flex justify-between items-start mb-4">
-                    <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 flex items-center justify-center text-emerald-500">
+                    <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 flex items-center justify-center text-emerald-700 dark:text-emerald-400">
                         <TrendingUp className="h-5 w-5" />
                     </div>
-                    <Badge variant="secondary" className="bg-emerald-500/10 text-emerald-500 border-none font-bold text-[10px]">EJECUTADO</Badge>
+                    <Badge variant="secondary" className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-none font-bold text-xs">Ejecutado</Badge>
                 </div>
-                <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1">Total Recibido (Devengado)</span>
+                <span className="text-xs font-bold text-muted-foreground mb-1">Total Recibido (Devengado)</span>
                 <p className="text-2xl font-bold text-foreground">${executedAmount.toLocaleString("es-AR")}</p>
                 <div className="mt-4 space-y-1">
                     <Progress value={globalProgress} className="h-1.5 [&>div]:bg-emerald-500 bg-emerald-500/10" />
-                    <p className="text-[10px] text-emerald-500 font-bold uppercase text-right">{Math.round(globalProgress)}% COMPLETADO</p>
+                    <p className="text-xs text-emerald-700 dark:text-emerald-400 font-bold text-right">{Math.round(globalProgress)}% completado</p>
                 </div>
               </div>
 
               <div className="bg-card text-card-foreground p-6 rounded-2xl border border-border/60 shadow-xs flex flex-col">
                 <div className="flex justify-between items-start mb-4">
-                    <div className="w-10 h-10 rounded-2xl bg-orange-500/10 flex items-center justify-center text-orange-500">
+                    <div className="w-10 h-10 rounded-2xl bg-orange-500/10 flex items-center justify-center text-orange-700 dark:text-orange-400">
                         <DollarSign className="h-5 w-5" />
                     </div>
-                    <Badge variant="secondary" className="bg-orange-500/10 text-orange-500 border-none font-bold text-[10px]">FINANZAS</Badge>
+                    <Badge variant="secondary" className="bg-orange-500/10 text-orange-700 dark:text-orange-400 border-none font-bold text-xs">Finanzas</Badge>
                 </div>
-                <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1">Saldo Pendiente de Entrega</span>
+                <span className="text-xs font-bold text-muted-foreground mb-1">Saldo pendiente de entrega</span>
                 <p className="text-2xl font-bold text-foreground">${(totalAmount - executedAmount).toLocaleString("es-AR")}</p>
                 <div className="mt-4 pt-4 border-t border-border/40 flex items-center justify-between">
-                    <span className="text-[10px] font-bold text-muted-foreground uppercase">Finanzas</span>
-                    <span className={`text-[10px] font-bold uppercase ${financialStatus === 'Pagada' ? 'text-emerald-500' : financialStatus === 'Parcialmente Pagada' ? 'text-blue-500' : 'text-orange-500'}`}>
+                    <span className="text-xs font-bold text-muted-foreground">Finanzas</span>
+                    <span className={`text-xs font-bold ${financialStatus === 'Pagada' ? 'text-emerald-700 dark:text-emerald-400' : financialStatus === 'Parcialmente Pagada' ? 'text-blue-700 dark:text-blue-400' : 'text-orange-700 dark:text-orange-400'}`}>
                         {financialStatus}
                     </span>
                 </div>
@@ -143,9 +143,9 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
           {/* Technical Info */}
           <Card className="rounded-2xl border border-border/60 shadow-xs bg-card text-card-foreground">
             <CardHeader className="pb-2 border-b border-border/40">
-              <CardTitle className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">
+              <CardTitle className="flex items-center gap-2 text-xs font-bold text-muted-foreground">
                 <FileText className="h-4 w-4" />
-                Especificaciones Técnicas
+                Especificaciones técnicas
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-6 space-y-6">
@@ -157,11 +157,10 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                                     <Info className="h-4 w-4 text-muted-foreground" />
                                 </div>
                                 <div>
-                                    <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">N° Expediente / Suministro</p>
+                                    <p className="text-xs font-bold text-muted-foreground">N° expediente / suministro</p>
                                     <p className="text-sm font-bold text-foreground">{order.expediente || "SIN DATO"}</p>
                                 </div>
                             </div>
-                            <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground"><ArrowUpRight className="h-4 w-4" /></Button>
                         </div>
 
                         <div className="flex items-center gap-3 p-3">
@@ -169,7 +168,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                                 <MapPin className="h-4 w-4 text-muted-foreground" />
                             </div>
                             <div>
-                                <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Lugar de Entrega</p>
+                                <p className="text-xs font-bold text-muted-foreground">Lugar de entrega</p>
                                 <p className="text-sm font-bold text-foreground">{order.deliveryPlace || "No especificado"}</p>
                             </div>
                         </div>
@@ -179,7 +178,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                                 <CreditCard className="h-4 w-4 text-muted-foreground" />
                             </div>
                             <div>
-                                <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Condiciones de Pago</p>
+                                <p className="text-xs font-bold text-muted-foreground">Condiciones de pago</p>
                                 <p className="text-sm font-bold text-foreground">{order.paymentTerms || "No especificadas"}</p>
                             </div>
                         </div>
@@ -187,7 +186,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
 
                     <div className="space-y-4">
                          <div className="space-y-2">
-                            <Label className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">Descripción / Motivo de la Adquisición</Label>
+                            <Label className="text-xs text-muted-foreground font-bold">Descripción / motivo de la adquisición</Label>
                             <div className="bg-muted/30 p-4 rounded-2xl text-foreground text-xs border border-border/40 leading-relaxed min-h-[100px]">
                                 {order.description || "Sin descripción adicional detallada para esta orden de compra."}
                             </div>
@@ -213,8 +212,8 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
           {/* Attachments Section */}
           <Card className="rounded-2xl border border-border/60 shadow-xs bg-card text-card-foreground overflow-hidden">
             <CardHeader className="bg-muted/30 border-b border-border/40">
-              <CardTitle className="text-xs font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
-                <Paperclip className="h-4 w-4" /> Documentación Adjunta
+              <CardTitle className="text-xs font-bold text-muted-foreground flex items-center gap-2">
+                <Paperclip className="h-4 w-4" /> Documentación adjunta
               </CardTitle>
             </CardHeader>
             <CardContent className="p-0">
@@ -233,9 +232,9 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
           {/* Provider Card */}
           <Card className="rounded-2xl border border-border/60 shadow-xs bg-card text-card-foreground overflow-hidden">
             <CardHeader className="pb-2 border-b border-border/40 bg-muted/20">
-              <CardTitle className="flex items-center gap-2 text-[10px] uppercase tracking-widest font-bold text-muted-foreground">
+              <CardTitle className="flex items-center gap-2 text-xs font-bold text-muted-foreground">
                 <Building2 className="h-4 w-4" />
-                Información del Proveedor
+                Información del proveedor
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-6 space-y-6">
@@ -244,8 +243,8 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                   {order.provider?.name || order.providerName || "Desconocido"}
                 </p>
                 <div className="flex items-center gap-2 mt-2">
-                    <Badge variant="outline" className="text-[10px] font-bold border-border text-foreground">CUIT: {order.providerCuit || "---"}</Badge>
-                    <Badge className="bg-primary text-primary-foreground border-none text-[10px] font-bold">CAT: {(order.provider?.orders?.length ?? 0) > 10 ? 'A' : 'B'}</Badge>
+                    <Badge variant="outline" className="text-xs font-bold border-border text-foreground">CUIT: {order.providerCuit || "---"}</Badge>
+                    <Badge className="bg-primary text-primary-foreground border-none text-xs font-bold">CAT: {(order.provider?.orders?.length ?? 0) > 10 ? 'A' : 'B'}</Badge>
                 </div>
               </div>
 
@@ -253,30 +252,30 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                 <div className="pt-4 border-t border-border/40 space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-1">
-                          <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Órdenes Totales</p>
+                          <p className="text-xs font-bold text-muted-foreground">Órdenes totales</p>
                           <p className="text-lg font-bold text-foreground">{(order.provider as any)._count?.orders || 0}</p>
                       </div>
                       <div className="space-y-1">
-                          <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Estado</p>
+                          <p className="text-xs font-bold text-muted-foreground">Estado</p>
                           <div className="flex items-center gap-1">
                               <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                              <p className="text-xs font-bold text-emerald-500">Verificado</p>
+                              <p className="text-xs font-bold text-emerald-700 dark:text-emerald-400">Verificado</p>
                           </div>
                       </div>
                   </div>
 
                   <div className="space-y-2 bg-muted/30 p-3 rounded-2xl border border-border/40">
-                    <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest mb-1">Datos Bancarios</p>
-                    <p className="text-[10px] font-bold text-foreground">Banco: {order.provider.bank || "---"}</p>
-                    <p className="font-mono text-[9px] truncate text-muted-foreground">CBU: {order.provider.cbu || "---"}</p>
+                    <p className="text-xs font-bold text-muted-foreground mb-1">Datos bancarios</p>
+                    <p className="text-xs font-bold text-foreground">Banco: {order.provider.bank || "---"}</p>
+                    <p className="font-mono text-xs truncate text-muted-foreground">CBU: {order.provider.cbu || "---"}</p>
                   </div>
 
                   <div className="space-y-2">
-                      <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Actividad Reciente</p>
+                      <p className="text-xs font-bold text-muted-foreground">Actividad reciente</p>
                       <div className="space-y-2">
                           {(order.provider as any).orders?.slice(0, 3).map((o: any) => (
                               <Link key={o.id} href={`/admin/purchase-orders/${o.id}`} className="block group">
-                                  <div className="flex items-center justify-between text-[10px]">
+                                  <div className="flex items-center justify-between text-xs">
                                       <span className="font-bold text-foreground group-hover:text-primary transition-colors">#{o.number}</span>
                                       <span className="text-muted-foreground">${Number(o.amount).toLocaleString("es-AR")}</span>
                                   </div>
@@ -292,9 +291,9 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
           {/* Audit Log Card */}
           <Card className="rounded-2xl border border-border/60 shadow-xs bg-card text-card-foreground overflow-hidden">
             <CardHeader className="pb-2 bg-muted/20 border-b border-border/40">
-              <CardTitle className="flex items-center gap-2 text-[10px] uppercase tracking-widest font-bold text-muted-foreground">
+              <CardTitle className="flex items-center gap-2 text-xs font-bold text-muted-foreground">
                 <History className="h-4 w-4" />
-                Actividad Reciente
+                Actividad reciente
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-6">
@@ -304,14 +303,14 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
 
           {/* System Metadata */}
           <Card className="rounded-2xl border border-border/60 shadow-xs bg-muted/20">
-            <CardContent className="pt-6 text-[10px] text-muted-foreground space-y-2 font-medium">
+            <CardContent className="pt-6 text-xs text-muted-foreground space-y-2 font-medium">
               <div className="flex justify-between">
                 <span>ID Interno:</span>
                 <span className="font-mono">{order.id.substring(0, 8)}...</span>
               </div>
               <div className="flex justify-between">
                 <span>Creado por:</span>
-                <span className="text-foreground font-bold">Admin Municipal</span>
+                <span className="text-foreground font-bold">Admin municipal</span>
               </div>
               <div className="flex justify-between">
                 <span>Última modif:</span>

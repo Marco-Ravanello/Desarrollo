@@ -58,7 +58,7 @@ export function UserNav({ variant = "header", isCollapsed = false }: UserNavProp
                   <p className="text-xs font-bold text-foreground truncate group-hover:text-primary transition-colors">
                     {user.name || "Usuario"}
                   </p>
-                  <p className="text-[10px] text-muted-foreground font-semibold truncate">
+                  <p className="text-xs text-muted-foreground font-semibold truncate">
                     {roleLabel(user.role)}
                   </p>
                 </div>
@@ -73,7 +73,7 @@ export function UserNav({ variant = "header", isCollapsed = false }: UserNavProp
             className="h-9 gap-2 px-2.5 rounded-xl text-xs font-bold text-foreground hover:bg-muted/60"
           >
             <Avatar className="h-7 w-7 rounded-lg border border-primary/20 shrink-0">
-              <AvatarFallback className="bg-primary/10 text-primary font-bold text-[11px]">
+              <AvatarFallback className="bg-primary/10 text-primary font-bold text-xs">
                 {initial}
               </AvatarFallback>
             </Avatar>
@@ -90,15 +90,15 @@ export function UserNav({ variant = "header", isCollapsed = false }: UserNavProp
       >
         <DropdownMenuLabel className="p-2 space-y-1">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-              Agente Municipal
+            <span className="text-xs font-bold text-muted-foreground">
+              Agente municipal
             </span>
-            <Badge className="bg-primary/15 text-primary border border-primary/20 text-[9px] font-bold py-0">
+            <Badge className="bg-primary/15 text-primary border border-primary/20 text-xs font-bold py-0">
               {roleLabel(user.role)}
             </Badge>
           </div>
           <p className="text-xs font-bold text-foreground truncate">{user.name || "Usuario Municipal"}</p>
-          <p className="text-[11px] text-muted-foreground font-mono truncate">{(user as any).username || user.email || ""}</p>
+          <p className="text-xs text-muted-foreground font-mono truncate">{(user as any).username || user.email || ""}</p>
         </DropdownMenuLabel>
 
         <DropdownMenuSeparator className="my-1 bg-border/60" />
@@ -123,7 +123,7 @@ export function UserNav({ variant = "header", isCollapsed = false }: UserNavProp
               <DropdownMenuItem asChild className="rounded-xl text-xs font-semibold cursor-pointer py-2 focus:bg-primary/10 focus:text-primary">
                 <Link href="/admin/users?new=true" className="flex items-center gap-2.5 w-full font-bold text-primary">
                   <UserPlus className="h-4 w-4 text-primary" />
-                  <span>+ Crear Nuevo Usuario</span>
+                  <span>+ Crear nuevo usuario</span>
                 </Link>
               </DropdownMenuItem>
             )}
@@ -135,7 +135,7 @@ export function UserNav({ variant = "header", isCollapsed = false }: UserNavProp
           <DropdownMenuItem asChild className="rounded-xl text-xs font-semibold cursor-pointer py-2 focus:bg-primary/10 focus:text-primary">
             <Link href="/admin/settings" className="flex items-center gap-2.5 w-full">
               <Settings className="h-4 w-4 text-muted-foreground" />
-              <span>Configuración del Sistema</span>
+              <span>Configuración del sistema</span>
             </Link>
           </DropdownMenuItem>
         )}
@@ -144,10 +144,10 @@ export function UserNav({ variant = "header", isCollapsed = false }: UserNavProp
 
         <DropdownMenuItem
           onClick={() => clearOfflineCache().finally(() => signOut({ callbackUrl: "/login" }))}
-          className="rounded-xl text-xs font-semibold cursor-pointer py-2 text-rose-500 hover:text-rose-600 focus:bg-rose-500/10 focus:text-rose-600"
+          className="rounded-xl text-xs font-semibold cursor-pointer py-2 text-rose-700 dark:text-rose-400 hover:text-rose-600 focus:bg-rose-500/10 focus:text-rose-600"
         >
           <LogOut className="h-4 w-4 mr-2.5" />
-          <span>Cerrar Sesión</span>
+          <span>Cerrar sesión</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

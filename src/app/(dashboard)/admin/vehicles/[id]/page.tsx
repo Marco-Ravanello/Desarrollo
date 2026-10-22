@@ -35,7 +35,7 @@ export default async function VehicleDetailPage({ params }: { params: Promise<{ 
         icon={Car}
         description={
           <span className="mt-1 inline-flex flex-wrap items-center gap-2">
-            <span className="px-2 py-0.5 bg-muted text-foreground font-mono font-bold text-xs uppercase border-b-2 border-border/80 rounded">
+            <span className="px-2 py-0.5 bg-muted text-foreground font-mono font-bold text-xs border-b-2 border-border/80 rounded">
               {vehicle.plate}
             </span>
             <span className={cn(badgeVariants(),
@@ -49,7 +49,7 @@ export default async function VehicleDetailPage({ params }: { params: Promise<{ 
         }
         actions={
           <Button variant="ghost" size="icon" asChild className="rounded-full">
-            <Link href="/admin/vehicles"><ArrowLeft className="h-5 w-5" /></Link>
+            <Link href="/admin/vehicles" aria-label="Volver a vehículos"><ArrowLeft className="h-5 w-5" /></Link>
           </Button>
         }
       />
@@ -60,12 +60,12 @@ export default async function VehicleDetailPage({ params }: { params: Promise<{ 
           <Card className="rounded-2xl border border-border/60 shadow-xs bg-card text-card-foreground overflow-hidden">
             <CardHeader className="bg-muted/30 border-b border-border/40">
               <CardTitle className="text-lg flex items-center gap-2">
-                <Settings className="h-5 w-5 text-muted-foreground" /> Ficha Técnica
+                <Settings className="h-5 w-5 text-muted-foreground" /> Ficha técnica
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4 pt-6">
               <div className="flex justify-between items-center">
-                <span className="text-sm text-muted-foreground">Último Service</span>
+                <span className="text-sm text-muted-foreground">Último service</span>
                 <span className="font-bold text-foreground">{vehicle.lastServiceKm?.toLocaleString("es-AR") || 0} KM</span>
               </div>
               <Separator />
@@ -75,8 +75,8 @@ export default async function VehicleDetailPage({ params }: { params: Promise<{ 
               </div>
               <Separator />
               <div className="flex justify-between items-center">
-                <span className="text-sm text-muted-foreground">Cupo Mensual</span>
-                <span className="font-bold text-emerald-600 dark:text-emerald-400">${Number(vehicle.fuelMonthlyLimit || 0).toLocaleString("es-AR")}</span>
+                <span className="text-sm text-muted-foreground">Cupo mensual</span>
+                <span className="font-bold text-emerald-700 dark:text-emerald-400">${Number(vehicle.fuelMonthlyLimit || 0).toLocaleString("es-AR")}</span>
               </div>
             </CardContent>
           </Card>
@@ -91,7 +91,7 @@ export default async function VehicleDetailPage({ params }: { params: Promise<{ 
               <div className="flex justify-between items-center">
                 <div className="flex flex-col">
                    <span className="text-sm font-semibold text-foreground">Vencimiento VTV</span>
-                   <span className="text-xs text-muted-foreground">Revisión Técnica</span>
+                   <span className="text-xs text-muted-foreground">Revisión técnica</span>
                 </div>
                 <Badge variant={isVtvClose ? "destructive" : "outline"} className="rounded-lg">
                   {vehicle.vtvExpiry ? new Date(vehicle.vtvExpiry).toLocaleDateString() : "No registrado"}
@@ -100,8 +100,8 @@ export default async function VehicleDetailPage({ params }: { params: Promise<{ 
               <Separator />
               <div className="flex justify-between items-center">
                 <div className="flex flex-col">
-                   <span className="text-sm font-semibold text-foreground">Vencimiento Seguro</span>
-                   <span className="text-xs text-muted-foreground">Póliza Vigente</span>
+                   <span className="text-sm font-semibold text-foreground">Vencimiento seguro</span>
+                   <span className="text-xs text-muted-foreground">Póliza vigente</span>
                 </div>
                 <Badge variant={isInsClose ? "destructive" : "outline"} className="rounded-lg">
                   {vehicle.insuranceExpiry ? new Date(vehicle.insuranceExpiry).toLocaleDateString() : "No registrado"}
@@ -111,7 +111,7 @@ export default async function VehicleDetailPage({ params }: { params: Promise<{ 
           </Card>
 
           <Button variant="outline" className="w-full rounded-2xl border-dashed border-2 py-8 text-muted-foreground hover:text-rose-600 hover:border-rose-200 hover:bg-rose-50 dark:hover:bg-rose-950/20 transition-all">
-             <Wrench className="h-5 w-5 mr-2" /> Reportar Problema / Ingreso a Taller
+             <Wrench className="h-5 w-5 mr-2" /> Reportar problema / ingreso a taller
           </Button>
         </div>
 
@@ -120,7 +120,7 @@ export default async function VehicleDetailPage({ params }: { params: Promise<{ 
           <Card className="rounded-2xl border border-border/60 shadow-xs bg-card text-card-foreground overflow-hidden">
             <CardHeader className="bg-muted/30 border-b border-border/40">
               <CardTitle className="text-lg flex items-center gap-2">
-                <Calendar className="h-5 w-5 text-blue-500" /> Historial de Reservas
+                <Calendar className="h-5 w-5 text-blue-500" /> Historial de reservas
               </CardTitle>
               <CardDescription className="text-muted-foreground">Registro histórico de uso por parte de las áreas.</CardDescription>
             </CardHeader>
@@ -143,14 +143,14 @@ export default async function VehicleDetailPage({ params }: { params: Promise<{ 
                       <TableCell>
                         <div className="flex flex-col">
                           <span className="text-sm font-semibold text-foreground">{res.user?.name || "Desconocido"}</span>
-                          <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-tight">{(res.user as any)?.area?.name || "Administración"}</span>
+                          <span className="text-xs text-muted-foreground font-bold tracking-tight">{(res.user as any)?.area?.name || "Administración"}</span>
                         </div>
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground max-w-[150px] truncate" title={res.reason || ""}>
                         {res.reason}
                       </TableCell>
                       <TableCell>
-                        <Badge variant="outline" className="text-[9px] font-bold uppercase rounded-full border-border/60">
+                        <Badge variant="outline" className="text-xs font-bold rounded-full border-border/60">
                           {res.status}
                         </Badge>
                       </TableCell>
@@ -169,7 +169,7 @@ export default async function VehicleDetailPage({ params }: { params: Promise<{ 
           <Card className="rounded-2xl border border-border/60 shadow-xs bg-card text-card-foreground overflow-hidden">
             <CardHeader className="bg-muted/30 border-b border-border/40">
               <CardTitle className="text-lg flex items-center gap-2">
-                <Fuel className="h-5 w-5 text-emerald-500" /> Cargas de Combustible
+                <Fuel className="h-5 w-5 text-emerald-500" /> Cargas de combustible
               </CardTitle>
               <CardDescription className="text-muted-foreground">Rendiciones de ticket YPF en Ruta.</CardDescription>
             </CardHeader>
@@ -189,7 +189,7 @@ export default async function VehicleDetailPage({ params }: { params: Promise<{ 
                       <TableCell className="text-sm text-foreground">
                         {new Date(fuel.date).toLocaleDateString()}
                       </TableCell>
-                      <TableCell className="font-bold text-emerald-600 dark:text-emerald-400">
+                      <TableCell className="font-bold text-emerald-700 dark:text-emerald-400">
                         ${Number(fuel.amount).toLocaleString("es-AR")}
                       </TableCell>
                       <TableCell className="text-sm font-semibold text-foreground">

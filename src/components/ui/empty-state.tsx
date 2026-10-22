@@ -44,7 +44,7 @@ const defaultTexts: Record<string, { title: string; description: string; actionL
   },
   vehicles: {
     title: "No hay vehículos en la flota actualmente",
-    description: "Registre camionetas, combis o móviles municipales para controlar services, combustible y asignaciones.",
+    description: "Cargá camionetas, combis o móviles municipales para controlar services, combustible y asignaciones.",
     actionLabel: "Registrar Vehículo",
     actionHref: "/admin/vehicles/new"
   },
@@ -56,13 +56,13 @@ const defaultTexts: Record<string, { title: string; description: string; actionL
   },
   stock: {
     title: "Sin insumos en el depósito",
-    description: "Registre los materiales de construcción, alimentos o insumos de emergencia para controlar el inventario.",
+    description: "Cargá los materiales de construcción, alimentos o insumos de emergencia para controlar el inventario.",
     actionLabel: "Cargar Insumo",
     actionHref: "/admin/stock"
   },
   search: {
     title: "No se encontraron resultados",
-    description: "Intente buscar con otros términos, revise la ortografía o limpie los filtros aplicados.",
+    description: "Probá con otras palabras, revisá cómo está escrito o sacá los filtros.",
     actionLabel: "Limpiar Búsqueda",
   },
   calendar: {
@@ -121,7 +121,7 @@ export function EmptyState({
       <div className="flex flex-wrap items-center justify-center gap-3 relative z-10">
         {displayActionLabel && (
           displayActionHref ? (
-            <Button asChild className="rounded-2xl h-11 px-6 font-bold text-xs uppercase tracking-wider shadow-lg shadow-primary/20 bg-primary text-primary-foreground hover:scale-102 transition-transform">
+            <Button asChild className="rounded-2xl h-11 px-6 font-bold text-xs shadow-lg shadow-primary/20 bg-primary text-primary-foreground hover:scale-102 transition-transform">
               <Link href={displayActionHref}>
                 <Plus className="mr-2 h-4 w-4" /> {displayActionLabel}
               </Link>
@@ -129,7 +129,7 @@ export function EmptyState({
           ) : (
             <Button
               onClick={onActionClick}
-              className="rounded-2xl h-11 px-6 font-bold text-xs uppercase tracking-wider shadow-lg shadow-primary/20 bg-primary text-primary-foreground hover:scale-102 transition-transform"
+              className="rounded-2xl h-11 px-6 font-bold text-xs shadow-lg shadow-primary/20 bg-primary text-primary-foreground hover:scale-102 transition-transform"
             >
               <Plus className="mr-2 h-4 w-4" /> {displayActionLabel}
             </Button>

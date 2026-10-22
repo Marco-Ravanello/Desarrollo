@@ -89,7 +89,7 @@ export default function InterventionsAdminPage() {
         <Card className="rounded-2xl border-none shadow-xl overflow-hidden group hover:shadow-2xl transition-all">
           <CardHeader className="bg-emerald-500/5">
             <div className="bg-emerald-500/15 w-12 h-12 rounded-2xl flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
-                <Download className="text-emerald-600" />
+                <Download className="text-emerald-700 dark:text-emerald-400" />
             </div>
             <CardTitle>Exportar a Excel</CardTitle>
             <CardDescription>Obtenga el listado completo de intervenciones del sistema.</CardDescription>
@@ -112,7 +112,7 @@ export default function InterventionsAdminPage() {
                 <Upload className="text-blue-600" />
             </div>
             <CardTitle>Importar desde Excel</CardTitle>
-            <CardDescription>Cargue datos históricos desde sus planillas actuales.</CardDescription>
+            <CardDescription>Cargá datos históricos desde tus planillas.</CardDescription>
           </CardHeader>
           <CardContent className="pt-6 space-y-4">
             <div className="text-xs text-muted-foreground mb-2">
@@ -122,6 +122,7 @@ export default function InterventionsAdminPage() {
               <input
                 type="file"
                 accept=".xlsx, .xls"
+                aria-label="Elegir la planilla"
                 onChange={handleImport}
                 disabled={importing}
                 className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"

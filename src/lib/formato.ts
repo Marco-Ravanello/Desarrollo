@@ -31,3 +31,9 @@ function defaultPlural(word: string): string {
   if (/ón$/i.test(word)) return `${word.slice(0, -2)}ones`;
   return `${word}es`;
 }
+
+/** Valores guardados en mayúsculas ("MEDIA", "EN_PROCESO") como texto normal: "Media", "En proceso". */
+export function textoNormal(value: string | null | undefined): string {
+  const s = (value ?? "").replace(/_/g, " ").trim().toLowerCase();
+  return s ? s.charAt(0).toUpperCase() + s.slice(1) : "";
+}

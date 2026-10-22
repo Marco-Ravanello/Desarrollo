@@ -51,7 +51,7 @@ export function BudgetProgressWidget({
     text: "text-emerald-400",
     border: "border-emerald-500/20",
     bg: "bg-emerald-500/10",
-    badge: "bg-emerald-500/15 text-emerald-400 border-emerald-500/25",
+    badge: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-emerald-500/25",
     statusText: "Ejecución Presupuestaria Saludable",
     icon: CheckCircle2
   };
@@ -62,7 +62,7 @@ export function BudgetProgressWidget({
       text: "text-rose-400",
       border: "border-rose-500/20",
       bg: "bg-rose-500/10",
-      badge: "bg-rose-500/15 text-rose-400 border-rose-500/25",
+      badge: "bg-rose-500/15 text-rose-700 dark:text-rose-400 border-rose-500/25",
       statusText: "Límite Presupuestario Crítico",
       icon: AlertTriangle
     };
@@ -72,7 +72,7 @@ export function BudgetProgressWidget({
       text: "text-amber-400",
       border: "border-amber-500/20",
       bg: "bg-amber-500/10",
-      badge: "bg-amber-500/15 text-amber-400 border-amber-500/25",
+      badge: "bg-amber-500/15 text-amber-800 dark:text-amber-400 border-amber-500/25",
       statusText: "Ejecución Presupuestaria Moderada",
       icon: TrendingUp
     };
@@ -97,7 +97,7 @@ export function BudgetProgressWidget({
           </div>
           <div>
             <CardTitle className="text-base font-bold text-foreground flex items-center gap-2">
-              Termómetro Presupuestario Municipal 3F
+              Termómetro presupuestario municipal 3F
             </CardTitle>
             <CardDescription className="text-xs text-muted-foreground mt-0.5">
               Ejecución acumulada de fondos aprobados y balance por partidas operativas.
@@ -106,7 +106,7 @@ export function BudgetProgressWidget({
         </div>
 
         <div className="flex items-center gap-2">
-          <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full border text-xs font-bold uppercase tracking-wider ${colorStyle.badge}`}>
+          <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full border text-xs font-bold ${colorStyle.badge}`}>
             <StatusIcon className="h-4 w-4 shrink-0" />
             <span>{percentage}% Ejecutado</span>
           </div>
@@ -127,52 +127,52 @@ export function BudgetProgressWidget({
         {/* 4 Key Financial Metrics Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <div className="p-3.5 rounded-2xl bg-muted/20 border border-border/40">
-            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest block">
-              Total Ejecutado
+            <span className="text-xs font-bold text-muted-foreground block">
+              Total ejecutado
             </span>
             <span className="text-lg font-bold text-foreground tracking-tight font-mono">
               {formatCurrency(executedAmount)}
             </span>
-            <span className="text-[10px] text-emerald-400 font-semibold block mt-0.5">
+            <span className="text-xs text-emerald-700 dark:text-emerald-400 font-semibold block mt-0.5">
               {percentage}% del presupuesto
             </span>
           </div>
 
           <div className="p-3.5 rounded-2xl bg-muted/20 border border-border/40">
-            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest block">
-              Saldo Remanente
+            <span className="text-xs font-bold text-muted-foreground block">
+              Saldo remanente
             </span>
-            <span className="text-lg font-bold text-emerald-400 tracking-tight font-mono">
+            <span className="text-lg font-bold text-emerald-700 dark:text-emerald-400 tracking-tight font-mono">
               {formatCurrency(remainingBudget)}
             </span>
-            <span className="text-[10px] text-muted-foreground block mt-0.5">
+            <span className="text-xs text-muted-foreground block mt-0.5">
               Disponible global
             </span>
           </div>
 
           <div className="p-3.5 rounded-2xl bg-muted/20 border border-border/40">
-            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest block">
-              Presupuesto Anual
+            <span className="text-xs font-bold text-muted-foreground block">
+              Presupuesto anual
             </span>
             <span className="text-lg font-bold text-foreground tracking-tight font-mono">
               {formatCurrency(effectiveBudget)}
             </span>
-            <span className="text-[10px] text-muted-foreground block mt-0.5">
-              Votado por Ordenanza
+            <span className="text-xs text-muted-foreground block mt-0.5">
+              Votado por ordenanza
             </span>
           </div>
 
           <div className="p-3.5 rounded-2xl bg-muted/20 border border-border/40">
-            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest block">
-              Ritmo de Gasto
+            <span className="text-xs font-bold text-muted-foreground block">
+              Ritmo de gasto
             </span>
             <div className="flex items-center gap-1.5 mt-0.5">
               <span className="text-base font-bold text-foreground">{burnRateStatus}</span>
-              <Badge className="text-[9px] font-bold uppercase bg-primary/20 text-primary border-none px-1.5 py-0">
+              <Badge className="text-xs font-bold bg-primary/20 text-primary border-none px-1.5 py-0">
                 {expectedPercentage}% esp.
               </Badge>
             </div>
-            <span className="text-[10px] text-muted-foreground block mt-0.5">
+            <span className="text-xs text-muted-foreground block mt-0.5">
               Proyección al día {currentDayOfYear}
             </span>
           </div>
@@ -188,26 +188,26 @@ export function BudgetProgressWidget({
           </div>
 
           {/* Multi-stop Ticks (0%, 25%, 50%, 75%, 100%) */}
-          <div className="relative flex justify-between items-center text-[10px] font-mono font-bold text-muted-foreground px-0.5">
+          <div className="relative flex justify-between items-center text-xs font-mono font-bold text-muted-foreground px-0.5">
             <div className="flex flex-col items-start">
               <span>0%</span>
-              <span className="text-[9px] font-normal opacity-75">$0</span>
+              <span className="text-xs font-normal opacity-75">$0</span>
             </div>
             <div className="flex flex-col items-center">
               <span>25%</span>
-              <span className="text-[9px] font-normal opacity-75">{formatCurrency(effectiveBudget * 0.25)}</span>
+              <span className="text-xs font-normal opacity-75">{formatCurrency(effectiveBudget * 0.25)}</span>
             </div>
             <div className="flex flex-col items-center">
               <span>50%</span>
-              <span className="text-[9px] font-normal opacity-75">{formatCurrency(effectiveBudget * 0.50)}</span>
+              <span className="text-xs font-normal opacity-75">{formatCurrency(effectiveBudget * 0.50)}</span>
             </div>
             <div className="flex flex-col items-center">
               <span>75%</span>
-              <span className="text-[9px] font-normal opacity-75">{formatCurrency(effectiveBudget * 0.75)}</span>
+              <span className="text-xs font-normal opacity-75">{formatCurrency(effectiveBudget * 0.75)}</span>
             </div>
             <div className="flex flex-col items-end">
               <span>100%</span>
-              <span className="text-[9px] font-normal opacity-75">{formatCurrency(effectiveBudget)}</span>
+              <span className="text-xs font-normal opacity-75">{formatCurrency(effectiveBudget)}</span>
             </div>
           </div>
         </div>
@@ -218,14 +218,14 @@ export function BudgetProgressWidget({
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="flex items-center gap-2">
                 <Building2 className="h-4 w-4 text-primary" />
-                <h4 className="text-xs font-bold uppercase tracking-wider text-foreground">
-                  Ejecución por Dependencia Municipal
+                <h4 className="text-xs font-bold text-foreground">
+                  Ejecución por dependencia municipal
                 </h4>
               </div>
 
               <Link href="/admin/budget">
                 <Button size="sm" className="h-8 rounded-xl text-xs font-bold gap-1.5 bg-primary text-primary-foreground shadow-sm">
-                  Administración de Partidas <ArrowUpRight className="h-3.5 w-3.5" />
+                  Administración de partidas <ArrowUpRight className="h-3.5 w-3.5" />
                 </Button>
               </Link>
             </div>
@@ -241,7 +241,7 @@ export function BudgetProgressWidget({
                     <div key={a.name || idx} className="p-3.5 rounded-2xl bg-muted/30 border border-border/40 space-y-2">
                       <div className="flex items-center justify-between text-xs font-bold">
                         <span className="text-foreground truncate max-w-[200px]">{a.name}</span>
-                        <span className="font-mono text-emerald-400">{areaPercent}%</span>
+                        <span className="font-mono text-emerald-700 dark:text-emerald-400">{areaPercent}%</span>
                       </div>
 
                       <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
@@ -251,7 +251,7 @@ export function BudgetProgressWidget({
                         />
                       </div>
 
-                      <div className="flex justify-between items-center text-[10px] text-muted-foreground font-mono">
+                      <div className="flex justify-between items-center text-xs text-muted-foreground font-mono">
                         <span>Ejecutado: {formatCurrency(areaExecuted)}</span>
                         <span>Partida: {formatCurrency(areaAnnual)}</span>
                       </div>

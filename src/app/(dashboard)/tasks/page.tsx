@@ -56,7 +56,7 @@ export default async function TasksPage() {
       <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
         <Card className="col-span-2 lg:col-span-1 bg-card text-card-foreground border border-border/60 rounded-2xl p-4 sm:p-5 shadow-sm flex flex-col justify-between">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-muted-foreground sm:text-sm">Progreso General</span>
+            <span className="text-xs font-medium text-muted-foreground sm:text-sm">Progreso general</span>
             <span className="text-xs font-bold font-mono text-primary">{progressPercentage}%</span>
           </div>
           <div className="my-3">
@@ -68,11 +68,11 @@ export default async function TasksPage() {
         </Card>
 
         <StatCard
-          label="Tareas Pendientes"
+          label="Tareas pendientes"
           value={pendingTasks.length}
           hint={
             urgentOrOverdue.length > 0 ? (
-              <span className="font-bold text-amber-500 flex items-center gap-1">
+              <span className="font-bold text-amber-700 dark:text-amber-400 flex items-center gap-1">
                 <AlertTriangle className="h-3 w-3 shrink-0" />
                 {urgentOrOverdue.length} con prioridad o vencidas
               </span>
@@ -85,7 +85,7 @@ export default async function TasksPage() {
         />
 
         <StatCard
-          label="Tareas Realizadas"
+          label="Tareas realizadas"
           value={completedTasks}
           hint="Completadas exitosamente"
           icon={CheckCircle2}

@@ -26,7 +26,7 @@ export function QuickInterventionForm({ caseId, caseTitle }: QuickInterventionFo
       return;
     }
     if (!description.trim()) {
-      toast.error("Ingrese una descripción para la intervención");
+      toast.error("Escribí qué se hizo en la intervención");
       return;
     }
 
@@ -62,10 +62,10 @@ export function QuickInterventionForm({ caseId, caseTitle }: QuickInterventionFo
   return (
     <form onSubmit={handleSubmit} className="p-4 rounded-2xl bg-card border border-primary/30 shadow-md space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
       <div className="flex justify-between items-center">
-        <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-          Cargar Nota de Evolución en Expediente
+        <label className="text-xs font-bold text-muted-foreground">
+          Cargar nota de evolución en expediente
         </label>
-        <span className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
+        <span className="text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
           {caseTitle}
         </span>
       </div>
@@ -92,7 +92,7 @@ export function QuickInterventionForm({ caseId, caseTitle }: QuickInterventionFo
       <Textarea
         value={description}
         onChange={(e) => setDescription(e.target.value)}
-        placeholder="Escriba los detalles de la atención, informe social o derivación realiza..."
+        placeholder="Contá cómo fue la atención, el informe social o la derivación"
         rows={3}
         className="rounded-2xl bg-muted/40 border-border/60 font-medium text-sm focus:ring-1 focus:ring-primary"
       />

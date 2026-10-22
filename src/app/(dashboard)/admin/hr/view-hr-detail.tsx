@@ -48,22 +48,22 @@ export function ViewHRDetail({ agent }: { agent: any }) {
         </Avatar>
         <div>
           <h3 className="text-2xl font-bold text-foreground">{agent.firstName} {agent.lastName}</h3>
-          <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mt-0.5">
+          <p className="text-xs font-bold text-muted-foreground mt-0.5">
             DNI {agent.dni} • Legajo #{agent.fileNumber || 'S/L'}
           </p>
         </div>
 
         <div className="flex items-center gap-2">
           <Badge className={`rounded-full px-3.5 py-1 text-xs font-bold tracking-wider border-none ${
-            agent.status === 'ACTIVO' ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30' :
-            agent.status === 'LICENCIA' ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30' :
-            agent.status === 'VACACIONES' ? 'bg-blue-500/15 text-blue-400 border border-blue-500/30' :
-            'bg-rose-500/15 text-rose-400 border border-rose-500/30'
+            agent.status === 'ACTIVO' ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30' :
+            agent.status === 'LICENCIA' ? 'bg-amber-500/15 text-amber-800 dark:text-amber-400 border border-amber-500/30' :
+            agent.status === 'VACACIONES' ? 'bg-blue-500/15 text-blue-700 dark:text-blue-400 border border-blue-500/30' :
+            'bg-rose-500/15 text-rose-700 dark:text-rose-400 border border-rose-500/30'
           }`}>
             {agent.status || 'ACTIVO'}
           </Badge>
           {agent.statusUntil && (
-            <span className="text-[11px] font-semibold text-muted-foreground flex items-center gap-1">
+            <span className="text-xs font-semibold text-muted-foreground flex items-center gap-1">
               <Info className="h-3 w-3 text-amber-400" /> Hasta el {formatDate(agent.statusUntil)}
             </span>
           )}
@@ -114,21 +114,21 @@ export function ViewHRDetail({ agent }: { agent: any }) {
           <div className="grid gap-3 md:grid-cols-2">
             <div className="bg-card/50 rounded-2xl p-4 space-y-3 border border-border/50">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-blue-500/10 text-blue-400 rounded-xl">
+                <div className="p-2 bg-blue-500/10 text-blue-700 dark:text-blue-400 rounded-xl">
                   <Briefcase className="h-4 w-4" />
                 </div>
                 <div>
-                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Cargo y Área</p>
+                  <p className="text-xs font-bold text-muted-foreground">Cargo y área</p>
                   <p className="text-sm font-bold text-foreground">{agent.position || "Operativo"} en {agent.area?.name || "Sin Área"}</p>
                 </div>
               </div>
 
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-emerald-500/10 text-emerald-400 rounded-xl">
+                <div className="p-2 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 rounded-xl">
                   <Calendar className="h-4 w-4" />
                 </div>
                 <div>
-                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Fecha de Ingreso</p>
+                  <p className="text-xs font-bold text-muted-foreground">Fecha de ingreso</p>
                   <p className="text-sm font-bold text-foreground">{formatDate(agent.startDate)}</p>
                 </div>
               </div>
@@ -136,21 +136,21 @@ export function ViewHRDetail({ agent }: { agent: any }) {
 
             <div className="bg-card/50 rounded-2xl p-4 space-y-3 border border-border/50">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-amber-500/10 text-amber-400 rounded-xl">
+                <div className="p-2 bg-amber-500/10 text-amber-700 dark:text-amber-400 rounded-xl">
                   <Clock className="h-4 w-4" />
                 </div>
                 <div>
-                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Horario Cumplido</p>
+                  <p className="text-xs font-bold text-muted-foreground">Horario cumplido</p>
                   <p className="text-sm font-bold text-foreground">{agent.schedule || "Sin registrar"}</p>
                 </div>
               </div>
 
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-purple-500/10 text-purple-400 rounded-xl">
+                <div className="p-2 bg-purple-500/10 text-purple-700 dark:text-purple-400 rounded-xl">
                   <Hash className="h-4 w-4" />
                 </div>
                 <div>
-                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Categoría</p>
+                  <p className="text-xs font-bold text-muted-foreground">Categoría</p>
                   <p className="text-sm font-bold text-foreground">{agent.category ? `Categoría ${agent.category}` : 'Sin categoría asignada'}</p>
                 </div>
               </div>
@@ -160,25 +160,25 @@ export function ViewHRDetail({ agent }: { agent: any }) {
           <div className="bg-card/50 rounded-2xl p-4 space-y-3 border border-border/50">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-indigo-500/10 text-indigo-400 rounded-xl">
+                <div className="p-2 bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 rounded-xl">
                   <FileText className="h-4 w-4" />
                 </div>
                 <div>
-                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Tipo de Contrato</p>
-                  <p className="text-sm font-bold text-foreground uppercase">{agent.contractType?.replace('_', ' ') || 'MENSUALIZADO'}</p>
+                  <p className="text-xs font-bold text-muted-foreground">Tipo de contrato</p>
+                  <p className="text-sm font-bold text-foreground">{agent.contractType?.replace('_', ' ') || 'MENSUALIZADO'}</p>
                 </div>
               </div>
 
               <div className="text-right">
-                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Haber Mensual</p>
-                <p className="text-base font-bold text-emerald-400">{formatCurrency(agent.salary)}</p>
+                <p className="text-xs font-bold text-muted-foreground">Haber mensual</p>
+                <p className="text-base font-bold text-emerald-700 dark:text-emerald-400">{formatCurrency(agent.salary)}</p>
               </div>
             </div>
           </div>
 
           <div className="bg-card/50 rounded-2xl p-4 space-y-2 border border-border/50">
-            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-1.5">
-              <Sparkles className="h-3.5 w-3.5 text-primary" /> Funciones y Tareas del Puesto
+            <p className="text-xs font-bold text-muted-foreground flex items-center gap-1.5">
+              <Sparkles className="h-3.5 w-3.5 text-primary" /> Funciones y tareas del puesto
             </p>
             <p className="text-xs text-muted-foreground leading-relaxed italic">
               {legajoData.tasksText || "No se detallaron funciones específicas para este legajo."}
@@ -193,17 +193,17 @@ export function ViewHRDetail({ agent }: { agent: any }) {
             <div className="flex items-center gap-3">
               <ShieldCheck className="h-5 w-5 text-emerald-400" />
               <div>
-                <p className="text-xs font-bold text-foreground">Aptitud Física del Agente</p>
-                <p className="text-[10px] text-muted-foreground">Examen pre-ocupacional / periódico municipal</p>
+                <p className="text-xs font-bold text-foreground">Aptitud física del agente</p>
+                <p className="text-xs text-muted-foreground">Examen pre-ocupacional / periódico municipal</p>
               </div>
             </div>
-            <Badge className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] uppercase font-bold">
+            <Badge className="bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 text-xs font-bold">
               {agent.status === 'LICENCIA' ? 'En Licencia' : 'Apto'}
             </Badge>
           </div>
 
           <div className="p-4 rounded-2xl bg-card/40 border border-border/40 space-y-2">
-            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Detalle de Salud y Carpetas Médicas</p>
+            <p className="text-xs font-bold text-muted-foreground">Detalle de salud y carpetas médicas</p>
             <p className="text-xs text-muted-foreground leading-relaxed">
               {legajoData.healthNotes || (agent.status === 'LICENCIA'
                 ? `Agente en licencia médica ${agent.statusUntil ? `hasta el ${formatDate(agent.statusUntil)}` : ''}.`
@@ -219,17 +219,17 @@ export function ViewHRDetail({ agent }: { agent: any }) {
             <div className="flex items-center gap-3">
               <GraduationCap className="h-5 w-5 text-purple-400" />
               <div>
-                <p className="text-xs font-bold text-foreground">Nivel Académico y Formación</p>
-                <p className="text-[10px] text-muted-foreground">Documentación y certificaciones registradas</p>
+                <p className="text-xs font-bold text-foreground">Nivel académico y formación</p>
+                <p className="text-xs text-muted-foreground">Documentación y certificaciones registradas</p>
               </div>
             </div>
-            <Badge className="bg-purple-500/20 text-purple-400 border border-purple-500/30 text-[10px] uppercase font-bold">
+            <Badge className="bg-purple-500/20 text-purple-700 dark:text-purple-400 border border-purple-500/30 text-xs font-bold">
               {legajoData.education ? "Acreditado" : "Regular"}
             </Badge>
           </div>
 
           <div className="p-4 rounded-2xl bg-card/40 border border-border/40 space-y-2">
-            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Acreditaciones y Capacitaciones</p>
+            <p className="text-xs font-bold text-muted-foreground">Acreditaciones y capacitaciones</p>
             <p className="text-xs text-muted-foreground leading-relaxed">
               {legajoData.education || "Sin títulos o cursos específicos acreditados en el legajo."}
             </p>
@@ -243,17 +243,17 @@ export function ViewHRDetail({ agent }: { agent: any }) {
             <div className="flex items-center gap-3">
               <Car className="h-5 w-5 text-teal-400" />
               <div>
-                <p className="text-xs font-bold text-foreground">Habilitación de Conducción de Vehículos</p>
-                <p className="text-[10px] text-muted-foreground">Permiso para uso de unidades de la flota logística</p>
+                <p className="text-xs font-bold text-foreground">Habilitación de conducción de vehículos</p>
+                <p className="text-xs text-muted-foreground">Permiso para uso de unidades de la flota logística</p>
               </div>
             </div>
-            <Badge className="bg-teal-500/20 text-teal-400 border border-teal-500/30 text-[10px] uppercase font-bold">
+            <Badge className="bg-teal-500/20 text-teal-700 dark:text-teal-400 border border-teal-500/30 text-xs font-bold">
               {legajoData.drivingLicense ? "Habilitado" : "No asignado"}
             </Badge>
           </div>
 
           <div className="p-4 rounded-2xl bg-card/40 border border-border/40 space-y-2">
-            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Observaciones de Conducción</p>
+            <p className="text-xs font-bold text-muted-foreground">Observaciones de conducción</p>
             <p className="text-xs text-muted-foreground leading-relaxed">
               {legajoData.drivingLicense || "Sin registros de licencia de conducir o habilitación especial asignada."}
             </p>

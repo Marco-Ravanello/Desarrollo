@@ -241,14 +241,14 @@ function PersonCard({ person }: { person: MapPerson }) {
         </div>
         <div>
           <h3 className="font-bold text-sm leading-tight text-foreground">{person.nombre}</h3>
-          <Badge variant="outline" className="font-mono text-[10px] font-bold mt-0.5 border-border/60">
+          <Badge variant="outline" className="font-mono text-xs font-bold mt-0.5 border-border/60">
             DNI: {person.dni}
           </Badge>
         </div>
       </div>
 
       {person.aproximada && (
-        <p className="rounded-lg bg-amber-500/10 px-2 py-1 text-[10px] font-semibold text-amber-700 dark:text-amber-300">
+        <p className="rounded-lg bg-amber-500/10 px-2 py-1 text-xs font-semibold text-amber-700 dark:text-amber-300">
           Ubicación aproximada: la dirección cargada solo tiene el barrio.
         </p>
       )}
@@ -271,7 +271,7 @@ function PersonCard({ person }: { person: MapPerson }) {
       {person.programas.length > 0 && (
         <div className="pt-1.5 border-t border-border/30 flex flex-wrap gap-1">
           {person.programas.slice(0, 3).map((prog) => (
-            <Badge key={prog} variant="outline" className="text-[9px] border-primary/30 text-primary font-bold px-1.5 py-0 h-4">
+            <Badge key={prog} variant="outline" className="text-xs border-primary/30 text-primary font-bold px-1.5 py-0 h-4">
               {prog}
             </Badge>
           ))}
@@ -279,13 +279,13 @@ function PersonCard({ person }: { person: MapPerson }) {
       )}
 
       <div className="pt-2 grid grid-cols-2 gap-1.5">
-        <Button asChild variant="outline" size="sm" className="h-7 text-[10px] font-bold rounded-xl p-0">
+        <Button asChild variant="outline" size="sm" className="h-7 text-xs font-bold rounded-xl p-0">
           <Link href={`/people/${person.dni}`}>
             <ExternalLink className="h-3 w-3 mr-1 text-primary" />
             Expediente
           </Link>
         </Button>
-        <Button asChild variant="default" size="sm" className="h-7 text-[10px] font-bold rounded-xl p-0 !text-primary-foreground">
+        <Button asChild variant="default" size="sm" className="h-7 text-xs font-bold rounded-xl p-0 !text-primary-foreground">
           <Link href={`/ficha-social?dni=${person.dni}`}>
             <Network className="h-3 w-3 mr-1" />
             Ficha 360°
@@ -307,7 +307,7 @@ function CaseCard({ item }: { item: MapCaseItem }) {
         </div>
         <div className="min-w-0">
           <h3 className="font-bold text-sm leading-tight text-foreground">{item.title}</h3>
-          <p className="mt-0.5 text-[11px] text-muted-foreground">
+          <p className="mt-0.5 text-xs text-muted-foreground">
             {item.status} · {item.area}
           </p>
         </div>
@@ -318,7 +318,7 @@ function CaseCard({ item }: { item: MapCaseItem }) {
           {item.dni ? <span className="font-mono"> · DNI {item.dni}</span> : null}
         </p>
       )}
-      <Button asChild size="sm" className="h-7 w-full text-[10px] font-bold rounded-xl !text-primary-foreground">
+      <Button asChild size="sm" className="h-7 w-full text-xs font-bold rounded-xl !text-primary-foreground">
         <Link href={`/cases/${item.id}`}>
           <ExternalLink className="h-3 w-3 mr-1" /> Abrir expediente
         </Link>
@@ -336,7 +336,7 @@ function StormCard({ item }: { item: MapStormItem }) {
         </div>
         <div className="min-w-0">
           <h3 className="font-bold text-sm leading-tight text-foreground">{item.nombre}</h3>
-          <p className="mt-0.5 text-[11px] text-muted-foreground">
+          <p className="mt-0.5 text-xs text-muted-foreground">
             Ficha de emergencia del {shortDate(item.fecha)}
           </p>
         </div>
@@ -351,7 +351,7 @@ function StormCard({ item }: { item: MapStormItem }) {
         </p>
       </div>
       {item.dni && (
-        <Button asChild size="sm" className="h-7 w-full text-[10px] font-bold rounded-xl !text-primary-foreground">
+        <Button asChild size="sm" className="h-7 w-full text-xs font-bold rounded-xl !text-primary-foreground">
           <Link href={`/ficha-social?dni=${item.dni}`}>
             <Network className="h-3 w-3 mr-1" /> Ficha 360°
           </Link>
@@ -446,12 +446,12 @@ function SelectionContent({ selection }: { selection: Selection }) {
             {r.href ? (
               <Link href={r.href} className="block hover:underline">
                 <span className="text-xs font-semibold text-foreground">{r.title}</span>
-                <span className="block text-[10px] text-muted-foreground">{r.detail}</span>
+                <span className="block text-xs text-muted-foreground">{r.detail}</span>
               </Link>
             ) : (
               <>
                 <span className="text-xs font-semibold text-foreground">{r.title}</span>
-                <span className="block text-[10px] text-muted-foreground">{r.detail}</span>
+                <span className="block text-xs text-muted-foreground">{r.detail}</span>
               </>
             )}
           </li>
@@ -511,7 +511,7 @@ function LayerRow({
           {count ? <span className="font-mono text-muted-foreground"> · {count}</span> : null}
           {loading ? <Loader2 className="ml-1 inline h-3 w-3 animate-spin text-muted-foreground" /> : null}
         </span>
-        {hint ? <span className="block text-[10px] font-medium text-muted-foreground">{hint}</span> : null}
+        {hint ? <span className="block text-xs font-medium text-muted-foreground">{hint}</span> : null}
       </span>
     </label>
   );
@@ -707,7 +707,7 @@ export function MapView({
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <MapIcon className="h-4 w-4" />}
           </div>
           <div className="pr-1 min-w-0 flex-1">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground leading-none truncate">
+            <p className="text-xs font-bold text-muted-foreground leading-none truncate">
               {localityName}
             </p>
             <p className="text-xs font-bold text-foreground mt-0.5">
@@ -716,7 +716,7 @@ export function MapView({
                 : `${visibleCount.toLocaleString("es-AR")} puntos en el mapa`}
             </p>
             {!isHeat && visibleCount > 0 && (
-              <p className="text-[10px] text-muted-foreground mt-0.5 hidden sm:block">Tocá un círculo para acercarte</p>
+              <p className="text-xs text-muted-foreground mt-0.5 hidden sm:block">Tocá un círculo para acercarte</p>
             )}
           </div>
           <button
@@ -724,7 +724,7 @@ export function MapView({
             onClick={() => setPanelOpen((v) => !v)}
             aria-expanded={panelOpen}
             aria-controls="mapa-capas"
-            className="flex shrink-0 items-center gap-1 rounded-xl border border-border/60 px-2 py-1.5 text-[11px] font-bold text-foreground hover:bg-muted"
+            className="flex shrink-0 items-center gap-1 rounded-xl border border-border/60 px-2 py-1.5 text-xs font-bold text-foreground hover:bg-muted"
           >
             <Layers className="h-3.5 w-3.5 text-primary" /> Capas
             <ChevronDown className={`h-3 w-3 transition-transform ${panelOpen ? "rotate-180" : ""}`} />
@@ -734,7 +734,7 @@ export function MapView({
         {panelOpen && (
           <div
             id="mapa-capas"
-            className="bg-background/90 backdrop-blur-md px-3 py-2.5 rounded-2xl shadow-2xl border border-border/60 pointer-events-auto space-y-2 text-[11px] font-semibold text-foreground max-h-[420px] overflow-y-auto"
+            className="bg-background/90 backdrop-blur-md px-3 py-2.5 rounded-2xl shadow-2xl border border-border/60 pointer-events-auto space-y-2 text-xs font-semibold text-foreground max-h-[420px] overflow-y-auto"
           >
             <LayerRow
               checked={toggles.padron}
@@ -799,9 +799,9 @@ export function MapView({
               {...(toggles.storm && !isHeat ? layerCount(stormLayer?.points ?? null) : {})}
             />
             {isHeat ? (
-              <p className="text-[10px] font-medium text-muted-foreground">El mapa de calor muestra solo al padrón. Pasá a Puntos para ver las otras capas.</p>
+              <p className="text-xs font-medium text-muted-foreground">El mapa de calor muestra solo al padrón. Pasá a Puntos para ver las otras capas.</p>
             ) : (toggles.cases || toggles.storm) ? (
-              <p className="text-[10px] font-medium text-muted-foreground">Expedientes y fichas se ubican en la dirección de la persona.</p>
+              <p className="text-xs font-medium text-muted-foreground">Expedientes y fichas se ubican en la dirección de la persona.</p>
             ) : null}
           </div>
         )}
