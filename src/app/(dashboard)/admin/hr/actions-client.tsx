@@ -13,7 +13,7 @@ export function DeleteHRAction({ agentId }: { agentId: string }) {
 
   const handleAction = async (e: Event) => {
     e.preventDefault();
-    if (!confirm("¿Está seguro que desea dar de baja a este agente?")) return;
+    if (!confirm("¿Dar de baja a este agente?")) return;
 
     setLoading(true);
     const res = await deleteHRRecordAction(agentId);
@@ -32,7 +32,7 @@ export function DeleteHRAction({ agentId }: { agentId: string }) {
       onSelect={handleAction}
       disabled={loading}
     >
-      <UserMinus className="h-4 w-4" /> {loading ? "Procesando..." : "Dar de Baja"}
+      <UserMinus className="h-4 w-4" /> {loading ? "Procesando..." : "Dar de baja"}
     </DropdownMenuItem>
   );
 }

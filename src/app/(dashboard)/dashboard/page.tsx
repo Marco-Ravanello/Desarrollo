@@ -21,6 +21,7 @@ import { Button } from "@/components/ui/button";
 import { ExecutiveReportButton } from "../admin/reports/executive-report-button";
 import { TerritorialActivityWidget } from "@/components/dashboard/territorial-activity-widget";
 import Link from "next/link";
+import { formatVencimiento } from "@/lib/fechas";
 
 /**
  * Cada rol ve primero lo suyo:
@@ -109,7 +110,7 @@ export default async function DashboardPage({
     },
     activeCases: {
       href: casesQuery({ status: "ACTIVOS" }),
-      label: area ? "Casos activos del área" : "Casos activos",
+      label: area ? "Expedientes abiertos del área" : "Expedientes abiertos",
       value: stats.activeCases,
       icon: FileText,
       tone: "blue",
@@ -117,7 +118,7 @@ export default async function DashboardPage({
     },
     urgentCases: {
       href: casesQuery({ status: "ACTIVOS", priority: "URGENTE" }),
-      label: "Casos urgentes",
+      label: "Expedientes urgentes",
       value: stats.criticalCases,
       icon: stats.criticalCases > 0 ? AlertTriangle : ShieldCheck,
       tone: stats.criticalCases > 0 ? "red" : "green",
@@ -127,7 +128,7 @@ export default async function DashboardPage({
     },
     closedCases: {
       href: casesQuery({ status: "CERRADO" }),
-      label: "Casos resueltos",
+      label: "Expedientes cerrados",
       value: stats.closedCases,
       icon: Archive,
       tone: "slate",
@@ -290,7 +291,7 @@ function AttentionCard({ items, viewAllHref }: { items: DashboardStats["attentio
             kind="done"
             icon={ShieldCheck}
             title="Nada urgente por ahora"
-            description="No hay casos urgentes ni órdenes de compra esperando firma."
+            description="No hay expedientes urgentes ni órdenes de compra esperando firma."
             className="py-8"
           />
         )}
@@ -382,10 +383,10 @@ function BudgetCard({ stats, areaName }: { stats: DashboardStats; areaName?: str
 function RecentCasesCard({ cases, viewAllHref }: { cases: DashboardStats["recentCases"]; viewAllHref: string }) {
   return (
     <Card className="rounded-2xl border border-border/60 bg-card p-5 shadow-sm h-full">
-      <CardHeaderRow icon={Users} iconClass="text-blue-600 dark:text-blue-400" title="Casos recientes" href={viewAllHref} linkLabel="Ver todos" />
+      <CardHeaderRow icon={Users} iconClass="text-blue-600 dark:text-blue-400" title="Expedientes recientes" href={viewAllHref} linkLabel="Ver todos" />
       <div className="divide-y divide-border/20 mt-1">
         {cases.length === 0 && (
-          <p className="py-6 text-center text-xs text-muted-foreground">Todavía no hay casos cargados.</p>
+          <p className="py-6 text-center text-xs text-muted-foreground">Todavía no hay expedientes cargados.</p>
         )}
         {cases.map((c) => (
           <Link
@@ -494,7 +495,7 @@ function TasksCard({ tasks }: { tasks: { id: string; title: string; priority: st
                   {priority}
                 </span>
                 <span className="text-muted-foreground font-mono text-xs">
-                  {t.dueDate ? new Date(t.dueDate).toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit" }) : "S/D"}
+                  {t.dueDate ? formatVencimiento(t.dueDate) : "Sin fecha"}
                 </span>
               </div>
             </Link>

@@ -20,6 +20,7 @@ import { searchPeopleForEmergencyAction } from "@/app/(dashboard)/admin/actions/
 import { saveFichaOrQueue } from "@/lib/emergency-offline";
 import { MunicipalLetterhead } from "@/components/ui/municipal-letterhead";
 import { STORM_BARRIOS, matchStormBarrio } from "@/lib/storm-barrios";
+import { formatFechaHora } from "@/lib/fechas";
 
 interface StormFichaDialogProps {
   open: boolean;
@@ -166,7 +167,7 @@ export function StormFichaDialog({
     if (s.ninos) setNinos(s.ninos);
 
     setShowSuggestions(false);
-    toast.success("Datos del vecino autocompletados desde el padrón unificado");
+    toast.success("Datos de la persona completados desde el padrón");
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -177,7 +178,7 @@ export function StormFichaDialog({
     }
 
     setIsSubmitting(true);
-    const toastId = toast.loading("Guardando Ficha de Tormenta...");
+    const toastId = toast.loading("Guardando ficha de tormenta…");
 
     const payload: Partial<StormVictimItem> = {
       id: initialRecord?.id || undefined,
@@ -296,7 +297,7 @@ export function StormFichaDialog({
             <div>
               <Label className="text-xs text-muted-foreground font-bold">Fecha y hora</Label>
               <Input
-                value={new Date().toLocaleDateString("es-AR") + " " + new Date().toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" })}
+                value={formatFechaHora(new Date())}
                 readOnly
                 className="h-9 rounded-xl text-xs mt-1 bg-muted/50 font-mono"
               />
@@ -436,7 +437,7 @@ export function StormFichaDialog({
           <div className="space-y-4 pt-2 border-t border-border/40">
             <div className="flex justify-between items-center">
               <h4 className="text-xs font-bold text-muted-foreground flex items-center gap-2">
-                <ShieldAlert className="h-4 w-4 text-amber-500" /> Nivel de Emergencia Social & Prioridad
+                <ShieldAlert className="h-4 w-4 text-amber-500" /> Nivel de emergencia y prioridad
               </h4>
             </div>
 

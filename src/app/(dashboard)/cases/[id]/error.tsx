@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import { HelpdeskLine } from "@/components/layout/helpdesk-line";
 import { AlertTriangle, ArrowLeft, RefreshCw } from "lucide-react";
 import Link from "next/link";
 
@@ -26,7 +27,7 @@ export default function CaseDetailError({
           No se pudo cargar el expediente
         </h2>
         <p className="text-sm text-muted-foreground">
-          Ocurrió un problema temporal al recuperar la información del expediente o los datos del ciudadano.
+          Puede ser un problema momentáneo de conexión. Probá de nuevo en unos segundos.
         </p>
         {error.digest && (
           <p className="text-xs font-mono text-muted-foreground pt-1">
@@ -34,6 +35,7 @@ export default function CaseDetailError({
           </p>
         )}
       </div>
+      <HelpdeskLine />
       <div className="flex gap-3 pt-2">
         <Button
           variant="outline"

@@ -32,10 +32,10 @@ export function UniversalExportMenu({
   data,
   columns,
   filename = "exportacion_municipal",
-  title = "Reporte de Datos Municipales",
+  title = "Reporte de datos",
   subtitle = "SISTEMA INTEGRADO DE GESTIÓN MUNICIPAL",
   orientation = "portrait",
-  label = "Exportar Planilla",
+  label = "Exportar planilla",
   loadData,
   pdfMaxRows
 }: UniversalExportMenuProps) {
@@ -118,7 +118,7 @@ export function UniversalExportMenu({
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56 rounded-2xl bg-card border-border/60 shadow-xl p-1">
         <DropdownMenuLabel className="text-xs font-bold text-muted-foreground px-2 py-1.5">
-          Opciones de Exportación
+          Bajar como
         </DropdownMenuLabel>
         <DropdownMenuSeparator className="bg-border/40" />
         <DropdownMenuItem
@@ -133,7 +133,7 @@ export function UniversalExportMenu({
           className="rounded-xl text-xs font-bold gap-2 cursor-pointer focus:bg-muted"
         >
           <FileText className="h-4 w-4 text-rose-600 dark:text-rose-400" />
-          Reporte Oficial (.pdf)
+          PDF (.pdf)
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

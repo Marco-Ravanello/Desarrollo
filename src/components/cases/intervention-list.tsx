@@ -10,12 +10,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { INTERVENTION_TYPES, interventionTypeLabel } from "@/lib/intervention-types";
 import { editCaseInterventionAction } from "@/app/(dashboard)/cases/actions/case-actions";
 import type { InterventionRow } from "@/services/interventions";
+import { formatFecha, formatHora } from "@/lib/fechas";
 
 export const fechaHora = (iso: string) => {
   const d = new Date(iso);
   return {
-    fecha: d.toLocaleDateString("es-AR"),
-    hora: d.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" }),
+    fecha: formatFecha(d),
+    hora: formatHora(d),
   };
 };
 

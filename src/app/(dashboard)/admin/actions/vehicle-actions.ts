@@ -11,6 +11,8 @@ import { conflictMessage, findBlockingReservation, lockVehicle } from "@/service
 
 const parseLocalDate = (dateStr: string) => {
   if (!dateStr) return new Date();
+  // Un día suelto (la fecha de una carga de combustible): mediodía en Argentina.
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return new Date(`${dateStr}T12:00:00-03:00`);
   if (dateStr.includes("Z") || dateStr.includes("+") || (dateStr.includes("-") && dateStr.length > 19)) {
     return new Date(dateStr);
   }

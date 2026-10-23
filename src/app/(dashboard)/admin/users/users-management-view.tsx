@@ -29,6 +29,7 @@ import { toggleUserStatusAction } from "../actions/user-actions";
 import { toast } from "sonner";
 import { Role } from "@prisma/client";
 import { ROLE_INFO, ROLE_ORDER, roleLabel } from "@/lib/roles";
+import { UNUSED_ACCOUNT_DAYS, type LastLoginInfo } from "@/lib/user-activity";
 
 interface AreaItem {
   id: string;
@@ -44,6 +45,7 @@ interface UserItem {
   areaId: string | null;
   isActive?: boolean;
   area?: AreaItem | null;
+  lastLogin?: LastLoginInfo;
 }
 
 interface UsersManagementViewProps {
@@ -65,7 +67,7 @@ export function UsersManagementView({
   const [isCreateOpen, setIsCreateOpen] = useState(Boolean(autoOpenNew));
   const [searchQuery, setSearchQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState<string>("TODOS");
-  const [statusFilter, setStatusFilter] = useState<"TODOS" | "ACTIVOS" | "INACTIVOS">("TODOS");
+  const [statusFilter, setStatusFilter] = useState<"TODOS" | "ACTIVOS" | "INACTIVOS" | "SIN_USO">("TODOS");
 
   const [editingUser, setEditingUser] = useState<(UserItem & { isActive: boolean }) | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -98,6 +100,7 @@ export function UsersManagementView({
   const filteredUsers = usersWithStatus.filter((u) => {
     if (statusFilter === "ACTIVOS" && !u.isActive) return false;
     if (statusFilter === "INACTIVOS" && u.isActive) return false;
+    if (statusFilter === "SIN_USO" && !(u.isActive && u.lastLogin?.unused)) return false;
 
     if (roleFilter !== "TODOS" && u.role !== roleFilter) return false;
 
@@ -116,6 +119,8 @@ export function UsersManagementView({
   const totalUsers = users.length;
   const activeCount = usersWithStatus.filter((u) => u.isActive).length;
   const inactiveCount = totalUsers - activeCount;
+  // Cuentas activas que nadie usa hace tiempo: conviene revisar si hay que suspenderlas.
+  const unusedCount = usersWithStatus.filter((u) => u.isActive && u.lastLogin?.unused).length;
   const managementCount = users.filter((u) => u.role === "SUPERADMIN" || u.role === "DIRECCION_GENERAL" || u.role === "ADMIN_GENERAL").length;
   // Solo los roles que hay cargados, en orden de más acceso a menos.
   const rolesInUse = ROLE_ORDER.filter((r) => users.some((u) => u.role === r));
@@ -126,7 +131,8 @@ export function UsersManagementView({
     { header: "Correo", accessorKey: "email" },
     { header: "Rol", accessorKey: "role" },
     { header: "Área", accessorKey: "areaName" },
-    { header: "Estado", accessorKey: "status" }
+    { header: "Estado", accessorKey: "status" },
+    { header: "Último ingreso", accessorKey: "lastLogin" }
   ];
 
   const exportData = filteredUsers.map((u) => ({
@@ -135,7 +141,8 @@ export function UsersManagementView({
     email: u.email || "",
     role: roleLabel(u.role),
     areaName: u.area?.name || "Sin área",
-    status: u.isActive ? "Activa" : "Suspendida"
+    status: u.isActive ? "Activa" : "Suspendida",
+    lastLogin: u.lastLogin?.title ?? ""
   }));
 
   const renderRoleBadge = (role: Role) => (
@@ -210,7 +217,7 @@ export function UsersManagementView({
 
       <Card className="bg-card text-card-foreground border border-border/60 shadow-xs rounded-2xl overflow-hidden">
         <div className="p-4 sm:p-5 border-b border-border/40 bg-muted/20 flex flex-col xl:flex-row xl:items-center justify-between gap-4">
-          <div className="flex items-center gap-1.5 bg-muted/40 p-1 rounded-2xl border border-border/40 shrink-0">
+          <div className="flex flex-wrap items-center gap-1.5 bg-muted/40 p-1 rounded-2xl border border-border/40 shrink-0">
             <button
               type="button"
               onClick={() => setStatusFilter("TODOS")}
@@ -243,6 +250,18 @@ export function UsersManagementView({
               }`}
             >
               Suspendidos ({inactiveCount})
+            </button>
+            <button
+              type="button"
+              onClick={() => setStatusFilter("SIN_USO")}
+              title={`Cuentas activas que no entran hace ${UNUSED_ACCOUNT_DAYS} días o más`}
+              className={`text-xs px-3.5 py-2 sm:py-1.5 rounded-xl font-bold transition-all ${
+                statusFilter === "SIN_USO"
+                  ? "bg-card text-foreground shadow-xs border border-border/40"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Sin entrar hace {UNUSED_ACCOUNT_DAYS} días ({unusedCount})
             </button>
           </div>
 
@@ -289,7 +308,7 @@ export function UsersManagementView({
                 <th className="px-5 py-3.5 min-w-[240px]">Persona</th>
                 <th className="px-4 py-3.5">Rol</th>
                 <th className="px-4 py-3.5">Área</th>
-                <th className="px-4 py-3.5">Estado</th>
+                <th className="px-4 py-3.5">Estado y último ingreso</th>
                 <th className="px-4 py-3.5 text-right">Acciones</th>
               </tr>
             </thead>
@@ -345,6 +364,14 @@ export function UsersManagementView({
                         >
                           {u.isActive ? "Activa" : "Suspendida"}
                         </button>
+                        {u.lastLogin && (
+                          <p
+                            title={u.lastLogin.title}
+                            className={`mt-1 whitespace-nowrap text-xs ${u.isActive && u.lastLogin.unused ? "font-bold text-amber-700 dark:text-amber-400" : "text-muted-foreground"}`}
+                          >
+                            {u.lastLogin.days === null ? u.lastLogin.label : `Entró: ${u.lastLogin.label.toLowerCase()}`}
+                          </p>
+                        )}
                       </td>
                       <td className="px-4 py-3.5 text-right">
                         <div className="flex items-center justify-end gap-1 whitespace-nowrap">

@@ -11,6 +11,7 @@ import { AlertTriangle, Save, Package, Download } from "lucide-react";
 import { EmptyMessage } from "@/components/ui/empty-message";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
+import { formatFechaHora } from "@/lib/fechas";
 
 export function StockList({ supplies }: { supplies: any[] }) {
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -32,9 +33,9 @@ export function StockList({ supplies }: { supplies: any[] }) {
 
   const exportPDF = () => {
     const doc = new jsPDF() as any;
-    doc.text("Reporte de Inventario - Municipio", 14, 15);
+    doc.text("Inventario de insumos", 14, 15);
     doc.setFontSize(10);
-    doc.text(`Generado el: ${new Date().toLocaleString("es-AR")}`, 14, 22);
+    doc.text(`Generado el ${formatFechaHora(new Date())} hs`, 14, 22);
 
     const tableData = supplies.map(s => [
       s.name,

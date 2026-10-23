@@ -3,6 +3,7 @@
 import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
 import { PERMISSIONS, hasPermission } from "@/lib/permissions";
+import { formatFecha, formatFechaHora } from "@/lib/fechas";
 
 export async function getWeeklyExecutiveData() {
   const session = await auth();
@@ -39,12 +40,12 @@ export async function getWeeklyExecutiveData() {
     .reduce((acc, p) => acc + Number(p.amount), 0);
 
   return {
-    period: `${oneWeekAgo.toLocaleDateString()} - ${now.toLocaleDateString()}`,
+    period: `${formatFecha(oneWeekAgo)} al ${formatFecha(now)}`,
     newCases,
     newInterventions,
     totalSpent,
     pendingAmount,
     criticalCases,
-    timestamp: new Date().toLocaleString("es-AR")
+    timestamp: `${formatFechaHora(new Date())} hs`
   };
 }

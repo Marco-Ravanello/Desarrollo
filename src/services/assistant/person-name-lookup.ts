@@ -95,7 +95,7 @@ export async function lookupPersonByName(query: string): Promise<AIResponse | nu
   }
 
   let answer = `### Personas encontradas en el Padrón Social Unificado\n\n`;
-  answer += `Hay **${result.total} personas** cuyo nombre coincide con la búsqueda. Indique el DNI para ver la ficha completa:\n\n`;
+  answer += `Hay **${result.total} personas** cuyo nombre coincide con la búsqueda. Decime el DNI para ver la ficha completa:\n\n`;
   answer += `| Ciudadano | DNI | Barrio / Localidad | Programas |\n| :--- | :---: | :--- | :---: |\n`;
   result.matches.forEach((p) => {
     answer += `| **${p.nombre_completo}** | ${p.dni} | ${p.barrio || p.localidad || "Sin dato"} | ${p.cantidad_programas || 0} |\n`;

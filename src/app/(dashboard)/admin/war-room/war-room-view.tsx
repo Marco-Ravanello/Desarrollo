@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { MunicipalCrest } from "@/components/ui/municipal-crest";
 import { plural } from "@/lib/formato";
+import { TZ_AR, formatFechaLarga } from "@/lib/fechas";
 
 interface WarRoomViewProps {
   initialData: {
@@ -20,7 +21,8 @@ interface WarRoomViewProps {
     resolvedToday: number;
     activeVehicles: number;
     totalVehicles: number;
-    emergencyStockPercent: number;
+    suppliesBelowMin: number;
+    suppliesTotal: number;
     committedBudgetFormatted: string;
     territorialAlerts: Array<{
       id: string;
@@ -52,10 +54,10 @@ export function WarRoomView({ initialData }: WarRoomViewProps) {
     const updateTime = () => {
       const now = new Date();
       setCurrentTime(
-        now.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit", second: "2-digit" })
+        now.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23", timeZone: TZ_AR })
       );
       setCurrentDate(
-        now.toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long", year: "numeric" })
+        (() => { const t = formatFechaLarga(now); return t.charAt(0).toUpperCase() + t.slice(1); })()
       );
     };
     updateTime();
@@ -133,7 +135,7 @@ export function WarRoomView({ initialData }: WarRoomViewProps) {
               <div className="text-lg font-bold font-mono tracking-widest text-foreground leading-none">
                 {currentTime || "12:00:00"}
               </div>
-              <div className="text-xs text-muted-foreground font-semibold capitalize mt-0.5">
+              <div className="text-xs text-muted-foreground font-semibold mt-0.5">
                 {currentDate || "Cargando fecha..."}
               </div>
             </div>
@@ -174,7 +176,7 @@ export function WarRoomView({ initialData }: WarRoomViewProps) {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         <Card className="rounded-2xl border-border/60 bg-card text-card-foreground shadow-sm hover:shadow-md transition-all p-5 relative overflow-hidden">
           <div className="flex justify-between items-start mb-2">
-            <span className="text-xs font-bold text-muted-foreground">Vecinos registrados</span>
+            <span className="text-xs font-bold text-muted-foreground">Personas en el padrón</span>
             <div className="p-2 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-xl">
               <Users className="h-4 w-4" />
             </div>
@@ -183,12 +185,12 @@ export function WarRoomView({ initialData }: WarRoomViewProps) {
             {initialData.totalCitizens.toLocaleString("es-AR")}
           </div>
           <div className="flex items-center gap-1.5 text-xs text-emerald-700 dark:text-emerald-400 mt-2 font-bold">
-            <TrendingUp className="h-3 w-3" /> Datos reales en sistema
+            <TrendingUp className="h-3 w-3" /> Registro Único
           </div>
         </Card>
         <Card className="rounded-2xl border-border/60 bg-card text-card-foreground shadow-sm hover:shadow-md transition-all p-5 relative overflow-hidden">
           <div className="flex justify-between items-start mb-2">
-            <span className="text-xs font-bold text-muted-foreground">Casos críticos</span>
+            <span className="text-xs font-bold text-muted-foreground">Expedientes urgentes</span>
             <div className="p-2 bg-rose-500/10 text-rose-700 dark:text-rose-400 rounded-xl">
               <ShieldAlert className="h-4 w-4" />
             </div>
@@ -216,16 +218,16 @@ export function WarRoomView({ initialData }: WarRoomViewProps) {
         </Card>
         <Card className="rounded-2xl border-border/60 bg-card text-card-foreground shadow-sm hover:shadow-md transition-all p-5 relative overflow-hidden">
           <div className="flex justify-between items-start mb-2">
-            <span className="text-xs font-bold text-muted-foreground">Nivel de stock</span>
+            <span className="text-xs font-bold text-muted-foreground">Insumos bajo el mínimo</span>
             <div className="p-2 bg-purple-500/10 text-purple-600 dark:text-purple-400 rounded-xl">
               <Package className="h-4 w-4" />
             </div>
           </div>
-          <div className="text-3xl sm:text-4xl font-bold font-mono tracking-tight text-purple-600 dark:text-purple-400">
-            {initialData.emergencyStockPercent} %
+          <div className={`text-3xl sm:text-4xl font-bold font-mono tracking-tight ${initialData.suppliesBelowMin > 0 ? "text-amber-700 dark:text-amber-400" : "text-foreground"}`}>
+            {initialData.suppliesBelowMin}
           </div>
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-2 font-semibold">
-            Insumos en depósitos
+            {initialData.suppliesTotal > 0 ? `De ${plural(initialData.suppliesTotal, "insumo cargado", "insumos cargados")}` : "Sin insumos cargados"}
           </div>
         </Card>
         <Card className="rounded-2xl border-border/60 bg-card text-card-foreground shadow-sm hover:shadow-md transition-all p-5 relative overflow-hidden">
@@ -250,7 +252,7 @@ export function WarRoomView({ initialData }: WarRoomViewProps) {
             <div className="flex items-center gap-2.5">
               <Radio className="h-5 w-5 text-rose-500 animate-pulse" />
               <h2 className="text-lg font-bold tracking-tight text-foreground">
-                Casos y alertas en vivo
+                Últimos expedientes
               </h2>
             </div>
             <Badge variant="outline" className="border-border/60 text-muted-foreground text-xs font-bold">
@@ -281,7 +283,7 @@ export function WarRoomView({ initialData }: WarRoomViewProps) {
               ))
             ) : (
               <div className="p-8 text-center text-muted-foreground font-medium">
-                No hay expedientes o casos registrados en la base de datos actualmente.
+                Todavía no hay expedientes cargados.
               </div>
             )}
           </div>

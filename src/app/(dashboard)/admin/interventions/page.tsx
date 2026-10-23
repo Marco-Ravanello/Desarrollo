@@ -101,7 +101,7 @@ export default function InterventionsAdminPage() {
               className="w-full rounded-xl"
             >
               {exporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileSpreadsheet className="mr-2 h-4 w-4" />}
-              Descargar Planilla
+              Bajar planilla modelo
             </Button>
           </CardContent>
         </Card>
@@ -116,7 +116,7 @@ export default function InterventionsAdminPage() {
           </CardHeader>
           <CardContent className="pt-6 space-y-4">
             <div className="text-xs text-muted-foreground mb-2">
-              <strong>Columnas:</strong> DNI, Area, Caso, Descripcion y Fecha (dd/mm/aaaa). Nombre y Apellido solo hacen falta si la persona no está en el Registro Único ni en el padrón. Las filas incompletas no se cargan y se listan abajo con el motivo.
+              <strong>Columnas:</strong> DNI, Area, Caso, Descripcion y Fecha (dd/mm/aaaa). Nombre y apellido solo hacen falta si la persona no está en el Registro Único ni en el padrón. Las filas incompletas no se cargan y se listan abajo con el motivo.
             </div>
             <div className="relative">
               <input
@@ -133,7 +133,7 @@ export default function InterventionsAdminPage() {
                 className="w-full border-blue-500/30 text-blue-600 hover:bg-blue-500/10 rounded-xl"
               >
                 {importing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
-                Seleccionar Archivo
+                Elegir archivo
               </Button>
             </div>
           </CardContent>

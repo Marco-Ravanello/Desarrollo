@@ -15,7 +15,7 @@ export async function createAgreementAction(formData: FormData) {
 
   const role = session.user.role;
   if (role !== "SUPERADMIN" && role !== "ADMIN_GENERAL" && role !== "DIRECCION_GENERAL") {
-    return { success: false, error: "No tiene permisos para registrar convenios" };
+    return { success: false, error: "No tenés permiso para cargar convenios." };
   }
 
   const title = formData.get("title") as string;

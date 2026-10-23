@@ -35,17 +35,15 @@ import { plural } from "@/lib/formato";
 import { getCaseStatusConfig } from "@/lib/status-styles";
 import { isSensitiveArea } from "@/lib/sensitive-areas";
 import { canEditSocialRecords, hasPermission, PERMISSIONS } from "@/lib/permissions";
+import { formatFecha, formatFechaHora } from "@/lib/fechas";
 
 export const metadata = { title: "Persona" };
 
 const TABS = ["datos", "programas", "expedientes", "familia", "historia", "documentos"] as const;
 type Tab = (typeof TABS)[number];
 
-const fecha = (d: Date | string) => new Date(d).toLocaleDateString("es-AR");
-const fechaHora = (d: Date | string) =>
-  new Date(d).toLocaleString("es-AR", {
-    timeZone: "America/Argentina/Buenos_Aires", day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit", hourCycle: "h23",
-  });
+const fecha = formatFecha;
+const fechaHora = formatFechaHora;
 
 function Dato({ icon: Icon, label, children }: { icon: React.ElementType; label: string; children: React.ReactNode }) {
   return (

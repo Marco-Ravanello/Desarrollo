@@ -81,9 +81,9 @@ export default function CrucesSocialesPage() {
   };
 
   const exportColumns = [
-    { header: "Nombre y Apellido", accessorKey: "nombre" },
+    { header: "Nombre y apellido", accessorKey: "nombre" },
     { header: "DNI", accessorKey: "dni" },
-    { header: "Programas Activos", accessorKey: "programasStr" },
+    { header: "Programas activos", accessorKey: "programasStr" },
     { header: "Barrio / Localidad", accessorKey: "barrio" },
     { header: "Teléfono", accessorKey: "telefono" }
   ];
@@ -278,7 +278,7 @@ export default function CrucesSocialesPage() {
           <table className="w-full text-xs text-left">
             <thead className="bg-muted/40 text-muted-foreground font-bold border-b border-border/40">
               <tr>
-                <th className="px-5 py-3">Ciudadano</th>
+                <th className="px-5 py-3">Persona</th>
                 <th className="px-4 py-3">DNI</th>
                 <th className="px-4 py-3">Programas activos</th>
                 <th className="px-4 py-3">Barrio / localidad</th>

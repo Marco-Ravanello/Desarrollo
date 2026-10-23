@@ -53,7 +53,7 @@ export function ReserveVehicleForm({ vehicleId, vehicles }: { vehicleId: string,
     }
 
     if (conflictReservation) {
-      toast.error("Existe un conflicto de horario con una reserva existente. Por favor elija otra franja horaria.");
+      toast.error("Ese horario choca con otra reserva. Elegí otro horario u otro vehículo.");
       return;
     }
 
@@ -156,7 +156,7 @@ export function ReserveVehicleForm({ vehicleId, vehicles }: { vehicleId: string,
                   <div className="p-2.5 rounded-xl bg-rose-500/15 font-mono text-xs font-bold">
                     📅 {formatRange(conflictReservation.startDate, conflictReservation.endDate)} ({reservationStatusLabel(conflictReservation.status).toLowerCase()})
                   </div>
-                  <p className="text-xs italic">Por favor, modifique la fecha/hora o elija otro vehículo para continuar.</p>
+                  <p className="text-xs italic">Cambiá la fecha u hora, o elegí otro vehículo.</p>
                 </div>
               )}
 
@@ -176,7 +176,7 @@ export function ReserveVehicleForm({ vehicleId, vehicles }: { vehicleId: string,
               <div className="bg-primary/10 border border-primary/20 rounded-2xl p-4 flex gap-3 items-start text-xs text-foreground">
                  <Info className="h-5 w-5 text-primary shrink-0 mt-0.5" />
                  <div className="leading-relaxed">
-                   <strong>Nota de Logística:</strong> El envío de este formulario genera una solicitud. Recibirá una notificación una vez que sea aprobada por el área de administración de flota.
+                   <strong>Nota de logística:</strong> El envío de este formulario genera una solicitud. Recibirá una notificación una vez que sea aprobada por el área de administración de flota.
                  </div>
               </div>
 
@@ -189,7 +189,7 @@ export function ReserveVehicleForm({ vehicleId, vehicles }: { vehicleId: string,
                   disabled={loading || Boolean(conflictReservation)}
                   className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl shadow-md font-bold text-xs h-11"
                 >
-                  {loading ? "Enviando Solicitud..." : "Enviar Solicitud de Reserva"}
+                  {loading ? "Enviando pedido…" : "Pedir reserva"}
                 </Button>
               </div>
             </form>
@@ -241,7 +241,7 @@ export function ReserveVehicleForm({ vehicleId, vehicles }: { vehicleId: string,
                         <div className="flex items-center justify-between">
                           <span className="font-bold text-xs flex items-center gap-1">
                             <Clock className="h-3 w-3" />
-                            {isOngoing ? "En Curso" : isApproved ? "Aprobada" : "Pendiente"}
+                            {isOngoing ? "En uso" : isApproved ? "Aprobada" : "Pendiente"}
                           </span>
                           <Badge variant="secondary" className="text-xs font-bold">
                             {reservationStatusLabel(r.status)}
@@ -255,7 +255,7 @@ export function ReserveVehicleForm({ vehicleId, vehicles }: { vehicleId: string,
 
                         <div className="pt-2 border-t border-border/20 flex items-center gap-1.5 text-xs font-medium opacity-90">
                           <User className="h-3 w-3 shrink-0" />
-                          <span className="truncate">Reservado por: <b>{r.user?.name || "Agente Municipal"}</b></span>
+                          <span className="truncate">Reservado por: <b>{r.user?.name || "Agente municipal"}</b></span>
                         </div>
                       </div>
                     );

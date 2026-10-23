@@ -20,6 +20,7 @@ import {
   reschedulePurchaseOrderAction,
   createSharedTaskAction
 } from "@/app/(dashboard)/admin/actions/calendar-actions";
+import { formatFechaHora, formatHora } from "@/lib/fechas";
 
 interface UnifiedCalendarProps {
   reservations: any[];
@@ -123,7 +124,7 @@ export function UnifiedCalendar({ reservations = [], purchaseOrders = [], tasks 
           allEvents.push({
             id: t.id,
             type: "task",
-            title: `Tarea: ${t.title || "Sin Título"}`,
+            title: `Tarea: ${t.title || "Sin título"}`,
             startDate: new Date(t.dueDate),
             endDate: new Date(t.dueDate),
             color: "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-l-4 border-l-amber-500 border-border/40 hover:bg-amber-500/20",
@@ -277,7 +278,7 @@ export function UnifiedCalendar({ reservations = [], purchaseOrders = [], tasks 
   };
 
   const formatTime = (date: Date) => {
-    return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    return formatHora(date);
   };
 
   // Mini Calendar Calculations
@@ -484,7 +485,7 @@ export function UnifiedCalendar({ reservations = [], purchaseOrders = [], tasks 
                 {view === "month" && `${monthNames[currentDate.getMonth()]} ${currentDate.getFullYear()}`}
                 {view === "week" && `Semana del ${weekDays[0].getDate()} de ${monthNames[weekDays[0].getMonth()].toLowerCase()}`}
                 {view === "day" && `${currentDate.toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long" })}`}
-                {view === "agenda" && `Agenda General Operativa`}
+                {view === "agenda" && `Agenda general`}
               </h3>
             </div>
 
@@ -899,11 +900,11 @@ export function UnifiedCalendar({ reservations = [], purchaseOrders = [], tasks 
                 <>
                   <div className="flex items-center gap-2.5 text-sm font-semibold text-foreground">
                     <Clock className="h-4 w-4 text-blue-500" />
-                    <span>Período: <span className="text-muted-foreground font-medium">{selectedEvent.startDate.toLocaleString("es-AR")} al {selectedEvent.endDate.toLocaleString("es-AR")}</span></span>
+                    <span>Período: <span className="text-muted-foreground font-medium">{formatFechaHora(selectedEvent.startDate)} al {formatFechaHora(selectedEvent.endDate)}</span></span>
                   </div>
                   <div className="flex items-center gap-2.5 text-sm font-semibold text-foreground">
                     <User className="h-4 w-4 text-blue-500" />
-                    <span>Responsable: <span className="text-muted-foreground font-medium">{selectedEvent.raw?.user?.name || "Agente Municipal"}</span></span>
+                    <span>Responsable: <span className="text-muted-foreground font-medium">{selectedEvent.raw?.user?.name || "Agente municipal"}</span></span>
                   </div>
                   <div className="flex items-center gap-2.5 text-sm font-semibold text-foreground">
                     <Briefcase className="h-4 w-4 text-blue-500" />
@@ -921,7 +922,7 @@ export function UnifiedCalendar({ reservations = [], purchaseOrders = [], tasks 
                 <>
                   <div className="flex items-center gap-2.5 text-sm font-semibold text-foreground">
                     <Clock className="h-4 w-4 text-emerald-500" />
-                    <span>Entrega Pactada: <span className="text-muted-foreground font-medium">{selectedEvent.startDate.toLocaleString("es-AR")}</span></span>
+                    <span>Entrega pactada: <span className="text-muted-foreground font-medium">{formatFechaHora(selectedEvent.startDate)}</span></span>
                   </div>
                   <div className="flex items-center gap-2.5 text-sm font-semibold text-foreground">
                     <User className="h-4 w-4 text-emerald-500" />
@@ -944,7 +945,7 @@ export function UnifiedCalendar({ reservations = [], purchaseOrders = [], tasks 
                 <>
                   <div className="flex items-center gap-2.5 text-sm font-semibold text-foreground">
                     <Clock className="h-4 w-4 text-amber-500" />
-                    <span>Vencimiento: <span className="text-muted-foreground font-medium">{selectedEvent.startDate.toLocaleString("es-AR")}</span></span>
+                    <span>Vencimiento: <span className="text-muted-foreground font-medium">{formatFechaHora(selectedEvent.startDate)}</span></span>
                   </div>
                   {selectedEvent.raw?.description && (
                     <div className="pt-2 border-t border-border/20 text-xs text-muted-foreground italic font-medium">
@@ -979,7 +980,7 @@ export function UnifiedCalendar({ reservations = [], purchaseOrders = [], tasks 
 
                   <div className="space-y-2">
                     <Label className="text-xs font-bold text-muted-foreground">
-                      {selectedEvent.type === "reservation" ? "Hora Inicio" : "Hora"}
+                      {selectedEvent.type === "reservation" ? "Hora de inicio" : "Hora"}
                     </Label>
                     <Input
                       type="time"
@@ -1016,7 +1017,7 @@ export function UnifiedCalendar({ reservations = [], purchaseOrders = [], tasks 
                     disabled={isRescheduling}
                     className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl gap-2 font-bold text-xs shadow-md"
                   >
-                    {isRescheduling ? "Guardando..." : "Guardar Cambios"}
+                    {isRescheduling ? "Guardando..." : "Guardar cambios"}
                   </Button>
                 </div>
               </div>
@@ -1054,7 +1055,7 @@ export function UnifiedCalendar({ reservations = [], purchaseOrders = [], tasks 
 
             <div className="space-y-1">
               <h3 className="text-2xl font-bold text-foreground tracking-tight">Nueva tarea compartida</h3>
-              <p className="text-sm text-muted-foreground font-medium">Cree tareas administrativas y elija qué agentes municipales pueden visualizarlas.</p>
+              <p className="text-sm text-muted-foreground font-medium">Creá tareas y elegí quién más las puede ver.</p>
             </div>
 
             <form onSubmit={handleAddTask} className="space-y-5">
@@ -1147,7 +1148,7 @@ export function UnifiedCalendar({ reservations = [], purchaseOrders = [], tasks 
                   disabled={isSaving}
                   className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl gap-2 font-bold text-xs shadow-md"
                 >
-                  {isSaving ? "Creando..." : "Crear y Compartir"}
+                  {isSaving ? "Creando..." : "Crear y compartir"}
                 </Button>
               </div>
             </form>

@@ -7,6 +7,7 @@ import { Plus, FileText, Calendar, Building2, User, Landmark } from "lucide-reac
 import { PageHeader } from "@/components/layout/page-header";
 import { EmptyMessage } from "@/components/ui/empty-message";
 import Link from "next/link";
+import { formatFecha, formatFechaCalendario } from "@/lib/fechas";
 
 export const metadata = { title: "Convenios" };
 
@@ -65,7 +66,7 @@ export default async function AgreementsPage({ searchParams }: { searchParams: P
                       </div>
                       {agreement.endDate && (
                         <div className="flex items-center gap-1 text-rose-600 font-medium">
-                          <Calendar className="h-3 w-3" /> Vence: {new Date(agreement.endDate).toLocaleDateString()}
+                          <Calendar className="h-3 w-3" /> Vence: {formatFechaCalendario(agreement.endDate)}
                         </div>
                       )}
                     </div>
@@ -77,7 +78,7 @@ export default async function AgreementsPage({ searchParams }: { searchParams: P
                       </div>
                     )}
                     <p className="text-xs text-muted-foreground mt-1">
-                      Registrado el {new Date(agreement.createdAt).toLocaleDateString()}
+                      Registrado el {formatFecha(agreement.createdAt)}
                     </p>
                   </div>
                 </div>

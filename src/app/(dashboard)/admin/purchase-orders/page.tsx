@@ -150,7 +150,7 @@ export default async function PurchaseOrdersPage({
           type="orders"
           title={status || query ? "No se encontraron órdenes de compra" : undefined}
           description={status || query ? "Probá con otras palabras o sacá algún filtro." : undefined}
-          actionLabel={status || query ? "Limpiar Filtros" : "Crear Primera Orden"}
+          actionLabel={status || query ? "Quitar filtros" : "Crear la primera orden"}
           actionHref={status || query ? "/admin/purchase-orders" : "/admin/purchase-orders/new"}
         />
       )}

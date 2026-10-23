@@ -1,6 +1,7 @@
 export const dynamic = "force-dynamic";
 
-import { getUsers } from "@/services/system";
+import { getLastLogins, getUsers } from "@/services/system";
+import { lastLoginInfo } from "@/lib/user-activity";
 import { getAreas } from "@/services/cases";
 import { UsersManagementView } from "./users-management-view";
 import { auth } from "@/auth";
@@ -33,9 +34,10 @@ export default async function UsersPage({
   const isSuperadmin = canCreateUsersAndResetPasswords(userRole);
   const autoOpenNew = isSuperadmin && Boolean(isNew === "true" || isNew === "1" || create === "true" || create === "1");
 
-  const [usersRaw, areas] = await Promise.all([
+  const [usersRaw, areas, logins] = await Promise.all([
     getUsers(),
     getAreas(),
+    getLastLogins(),
   ]);
 
   const sanitizedUsers = (usersRaw || []).map((u: any) => ({
@@ -47,6 +49,7 @@ export default async function UsersPage({
     areaId: u.areaId,
     area: u.area ? { id: u.area.id, name: u.area.name } : null,
     isActive: u.isActive !== undefined && u.isActive !== null ? Boolean(u.isActive) : true,
+    lastLogin: lastLoginInfo(logins.byUser.get(u.id) ?? null, u.createdAt, logins.since),
   }));
 
   return (

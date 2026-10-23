@@ -13,6 +13,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { EmptyMessage } from "@/components/ui/empty-message";
 import { ProviderFormDialog } from "../provider-form-dialog";
 import { DeleteProviderButton } from "../delete-provider-button";
+import { formatFecha } from "@/lib/fechas";
 
 const money = (n: number) => `$ ${n.toLocaleString("es-AR", { maximumFractionDigits: 0 })}`;
 
@@ -104,7 +105,7 @@ export default async function ProviderDetailPage({ params }: { params: Promise<{
                         <TableCell className="font-medium">
                           <Link href={`/admin/purchase-orders/${o.id}`} className="hover:underline text-primary">{o.number}</Link>
                         </TableCell>
-                        <TableCell className="text-xs">{new Date(o.createdAt).toLocaleDateString("es-AR")}</TableCell>
+                        <TableCell className="text-xs">{formatFecha(o.createdAt)}</TableCell>
                         <TableCell className="hidden md:table-cell text-xs text-muted-foreground">{o.area?.name || "Sin área"}</TableCell>
                         <TableCell>
                           <span className={`inline-block px-2 py-0.5 rounded-full text-xs border ${status.badgeClass}`}>{status.label}</span>

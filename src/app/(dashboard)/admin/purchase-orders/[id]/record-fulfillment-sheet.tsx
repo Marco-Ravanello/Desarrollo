@@ -145,7 +145,7 @@ export function RecordFulfillmentSheet({
               <Button type="button" variant="outline" className="w-full">Cancelar</Button>
             </SheetClose>
             <Button type="submit" disabled={loading || parseFloat(newFulfillment) <= 0 || parseFloat(newFulfillment) > remaining} className="w-full">
-              {loading ? "Guardando..." : "Confirmar Entrega"}
+              {loading ? "Guardando..." : "Confirmar entrega"}
             </Button>
           </SheetFooter>
         </form>

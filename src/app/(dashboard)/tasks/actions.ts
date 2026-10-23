@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import prisma from "@/lib/prisma";
 import { actionErrorMessage } from "@/lib/action-error";
+import { followUpDueDate } from "@/lib/follow-up-dates";
 
 type TaskActionResult = { success: true } | { success: false; error: string };
 
@@ -26,7 +27,8 @@ export async function addTaskAction(
   }
 
   try {
-    const parsedDueDate = dueDate ? new Date(dueDate) : null;
+    // Un día suelto ("AAAA-MM-DD") queda a las 9 de la mañana de Argentina, como los seguimientos.
+    const parsedDueDate = dueDate ? (/^\d{4}-\d{2}-\d{2}$/.test(dueDate) ? followUpDueDate(dueDate) : new Date(dueDate)) : null;
 
     await createTask(
       session.user.id,

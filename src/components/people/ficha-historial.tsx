@@ -7,8 +7,9 @@ import { Button } from "@/components/ui/button";
 import { EmptyMessage } from "@/components/ui/empty-message";
 import { CloudRain, FolderOpen, MessageSquareText, PackageCheck, ArrowRight, MapPin } from "lucide-react";
 import type { FichaHistorial } from "@/services/ficha-social";
+import { formatFecha } from "@/lib/fechas";
 
-const fecha = (iso: string) => new Date(iso).toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", year: "numeric" });
+const fecha = formatFecha;
 
 const ESTADO: Record<string, { label: string; className: string }> = {
   ABIERTO: { label: "Abierto", className: "bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/30" },
@@ -172,7 +173,7 @@ export function FichaHistorialView({ historial, withCases = true }: { historial:
       {withCases && historial.personaId && (
         <Button variant="outline" asChild className="rounded-xl text-xs font-bold">
           <Link href={`/people/${historial.personaId}`}>
-            Abrir legajo completo en el Registro Único <ArrowRight className="h-3.5 w-3.5" />
+            Ver la ficha completa <ArrowRight className="h-3.5 w-3.5" />
           </Link>
         </Button>
       )}

@@ -50,7 +50,7 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
   }
 
   const areaName = caseData.area?.name || "Dirección General de Desarrollo Humano y Hábitat";
-  const titleStr = caseData.title || "Expediente Social";
+  const titleStr = caseData.title || "Expediente";
   const shownTitle = splitCaseTitle(titleStr);
 
   // Validar permiso para casos sensibles (Violencia de Género)
@@ -68,7 +68,7 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
         <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
           <ShieldAlert className="h-16 w-16 text-rose-700 dark:text-rose-400 animate-pulse" />
           <h2 className="text-2xl font-bold text-foreground">Acceso restringido</h2>
-          <p className="text-muted-foreground max-w-md">No tiene los permisos necesarios para visualizar la información de este caso debido a su naturaleza sensible.</p>
+          <p className="text-muted-foreground max-w-md">Tu rol no puede ver este expediente porque tiene datos sensibles.</p>
           <Button asChild variant="outline">
             <Link href="/people">Volver al registro</Link>
           </Button>
@@ -217,7 +217,7 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
           <div className="grid gap-6 md:grid-cols-3">
             <Card className="md:col-span-2 rounded-2xl border border-border/60 shadow-sm bg-card">
               <CardHeader>
-                <CardTitle className="text-lg font-bold text-foreground">Descripción del caso</CardTitle>
+                <CardTitle className="text-lg font-bold text-foreground">Descripción</CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-foreground whitespace-pre-wrap leading-relaxed">{caseData.description || "Sin descripción adicional."}</p>
@@ -307,7 +307,7 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
             {person && (
               <p className="text-xs text-muted-foreground">
                 Los documentos se adjuntan desde el{" "}
-                <Link href={`/people/${person.dni || person.id}`} className="font-semibold text-primary hover:underline">legajo de la persona</Link>.
+                <Link href={`/people/${person.dni || person.id}`} className="font-semibold text-primary hover:underline">ficha de la persona</Link>.
               </p>
             )}
           </Card>

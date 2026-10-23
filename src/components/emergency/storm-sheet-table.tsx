@@ -162,7 +162,7 @@ export function StormSheetTable({
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("¿Está seguro de eliminar esta fila del relevamiento?")) return;
+    if (!confirm("¿Borrar esta fila del relevamiento?")) return;
     const toastId = toast.loading("Eliminando registro...");
     const res = await deleteStormVictimAction(id);
     if (res.success) {

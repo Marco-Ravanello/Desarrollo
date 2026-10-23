@@ -49,7 +49,7 @@ export async function createUserAction(formData: FormData): Promise<ActionResult
   const areaId = formData.get("areaId") as string;
 
   if (!canAssignRole(session.user.role, role)) {
-    return { success: false, error: "No tiene permisos para asignar ese rol" };
+    return { success: false, error: "No tenés permiso para asignar ese rol." };
   }
   const userProblem = usernameProblem(username);
   if (userProblem) return { success: false, error: userProblem };
@@ -118,7 +118,7 @@ export interface UpdateUserInput {
 export async function updateUserAction(input: UpdateUserInput): Promise<ActionResult<User>> {
   const session = await auth();
   if (!session?.user || !canManageUsers(session.user.role)) {
-    return { success: false, error: "No tiene permisos para modificar usuarios" };
+    return { success: false, error: "No tenés permiso para modificar usuarios." };
   }
 
   try {
@@ -131,7 +131,7 @@ export async function updateUserAction(input: UpdateUserInput): Promise<ActionRe
     }
 
     if (!canModifyUser(session.user.role, existing.role) || !canAssignRole(session.user.role, input.role)) {
-      return { success: false, error: "No tiene permisos para asignar ese rol o modificar este usuario" };
+      return { success: false, error: "No tenés permiso para asignar ese rol o modificar este usuario." };
     }
     if (input.password && !canCreateUsersAndResetPasswords(session.user.role)) {
       return { success: false, error: "Solo el Superadmin puede cambiar contraseñas desde acá. La tuya la cambiás en “Cambiar mi contraseña”." };
@@ -211,7 +211,7 @@ export async function toggleUserStatusAction(userId: string) {
   }
 
   if (session.user.id === userId) {
-    return { success: false, error: "No puede desactivar su propia cuenta activa de administrador" };
+    return { success: false, error: "No podés suspender tu propia cuenta." };
   }
 
   try {
@@ -225,7 +225,7 @@ export async function toggleUserStatusAction(userId: string) {
     }
 
     if (!canModifyUser(session.user.role, existingUser.role)) {
-      return { success: false, error: "No tiene permisos para modificar este usuario" };
+      return { success: false, error: "No tenés permiso para modificar este usuario." };
     }
 
     const newStatus = existingUser.isActive === false ? true : false;

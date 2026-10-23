@@ -199,7 +199,7 @@ export function CreatePurchaseOrderForm({ providers, areas = [] }: { providers: 
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="amount">Importe Total ($)</Label>
+              <Label htmlFor="amount">Importe total ($)</Label>
               <Input
                 id="amount"
                 name="amount"
@@ -373,7 +373,7 @@ export function CreatePurchaseOrderForm({ providers, areas = [] }: { providers: 
               Cancelar
             </Button>
             <Button type="submit" disabled={loading}>
-              {loading ? "Registrando..." : "Crear Orden"}
+              {loading ? "Registrando..." : "Crear orden"}
             </Button>
           </div>
         </form>

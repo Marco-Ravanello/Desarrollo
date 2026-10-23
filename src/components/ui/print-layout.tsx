@@ -4,6 +4,8 @@ import React, { useState, useEffect } from "react";
 import { MunicipalCrest } from "./municipal-crest";
 import { Button } from "@/components/ui/button";
 import { Printer } from "lucide-react";
+import { formatFechaHora } from "@/lib/fechas";
+import { useMunicipalSettings } from "@/components/providers/municipal-settings";
 
 export function PrintHeader({
   documentTitle,
@@ -14,38 +16,10 @@ export function PrintHeader({
   documentSubtitle?: string;
   referenceNumber?: string;
 }) {
+  const settings = useMunicipalSettings();
+  // La hora de emisión se pone en el navegador, al abrir la pantalla.
   const [currentDate, setCurrentDate] = useState("");
-  const [settings, setSettings] = useState({
-    municipalityName: "Municipalidad de Tres de Febrero",
-    provinceName: "Provincia de Buenos Aires • República Argentina",
-    secretariatName: "Secretaría de Desarrollo Humano y Hábitat",
-    directionName: "Dirección General de Gestión Social y Hábitat"
-  });
-
-  useEffect(() => {
-    try {
-      const now = new Date();
-      setCurrentDate(
-        `${now.toLocaleDateString("es-AR")} ${now.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" })}`
-      );
-    } catch (e) {
-      setCurrentDate(new Date().toISOString().slice(0, 10));
-    }
-
-    const loadLocal = () => {
-      const saved = localStorage.getItem("muni-system-settings");
-      if (saved) {
-        try {
-          const parsed = JSON.parse(saved);
-          setSettings((prev) => ({ ...prev, ...parsed }));
-        } catch (e) {}
-      }
-    };
-
-    loadLocal();
-    window.addEventListener("muni-settings-updated", loadLocal);
-    return () => window.removeEventListener("muni-settings-updated", loadLocal);
-  }, []);
+  useEffect(() => setCurrentDate(formatFechaHora(new Date())), []);
 
   return (
     <div className="hidden print:flex flex-col w-full border-b-2 border-slate-900 pb-4 mb-6 text-slate-900">
@@ -92,7 +66,7 @@ export function PrintHeader({
             )}
           </div>
           <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
-            Ficha de Validez Institucional
+            Documento municipal
           </span>
         </div>
       )}
@@ -101,26 +75,7 @@ export function PrintHeader({
 }
 
 export function PrintFooter() {
-  const [settings, setSettings] = useState({
-    municipalityName: "Municipalidad de Tres de Febrero",
-    directionName: "Dirección General de Gestión Social y Hábitat"
-  });
-
-  useEffect(() => {
-    const loadLocal = () => {
-      const saved = localStorage.getItem("muni-system-settings");
-      if (saved) {
-        try {
-          const parsed = JSON.parse(saved);
-          setSettings((prev) => ({ ...prev, ...parsed }));
-        } catch (e) {}
-      }
-    };
-
-    loadLocal();
-    window.addEventListener("muni-settings-updated", loadLocal);
-    return () => window.removeEventListener("muni-settings-updated", loadLocal);
-  }, []);
+  const settings = useMunicipalSettings();
 
   return (
     // print-default-footer: una página con sus propias firmas (por ejemplo, una constancia) puede ocultarlo.
@@ -128,18 +83,18 @@ export function PrintFooter() {
       <div className="grid grid-cols-2 gap-12 pt-8 pb-4">
         <div className="text-center space-y-1">
           <div className="border-t border-slate-400 w-48 mx-auto mb-1" />
-          <p className="text-xs font-bold uppercase text-slate-900">Firma y Sello del Agente</p>
+          <p className="text-xs font-bold uppercase text-slate-900">Firma y sello del agente</p>
           <p className="text-[10px] text-slate-500">{settings.directionName}</p>
         </div>
         <div className="text-center space-y-1">
           <div className="border-t border-slate-400 w-48 mx-auto mb-1" />
-          <p className="text-xs font-bold uppercase text-slate-900">Firma del Titular / Receptor</p>
-          <p className="text-[10px] text-slate-500">Conformidad de Trámite / Notificación</p>
+          <p className="text-xs font-bold uppercase text-slate-900">Firma de quien recibe</p>
+          <p className="text-[10px] text-slate-500">Conformidad del trámite</p>
         </div>
       </div>
 
       <div className="flex justify-between items-center text-[9px] text-slate-500 pt-3 border-t border-slate-200 mt-4">
-        <span>{settings.municipalityName} • Plataforma MuniGestión • Documento emitido bajo secreto fiscal y protección de datos (Ley 25.326).</span>
+        <span>{settings.municipalityName} • Plataforma MuniGestión • Contiene datos personales protegidos por la Ley 25.326.</span>
         <span className="font-mono font-bold">Página 1 de 1</span>
       </div>
     </div>
@@ -148,7 +103,7 @@ export function PrintFooter() {
 
 export function PrintButton({
   className = "",
-  label = "Imprimir Documento Oficial"
+  label = "Imprimir"
 }: {
   className?: string;
   label?: string;

@@ -31,49 +31,49 @@ const iconsMap = {
 
 const defaultTexts: Record<string, { title: string; description: string; actionLabel: string; actionHref?: string }> = {
   people: {
-    title: "No hay ciudadanos o familias registradas",
-    description: "Comience creando el primer legajo digital o importe datos masivos desde una planilla Excel.",
-    actionLabel: "Nueva Persona",
+    title: "Todavía no hay personas cargadas",
+    description: "Cargá la primera persona o importá el padrón desde una planilla de Excel.",
+    actionLabel: "Nueva persona",
     actionHref: "/people/new"
   },
   orders: {
     title: "No hay órdenes de compra registradas",
     description: "Las órdenes generadas para contrataciones y adquisiciones de insumos aparecerán detalladas aquí.",
-    actionLabel: "Nueva Orden de Compra",
+    actionLabel: "Nueva orden de compra",
     actionHref: "/admin/purchase-orders/new"
   },
   vehicles: {
     title: "No hay vehículos en la flota actualmente",
     description: "Cargá camionetas, combis o móviles municipales para controlar services, combustible y asignaciones.",
-    actionLabel: "Registrar Vehículo",
+    actionLabel: "Cargar vehículo",
     actionHref: "/admin/vehicles/new"
   },
   tasks: {
     title: "¡Todo al día! No hay tareas pendientes",
     description: "No tienes asignaciones territoriales ni trámites pendientes de resolución en este momento.",
-    actionLabel: "Crear Nueva Tarea",
+    actionLabel: "Nueva tarea",
     actionHref: "/tasks"
   },
   stock: {
     title: "Sin insumos en el depósito",
     description: "Cargá los materiales de construcción, alimentos o insumos de emergencia para controlar el inventario.",
-    actionLabel: "Cargar Insumo",
+    actionLabel: "Cargar insumo",
     actionHref: "/admin/stock"
   },
   search: {
     title: "No se encontraron resultados",
     description: "Probá con otras palabras, revisá cómo está escrito o sacá los filtros.",
-    actionLabel: "Limpiar Búsqueda",
+    actionLabel: "Limpiar búsqueda",
   },
   calendar: {
     title: "No hay eventos programados",
     description: "Planifique operativos territoriales, reuniones de gabinete o audiencias públicas en la agenda.",
-    actionLabel: "Agendar Evento",
+    actionLabel: "Agendar evento",
   },
   default: {
     title: "No hay registros disponibles",
     description: "Aún no se ha cargado información en esta sección del sistema.",
-    actionLabel: "Crear Registro",
+    actionLabel: "Crear registro",
   }
 };
 

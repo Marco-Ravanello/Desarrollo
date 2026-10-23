@@ -19,7 +19,7 @@ export function CreateCaseForm({ personId, areas }: { personId: string, areas: a
 
     const res = await createCaseAction(formData);
     if (res.success) {
-      toast.success("Caso creado exitosamente");
+      toast.success("Expediente creado");
       setOpen(false);
     } else {
       toast.error(res.error);
@@ -40,7 +40,7 @@ export function CreateCaseForm({ personId, areas }: { personId: string, areas: a
       <input type="hidden" name="personId" value={personId} />
 
       <div className="space-y-2">
-        <Label htmlFor="title">Título del caso</Label>
+        <Label htmlFor="title">Carátula</Label>
         <Input id="title" name="title" placeholder="Ej: Solicitud de materiales" required />
       </div>
 
@@ -71,7 +71,7 @@ export function CreateCaseForm({ personId, areas }: { personId: string, areas: a
 
       <div className="flex gap-2 justify-end">
         <Button type="button" variant="ghost" onClick={() => setOpen(false)}>Cancelar</Button>
-        <Button type="submit" disabled={loading}>{loading ? "Creando..." : "Guardar Caso"}</Button>
+        <Button type="submit" disabled={loading}>{loading ? "Creando…" : "Crear expediente"}</Button>
       </div>
     </form>
   );

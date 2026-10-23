@@ -11,7 +11,7 @@ export async function queryAssistantAction(
   const session = await auth();
 
   if (!session || !session.user) {
-    throw new Error("No autorizado. Debe iniciar sesión.");
+    throw new Error("Tu sesión expiró. Volvé a iniciar sesión.");
   }
   if (!canUseAiAssistant(session.user.role)) {
     return { intent: "error", answer: "Tu rol no tiene acceso al Asistente de IA." };

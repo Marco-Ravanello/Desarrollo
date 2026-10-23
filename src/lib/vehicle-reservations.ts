@@ -1,5 +1,6 @@
 import type { ReservationStatus, Role } from "@prisma/client";
 import { FLEET_ADMIN_ROLES } from "@/lib/permissions";
+import { formatFecha, formatFechaHora, formatHora } from "@/lib/fechas";
 
 // Reservas de vehículos: nombres de los estados, fechas en hora argentina y quién puede hacer qué.
 
@@ -24,22 +25,13 @@ export function rangesOverlap(aStart: Date, aEnd: Date, bStart: Date, bEnd: Date
   return aStart < bEnd && bStart < aEnd;
 }
 
-const TZ = "America/Argentina/Buenos_Aires";
-const dia = new Intl.DateTimeFormat("es-AR", { timeZone: TZ, day: "2-digit", month: "2-digit", year: "numeric" });
-const hora = new Intl.DateTimeFormat("es-AR", { timeZone: TZ, hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
-
-/** "27/10/2026 12:00", en hora argentina. */
-export function formatFechaHora(d: Date | string): string {
-  const x = new Date(d);
-  return `${dia.format(x)} ${hora.format(x)}`;
-}
+// formatFechaHora vive en lib/fechas; se sigue exportando desde acá porque lo usan las pantallas de vehículos.
+export { formatFechaHora };
 
 /** "27/10/2026 de 10:00 a 12:00", o con las dos fechas si termina otro día. Siempre en hora argentina. */
 export function formatReservationRange(start: Date | string, end: Date | string): string {
-  const s = new Date(start);
-  const e = new Date(end);
-  if (dia.format(s) === dia.format(e)) return `${dia.format(s)} de ${hora.format(s)} a ${hora.format(e)}`;
-  return `${dia.format(s)} ${hora.format(s)} al ${dia.format(e)} ${hora.format(e)}`;
+  if (formatFecha(start) === formatFecha(end)) return `${formatFecha(start)} de ${formatHora(start)} a ${formatHora(end)}`;
+  return `${formatFechaHora(start)} al ${formatFechaHora(end)}`;
 }
 
 export function isFleetAdmin(role?: Role | string | null): boolean {

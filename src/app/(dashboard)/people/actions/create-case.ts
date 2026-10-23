@@ -23,7 +23,7 @@ export async function createCaseAction(formData: FormData) {
 
   try {
     const person = await ensurePersonInPrisma(personId);
-    if (!person) return { error: "No se encontró el ciudadano para asociar el caso" };
+    if (!person) return { error: "No se encontró a la persona para abrirle el expediente." };
 
     const newCase = await createCase({
       personId: person.id,
@@ -38,7 +38,7 @@ export async function createCaseAction(formData: FormData) {
         action: 'CREATE_CASE',
         entity: 'Case',
         entityId: newCase.id,
-        details: `Nuevo caso: ${title}`
+        details: `Nuevo expediente: ${title}`
       }
     });
 
@@ -47,8 +47,8 @@ export async function createCaseAction(formData: FormData) {
     for (const admin of admins) {
       await createNotification(
         admin.id,
-        "Nuevo Caso Abierto",
-        `Se ha registrado un nuevo caso: "${title}"`,
+        "Nuevo expediente",
+        `Se abrió el expediente "${title}".`,
         `/people/${person.id}`
       );
     }
@@ -58,6 +58,6 @@ export async function createCaseAction(formData: FormData) {
     return { success: true };
   } catch (error) {
     console.error(error);
-    return { error: actionErrorMessage(error, "No se pudo crear el caso") };
+    return { error: actionErrorMessage(error, "No se pudo crear el expediente") };
   }
 }

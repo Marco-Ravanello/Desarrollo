@@ -1,12 +1,29 @@
 export const dynamic = "force-dynamic";
 
-import { getSystemSettingsAction } from "@/app/(dashboard)/admin/actions/settings-actions";
-import { DEFAULT_MUNICIPAL_SETTINGS } from "@/types/settings";
-import { MunicipalSettingsClient } from "./settings-client-form";
+import { getMunicipalSettings } from "@/services/municipal-settings";
+import { MunicipalSettingsClient, type SystemStatus } from "./settings-client-form";
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
+import prisma from "@/lib/prisma";
+import { INACTIVITY_LIMIT_MS } from "@/lib/inactivity";
+import { isBlobStorageEnabled } from "@/lib/file-storage";
 
 export const metadata = { title: "Configuración" };
+
+/** Lo que de verdad está andando, en vez de carteles fijos. */
+async function getSystemStatus(): Promise<SystemStatus> {
+  let database = false;
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    database = true;
+  } catch {}
+  return {
+    database,
+    assistant: Boolean(process.env.GEMINI_API_KEY),
+    fileStorage: isBlobStorageEnabled(),
+    inactivityMinutes: Math.round(INACTIVITY_LIMIT_MS / 60000),
+  };
+}
 
 export default async function MunicipalSettingsPage() {
   const session = await auth();
@@ -17,8 +34,6 @@ export default async function MunicipalSettingsPage() {
     redirect("/dashboard");
   }
 
-  const res = await getSystemSettingsAction();
-  const settings = res.success && res.settings ? res.settings : DEFAULT_MUNICIPAL_SETTINGS;
-
-  return <MunicipalSettingsClient initialSettings={settings} />;
+  const [settings, status] = await Promise.all([getMunicipalSettings(), getSystemStatus()]);
+  return <MunicipalSettingsClient initialSettings={settings} status={status} canEdit={role !== "DIRECCION_GENERAL"} />;
 }

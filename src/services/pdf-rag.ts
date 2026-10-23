@@ -1,5 +1,6 @@
 import prisma from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
+import { formatFecha } from "@/lib/fechas";
 
 export interface PDFDocumentContent {
   documentId: string;
@@ -77,7 +78,7 @@ export async function searchPDFDocumentsForRAG(
       name: doc.name,
       url: doc.url,
       extractedText: `Documento: ${doc.name}\nRelacionado con: ${personName || caseTitle || "General"}\n` +
-        `Fecha de Carga: ${new Date(doc.createdAt).toLocaleDateString("es-AR")}\n` +
+        `Fecha de Carga: ${formatFecha(doc.createdAt)}\n` +
         `Estado: Documento oficialmente registrado en el legajo municipal.`,
       personName,
       caseTitle

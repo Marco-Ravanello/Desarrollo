@@ -15,7 +15,7 @@ export const authConfig = {
 
       if (nextUrl.pathname.startsWith("/api/")) {
         if (!isLoggedIn) {
-          return Response.json({ error: "No autorizado. Inicie sesión." }, { status: 401 });
+          return Response.json({ error: "Tu sesión expiró. Volvé a iniciar sesión." }, { status: 401 });
         }
         // El relevador de emergencia solo usa la API de fichas de emergencia.
         if (isEmergencySurveyor(role) && !nextUrl.pathname.startsWith("/api/emergency/")) {

@@ -67,9 +67,9 @@ const SUGGESTIONS_BY_AREA: Record<string, string[]> = {
     "Medidas Urgentes de Restricción y Protección"
   ],
   default: [
-    "Solicitud Asistencial Generica",
+    "Solicitud asistencial",
     "Informe de Evaluación Social Territorial",
-    "Derivación Interinstitucional de Caso"
+    "Derivación a otra institución"
   ]
 };
 
@@ -178,7 +178,7 @@ export function NewCaseForm({
               Paso 1
             </Badge>
             <h3 className="text-sm font-bold text-foreground">
-              Titular del Expediente (Búsqueda en Padrón Municipal)
+              Titular del expediente (buscalo en el padrón)
             </h3>
           </div>
 
@@ -200,7 +200,7 @@ export function NewCaseForm({
               {suggestions.length > 0 && (
                 <div className="absolute top-full left-0 right-0 mt-2 bg-card border border-border/60 rounded-2xl shadow-2xl z-50 overflow-hidden divide-y divide-border/40">
                   <div className="p-2 bg-muted/40 text-xs font-bold text-muted-foreground">
-                    Ciudadanos coincidentes en padrón
+                    Personas encontradas en el padrón
                   </div>
                   {suggestions.map((item) => (
                     <button
@@ -235,10 +235,10 @@ export function NewCaseForm({
               )}
 
               <div className="pt-2 flex items-center justify-between text-xs text-muted-foreground">
-                <span>¿El vecino no figura registrado en el padrón?</span>
+                <span>¿La persona no está en el padrón?</span>
                 <Button variant="outline" size="sm" asChild className="rounded-xl h-8 text-xs font-bold border-border/60">
                   <Link href="/people/new">
-                    <Plus className="h-3.5 w-3.5 mr-1 text-primary" /> Registrar nuevo vecino
+                    <Plus className="h-3.5 w-3.5 mr-1 text-primary" /> Cargar persona
                   </Link>
                 </Button>
               </div>
@@ -397,7 +397,7 @@ export function NewCaseForm({
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-xs font-bold text-foreground">Informe Preliminar / Primera Intervención (Opcional)</Label>
+              <Label className="text-xs font-bold text-foreground">Primera intervención (opcional)</Label>
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}

@@ -10,8 +10,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { StatCard } from "@/components/ui/stat-card";
 import { EmptyMessage } from "@/components/ui/empty-message";
 import Link from "next/link";
-import { format } from "date-fns";
-import { es } from "date-fns/locale";
+import { formatFechaCalendario, formatFechaHora } from "@/lib/fechas";
 
 export const metadata = { title: "Convenio" };
 
@@ -27,7 +26,7 @@ export default async function AgreementDetailPage({ params }: { params: Promise<
     <div className="space-y-6">
       <PageHeader
         title={agreement.title}
-        description={<>Número de Registro: {agreement.number || "---"}</>}
+        description={<>Número de registro: {agreement.number || "---"}</>}
         icon={Landmark}
         actions={
           <>
@@ -73,9 +72,9 @@ export default async function AgreementDetailPage({ params }: { params: Promise<
                 <div>
                   <Label className="text-xs text-muted-foreground font-bold text-xs">Vigencia</Label>
                   <p className="font-medium">
-                    {agreement.startDate ? format(new Date(agreement.startDate), "dd/MM/yyyy") : "---"}
+                    {agreement.startDate ? formatFechaCalendario(agreement.startDate) : "---"}
                     {" al "}
-                    {agreement.endDate ? format(new Date(agreement.endDate), "dd/MM/yyyy") : "---"}
+                    {agreement.endDate ? formatFechaCalendario(agreement.endDate) : "---"}
                   </p>
                 </div>
               </div>
@@ -127,8 +126,8 @@ export default async function AgreementDetailPage({ params }: { params: Promise<
             </CardHeader>
             <CardContent className="text-xs text-muted-foreground space-y-1">
               <p>ID Sistema: {agreement.id}</p>
-              <p>Fecha Alta: {format(new Date(agreement.createdAt), "dd/MM/yyyy HH:mm")}</p>
-              <p>Última Modificación: {format(new Date(agreement.updatedAt), "dd/MM/yyyy HH:mm")}</p>
+              <p>Fecha de alta: {formatFechaHora(agreement.createdAt)}</p>
+              <p>Última modificación: {formatFechaHora(agreement.updatedAt)}</p>
             </CardContent>
           </Card>
         </div>

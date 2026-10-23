@@ -26,6 +26,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { StatCard } from "@/components/ui/stat-card";
 import { EmptyMessage } from "@/components/ui/empty-message";
 import { PeopleHeaderActions } from "@/components/people/people-header-actions";
+import { plural } from "@/lib/formato";
 
 export const metadata = { title: "Registro Único" };
 
@@ -66,7 +67,7 @@ export default async function PeoplePage({
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20">
       <PageHeader
         title="Registro Único"
-        description="Las personas del padrón municipal. Buscá por nombre, DNI o dirección y entrá a su legajo."
+        description="Las personas del padrón municipal. Buscá por nombre, DNI o dirección y entrá a su ficha."
         icon={Users}
         actions={
           <PeopleHeaderActions
@@ -96,7 +97,7 @@ export default async function PeoplePage({
         <StatCard
           label="Padrón unificado"
           value={stats.total.toLocaleString("es-AR")}
-          hint="Ciudadanos unificados con cruce de programas"
+          hint="Personas con datos de los programas sociales"
           icon={Users}
           tone="blue"
         />
@@ -189,7 +190,7 @@ export default async function PeoplePage({
                           </>
                         ) : (
                           <Badge variant="secondary" className="rounded-xl font-bold bg-muted text-muted-foreground text-xs px-2 py-0.5">
-                            {p.casesCount || 0} Casos
+                            {plural(p.casesCount || 0, "expediente")}
                           </Badge>
                         )}
                       </div>

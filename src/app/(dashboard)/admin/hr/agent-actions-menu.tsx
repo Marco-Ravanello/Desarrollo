@@ -95,7 +95,7 @@ export function AgentActionsMenu({ agent, areas }: AgentActionsMenuProps) {
         <SheetContent side="right" className="sm:max-w-lg w-full border-l border-border bg-background rounded-l-[2rem] shadow-2xl p-8 overflow-y-auto">
         <SheetHeader className="mb-8">
           <SheetTitle className="text-2xl font-bold">
-            {mode === 'view' ? 'Detalle del Agente' : 'Editar Legajo'}
+            {mode === 'view' ? 'Detalle del agente' : 'Editar legajo'}
           </SheetTitle>
           <SheetDescription className="text-base">
             {mode === 'view'

@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
+import { useMunicipalSettings } from "@/components/providers/municipal-settings";
 
 export function MunicipalCrest({
   className = "h-8 w-8",
@@ -9,37 +10,9 @@ export function MunicipalCrest({
   className?: string;
   forceDefault?: boolean;
 }) {
-  const [customLogo, setCustomLogo] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (forceDefault) return;
-    const loadLogo = () => {
-      try {
-        const saved = localStorage.getItem("muni-system-settings");
-        if (saved) {
-          const parsed = JSON.parse(saved);
-          if (
-            parsed.customLogoUrl &&
-            typeof parsed.customLogoUrl === "string" &&
-            parsed.customLogoUrl.trim() !== ""
-          ) {
-            setCustomLogo(parsed.customLogoUrl);
-            return;
-          }
-        }
-        setCustomLogo(null);
-      } catch (e) {
-        setCustomLogo(null);
-      }
-    };
-    loadLogo();
-    window.addEventListener("muni-settings-updated", loadLogo);
-    window.addEventListener("storage", loadLogo);
-    return () => {
-      window.removeEventListener("muni-settings-updated", loadLogo);
-      window.removeEventListener("storage", loadLogo);
-    };
-  }, [forceDefault]);
+  const { logoUrl } = useMunicipalSettings();
+  const [failed, setFailed] = useState(false);
+  const customLogo = !forceDefault && !failed ? logoUrl : null;
 
   if (customLogo && !forceDefault) {
     return (
@@ -47,7 +20,7 @@ export function MunicipalCrest({
         src={customLogo}
         alt="Logo Municipal Oficial"
         className={`${className} object-contain`}
-        onError={() => setCustomLogo(null)}
+        onError={() => setFailed(true)}
       />
     );
   }

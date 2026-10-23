@@ -73,7 +73,7 @@ export function CreateAgreementForm({ areas }: { areas: any[] }) {
       </CardHeader>
       <CardContent className="space-y-8">
         <div className="bg-slate-50 dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800">
-           <h4 className="text-xs font-bold text-muted-foreground mb-3">Asistente de Carga (OCR)</h4>
+           <h4 className="text-xs font-bold text-muted-foreground mb-3">Carga desde un documento</h4>
            <OCRScanner onScanComplete={handleScanComplete} label="Escanear el convenio" />
         </div>
 
@@ -174,7 +174,7 @@ export function CreateAgreementForm({ areas }: { areas: any[] }) {
               Cancelar
             </Button>
             <Button type="submit" disabled={loading}>
-              {loading ? "Registrando..." : "Guardar Convenio"}
+              {loading ? "Registrando..." : "Guardar convenio"}
             </Button>
           </div>
         </form>

@@ -17,6 +17,7 @@ import type { MapPerson } from "@/services/map";
 import type { MapCaseItem, MapLayerPoints, MapStormItem } from "@/services/map-layers";
 import { getMapLayerItemsAction, getMapPeopleAction } from "@/app/(dashboard)/maps/actions";
 import { APPROX_COLOR, CASE_COLOR, EXACT_COLOR, PROGRAM_COLORS, STORM_COLOR } from "@/lib/map-colors";
+import { formatFecha } from "@/lib/fechas";
 
 const HeatmapView = dynamic(
   () => import("./heatmap-view").then((mod) => mod.HeatmapView),
@@ -290,7 +291,7 @@ function PersonCard({ person }: { person: MapPerson }) {
   );
 }
 
-const shortDate = (iso: string) => new Date(iso).toLocaleDateString("es-AR", { day: "numeric", month: "short", year: "numeric" });
+const shortDate = formatFecha;
 
 function CaseCard({ item }: { item: MapCaseItem }) {
   return (
@@ -827,7 +828,7 @@ export function MapView({
           className="hidden sm:flex rounded-2xl bg-background/90 backdrop-blur-md border border-border/60 text-foreground hover:bg-accent shadow-2xl h-11 gap-2 text-xs font-bold"
         >
           <Download className="h-4 w-4 text-primary" />
-          {isExporting ? "Exportando Mapa..." : "Capturar Vista PNG"}
+          {isExporting ? "Exportando mapa…" : "Guardar imagen del mapa"}
         </Button>
       </div>
 

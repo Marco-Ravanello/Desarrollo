@@ -73,7 +73,7 @@ export function MiniHeatmapWidget({ peopleLocations = [] }: MiniHeatmapWidgetPro
   peopleLocations.forEach((p) => {
     let locName = p.neighborhood?.trim();
 
-    if (!locName || locName === "Zona Registrada" || locName === "S/D") {
+    if (!locName || locName === "Zona registrada" || locName === "S/D") {
       if (p.latitude && p.longitude) {
         locName = findNearestLocality(p.latitude, p.longitude);
       } else {
@@ -173,7 +173,7 @@ export function MiniHeatmapWidget({ peopleLocations = [] }: MiniHeatmapWidgetPro
             <div className="p-3 rounded-xl bg-muted/30 border border-border/40 text-center space-y-1">
               <p className="text-xs font-semibold text-muted-foreground">Sin registros geolocalizados en la BD</p>
               <p className="text-xs text-muted-foreground">
-                Al registrar ciudadanos con dirección o coordenadas GPS, las zonas de mayor demanda se calcularán automáticamente.
+                Cuando haya personas con la dirección ubicada en el mapa, acá se van a ver las zonas con más demanda.
               </p>
             </div>
           )}

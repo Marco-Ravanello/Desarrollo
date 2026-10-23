@@ -42,13 +42,13 @@ export function handleGreetingQuery(queryText: string): AIResponse {
   let intent = "greeting";
 
   if (clean.includes("gracias")) {
-    answer = `### Mensaje Recibido\n\nEs un agrado asistirle en la gestión de tareas del municipio. Si requiere realizar consultas adicionales sobre Recursos Humanos, Presupuesto, Vehículos, Casos Sociales o Inventario, quedo a su entera disposición.\n\nAtentamente,\nAsistencia Municipal`;
+    answer = `De nada. Si necesitás algo más sobre recursos humanos, presupuesto, vehículos, expedientes o insumos, preguntame.`;
     intent = "thanks";
   } else if (clean.includes("chau") || clean.includes("adios") || clean.includes("adiós")) {
-    answer = `### Sesión Finalizada\n\nAgradecemos su uso del Asistente Inteligente Municipal. Que tenga una excelente jornada de gestión pública. Estaré disponible para futuras consultas administrativas.`;
+    answer = `¡Hasta luego! Acá voy a estar para la próxima consulta.`;
     intent = "goodbye";
   } else {
-    answer = `### Sistema de Asistencia Inteligente Municipal\n\nBienvenido al asistente de consulta municipal. Este canal automatizado facilita el análisis y auditoría de la información administrativa y social de la municipalidad.\n\n#### Módulos y capacidades de consulta habilitados:\n*   **Recursos Humanos (RRHH):** Auditoría de nómina de personal activo, licencias, régimen contractual y cálculo consolidado del gasto salarial mensual por dirección.\n*   **Presupuesto y Compras:** Análisis del estado administrativo de Órdenes de Compra, saldos pendientes, montos de ejecución real y legajos de proveedores.\n*   **Vehículos y Logística:** Monitoreo del consumo de combustible, kilometraje, control de alertas por vencimiento de VTV o pólizas de seguro, y reserva de unidades de flota municipal.\n*   **Convenios Institucionales:** Consulta de convenios vigentes, montos devengados, partes intervinientes y plazos según la dirección solicitante.\n*   **Acción Social:** Consulta integrada del Registro Único de personas, grupos familiares, legajos de vulnerabilidad con filtros por DNI o inicial de apellido, y lectura inteligente de informes PDF adjuntos.\n*   **Control de Insumos (Depósito):** Reportes automáticos sobre stock mínimo, faltantes y alertas de abastecimiento.\n*   **Agenda Unificada:** Programación y asignación de tareas, eventos administrativos y coordinación horaria de recursos municipales.\n\nPor favor, especifique el reporte o la consulta administrativa que desea formular para iniciar el procesamiento de datos.`;
+    answer = `### Asistente de IA\n\nTe ayudo a consultar la información de la app.\n\n#### Qué podés consultar:\n*   **Recursos Humanos (RRHH):** Auditoría de nómina de personal activo, licencias, régimen contractual y cálculo consolidado del gasto salarial mensual por dirección.\n*   **Presupuesto y Compras:** Análisis del estado administrativo de Órdenes de Compra, saldos pendientes, montos de ejecución real y legajos de proveedores.\n*   **Vehículos y Logística:** Monitoreo del consumo de combustible, kilometraje, control de alertas por vencimiento de VTV o pólizas de seguro, y reserva de unidades de flota municipal.\n*   **Convenios Institucionales:** Consulta de convenios vigentes, montos devengados, partes intervinientes y plazos según la dirección solicitante.\n*   **Acción Social:** Consulta integrada del Registro Único de personas, grupos familiares, expedientes, con búsqueda por DNI o apellido, y lectura inteligente de informes PDF adjuntos.\n*   **Control de Insumos (Depósito):** Reportes automáticos sobre stock mínimo, faltantes y alertas de abastecimiento.\n*   **Agenda Unificada:** Programación y asignación de tareas, eventos administrativos y coordinación horaria de recursos municipales.\n\nEscribí qué querés saber, por ejemplo: "¿qué vehículos tienen la VTV vencida?".`;
   }
 
   return {
@@ -200,7 +200,7 @@ export async function performUniversalDBSearch(
       contextText += `*   Caso: ${c.title} - Estado: ${c.status} - Prioridad: ${c.priority} - Dirección Área: ${c.area.name}\n`;
       sources.push({ type: "Caso Social", name: `Caso: ${c.title}`, url: `/cases/${c.id}` });
     });
-    actions.push({ label: "Asignar Tarea", actionType: "OPEN_DIALOG", payload: { type: "TASK_ASSIGN" } });
+    actions.push({ label: "Asignar tarea", actionType: "OPEN_DIALOG", payload: { type: "TASK_ASSIGN" } });
   }
 
   if (orders.length > 0) {

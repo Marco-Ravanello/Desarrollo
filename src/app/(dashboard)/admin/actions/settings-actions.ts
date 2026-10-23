@@ -4,29 +4,8 @@ import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
 import { MunicipalSettings, DEFAULT_MUNICIPAL_SETTINGS } from "@/types/settings";
+import { SETTINGS_KEY, cleanSettings } from "@/services/municipal-settings";
 import { actionErrorMessage } from "@/lib/action-error";
-
-const SETTINGS_KEY = "muni-system-settings";
-
-export async function getSystemSettingsAction() {
-  try {
-    const record = await prisma.systemSetting.findUnique({
-      where: { key: SETTINGS_KEY }
-    });
-
-    if (record?.value) {
-      const parsed = JSON.parse(record.value);
-      return { success: true, settings: { ...DEFAULT_MUNICIPAL_SETTINGS, ...parsed } };
-    }
-    return { success: true, settings: DEFAULT_MUNICIPAL_SETTINGS };
-  } catch (error: any) {
-    return {
-      success: false,
-      settings: DEFAULT_MUNICIPAL_SETTINGS,
-      error: actionErrorMessage(error, "No se pudo recuperar la configuración")
-    };
-  }
-}
 
 export async function saveSystemSettingsAction(settings: Partial<MunicipalSettings>) {
   const session = await auth();
@@ -35,7 +14,7 @@ export async function saveSystemSettingsAction(settings: Partial<MunicipalSettin
   }
 
   try {
-    const merged = { ...DEFAULT_MUNICIPAL_SETTINGS, ...settings };
+    const merged = cleanSettings({ ...DEFAULT_MUNICIPAL_SETTINGS, ...settings });
     const value = JSON.stringify(merged);
 
     await prisma.systemSetting.upsert({
@@ -51,7 +30,7 @@ export async function saveSystemSettingsAction(settings: Partial<MunicipalSettin
           action: "UPDATE_SYSTEM_SETTINGS",
           entity: "SystemSetting",
           entityId: SETTINGS_KEY,
-          details: `Configuración de identidad institucional de Tres de Febrero actualizada por ${session.user.name || session.user.email}`
+          details: "Cambió los datos de Configuración."
         }
       });
     }
@@ -82,7 +61,7 @@ export async function resetSystemSettingsAction() {
           action: "RESET_SYSTEM_SETTINGS",
           entity: "SystemSetting",
           entityId: SETTINGS_KEY,
-          details: "Restablecimiento de configuración institucional a valores oficiales de Tres de Febrero"
+          details: "Volvió los datos de Configuración a los de fábrica."
         }
       });
     }

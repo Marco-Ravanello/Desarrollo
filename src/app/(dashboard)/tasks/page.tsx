@@ -13,6 +13,7 @@ import {
   CheckCircle2, Clock, Calendar, AlertTriangle, ArrowRight
 } from "lucide-react";
 import Link from "next/link";
+import { diaAR, diaDeVencimiento } from "@/lib/fechas";
 
 export const metadata = { title: "Mis tareas" };
 
@@ -27,12 +28,11 @@ export default async function TasksPage() {
   const pendingTasks = tasks.filter((t) => t.status !== "COMPLETADA");
   const progressPercentage = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
-  const now = new Date();
-  now.setHours(0, 0, 0, 0);
+  const hoy = diaAR();
 
   const urgentOrOverdue = pendingTasks.filter((t) => {
     const isUrgent = (t as any).priority === "URGENTE";
-    const isOverdue = t.dueDate ? new Date(t.dueDate) < now : false;
+    const isOverdue = t.dueDate ? diaDeVencimiento(t.dueDate) < hoy : false;
     return isUrgent || isOverdue;
   });
 

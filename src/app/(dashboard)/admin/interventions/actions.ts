@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache";
 import { actionErrorMessage } from "@/lib/action-error";
 import { ensurePersonInPrisma } from "@/services/people";
 import { MANAGEMENT_ROLES } from "@/lib/permissions";
+import { formatFecha } from "@/lib/fechas";
 
 export async function exportInterventionsAction() {
   const session = await auth();
@@ -40,8 +41,8 @@ export async function exportInterventionsAction() {
     });
 
     const rows = interventions.map(i => ({
-      Fecha: i.date.toLocaleDateString('es-AR'),
-      Ciudadano: `${i.person.lastName}, ${i.person.firstName}`,
+      Fecha: formatFecha(i.date),
+      Persona: `${i.person.lastName}, ${i.person.firstName}`,
       DNI: i.person.dni,
       Area: i.case.area.name,
       Caso: i.case.title,

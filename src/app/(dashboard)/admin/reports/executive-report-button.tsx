@@ -31,17 +31,17 @@ export function ExecutiveReportButton() {
       doc.setTextColor(60, 60, 60);
       doc.setFontSize(12);
       doc.text(`Periodo: ${data.period}`, 14, 55);
-      doc.text(`Fecha de Emisión: ${data.timestamp}`, 14, 62);
+      doc.text(`Fecha de emisión: ${data.timestamp}`, 14, 62);
 
       (doc as any).autoTable({
         startY: 75,
         head: [['Métrica de Gestión', 'Valor']],
         body: [
-          ['Nuevos Ciudadanos con Casos', data.newCases],
-          ['Intervenciones Realizadas', data.newInterventions],
-          ['Presupuesto Ejecutado (OC Aprobadas)', `$${data.totalSpent.toLocaleString('es-AR')}`],
+          ['Expedientes nuevos', data.newCases],
+          ['Intervenciones realizadas', data.newInterventions],
+          ['Presupuesto ejecutado (órdenes aprobadas)', `$${data.totalSpent.toLocaleString('es-AR')}`],
           ['Órdenes de Compra Pendientes ($)', `$${data.pendingAmount.toLocaleString('es-AR')}`],
-          ['Alertas Críticas Activas', data.criticalCases],
+          ['Alertas críticas activas', data.criticalCases],
         ],
         theme: 'striped',
         headStyles: { fillColor: [0, 74, 128] },
@@ -75,7 +75,7 @@ export function ExecutiveReportButton() {
       ) : (
         <FileText className="h-3.5 w-3.5 text-muted-foreground" />
       )}
-      Reporte Semanal
+      Reporte semanal
     </Button>
   );
 }

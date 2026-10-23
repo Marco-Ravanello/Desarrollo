@@ -159,7 +159,7 @@ export function OrderItemsTable({ orderId, orderStatus, items, canRecord }: Orde
             <tfoot className="bg-muted/30 border-t border-border/60">
               <tr>
                 <td colSpan={canEdit ? 6 : 5} className="py-5 px-6 text-right font-bold text-muted-foreground text-xs">
-                  Suma Total de Renglones:
+                  Total:
                 </td>
                 <td className="py-5 px-6 text-right font-bold text-xl text-foreground tabular-nums">
                   <span className="text-sm mr-1 text-muted-foreground font-bold">$</span>
