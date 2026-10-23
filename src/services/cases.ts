@@ -1,5 +1,5 @@
 import prisma from "@/lib/prisma";
-import { CASE_STATUS_LABEL, summarizeCase } from "@/lib/case-summary";
+import { CASE_STATUS_LABEL, staleCutoff, summarizeCase } from "@/lib/case-summary";
 import { pickAreaByKeywords } from "@/lib/area-theme";
 
 export async function getCasesByArea(areaName: string) {
@@ -153,9 +153,11 @@ export interface GetCasesFilters {
   page?: number;
   limit?: number;
   canViewSensitive?: boolean;
-  /** "mine": a cargo de `userId`; "none": sin profesional a cargo. */
-  assigned?: "mine" | "none";
+  /** "mine": a cargo de `userId`; "none": sin profesional a cargo; o el id de un usuario (a cargo de esa persona). */
+  assigned?: string;
   userId?: string;
+  /** Solo los que no tuvieron intervenciones hace STALE_DAYS días o más (sin cerrar). */
+  quiet?: boolean;
 }
 
 export async function getAllCases(filters: GetCasesFilters = {}) {
@@ -185,6 +187,14 @@ export async function getAllCases(filters: GetCasesFilters = {}) {
     where.assignedToId = filters.userId;
   } else if (filters.assigned === "none") {
     where.assignedToId = null;
+  } else if (filters.assigned && filters.assigned !== "mine") {
+    where.assignedToId = filters.assigned;
+  }
+  if (filters.quiet) {
+    const cutoff = staleCutoff();
+    where.createdAt = { lt: cutoff };
+    where.interventions = { none: { date: { gte: cutoff } } };
+    if (!where.status) where.status = { not: "CERRADO" };
   }
   if (filters.query && filters.query.trim()) {
     const q = filters.query.trim();

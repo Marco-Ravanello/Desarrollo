@@ -1,7 +1,7 @@
 import prisma from "@/lib/prisma";
 import { MUNICIPAL_LOCALITIES } from "@/lib/constants/localities";
 import { normalizeDni } from "@/lib/padron-import";
-import { parseFechaNacimiento, personAddress } from "@/lib/person-display";
+import { parseFechaNacimiento, personAddress, barrioLabel } from "@/lib/person-display";
 
 export interface GetPeopleOptions {
   query?: string;
@@ -64,7 +64,7 @@ export async function ensurePersonInPrisma(personIdOrDni: string) {
         dni: p.dni,
         firstName,
         lastName,
-        address: p.direccion || (p.barrio ? `Barrio ${p.barrio}` : "Tres de Febrero"),
+        address: p.direccion || (p.barrio ? barrioLabel(p.barrio) : "Tres de Febrero"),
         phone: p.telefono || null,
         email: p.email || null,
         gender: p.genero || null,

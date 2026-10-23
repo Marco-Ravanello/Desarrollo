@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { UniversalExportMenu } from "@/components/ui/universal-export-menu";
 import { PageHeader } from "@/components/layout/page-header";
 import { StatCard } from "@/components/ui/stat-card";
+import { StatRow } from "@/components/ui/mobile-list";
 import {
   MapPin, Users, Search, RotateCcw, Map as MapIcon,
   Building2, Sparkles, HeartHandshake, MapPinned, Info, X
@@ -157,8 +158,10 @@ export function SocialMapDashboard({ initialStats, programs, unlocated = 0, canL
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500 pb-20">
+    // En el celular el mapa va primero (después del título); los filtros y las cifras, abajo.
+    <div className="flex flex-col gap-6 animate-in fade-in duration-500 pb-20">
       <PageHeader
+        className="max-md:-order-2"
         title="Mapa Social"
         description="Dónde vive la gente del padrón, por localidad, barrio y programa."
         icon={MapPin}
@@ -188,7 +191,7 @@ export function SocialMapDashboard({ initialStats, programs, unlocated = 0, canL
       />
 
       {unlocated > 0 && (
-        <div className="flex flex-col gap-3 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="max-md:-order-2 flex flex-col gap-3 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-start gap-3">
             <Info className="mt-0.5 h-5 w-5 shrink-0 text-amber-600 dark:text-amber-400" />
             <p className="text-sm text-foreground">
@@ -306,7 +309,7 @@ export function SocialMapDashboard({ initialStats, programs, unlocated = 0, canL
         )}
       </Card>
 
-      <div className={`grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4 transition-opacity ${loading ? "opacity-60" : ""}`} aria-busy={loading}>
+      <StatRow className={`transition-opacity ${loading ? "opacity-60" : ""}`} aria-busy={loading}>
         <StatCard
           label="Personas"
           value={<span className="font-mono">{fmt(stats.total)}</span>}
@@ -351,9 +354,9 @@ export function SocialMapDashboard({ initialStats, programs, unlocated = 0, canL
           icon={Sparkles}
           tone="purple"
         />
-      </div>
+      </StatRow>
 
-      <Card className="bg-card text-card-foreground border border-border/60 shadow-xs rounded-2xl overflow-hidden p-2">
+      <Card className="max-md:-order-1 bg-card text-card-foreground border border-border/60 shadow-xs rounded-2xl overflow-hidden p-2">
         <DynamicMapView
           dnis={data.dnis}
           exactCount={data.exactCount}

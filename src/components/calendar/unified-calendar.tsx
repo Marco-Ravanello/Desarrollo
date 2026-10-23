@@ -60,6 +60,11 @@ export function UnifiedCalendar({ reservations = [], purchaseOrders = [], tasks 
 
   const [nowClock, setNowClock] = useState(new Date());
 
+  // En el celular la semana no entra: arranca en la lista de próximos eventos.
+  useEffect(() => {
+    if (window.matchMedia("(max-width: 767px)").matches) setView("agenda");
+  }, []);
+
   useEffect(() => {
     const timer = setInterval(() => setNowClock(new Date()), 30000);
     return () => clearInterval(timer);
@@ -530,7 +535,7 @@ export function UnifiedCalendar({ reservations = [], purchaseOrders = [], tasks 
                       view === v ? "bg-background text-foreground shadow-xs" : "text-muted-foreground"
                     }`}
                   >
-                    {v === "month" ? "Mes" : v === "week" ? "Semana" : v === "day" ? "Día" : "Agenda"}
+                    {v === "month" ? "Mes" : v === "week" ? "Semana" : v === "day" ? "Día" : "Lista"}
                   </Button>
                 ))}
               </div>

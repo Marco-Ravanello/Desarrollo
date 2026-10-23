@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { searchCitizensAction, createCentralizedCaseAction } from "../actions/case-actions";
+import { barrioLabel } from "@/lib/person-display";
 
 type PriorityType = "BAJA" | "MEDIA" | "ALTA" | "URGENTE";
 
@@ -222,7 +223,7 @@ export function NewCaseForm({
                             {item.lastName}, {item.firstName}
                           </p>
                           <p className="text-muted-foreground text-xs font-mono mt-0.5">
-                            DNI: {item.dni} {item.barrio ? `• Barrio ${item.barrio}` : ""}
+                            DNI: {item.dni} {item.barrio ? `• ${barrioLabel(item.barrio)}` : ""}
                           </p>
                         </div>
                       </div>
@@ -259,7 +260,7 @@ export function NewCaseForm({
                     </Badge>
                     {selectedPerson.barrio && (
                       <Badge className="bg-primary/10 text-primary border border-primary/20 text-xs font-bold">
-                        Barrio {selectedPerson.barrio}
+                        {barrioLabel(selectedPerson.barrio)}
                       </Badge>
                     )}
                   </div>

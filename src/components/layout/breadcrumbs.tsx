@@ -4,7 +4,7 @@ import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useBreadcrumbs, BreadcrumbItem } from "./breadcrumbs-context";
-import { Home, ChevronRight } from "lucide-react";
+import { Home, ChevronRight, ChevronLeft } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 const NEW_LABELS: Record<string, string> = {
@@ -125,10 +125,24 @@ export function DashboardBreadcrumbs() {
     });
   }
 
+  // En celulares, en vez de las migas (que se cortan), un solo "‹ Volver a …" a la sección de arriba.
+  const parent = [...resolvedItems.slice(0, -1)].reverse().find((item) => item.href);
+  const back = parent && parent.href !== "/dashboard"
+    ? { href: parent.href!, label: `Volver a ${parent.label}` }
+    : { href: "/dashboard", label: "Volver al inicio" };
+
   return (
+    <>
+    <Link
+      href={back.href}
+      className="md:hidden mb-3 inline-flex min-h-9 max-w-full items-center gap-1 text-xs font-semibold text-muted-foreground hover:text-foreground print:hidden"
+    >
+      <ChevronLeft className="h-4 w-4 shrink-0 text-primary" />
+      <span className="truncate">{back.label}</span>
+    </Link>
     <nav
       aria-label="Breadcrumb"
-      className="flex items-center gap-1.5 text-xs text-muted-foreground mb-4 py-1.5 px-3 rounded-2xl bg-card/60 border border-border/40 w-fit max-w-full backdrop-blur-xs shadow-2xs print:hidden"
+      className="hidden md:flex items-center gap-1.5 text-xs text-muted-foreground mb-4 py-1.5 px-3 rounded-2xl bg-card/60 border border-border/40 w-fit max-w-full backdrop-blur-xs shadow-2xs print:hidden"
     >
       <Link
         href="/dashboard"
@@ -160,5 +174,6 @@ export function DashboardBreadcrumbs() {
         );
       })}
     </nav>
+    </>
   );
 }

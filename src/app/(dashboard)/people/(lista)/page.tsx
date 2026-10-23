@@ -24,9 +24,11 @@ import { PeopleFilters } from "@/components/people/people-filters";
 import { PeoplePagination } from "@/components/people/people-pagination";
 import { PageHeader } from "@/components/layout/page-header";
 import { StatCard } from "@/components/ui/stat-card";
+import { MobileList, MobileListItem, StatRow } from "@/components/ui/mobile-list";
 import { EmptyMessage } from "@/components/ui/empty-message";
 import { PeopleHeaderActions } from "@/components/people/people-header-actions";
 import { plural } from "@/lib/formato";
+import { barrioLabel } from "@/lib/person-display";
 
 export const metadata = { title: "Registro Único" };
 
@@ -93,7 +95,7 @@ export default async function PeoplePage({
       />
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
+      <StatRow className="lg:grid-cols-3">
         <StatCard
           label="Padrón unificado"
           value={stats.total.toLocaleString("es-AR")}
@@ -117,7 +119,7 @@ export default async function PeoplePage({
           tone="purple"
         />
         <StatCard
-          className="col-span-2 lg:col-span-1"
+          className="sm:col-span-2 lg:col-span-1"
           label="Barrio con mayor asistencia"
           value={
             <span className="line-clamp-1 text-xl" title={stats.topArea}>
@@ -128,7 +130,7 @@ export default async function PeoplePage({
           icon={Building2}
           tone="orange"
         />
-      </div>
+      </StatRow>
 
       {/* Componente de Filtros Avanzados */}
       <PeopleFilters
@@ -137,8 +139,26 @@ export default async function PeoplePage({
       />
 
       {/* Tabla de Ciudadanos */}
-      <Card className="border border-border/60 shadow-sm overflow-hidden rounded-2xl bg-card p-2 sm:p-4 space-y-4">
-          <Table>
+      <Card className="border border-border/60 shadow-sm overflow-hidden rounded-2xl bg-card p-0 md:p-4 space-y-4">
+          {people.length > 0 && (
+            <MobileList label="Personas">
+              {people.map((p: any) => (
+                <MobileListItem
+                  key={p.id}
+                  href={`/people/${p.id}`}
+                  title={`${p.lastName}, ${p.firstName}`}
+                  subtitle={[`DNI ${p.dni}`, p.barrio ? barrioLabel(p.barrio) : p.address].filter(Boolean).join(" · ")}
+                  meta={
+                    p.programasActivos?.length
+                      ? p.programasActivos.slice(0, 2).join(", ") + (p.programasActivos.length > 2 ? ` y ${p.programasActivos.length - 2} más` : "")
+                      : undefined
+                  }
+                />
+              ))}
+            </MobileList>
+          )}
+          <div className={people.length > 0 ? "hidden md:block" : undefined}>
+          <Table mobileCards={false}>
             <TableHeader className="bg-muted/40">
               <TableRow className="border-b border-border/60 hover:bg-transparent">
                 <TableHead className="font-bold text-muted-foreground text-xs py-4 px-6">
@@ -198,7 +218,7 @@ export default async function PeoplePage({
                     <TableCell className="text-muted-foreground text-xs py-4 px-6 max-w-[220px] truncate">
                       <span className="flex items-center gap-1.5" title={p.address || "Sin dirección"}>
                         <MapPin className="h-3 w-3 text-primary/70 shrink-0" />
-                        <span className="truncate">{p.barrio ? `Barrio ${p.barrio}` : (p.address || "Sin dirección")}</span>
+                        <span className="truncate">{p.barrio ? barrioLabel(p.barrio) : (p.address || "Sin dirección")}</span>
                       </span>
                     </TableCell>
                     <TableCell className="text-muted-foreground text-xs py-4 px-6">
@@ -249,6 +269,7 @@ export default async function PeoplePage({
               )}
             </TableBody>
           </Table>
+          </div>
 
         {/* Componente de Paginación Server-Side */}
         <PeoplePagination

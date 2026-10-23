@@ -23,8 +23,9 @@ import { auth } from "@/auth";
 import { allowedOrderTransitions, canEditPurchaseOrders } from "@/lib/purchase-orders";
 import { getOrderStatusConfig } from "@/lib/status-styles";
 import { formatFechaHora } from "@/lib/fechas";
+import { purchaseOrderTitle } from "@/lib/page-titles";
 
-export const metadata = { title: "Orden de compra" };
+export const generateMetadata = purchaseOrderTitle;
 
 export default async function OrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;

@@ -36,8 +36,10 @@ import { getCaseStatusConfig } from "@/lib/status-styles";
 import { isSensitiveArea } from "@/lib/sensitive-areas";
 import { canEditSocialRecords, hasPermission, PERMISSIONS } from "@/lib/permissions";
 import { formatFecha, formatFechaHora } from "@/lib/fechas";
+import { barrioLabel } from "@/lib/person-display";
+import { personTitle } from "@/lib/page-titles";
 
-export const metadata = { title: "Persona" };
+export const generateMetadata = personTitle;
 
 const TABS = ["datos", "programas", "expedientes", "familia", "historia", "documentos"] as const;
 type Tab = (typeof TABS)[number];
@@ -131,7 +133,7 @@ export default async function PersonDetailPage({
           <Badge variant="outline" className="border-border text-foreground font-mono font-bold">DNI {dni}</Badge>
           {person?.barrio && (
             <Badge variant="outline" className="border-primary/40 text-primary bg-primary/5 text-xs font-bold">
-              Barrio {person.barrio}
+              {barrioLabel(person.barrio)}
             </Badge>
           )}
           {totalProgramas > 0 && (

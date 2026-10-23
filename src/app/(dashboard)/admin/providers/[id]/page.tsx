@@ -14,10 +14,11 @@ import { EmptyMessage } from "@/components/ui/empty-message";
 import { ProviderFormDialog } from "../provider-form-dialog";
 import { DeleteProviderButton } from "../delete-provider-button";
 import { formatFecha } from "@/lib/fechas";
+import { providerTitle } from "@/lib/page-titles";
 
 const money = (n: number) => `$ ${n.toLocaleString("es-AR", { maximumFractionDigits: 0 })}`;
 
-export const metadata = { title: "Proveedor" };
+export const generateMetadata = providerTitle;
 
 export default async function ProviderDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;

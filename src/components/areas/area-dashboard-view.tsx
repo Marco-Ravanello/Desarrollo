@@ -9,6 +9,8 @@ import { UniversalExportMenu } from "@/components/ui/universal-export-menu";
 import { TableCards } from "@/components/ui/table";
 import { PageHeader } from "@/components/layout/page-header";
 import { StatCard } from "@/components/ui/stat-card";
+import { MobileList, MobileListItem, StatRow } from "@/components/ui/mobile-list";
+import { isProvisionalDni, splitCaseTitle } from "@/lib/case-summary";
 import { EmptyMessage } from "@/components/ui/empty-message";
 import {
   FolderPlus, Search, ShieldAlert, Users, AlertTriangle, Clock,
@@ -198,7 +200,7 @@ export function AreaDashboardView({
         </Card>
       )}
 
-      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+      <StatRow>
         <StatCard
           label="Expedientes abiertos"
           value={stats.activeCases}
@@ -227,11 +229,11 @@ export function AreaDashboardView({
           icon={Users}
           tone="green"
         />
-      </div>
+      </StatRow>
 
       <Card className="bg-card text-card-foreground border border-border/60 shadow-xs rounded-2xl overflow-hidden">
         <div className="p-4 sm:p-5 border-b border-border/40 bg-muted/20 flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="flex items-center gap-1.5 bg-muted/40 p-1 rounded-2xl border border-border/40 shrink-0 overflow-x-auto">
+          <div className="flex max-w-full items-center gap-1.5 bg-muted/40 p-1 rounded-2xl border border-border/40 shrink-0 overflow-x-auto [scrollbar-width:none] [&>button]:shrink-0 [&>button]:whitespace-nowrap">
             <button
               type="button"
               onClick={() => setActiveTab("ACTIVOS")}
@@ -327,7 +329,29 @@ export function AreaDashboardView({
           </div>
         </div>
 
-        <TableCards>
+        {filteredCases.length > 0 && (
+          <MobileList label="Expedientes del área">
+            {filteredCases.map((c) => {
+              const shown = splitCaseTitle(c.title);
+              return (
+                <MobileListItem
+                  key={c.id}
+                  href={`/cases/${c.id}`}
+                  title={`${c.person.lastName}, ${c.person.firstName}`}
+                  subtitle={[shown.title, shown.tag, isProvisionalDni(c.person.dni) ? "Sin DNI" : `DNI ${c.person.dni}`].filter(Boolean).join(" · ")}
+                  meta={plural(c._count?.interventions || 0, "intervención")}
+                  aside={
+                    <>
+                      {renderStatusBadge(c.status)}
+                      {(c.priority === "URGENTE" || c.priority === "ALTA") && renderPriorityBadge(c.priority)}
+                    </>
+                  }
+                />
+              );
+            })}
+          </MobileList>
+        )}
+        <TableCards className={filteredCases.length > 0 ? "hidden md:block" : undefined}>
           <table className="w-full text-xs text-left">
             <thead className="bg-muted/40 text-muted-foreground font-bold border-b border-border/40">
               <tr>
