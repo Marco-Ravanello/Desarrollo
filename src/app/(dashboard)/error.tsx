@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import Link from "next/link";
 import { AlertTriangle, Home, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { HelpdeskLine } from "@/components/layout/helpdesk-line";
 
 /** Mensaje común cuando una pantalla no se pudo cargar. */
 export default function SectionError({
@@ -31,6 +32,7 @@ export default function SectionError({
           <p className="pt-1 font-mono text-xs text-muted-foreground">Código: {error.digest}</p>
         )}
       </div>
+      <HelpdeskLine />
       <div className="flex flex-wrap justify-center gap-2 pt-1">
         <Button variant="outline" onClick={() => reset()} className="gap-2 rounded-xl">
           <RefreshCw className="h-4 w-4" /> Reintentar

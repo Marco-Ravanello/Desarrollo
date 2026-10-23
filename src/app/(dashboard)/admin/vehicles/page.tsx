@@ -17,6 +17,7 @@ import { Progress } from "@/components/ui/progress";
 import { auth } from "@/auth";
 import { RESERVATION_STATUS, formatReservationRange, isFleetAdmin, reservationActionsFor } from "@/lib/vehicle-reservations";
 import { ReservationActions } from "./requests/reservation-actions";
+import { formatFechaCalendario } from "@/lib/fechas";
 
 export const metadata = { title: "Vehículos" };
 
@@ -189,7 +190,7 @@ export default async function VehiclesPage() {
             <CardDescription>Detalle técnico y disponibilidad de unidades.</CardDescription>
           </div>
           <div className="text-right hidden md:block">
-            <p className="text-xs text-muted-foreground">Gasto Combustible (Mes)</p>
+            <p className="text-xs text-muted-foreground">Combustible del mes</p>
             <p className="text-lg font-bold text-emerald-700 dark:text-emerald-400">${totalFuelSpentMonth.toLocaleString("es-AR")}</p>
           </div>
         </CardHeader>
@@ -260,14 +261,14 @@ export default async function VehiclesPage() {
                         <div className="flex flex-col gap-1">
                           {v.vtvExpiry ? (
                             <div className={`text-xs flex items-center gap-1 ${isVtvClose ? 'text-rose-700 dark:text-rose-400 font-bold' : 'text-muted-foreground'}`}>
-                              VTV: {new Date(v.vtvExpiry).toLocaleDateString()}
+                              VTV: {formatFechaCalendario(v.vtvExpiry)}
                               {isVtvClose && <AlertTriangle className="h-2.5 w-2.5" />}
                             </div>
                           ) : <span className="text-xs text-muted-foreground italic">Sin VTV</span>}
 
                           {v.insuranceExpiry ? (
                             <div className={`text-xs flex items-center gap-1 ${isInsClose ? 'text-rose-700 dark:text-rose-400 font-bold' : 'text-muted-foreground'}`}>
-                              Seg: {new Date(v.insuranceExpiry).toLocaleDateString()}
+                              Seguro: {formatFechaCalendario(v.insuranceExpiry)}
                               {isInsClose && <AlertTriangle className="h-2.5 w-2.5" />}
                             </div>
                           ) : <span className="text-xs text-muted-foreground italic">Sin seguro</span>}

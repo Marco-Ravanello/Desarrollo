@@ -145,7 +145,7 @@ export function formatSheetDate(value: unknown): string | undefined {
   return text;
 }
 
-/** "Pérez" + "Juana" → "Pérez, Juana" (el mismo formato que usa "Nueva Persona"). */
+/** "Pérez" + "Juana" → "Pérez, Juana" (el mismo formato que usa "Nueva persona"). */
 export function composeFullName(apellido?: string, nombre?: string): string | undefined {
   if (apellido && nombre) return `${apellido}, ${nombre}`;
   return apellido || nombre || undefined;

@@ -22,6 +22,7 @@ import {
   requestedByCategory,
   requestedExtras,
 } from "@/lib/emergency-categories";
+import { formatFecha, formatFechaHora } from "@/lib/fechas";
 
 interface StormSummaryTabProps {
   records: StormVictimItem[];
@@ -44,7 +45,7 @@ function missingText(r: StormVictimItem, extraNames: Map<string, string>) {
 }
 
 const fechaHora = (iso: string) =>
-  new Date(iso).toLocaleString("es-AR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
+  formatFechaHora(iso);
 
 /** Barras por barrio: familias que esperan entrega y familias con todo entregado. */
 function BarrioChart({ rows }: { rows: { barrio: string; esperan: number; completas: number; falta: number }[] }) {
@@ -204,7 +205,7 @@ export function StormSummaryTab({ records, stock, onDeliver, deliveries = [] }: 
           Domicilio: r.domicilio,
           Contacto: r.contacto || "",
           "Falta entregar": missingText(r, extraNames),
-          "Cargada el": r.createdAt ? new Date(r.createdAt).toLocaleDateString("es-AR") : "",
+          "Cargada el": r.createdAt ? formatFecha(r.createdAt) : "",
         }))
       ),
       "Falta entregar"

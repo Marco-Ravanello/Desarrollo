@@ -1,40 +1,25 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React from "react";
+import { useMunicipalSettings } from "@/components/providers/municipal-settings";
+import type { MunicipalSettings } from "@/types/settings";
 import { MunicipalCrest } from "./municipal-crest";
 import { Badge } from "@/components/ui/badge";
 
 export function MunicipalLetterhead({
   department,
   direction,
-  showWatermark = false
+  showWatermark = false,
+  preview
 }: {
   department?: string;
   direction?: string;
   showWatermark?: boolean;
+  /** Datos sin guardar todavía, para la vista previa de Configuración. */
+  preview?: Pick<MunicipalSettings, "municipalityName" | "provinceName" | "secretariatName" | "directionName">;
 }) {
-  const [settings, setSettings] = useState({
-    municipalityName: "Municipalidad de Tres de Febrero",
-    provinceName: "Provincia de Buenos Aires • República Argentina",
-    secretariatName: "Secretaría de Desarrollo Humano y Hábitat",
-    directionName: "Dirección General de Gestión Social y Hábitat"
-  });
-
-  useEffect(() => {
-    const loadLocal = () => {
-      const saved = localStorage.getItem("muni-system-settings");
-      if (saved) {
-        try {
-          const parsed = JSON.parse(saved);
-          setSettings((prev) => ({ ...prev, ...parsed }));
-        } catch (e) {}
-      }
-    };
-
-    loadLocal();
-    window.addEventListener("muni-settings-updated", loadLocal);
-    return () => window.removeEventListener("muni-settings-updated", loadLocal);
-  }, []);
+  const saved = useMunicipalSettings();
+  const settings = preview ?? saved;
 
   const currentDept = department || settings.secretariatName;
   const currentDir = direction || settings.directionName;
@@ -68,7 +53,7 @@ export function MunicipalLetterhead({
             Sistema Oficial MuniGestión
           </Badge>
           <p className="text-[10px] text-muted-foreground font-mono">
-            Documento de Validez Institucional
+            Documento municipal
           </p>
         </div>
       </div>

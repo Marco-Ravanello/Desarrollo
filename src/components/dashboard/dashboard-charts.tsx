@@ -35,6 +35,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import Link from "next/link";
+import { plural } from "@/lib/formato";
 
 const COLORS = ['#0284c7', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#ec4899', '#f97316'];
 
@@ -157,11 +158,11 @@ export function DashboardCharts({
                   <TrendingUp className="h-4 w-4" />
                 </div>
                 <h3 className="text-xs font-bold text-foreground">
-                  Evolución semestral de casos
+                  Expedientes de los últimos 6 meses
                 </h3>
               </div>
               <p className="text-xs text-muted-foreground mt-1">
-                Comparativa entre casos ingresados y soluciones concretadas.
+                Cuántos se abrieron y cuántos se cerraron cada mes.
               </p>
             </div>
 
@@ -267,7 +268,7 @@ export function DashboardCharts({
               </div>
               <Progress value={resolutionRatePercent} className="h-2.5 rounded-full bg-muted" />
               <p className="text-xs text-muted-foreground font-semibold">
-                {resolvedCasesCount} casos cerrados de {totalCasesCombined} tramitados.
+                {resolvedCasesCount} cerrados de {plural(totalCasesCombined, "expediente")}.
               </p>
             </div>
 
@@ -309,10 +310,10 @@ export function DashboardCharts({
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <h3 className="text-xs font-bold text-foreground">
-                Distribución de casos por área operativa
+                Expedientes por área
               </h3>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Volumen de demanda territorial en secretarías.
+                Cuántos expedientes tiene cada área.
               </p>
             </div>
 
@@ -361,7 +362,7 @@ export function DashboardCharts({
 
                       <div className="text-right">
                         <span className="text-sm font-bold font-mono text-foreground">{item.value}</span>
-                        <span className="text-xs text-muted-foreground ml-1">casos</span>
+                        <span className="text-xs text-muted-foreground ml-1">{item.value === 1 ? "expediente" : "expedientes"}</span>
                       </div>
                     </div>
 

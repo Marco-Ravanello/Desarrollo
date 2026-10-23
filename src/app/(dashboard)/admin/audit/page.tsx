@@ -10,6 +10,7 @@ import { Activity, User, Calendar, Database, ScrollText } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
 import { EmptyMessage } from "@/components/ui/empty-message";
 import { hasPermission, PERMISSIONS } from "@/lib/permissions";
+import { formatFechaHora } from "@/lib/fechas";
 
 export const metadata = { title: "Auditoría" };
 
@@ -72,7 +73,7 @@ export default async function AuditPage() {
                     <TableCell className="whitespace-nowrap">
                       <div className="flex items-center gap-2 text-xs font-mono text-muted-foreground">
                         <Calendar className="h-3 w-3 text-muted-foreground" />
-                        {new Date(log.createdAt).toLocaleString('es-AR')}
+                        {formatFechaHora(log.createdAt)}
                       </div>
                     </TableCell>
                     <TableCell>

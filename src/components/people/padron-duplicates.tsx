@@ -31,7 +31,7 @@ function PersonColumn({ p, other }: { p: DuplicatePerson; other: DuplicatePerson
       {row("Programas", p.programas.join(", ") || null, false)}
       {(p.expedientes > 0 || p.fichasTormenta > 0) &&
         row(
-          "Legajo",
+          "Expedientes",
           [p.expedientes && `${p.expedientes} expediente${p.expedientes === 1 ? "" : "s"}`, p.fichasTormenta && `${p.fichasTormenta} ficha${p.fichasTormenta === 1 ? "" : "s"} de tormenta`]
             .filter(Boolean)
             .join(", "),

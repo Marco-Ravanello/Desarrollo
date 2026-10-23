@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Printer, Download, Filter } from "lucide-react";
 import { useState } from "react";
 import { EmptyMessage } from "@/components/ui/empty-message";
+import { formatFecha } from "@/lib/fechas";
 
 export function FuelReportView({ vehicles }: { vehicles: any[] }) {
   const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7)); // YYYY-MM
@@ -27,7 +28,7 @@ export function FuelReportView({ vehicles }: { vehicles: any[] }) {
 
       monthlyRecords.forEach((r: any) => {
         rows.push([
-          new Date(r.date).toLocaleDateString(),
+          formatFecha(r.date),
           `${v.brand} ${v.model}`,
           v.plate,
           r.ticketNumber || "",
@@ -77,7 +78,7 @@ export function FuelReportView({ vehicles }: { vehicles: any[] }) {
       <div className="space-y-8 print:block">
         <div className="hidden print:block text-center mb-8 border-b pb-4">
            <h1 className="text-2xl font-bold">Dirección General de Desarrollo Humano y Hábitat</h1>
-           <h2 className="text-xl">Reporte Mensual de Combustible - {selectedMonth}</h2>
+           <h2 className="text-xl">Combustible del mes {selectedMonth}</h2>
         </div>
 
         {vehicles.map(v => {
@@ -114,7 +115,7 @@ export function FuelReportView({ vehicles }: { vehicles: any[] }) {
                    <TableBody>
                      {monthlyRecords.map((r: any) => (
                        <TableRow key={r.id}>
-                         <TableCell>{new Date(r.date).toLocaleDateString()}</TableCell>
+                         <TableCell>{formatFecha(r.date)}</TableCell>
                          <TableCell className="font-mono text-xs">{r.ticketNumber}</TableCell>
                          <TableCell>{Number(r.liters).toFixed(2)} L</TableCell>
                          <TableCell className="text-right font-bold">${Number(r.amount).toLocaleString("es-AR")}</TableCell>

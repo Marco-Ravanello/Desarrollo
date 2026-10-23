@@ -141,7 +141,7 @@ export function StormStockTab({ stock, onRefresh }: StormStockTabProps) {
         <div>
           <h3 className="text-base font-bold text-foreground flex items-center gap-2">
             <Package className="h-5 w-5 text-primary" />
-            Balance Comparativo: Depósito vs. Demanda de Planilla
+            Depósito y lo pedido en las fichas
           </h3>
           <p className="text-xs text-muted-foreground mt-1">
             Stock de contingencia. Podés corregir el nombre o la cantidad de cada insumo, o agregar uno nuevo.

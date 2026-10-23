@@ -1,6 +1,7 @@
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { formatFecha, formatHora } from "@/lib/fechas";
 
 export interface ExportColumn {
   header: string;
@@ -43,15 +44,8 @@ export function exportToPdf({
   });
 
   const now = new Date();
-  const dateStr = now.toLocaleDateString("es-AR", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric"
-  });
-  const timeStr = now.toLocaleTimeString("es-AR", {
-    hour: "2-digit",
-    minute: "2-digit"
-  });
+  const dateStr = formatFecha(now);
+  const timeStr = formatHora(now);
 
   // Membrete Institucional
   doc.setFillColor(15, 23, 42); // slate-900

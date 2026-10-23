@@ -34,7 +34,7 @@ export function ViewHRDetail({ agent }: { agent: any }) {
 
   const formatDate = (dateStr?: string | Date) => {
     if (!dateStr) return "No registrada";
-    return new Date(dateStr).toLocaleDateString("es-AR", { day: "numeric", month: "short", year: "numeric" });
+    return new Date(dateStr).toLocaleDateString("es-AR", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
   };
 
   return (
@@ -198,7 +198,7 @@ export function ViewHRDetail({ agent }: { agent: any }) {
               </div>
             </div>
             <Badge className="bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 text-xs font-bold">
-              {agent.status === 'LICENCIA' ? 'En Licencia' : 'Apto'}
+              {agent.status === 'LICENCIA' ? 'De licencia' : 'Apto'}
             </Badge>
           </div>
 
@@ -268,7 +268,7 @@ export function ViewHRDetail({ agent }: { agent: any }) {
           className="w-full rounded-xl h-11 border-border font-bold hover:bg-accent text-xs flex items-center justify-center gap-2"
         >
           <FileText className="h-4 w-4" />
-          Descargar Ficha del Legajo Digital (Imprimir / PDF)
+          Imprimir legajo
         </Button>
       </div>
     </div>

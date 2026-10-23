@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,7 +11,7 @@ import { toast } from "sonner";
 import {
   Building2, Shield, Phone, Globe, MapPin, Save,
   RotateCcw, Database, Upload, Image as ImageIcon, Trash2, Link as LinkIcon,
-  FileText, ExternalLink, Settings
+  FileText, ExternalLink, Settings, LifeBuoy, Bot, FolderUp, Timer
 } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
 import { MunicipalCrest } from "@/components/ui/municipal-crest";
@@ -22,11 +23,23 @@ import {
 } from "@/app/(dashboard)/admin/actions/settings-actions";
 import { MunicipalSettings, DEFAULT_MUNICIPAL_SETTINGS } from "@/types/settings";
 
+export interface SystemStatus {
+  database: boolean;
+  assistant: boolean;
+  fileStorage: boolean;
+  inactivityMinutes: number;
+}
+
 export function MunicipalSettingsClient({
-  initialSettings
+  initialSettings,
+  status,
+  canEdit
 }: {
   initialSettings: MunicipalSettings;
+  status: SystemStatus;
+  canEdit: boolean;
 }) {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<"identity" | "contact" | "preview" | "security">("identity");
   const [loading, setLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -38,8 +51,8 @@ export function MunicipalSettingsClient({
     if (!file) return;
 
     if (file.size > 2 * 1024 * 1024) {
-      toast.error("Archivo demasiado grande", {
-        description: "Por favor, suba una imagen de hasta 2MB (PNG, JPG o SVG)."
+      toast.error("La imagen es muy pesada", {
+        description: "Subí una imagen de hasta 2 MB (PNG, JPG o SVG)."
       });
       return;
     }
@@ -48,7 +61,7 @@ export function MunicipalSettingsClient({
     reader.onload = (event) => {
       const base64 = event.target?.result as string;
       setSettings((prev) => ({ ...prev, customLogoUrl: base64 }));
-      toast.success("Logo cargado con éxito", {
+      toast.success("Logo cargado", {
         description: "Acordate de tocar \"Guardar cambios\" para que se aplique en toda la app."
       });
     };
@@ -57,7 +70,7 @@ export function MunicipalSettingsClient({
 
   const handleRemoveLogo = () => {
     setSettings((prev) => ({ ...prev, customLogoUrl: "" }));
-    toast.info("Escudo oficial predeterminado restablecido");
+    toast.info("Se vuelve a usar el escudo de fábrica. Tocá \"Guardar cambios\" para aplicarlo.");
   };
 
   const handleSave = async (e: React.FormEvent) => {
@@ -67,38 +80,35 @@ export function MunicipalSettingsClient({
     try {
       const res = await saveSystemSettingsAction(settings);
       if (!res.success) {
-        toast.error("Error al persistir en base de datos", { description: res.error });
+        toast.error("No se pudo guardar la configuración", { description: res.error });
+        return;
       }
-
-      const updatedSettings = res.settings || settings;
-      localStorage.setItem("muni-system-settings", JSON.stringify(updatedSettings));
-      window.dispatchEvent(new Event("muni-settings-updated"));
-
-      toast.success("Configuración e Identidad Municipal guardadas", {
-        description: "Los datos de Tres de Febrero se actualizaron en toda la plataforma."
+      if (res.settings) setSettings(res.settings);
+      toast.success("Configuración guardada", {
+        description: "Los encabezados y las impresiones ya la usan, en todas las compus."
       });
-    } catch (error) {
-      toast.error("Error al guardar la configuración");
+      router.refresh();
+    } catch {
+      toast.error("No se pudo guardar la configuración. Revisá la conexión y probá de nuevo.");
     } finally {
       setLoading(false);
     }
   };
 
   const handleReset = async () => {
+    if (!window.confirm("¿Volver todos los datos de Configuración a los de fábrica? Se pierde lo que se cargó.")) return;
     setLoading(true);
     try {
       const res = await resetSystemSettingsAction();
-      if (res.settings) {
-        setSettings(res.settings);
-        localStorage.setItem("muni-system-settings", JSON.stringify(res.settings));
-      } else {
-        setSettings(DEFAULT_MUNICIPAL_SETTINGS);
-        localStorage.removeItem("muni-system-settings");
+      if (!res.success) {
+        toast.error("No se pudo restablecer la configuración", { description: res.error });
+        return;
       }
-      window.dispatchEvent(new Event("muni-settings-updated"));
-      toast.success("Configuración restablecida a valores oficiales de Tres de Febrero");
-    } catch (e) {
-      toast.error("Error al restablecer la configuración");
+      setSettings(res.settings ?? DEFAULT_MUNICIPAL_SETTINGS);
+      toast.success("Configuración restablecida a los datos de fábrica");
+      router.refresh();
+    } catch {
+      toast.error("No se pudo restablecer la configuración. Revisá la conexión y probá de nuevo.");
     } finally {
       setLoading(false);
     }
@@ -111,6 +121,7 @@ export function MunicipalSettingsClient({
         description="El nombre, el escudo, las autoridades y los contactos de la Municipalidad que aparecen en la app y en los documentos."
         icon={Settings}
         actions={
+          canEdit ? (
           <>
           <Button
             variant="outline"
@@ -125,11 +136,18 @@ export function MunicipalSettingsClient({
             disabled={loading}
             className="rounded-2xl h-11 px-5 font-bold text-xs bg-primary text-primary-foreground shadow-lg shadow-primary/20"
           >
-            <Save className="mr-2 h-4 w-4" /> {loading ? "Guardando..." : "Guardar Cambios"}
+            <Save className="mr-2 h-4 w-4" /> {loading ? "Guardando…" : "Guardar cambios"}
           </Button>
           </>
+          ) : undefined
         }
       />
+
+      {!canEdit && (
+        <p className="text-sm text-muted-foreground rounded-xl border border-border/60 bg-muted/30 px-4 py-3 max-w-3xl">
+          Podés ver la configuración. Para cambiarla, pedíselo a Superadmin o a Administración General.
+        </p>
+      )}
 
       <div className="flex flex-wrap items-center gap-2 p-1.5 bg-muted/40 rounded-2xl border border-border/50 max-w-2xl">
         <button
@@ -174,10 +192,11 @@ export function MunicipalSettingsClient({
           }`}
         >
           <Shield className="h-4 w-4" />
-          <span>Seguridad y servidor</span>
+          <span>Estado del sistema</span>
         </button>
       </div>
 
+      <fieldset disabled={!canEdit} className="contents">
       {activeTab === "identity" && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-in fade-in duration-300">
           <div className="lg:col-span-2 space-y-6">
@@ -259,7 +278,7 @@ export function MunicipalSettingsClient({
               <div>
                 <h3 className="text-base font-bold text-foreground">Datos del distrito y dependencia</h3>
                 <p className="text-xs text-muted-foreground font-medium">
-                  Esta información figurará en el encabezado oficial, login y documentos PDF descargables.
+                  Aparecen en el encabezado y el pie de todo lo que se imprime desde la app.
                 </p>
               </div>
 
@@ -301,7 +320,7 @@ export function MunicipalSettingsClient({
                       value={settings.directionName}
                       onChange={(e) => setSettings({ ...settings, directionName: e.target.value })}
                       className="rounded-xl h-11 text-xs"
-                      placeholder="Dirección General de Gestión Social y Hábitat"
+                      placeholder="Dirección General de Desarrollo Humano y Hábitat"
                     />
                   </div>
                 </div>
@@ -381,6 +400,20 @@ export function MunicipalSettingsClient({
           </div>
 
           <div className="space-y-4">
+            <div className="space-y-1.5 p-4 rounded-2xl bg-primary/5 border border-primary/15">
+              <Label htmlFor="helpdeskPhone" className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                <LifeBuoy className="h-3.5 w-3.5 text-primary" /> Mesa de ayuda de la app
+              </Label>
+              <Input
+                id="helpdeskPhone"
+                value={settings.helpdeskPhone}
+                onChange={(e) => setSettings({ ...settings, helpdeskPhone: e.target.value })}
+                className="rounded-xl h-11 text-xs bg-card"
+                placeholder="Ej.: interno o teléfono de quien da soporte"
+              />
+              <p className="text-xs text-muted-foreground">Aparece en las páginas de error, para que la gente sepa a quién avisar. Si queda vacío, no se muestra.</p>
+            </div>
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label className="text-xs font-bold text-foreground flex items-center gap-1.5">
@@ -479,7 +512,7 @@ export function MunicipalSettingsClient({
           </div>
 
           <div className="p-6 sm:p-8 rounded-2xl border border-border/60 bg-background shadow-inner space-y-6 relative overflow-hidden">
-            <MunicipalLetterhead showWatermark={true} />
+            <MunicipalLetterhead showWatermark={true} preview={settings} />
 
             <div className="space-y-4 py-4 text-xs leading-relaxed text-foreground/90">
               <div className="p-4 rounded-2xl bg-muted/30 border border-border/40 space-y-2">
@@ -519,101 +552,64 @@ export function MunicipalSettingsClient({
         </Card>
       )}
 
+      </fieldset>
+
       {activeTab === "security" && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in duration-300">
-          <Card className="rounded-2xl border-border/60 shadow-sm bg-card p-6 space-y-4">
-            <h3 className="text-base font-bold text-foreground flex items-center gap-2">
-              <Database className="h-5 w-5 text-emerald-500" /> Estado del servidor y base de datos
-            </h3>
-            <div className="space-y-3 text-xs">
-              <div className="flex justify-between items-center p-3 rounded-2xl bg-muted/30">
-                <div>
-                  <p className="font-bold text-foreground">Motor de base de datos</p>
-                  <p className="text-xs text-muted-foreground">PostgreSQL Cloud (Neon Serverless)</p>
-                </div>
-                <Badge className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 font-bold border-none">Conectado (Online)</Badge>
-              </div>
-
-              <div className="flex justify-between items-center p-3 rounded-2xl bg-muted/30">
-                <div>
-                  <p className="font-bold text-foreground">Hospedaje de aplicación</p>
-                  <p className="text-xs text-muted-foreground">Vercel Edge Network (iad1)</p>
-                </div>
-                <Badge className="bg-blue-500/10 text-blue-700 dark:text-blue-400 font-bold border-none">Activo (SSL HTTPS)</Badge>
-              </div>
-
-              <div className="flex justify-between items-center p-3 rounded-2xl bg-muted/30">
-                <div>
-                  <p className="font-bold text-foreground">Motor de inteligencia artificial</p>
-                  <p className="text-xs text-muted-foreground">Google Gemini con RAG local</p>
-                </div>
-                <Badge className="bg-purple-500/10 text-purple-700 dark:text-purple-400 font-bold border-none">Operativo</Badge>
-              </div>
-            </div>
-          </Card>
-
-          <Card className="rounded-2xl border-border/60 shadow-sm bg-card p-6 space-y-4">
-            <h3 className="text-base font-bold text-foreground flex items-center gap-2">
-              <Shield className="h-5 w-5 text-primary" /> Políticas de privacidad y parámetros
-            </h3>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between p-3 rounded-2xl bg-muted/30">
-                <div>
-                  <p className="text-xs font-bold text-foreground">Anonimización PII de IA</p>
-                  <p className="text-xs text-muted-foreground">Enmascara DNI y nombres antes de enviar a la nube</p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setSettings((prev) => ({ ...prev, aiAnonymization: !prev.aiAnonymization }))}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-colors ${
-                    settings.aiAnonymization
-                      ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30"
-                      : "bg-muted text-muted-foreground border border-border/60"
-                  }`}
-                >
-                  {settings.aiAnonymization ? "Habilitado" : "Deshabilitado"}
-                </button>
-              </div>
-
-              <div className="flex items-center justify-between p-3 rounded-2xl bg-muted/30">
-                <div>
-                  <p className="text-xs font-bold text-foreground">Expiración de Sesión (Horas)</p>
-                  <p className="text-xs text-muted-foreground">Tiempo de inactividad de agente municipal</p>
-                </div>
-                <select
-                  value={settings.sessionTimeout}
-                  onChange={(e) => setSettings((prev) => ({ ...prev, sessionTimeout: e.target.value }))}
-                  className="h-8 px-2 rounded-xl bg-card border border-border/60 text-xs font-bold text-foreground"
-                >
-                  <option value="2">2 hs</option>
-                  <option value="4">4 hs</option>
-                  <option value="8">8 hs</option>
-                  <option value="12">12 hs</option>
-                  <option value="24">24 hs</option>
-                </select>
-              </div>
-
-              <div className="flex items-center justify-between p-3 rounded-2xl bg-muted/30">
-                <div>
-                  <p className="text-xs font-bold text-foreground">Modo mantenimiento</p>
-                  <p className="text-xs text-muted-foreground">Bloqueo temporal de operaciones no críticas</p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setSettings((prev) => ({ ...prev, maintenanceMode: !prev.maintenanceMode }))}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-colors ${
-                    settings.maintenanceMode
-                      ? "bg-rose-500/15 text-rose-700 dark:text-rose-400 border border-rose-500/30"
-                      : "bg-muted text-muted-foreground border border-border/60"
-                  }`}
-                >
-                  {settings.maintenanceMode ? "Activo" : "Inactivo"}
-                </button>
-              </div>
-            </div>
-          </Card>
-        </div>
+        <Card className="rounded-2xl border-border/60 shadow-sm bg-card p-6 space-y-4 max-w-3xl animate-in fade-in duration-300">
+          <div>
+            <h3 className="text-base font-bold text-foreground">Estado del sistema</h3>
+            <p className="text-xs text-muted-foreground font-medium">Se revisa cada vez que abrís esta pestaña.</p>
+          </div>
+          <div className="space-y-3 text-xs">
+            <StatusRow
+              icon={Database}
+              title="Base de datos"
+              detail={status.database ? "Responde bien." : "No responde. Si sigue así, avisá a quien administra la app."}
+              ok={status.database}
+              label={status.database ? "Conectada" : "Sin conexión"}
+            />
+            <StatusRow
+              icon={Bot}
+              title="Asistente de IA"
+              detail={status.assistant ? "Tiene la clave de Google Gemini cargada." : "Falta cargar la clave de Google Gemini, así que el asistente no responde."}
+              ok={status.assistant}
+              label={status.assistant ? "Configurado" : "Sin configurar"}
+            />
+            <StatusRow
+              icon={FolderUp}
+              title="Archivos adjuntos"
+              detail={status.fileStorage ? "Los documentos se guardan en el almacenamiento de Vercel." : "Falta conectar el almacenamiento de archivos (Vercel Blob): lo que se sube puede perderse."}
+              ok={status.fileStorage}
+              label={status.fileStorage ? "Conectado" : "Sin conectar"}
+            />
+            <StatusRow
+              icon={Timer}
+              title="Cierre de sesión por inactividad"
+              detail={`La sesión se cierra sola después de ${status.inactivityMinutes} minutos sin usar la app.`}
+              ok
+              label={`${status.inactivityMinutes} minutos`}
+            />
+          </div>
+        </Card>
       )}
+    </div>
+  );
+}
+
+
+function StatusRow({ icon: Icon, title, detail, ok, label }: { icon: React.ElementType; title: string; detail: string; ok: boolean; label: string }) {
+  return (
+    <div className="flex items-center justify-between gap-3 p-3 rounded-2xl bg-muted/30">
+      <div className="flex items-start gap-3 min-w-0">
+        <Icon className={`h-4 w-4 mt-0.5 shrink-0 ${ok ? "text-emerald-600 dark:text-emerald-400" : "text-amber-600 dark:text-amber-400"}`} />
+        <div className="min-w-0">
+          <p className="font-bold text-foreground">{title}</p>
+          <p className="text-xs text-muted-foreground">{detail}</p>
+        </div>
+      </div>
+      <Badge className={`shrink-0 font-bold border-none ${ok ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400" : "bg-amber-500/15 text-amber-800 dark:text-amber-300"}`}>
+        {label}
+      </Badge>
     </div>
   );
 }

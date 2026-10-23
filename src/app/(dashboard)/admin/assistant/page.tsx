@@ -38,7 +38,7 @@ export default function AssistantPage() {
     {
       id: "welcome",
       sender: "assistant",
-      text: "### Sistema de Asistencia Inteligente Municipal\n\nEste canal automatizado facilita la consulta y auditoría de la base de datos de MuniGestión en tiempo real. Puede formular preguntas o solicitar reportes estructurados sobre los módulos de **Recursos Humanos, Presupuesto, Vehículos, Casos Sociales, Convenios e Inventario**.\n\nPor favor, detalle la consulta administrativa o el análisis que desea realizar.",
+      text: "### Asistente de IA\n\nPreguntame lo que necesites sobre **recursos humanos, presupuesto, vehículos, expedientes, convenios e insumos**, o pedime un gráfico.",
       timestamp: new Date()
     }
   ]);
@@ -176,7 +176,7 @@ export default function AssistantPage() {
       toast.success(`Navegando a: ${act.label}`);
     } else if (act.actionType === "OPEN_DIALOG") {
       router.push("/tasks");
-      toast.info("Por favor, crea una nueva tarea para asignar este caso.");
+      toast.info("Creá una tarea nueva para asignar este expediente.");
     }
   };
 
@@ -251,7 +251,7 @@ export default function AssistantPage() {
       }
     } catch (err: any) {
       toast.error("Error al procesar la consulta");
-      setMessages(prev => prev.map(m => m.id === assistantMsgId ? { ...m, text: "⚠️ Ocurrió un error al procesar la consulta. Por favor, intenta de nuevo." } : m));
+      setMessages(prev => prev.map(m => m.id === assistantMsgId ? { ...m, text: "⚠️ No se pudo responder la consulta. Probá de nuevo." } : m));
     } finally {
       setLoading(false);
     }
@@ -268,19 +268,19 @@ export default function AssistantPage() {
     setMessages([{
       id: "welcome",
       sender: "assistant",
-      text: "### Sistema de Asistencia Inteligente Municipal\n\nEste canal automatizado facilita la consulta y auditoría de la base de datos de MuniGestión en tiempo real. Puede formular preguntas o solicitar reportes estructurados sobre los módulos de **Recursos Humanos, Presupuesto, Vehículos, Casos Sociales, Convenios e Inventario**.\n\nPor favor, detalle la consulta administrativa o el análisis que desea realizar.",
+      text: "### Asistente de IA\n\nPreguntame lo que necesites sobre **recursos humanos, presupuesto, vehículos, expedientes, convenios e insumos**, o pedime un gráfico.",
       timestamp: new Date()
     }]);
   };
 
   const suggestions = [
-    { label: "Nómina de Personal y RRHH", query: "presupuesto total sueldos personal activo", icon: Users, color: "text-blue-500", bg: "bg-blue-500/10" },
-    { label: "Ejecución Presupuestaria", query: "gasto total ordenes de compra presupuestos", icon: TrendingUp, color: "text-emerald-500", bg: "bg-emerald-500/10" },
+    { label: "Personal y sueldos", query: "presupuesto total sueldos personal activo", icon: Users, color: "text-blue-500", bg: "bg-blue-500/10" },
+    { label: "Ejecución del presupuesto", query: "gasto total ordenes de compra presupuestos", icon: TrendingUp, color: "text-emerald-500", bg: "bg-emerald-500/10" },
     { label: "Estado de la Flota Vehicular", query: "estado vehiculos taller nafta combustible", icon: Car, color: "text-amber-500", bg: "bg-amber-500/10" },
-    { label: "Casos por Edad", query: "mostrar un gráfico de casos por edad", icon: TrendingUp, color: "text-rose-500", bg: "bg-rose-500/10" },
-    { label: "Casos por Género", query: "dibujar gráfico de casos por género", icon: Users, color: "text-indigo-500", bg: "bg-indigo-500/10" },
-    { label: "Casos por Prioridad", query: "mostrar gráfico de casos por prioridad", icon: FileText, color: "text-amber-500", bg: "bg-amber-500/10" },
-    { label: "Gráfico de Casos por Área", query: "mostrar gráfico de casos por área municipal", icon: TrendingUp, color: "text-blue-500", bg: "bg-blue-500/10" },
+    { label: "Expedientes por edad", query: "mostrar un gráfico de casos por edad", icon: TrendingUp, color: "text-rose-500", bg: "bg-rose-500/10" },
+    { label: "Expedientes por género", query: "dibujar gráfico de casos por género", icon: Users, color: "text-indigo-500", bg: "bg-indigo-500/10" },
+    { label: "Expedientes por prioridad", query: "mostrar gráfico de casos por prioridad", icon: FileText, color: "text-amber-500", bg: "bg-amber-500/10" },
+    { label: "Expedientes por área", query: "mostrar gráfico de casos por área municipal", icon: TrendingUp, color: "text-blue-500", bg: "bg-blue-500/10" },
   ];
 
   const parseMarkdown = (text: string) => {
@@ -368,7 +368,7 @@ export default function AssistantPage() {
 
   const renderChart = (chart: any) => {
     if (!chart || !chart.data || chart.data.length === 0) return null;
-    const chartTitle = chart.title || "Gráfico de Análisis de Datos";
+    const chartTitle = chart.title || "Gráfico";
 
     return (
       <div className="mt-4 p-5 rounded-2xl border border-border/40 shadow-sm bg-card/60 backdrop-blur-sm w-full min-h-[220px]">
@@ -600,7 +600,7 @@ export default function AssistantPage() {
                                 className="h-8 rounded-xl text-xs font-bold border-blue-500/20 bg-blue-500/5 hover:bg-blue-500/10 text-blue-600 hover:text-blue-700 flex items-center gap-1.5"
                               >
                                 {act.label === "Ver en Mapa Social" && <MapPin className="h-3.5 w-3.5" />}
-                                {act.label === "Asignar Tarea" && <CheckCircle2 className="h-3.5 w-3.5" />}
+                                {act.label === "Asignar tarea" && <CheckCircle2 className="h-3.5 w-3.5" />}
                                 {act.label}
                               </Button>
                             ))}

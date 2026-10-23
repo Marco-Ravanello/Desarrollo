@@ -10,6 +10,7 @@ import { StormVictimItem } from "@/types/emergency";
 import { normalizeDni } from "@/lib/padron-import";
 import { recordsWithoutDni } from "@/lib/emergency-categories";
 import { completeStormRecordDniAction, lookupStormDniAction } from "@/app/(dashboard)/admin/actions/emergency-actions";
+import { formatFecha } from "@/lib/fechas";
 
 type Lookup = Awaited<ReturnType<typeof lookupStormDniAction>>;
 
@@ -51,7 +52,7 @@ function MissingDniRow({ record, onSaved }: { record: StormVictimItem; onSaved: 
         <p className="text-sm font-bold uppercase text-foreground">{record.nombreApellido}</p>
         <p className="text-xs text-muted-foreground">
           {[record.domicilio, record.barrio].filter(Boolean).join(" · ")}
-          {record.createdAt ? ` · cargada el ${new Date(record.createdAt).toLocaleDateString("es-AR")}` : ""}
+          {record.createdAt ? ` · cargada el ${formatFecha(record.createdAt)}` : ""}
         </p>
       </div>
 

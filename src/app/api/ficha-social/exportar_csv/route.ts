@@ -14,7 +14,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   }
   if (!hasPermission(session.user.role as any, PERMISSIONS.EXPORT_PERSONAL_DATA)) {
-    return NextResponse.json({ error: "Su rol no tiene permiso para exportar datos personales" }, { status: 403 });
+    return NextResponse.json({ error: "Tu rol no tiene permiso para bajar datos personales." }, { status: 403 });
   }
 
   try {
@@ -47,7 +47,7 @@ export async function GET(request: Request) {
        LIMIT 5000;`
     );
 
-    const headers = ["DNI", "Nombre Completo", "Cantidad Programas", "Programas Activos", "Roles", "Barrio", "Localidad", "Telefono", "Direccion", "Email"];
+    const headers = ["DNI", "Nombre Completo", "Cantidad Programas", "Programas activos", "Roles", "Barrio", "Localidad", "Telefono", "Direccion", "Email"];
     const csvRows = [headers.join(";")];
 
     rows.forEach((r: any) => {

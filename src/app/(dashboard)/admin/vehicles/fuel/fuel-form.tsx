@@ -46,7 +46,7 @@ export function FuelForm({ vehicles }: { vehicles: any[] }) {
     if (data.amount || data.number || data.patente || data.liters) {
         toast.info("Campos completados desde el ticket");
     } else {
-        toast.warning("El análisis no detectó campos específicos, intente una foto más clara.");
+        toast.warning("No se pudieron leer los datos del ticket. Probá con una foto más clara.");
     }
   };
 
@@ -68,7 +68,7 @@ export function FuelForm({ vehicles }: { vehicles: any[] }) {
   return (
     <div className="space-y-8">
       <div className="bg-amber-50 dark:bg-amber-950/20 p-4 rounded-2xl border border-amber-200 dark:border-amber-900/30">
-           <h4 className="text-xs font-bold text-amber-700 dark:text-amber-400 mb-3">Asistente de Carga Rápida (Foto Ticket)</h4>
+           <h4 className="text-xs font-bold text-amber-700 dark:text-amber-400 mb-3">Carga rápida con la foto del ticket</h4>
            <OCRScanner onScanComplete={handleScanComplete} label="Escanear el ticket" />
       </div>
 
@@ -154,7 +154,7 @@ export function FuelForm({ vehicles }: { vehicles: any[] }) {
           Cancelar
         </Button>
         <Button type="submit" disabled={loading} className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl shadow-md">
-          {loading ? "Registrando..." : "Guardar Carga"}
+          {loading ? "Registrando..." : "Guardar carga"}
         </Button>
       </div>
     </form>

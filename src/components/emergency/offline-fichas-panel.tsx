@@ -12,6 +12,7 @@ import {
   syncPendingFichas,
 } from "@/lib/emergency-offline";
 import { StormVictimItem } from "@/types/emergency";
+import { formatFechaCorta, formatHora } from "@/lib/fechas";
 
 const AUTO_SYNC_MS = 60 * 1000;
 
@@ -142,7 +143,7 @@ export function OfflineFichasPanel({ userId, pending, online, syncing, onSyncNow
                 <p className="text-xs font-bold uppercase text-foreground truncate">{item.payload.nombreApellido || "Sin nombre"}</p>
                 <p className="text-xs text-muted-foreground truncate">
                   {item.payload.domicilio || "Sin domicilio"} · guardada el{" "}
-                  {new Date(item.savedAt).toLocaleString("es-AR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}
+                  {formatFechaCorta(item.savedAt)} {formatHora(item.savedAt)}
                 </p>
                 {item.lastError && <p className="text-xs font-semibold text-rose-600">No se envió: {item.lastError}</p>}
               </div>

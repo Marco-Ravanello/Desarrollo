@@ -97,7 +97,7 @@ export function UserNav({ variant = "header", isCollapsed = false }: UserNavProp
               {roleLabel(user.role)}
             </Badge>
           </div>
-          <p className="text-xs font-bold text-foreground truncate">{user.name || "Usuario Municipal"}</p>
+          <p className="text-xs font-bold text-foreground truncate">{user.name || "Usuario municipal"}</p>
           <p className="text-xs text-muted-foreground font-mono truncate">{(user as any).username || user.email || ""}</p>
         </DropdownMenuLabel>
 

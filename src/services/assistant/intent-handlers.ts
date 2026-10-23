@@ -8,6 +8,7 @@ import { AIResponse } from "./types";
 import { callOllama } from "./ollama-client";
 import { readUploadedFile, storedNameFromUrl } from "@/lib/file-storage";
 import { extractTextFromPDFBuffer } from "@/services/pdf-rag";
+import { TZ_AR, formatFecha, formatFechaCalendario, formatFechaHora, formatFechaLarga, formatHora } from "@/lib/fechas";
 
 // Pasa a minúsculas y saca los acentos (conserva la ñ) para que "cuántas" o "padrón"
 // se reconozcan igual que "cuantas" o "padron".
@@ -417,12 +418,12 @@ export async function handleHRQuery(query: string): Promise<AIResponse> {
 
   let answer = "";
   if (query.includes("sueldo") || query.includes("salario") || query.includes("presupuesto") || query.includes("gasto")) {
-    answer = `### Presupuesto Mensual de Recursos Humanos
+    answer = `### Presupuesto mensual de Recursos Humanos
 
 El gasto salarial mensual acumulado para el personal activo y de licencia asciende a **$${totalSalary.toLocaleString("es-AR")} ARS**.
 
 #### Distribución Salarial por Dirección Municipal:
-| Dirección / Área | Cantidad de Agentes | Presupuesto Mensual | Promedio Salarial |
+| Dirección / Área | Cantidad de Agentes | Presupuesto mensual | Promedio Salarial |
 | :--- | :---: | :---: | :---: |
 ${salaryByArea.map(a => `| ${a.name} | **${a.count}** | $${a.total.toLocaleString("es-AR")} | $${Math.round(a.count > 0 ? a.total / a.count : 0).toLocaleString("es-AR")} |`).join("\n")}
 
@@ -434,7 +435,7 @@ Actualmente se registran **${totalPersonnel}** legajos en la base de datos munic
 
 #### Resumen de Estados de Ocupación:
 *   **Activos:** ${activePersonnel} agentes
-*   **En Licencia o Vacaciones:** ${leavePersonnel} agentes
+*   **De licencia o Vacaciones:** ${leavePersonnel} agentes
 *   **Dados de Baja:** ${inactivePersonnel} agentes
 
 #### Distribución por Modalidad de Contratación:
@@ -442,7 +443,7 @@ Actualmente se registran **${totalPersonnel}** legajos en la base de datos munic
 *   **Mensualizados:** ${contracts.MENSUALIZADO} agentes
 *   **Planta Permanente:** ${contracts.PLANTA_PERMANENTE} agentes
 
-Por favor, indique si requiere un análisis o desglose salarial de alguna de estas modalidades contractuales.`;
+Si querés, te muestro el detalle de sueldos de alguna de estas modalidades.`;
   }
 
   return {
@@ -475,7 +476,7 @@ export async function handleBudgetQuery(query: string): Promise<AIResponse> {
       answer += `Se han extraído los datos reales de la base de datos municipal para la **OC #${order.number}**:\n\n`;
       answer += `*   **Área Solicitante:** ${order.area?.name || "Sin área asignada"}\n`;
       answer += `*   **Proveedor:** ${order.providerName || "Desconocido"} (CUIT: ${order.providerCuit || "No registrado"})\n`;
-      answer += `*   **Fecha de Entrega:** ${order.deliveryDate ? new Date(order.deliveryDate).toLocaleDateString("es-AR") : "No especificada"}\n`;
+      answer += `*   **Fecha de Entrega:** ${order.deliveryDate ? formatFechaCalendario(order.deliveryDate) : "No especificada"}\n`;
       answer += `*   **Lugar de Entrega:** ${order.deliveryPlace || "No especificado"}\n`;
       answer += `*   **Condición de Pago:** ${order.paymentTerms || "No especificada"}\n`;
       answer += `*   **Estado Administrativo:** \`${order.status}\`\n\n`;
@@ -540,7 +541,7 @@ export async function handleBudgetQuery(query: string): Promise<AIResponse> {
 
   let answer = "";
   if (query.includes("gasto") || query.includes("presupuesto") || query.includes("gastado") || query.includes("monto")) {
-    answer = `### Análisis de Ejecución Presupuestaria y Gastos
+    answer = `### Ejecución del presupuesto y gastos
 
 El gasto total aprobado y ejecutado mediante Órdenes de Compra es de **$${totalSpent.toLocaleString("es-AR")} ARS**.
 Adicionalmente, hay solicitudes en espera de aprobación por un total de **$${totalPendingAmount.toLocaleString("es-AR")} ARS**.
@@ -638,7 +639,7 @@ export async function handleVehicleQuery(query: string): Promise<AIResponse> {
         const hasVtvExpired = v.vtvExpiry && new Date(v.vtvExpiry) < new Date();
         const hasInsExpired = v.insuranceExpiry && new Date(v.insuranceExpiry) < new Date();
         if (hasVtvExpired || hasInsExpired) {
-          answer += `| **${v.brand} ${v.model}** | ${v.plate} | ${hasVtvExpired ? `Vencido (${new Date(v.vtvExpiry!).toLocaleDateString("es-AR")})` : "Al día"} | ${hasInsExpired ? `Vencido (${new Date(v.insuranceExpiry!).toLocaleDateString("es-AR")})` : "Al día"} | \`${v.status}\` |\n`;
+          answer += `| **${v.brand} ${v.model}** | ${v.plate} | ${hasVtvExpired ? `Vencido (${formatFechaCalendario(v.vtvExpiry)})` : "Al día"} | ${hasInsExpired ? `Vencido (${formatFechaCalendario(v.insuranceExpiry)})` : "Al día"} | \`${v.status}\` |\n`;
         }
       });
     } else {
@@ -809,7 +810,7 @@ export async function handleSocialQuery(query: string): Promise<AIResponse> {
       answer += `*   **DNI / Documento:** ${matchedPerson.dni}\n`;
       answer += `*   **Teléfono:** ${matchedPerson.phone || "No registrado"}\n`;
       answer += `*   **Dirección:** ${matchedPerson.address || "No registrada"}\n`;
-      answer += `*   **Fecha de Nacimiento:** ${matchedPerson.birthDate ? new Date(matchedPerson.birthDate).toLocaleDateString("es-AR") : "No registrada"}\n\n`;
+      answer += `*   **Fecha de Nacimiento:** ${matchedPerson.birthDate ? formatFechaCalendario(matchedPerson.birthDate) : "No registrada"}\n\n`;
 
       answer += `#### Casos de Asistencia Social Asociados (${matchedPerson.cases.length}):\n`;
       if (matchedPerson.cases.length > 0) {
@@ -818,10 +819,10 @@ export async function handleSocialQuery(query: string): Promise<AIResponse> {
           answer += `   *   **Descripción:** ${c.description || "Sin descripción disponible."}\n`;
           answer += `   *   **Estado:** \`${c.status}\` - **Prioridad:** \`${c.priority}\`\n`;
           answer += `   *   **Área de Atención:** *${c.area.name}*\n`;
-          answer += `   *   **Fecha de Registro:** ${new Date(c.createdAt).toLocaleDateString("es-AR")}\n`;
+          answer += `   *   **Fecha de Registro:** ${formatFecha(c.createdAt)}\n`;
         });
       } else {
-        answer += `*No se registran solicitudes de asistencia o casos activos abiertos para este ciudadano.*\n`;
+        answer += `*No tiene expedientes abiertos.*\n`;
       }
 
       const pdfDocs = matchedPerson.documents.filter(d => d.url && d.url.toLowerCase().endsWith(".pdf"));
@@ -928,7 +929,7 @@ export async function handleSocialQuery(query: string): Promise<AIResponse> {
         answer += `Se encontraron **${totalCount.toLocaleString("es-AR")} ciudadanos** registrados en el Padrón Social Unificado cuyo apellido comienza por la letra **"${targetLetter}"**:\n\n`;
       }
 
-      answer += `| Ciudadano | DNI | Barrio / Localidad | Programas Activos |\n`;
+      answer += `| Persona | DNI | Barrio / Localidad | Programas activos |\n`;
       answer += `| :--- | :---: | :--- | :---: |\n`;
       sampleRows.forEach((p: any) => {
         answer += `| **${p.nombre_completo}** | ${p.dni} | ${p.barrio || "Tres de Febrero"} | ${p.cantidad_programas || 0} programas |\n`;
@@ -974,7 +975,7 @@ Se presenta el reporte oficial consolidado de la base de datos municipal de Tres
 
 #### Métricas Principales del Padrón:
 *   **Total de Ciudadanos Registrados:** **${totalPeople.toLocaleString("es-AR")} personas (ciudadanos)**
-*   **Total de Asistencias y Programas Activos:** **${totalPrestaciones.toLocaleString("es-AR")} registros**
+*   **Total de Asistencias y Programas activos:** **${totalPrestaciones.toLocaleString("es-AR")} registros**
 *   **Zona Territorial con Mayor Asistencia:** Barrio **${topBarrio}**
 *   **Familias Consolidadas:** ${families.length > 0 ? families.length : "Grupos familiares unificados en padrón 360°"}
 *   **Expedientes de Casos:** ${totalCases} expedientes
@@ -1117,10 +1118,10 @@ export async function handleDocumentRAGQuery(query: string): Promise<AIResponse>
     if (extractedContext.trim().length > 0) {
       answer += `\n[CONTENIDO DE TEXTO EXTRAÍDO DE LOS PDFs]:\n${extractedContext}\n`;
     } else {
-      answer += `\n*No se pudo extraer texto legible de los archivos adjuntos. Asegúrate de que sean archivos PDF digitales legibles.*`;
+      answer += `\n*No se pudo extraer texto legible de los archivos adjuntos. Fijate que sean PDF con texto, no fotos escaneadas.*`;
     }
   } else {
-    answer += `*No se registran archivos adjuntos en formato PDF para este legajo o caso municipal.*`;
+    answer += `*No hay archivos PDF adjuntos.*`;
   }
 
   return {
@@ -1219,8 +1220,8 @@ export async function extractSchedulingDetails(query: string): Promise<{ title: 
   const arOffset = -3;
   const arNow = new Date(utcTime + (3600000 * arOffset));
 
-  const arNowString = arNow.toLocaleDateString("es-AR", { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-  const arNowTimeString = arNow.toLocaleTimeString("es-AR", { hour: '2-digit', minute: '2-digit' });
+  const arNowString = formatFechaLarga(now);
+  const arNowTimeString = formatHora(now);
 
   let fallbackTitle = query
     .replace(/crear tarea/i, "")
@@ -1300,7 +1301,7 @@ export async function handleAgentCommandQuery(query: string, userId?: string): P
   if (!userId) {
     return {
       intent: "command_error",
-      answer: "Error de autenticación: No se pudo identificar su sesión de usuario. Por favor inicie sesión para agendar tareas o reservas."
+      answer: "Tu sesión expiró. Volvé a iniciar sesión para agendar tareas o reservas."
     };
   }
 
@@ -1323,7 +1324,9 @@ export async function handleAgentCommandQuery(query: string, userId?: string): P
       month: "long",
       day: "numeric",
       hour: "2-digit",
-      minute: "2-digit"
+      minute: "2-digit",
+      hourCycle: "h23",
+      timeZone: TZ_AR
     };
 
     return {
@@ -1334,7 +1337,7 @@ Se ha registrado la nueva tarea en la base de datos municipal:
 *   **Fecha de Vencimiento:** ${task.dueDate ? new Date(task.dueDate).toLocaleDateString("es-AR", formatOptions) : "Sin fecha especificada"}
 *   **Asignado a:** Usuario de MuniGestión correspondiente
 
-Indique si requiere agendar compromisos o tareas adicionales en el calendario unificado.`,
+Si querés agendar algo más, decime.`,
       dataSummary: task
     };
   }
@@ -1379,8 +1382,8 @@ Indique si requiere agendar compromisos o tareas adicionales en el calendario un
       answer: `### Registro de Reserva de Vehículo Completado
 Se ha registrado la reserva de flota logística en el calendario unificado del municipio:
 *   **Vehículo:** ${matchedVehicle.brand} ${matchedVehicle.model} (Patente: ${matchedVehicle.plate})
-*   **Inicio:** ${reservation.startDate.toLocaleString("es-AR")}
-*   **Fin:** ${reservation.endDate.toLocaleString("es-AR")}
+*   **Inicio:** ${formatFechaHora(reservation.startDate)} hs
+*   **Fin:** ${formatFechaHora(reservation.endDate)} hs
 *   **Motivo:** ${reservation.reason}
 
 La unidad automotriz ha quedado reservada y bloqueada para su uso exclusivo durante el bloque horario detallado.`,

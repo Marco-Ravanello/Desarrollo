@@ -224,7 +224,7 @@ export function CreateHRForm({ areas }: { areas: any[] }) {
       </div>
 
       <Button type="submit" disabled={loading} className="w-full h-12 rounded-xl font-bold text-base shadow-lg">
-        {loading ? "Creando Legajo..." : "Crear Legajo de Agente"}
+        {loading ? "Creando legajo…" : "Crear legajo"}
       </Button>
     </form>
   );

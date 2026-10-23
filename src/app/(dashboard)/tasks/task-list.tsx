@@ -13,6 +13,7 @@ import { EmptyMessage } from "@/components/ui/empty-message";
 import { addTaskAction, toggleTaskAction, deleteTaskAction } from "./actions";
 import { toast } from "sonner";
 import Link from "next/link";
+import { diaAR, diaDeVencimiento, diasEntre, formatVencimiento } from "@/lib/fechas";
 
 type PriorityType = "BAJA" | "MEDIA" | "ALTA" | "URGENTE";
 
@@ -125,16 +126,8 @@ export function TaskList({ initialTasks, userId }: { initialTasks: TaskItem[], u
 
   const renderDueDateBadge = (dueDateStr?: string | Date | null) => {
     if (!dueDateStr) return null;
-    const due = new Date(dueDateStr);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    const dueZero = new Date(due);
-    dueZero.setHours(0, 0, 0, 0);
-
-    const diffDays = Math.round((dueZero.getTime() - today.getTime()) / (1000 * 3600 * 24));
-
-    const formatted = due.toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit" });
+    const diffDays = diasEntre(diaAR(new Date()), diaDeVencimiento(dueDateStr));
+    const formatted = formatVencimiento(dueDateStr);
 
     if (diffDays < 0) {
       return (

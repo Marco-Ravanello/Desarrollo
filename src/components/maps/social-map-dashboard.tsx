@@ -137,11 +137,11 @@ export function SocialMapDashboard({ initialStats, programs, unlocated = 0, canL
     stats.total === 0 ? 0 : stats.located === stats.total ? 100 : Math.min(99, Math.round((stats.located / stats.total) * 100));
 
   const exportColumns = [
-    { header: "Apellido y Nombre", accessorKey: "name" },
+    { header: "Apellido y nombre", accessorKey: "name" },
     { header: "DNI", accessorKey: "dni" },
     { header: "Localidad / Barrio", accessorKey: "barrio" },
     { header: "Dirección", accessorKey: "address" },
-    { header: "Programas Activos", accessorKey: "programasStr" },
+    { header: "Programas activos", accessorKey: "programasStr" },
     { header: "Latitud", accessorKey: "latitude" },
     { header: "Longitud", accessorKey: "longitude" },
     { header: "Ubicación", accessorKey: "ubicacion" }
@@ -266,7 +266,7 @@ export function SocialMapDashboard({ initialStats, programs, unlocated = 0, canL
               id="mapa-busqueda"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Buscar por vecino, DNI o calle..."
+              placeholder="Buscar por nombre, DNI o calle"
               className="h-10 text-xs rounded-2xl bg-muted/30 border-border/60 text-foreground font-medium"
             />
           </div>
@@ -308,7 +308,7 @@ export function SocialMapDashboard({ initialStats, programs, unlocated = 0, canL
 
       <div className={`grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4 transition-opacity ${loading ? "opacity-60" : ""}`} aria-busy={loading}>
         <StatCard
-          label="Vecinos en zona"
+          label="Personas"
           value={<span className="font-mono">{fmt(stats.total)}</span>}
           hint="Personas del padrón con estos filtros"
           icon={Users}
@@ -316,7 +316,7 @@ export function SocialMapDashboard({ initialStats, programs, unlocated = 0, canL
         />
 
         <StatCard
-          label="Puntos GPS activos"
+          label="Ubicadas en el mapa"
           value={<span className="font-mono">{fmt(stats.located)}</span>}
           hint={
             stats.total > 0 ? (
@@ -337,9 +337,9 @@ export function SocialMapDashboard({ initialStats, programs, unlocated = 0, canL
         />
 
         <StatCard
-          label="Sector dominante"
+          label="Barrio con más personas"
           value={<span className="block truncate text-base sm:text-lg" title={stats.topBarrio}>{stats.topBarrio}</span>}
-          hint="Barrio con más personas"
+          hint="Con estos filtros"
           icon={Building2}
           tone="orange"
         />
@@ -347,7 +347,7 @@ export function SocialMapDashboard({ initialStats, programs, unlocated = 0, canL
         <StatCard
           label="Programa principal"
           value={<span className="block truncate text-base sm:text-lg" title={stats.topProgram}>{stats.topProgram}</span>}
-          hint={<span className="font-bold text-blue-700 dark:text-blue-400">Cobertura socio-asistencial</span>}
+          hint={<span className="font-bold text-blue-700 dark:text-blue-400">El programa con más personas</span>}
           icon={Sparkles}
           tone="purple"
         />

@@ -52,7 +52,7 @@ export function BudgetProgressWidget({
     border: "border-emerald-500/20",
     bg: "bg-emerald-500/10",
     badge: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-emerald-500/25",
-    statusText: "Ejecución Presupuestaria Saludable",
+    statusText: "Ejecución normal",
     icon: CheckCircle2
   };
 
@@ -63,7 +63,7 @@ export function BudgetProgressWidget({
       border: "border-rose-500/20",
       bg: "bg-rose-500/10",
       badge: "bg-rose-500/15 text-rose-700 dark:text-rose-400 border-rose-500/25",
-      statusText: "Límite Presupuestario Crítico",
+      statusText: "Presupuesto casi agotado",
       icon: AlertTriangle
     };
   } else if (percentage >= 70) {
@@ -73,7 +73,7 @@ export function BudgetProgressWidget({
       border: "border-amber-500/20",
       bg: "bg-amber-500/10",
       badge: "bg-amber-500/15 text-amber-800 dark:text-amber-400 border-amber-500/25",
-      statusText: "Ejecución Presupuestaria Moderada",
+      statusText: "Ejecución alta",
       icon: TrendingUp
     };
   }
@@ -117,7 +117,7 @@ export function BudgetProgressWidget({
             onClick={() => setIsExpanded(!isExpanded)}
             className="h-8 rounded-xl text-xs font-bold gap-1 text-muted-foreground hover:text-foreground"
           >
-            <span>{isExpanded ? "Ocultar Desglose" : "Ver Desglose por Áreas"}</span>
+            <span>{isExpanded ? "Ocultar detalle" : "Ver detalle por área"}</span>
             {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
           </Button>
         </div>

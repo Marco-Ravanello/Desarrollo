@@ -24,6 +24,7 @@ import {
   ArrowRight, ClipboardList, ArrowRightLeft, AlertTriangle, UserCheck
 } from "lucide-react";
 import Link from "next/link";
+import { plural } from "@/lib/formato";
 
 interface CasesPageProps {
   searchParams: Promise<{
@@ -367,7 +368,7 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
                         ) : (
                           <Button asChild variant="ghost" size="sm" className="h-8 rounded-lg text-xs font-bold">
                             <Link href={`/cases/${c.id}`}>
-                              Ver <ArrowRight className="h-3.5 w-3.5 ml-1" />
+                              Ver expediente <ArrowRight className="h-3.5 w-3.5 ml-1" />
                             </Link>
                           </Button>
                         )}
@@ -383,7 +384,7 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
       {/* Pagination */}
       {data.totalPages > 1 && (
         <div className="flex items-center justify-between text-xs text-muted-foreground pt-2">
-          <span>Mostrando página {data.currentPage} de {data.totalPages} ({data.total} casos en total)</span>
+          <span>Mostrando página {data.currentPage} de {data.totalPages} ({plural(data.total, "expediente")} en total)</span>
           <div className="flex gap-1">
             {data.currentPage > 1 && (
               <Button asChild variant="outline" size="sm" className="rounded-xl text-xs">

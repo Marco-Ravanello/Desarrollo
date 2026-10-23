@@ -49,7 +49,7 @@ export function RemoveFamilyMemberButton({ id, name }: { id: string; name: strin
         <DialogHeader>
           <DialogTitle>Desvincular del grupo familiar</DialogTitle>
           <DialogDescription>
-            {name} va a dejar de figurar en este grupo familiar. Su legajo personal no se borra.
+            {name} va a dejar de figurar en este grupo familiar. Su ficha no se borra.
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>

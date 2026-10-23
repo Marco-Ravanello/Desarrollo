@@ -1,6 +1,7 @@
 import prisma from "@/lib/prisma";
 import { todayInArgentina } from "@/lib/follow-up-dates";
 import { plural } from "@/lib/formato";
+import { TZ_AR } from "@/lib/fechas";
 
 function formatRelativeTime(date: Date) {
   const now = new Date();
@@ -11,7 +12,7 @@ function formatRelativeTime(date: Date) {
   if (diffMins < 1) return "Ahora mismo";
   if (diffMins < 60) return `Hace ${diffMins} min`;
   if (diffHours < 24) return `Hace ${diffHours} h`;
-  return new Date(date).toLocaleDateString("es-AR", { day: "numeric", month: "short" });
+  return new Date(date).toLocaleDateString("es-AR", { day: "numeric", month: "short", timeZone: TZ_AR });
 }
 
 export async function getWarRoomData() {
@@ -73,19 +74,14 @@ export async function getWarRoomData() {
       ? `$ ${budgetTotal.toLocaleString("es-AR")}`
       : "$ 0";
 
-    let emergencyStockPercent = 0;
-    if (supplies.length > 0) {
-      const totalStock = supplies.reduce((acc, item) => acc + item.stock, 0);
-      const totalMin = supplies.reduce((acc, item) => acc + item.minStock, 0);
-      if (totalMin > 0) {
-        emergencyStockPercent = Math.min(100, Math.round((totalStock / (totalMin * 2)) * 100));
-      }
-    }
+    // Cuántos insumos están por debajo de su mínimo (antes era un porcentaje que no se entendía).
+    const suppliesBelowMin = supplies.filter((item) => item.stock < item.minStock).length;
+    const suppliesTotal = supplies.length;
 
     const territorialAlerts = realCases.map((c) => ({
       id: c.id,
-      area: c.area?.name || "Gestión Social",
-      title: `${c.title} — ${c.person ? `${c.person.lastName}, ${c.person.firstName}` : 'Caso Territorial'} ${c.person?.address ? `(${c.person.address})` : ''}`,
+      area: c.area?.name || "Sin área",
+      title: `${c.title} — ${c.person ? `${c.person.lastName}, ${c.person.firstName}` : 'Sin titular'} ${c.person?.address ? `(${c.person.address})` : ''}`,
       time: formatRelativeTime(c.createdAt),
       priority: c.priority,
       status: c.status
@@ -110,7 +106,8 @@ export async function getWarRoomData() {
       resolvedToday,
       activeVehicles,
       totalVehicles,
-      emergencyStockPercent,
+      suppliesBelowMin,
+      suppliesTotal,
       committedBudgetFormatted,
       territorialAlerts,
       areaStatus
@@ -123,7 +120,8 @@ export async function getWarRoomData() {
       resolvedToday: 0,
       activeVehicles: 0,
       totalVehicles: 0,
-      emergencyStockPercent: 0,
+      suppliesBelowMin: 0,
+      suppliesTotal: 0,
       committedBudgetFormatted: "$ 0",
       territorialAlerts: [],
       areaStatus: []

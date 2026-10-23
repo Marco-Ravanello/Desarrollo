@@ -54,7 +54,7 @@ export function PeoplePagination({
       <p className="text-muted-foreground font-semibold">
         Mostrando <b className="text-foreground font-bold">{startItem}</b> a{" "}
         <b className="text-foreground font-bold">{endItem}</b> de{" "}
-        <b className="text-foreground font-bold">{totalItems.toLocaleString("es-AR")}</b> vecinos empadronados
+        <b className="text-foreground font-bold">{totalItems.toLocaleString("es-AR")}</b> personas en el padrón
       </p>
 
       <div className="flex items-center gap-1.5">

@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { plural } from "@/lib/formato";
+import { formatFecha } from "@/lib/fechas";
 
 interface CaseItem {
   id: string;
@@ -118,12 +119,12 @@ export function AreaDashboardView({
 
   const exportColumns = [
     { header: "Expediente", accessorKey: "title" },
-    { header: "Ciudadano", accessorKey: "citizenName" },
+    { header: "Titular", accessorKey: "citizenName" },
     { header: "DNI", accessorKey: "dni" },
     { header: "Estado", accessorKey: "status" },
     { header: "Prioridad", accessorKey: "priority" },
-    { header: "Fecha Actualización", accessorKey: "updatedAt" },
-    { header: "Total Intervenciones", accessorKey: "interventionsCount" }
+    { header: "Última actualización", accessorKey: "updatedAt" },
+    { header: "Intervenciones", accessorKey: "interventionsCount" }
   ];
 
   const exportData = filteredCases.map((c) => ({
@@ -132,7 +133,7 @@ export function AreaDashboardView({
     dni: c.person.dni,
     status: c.status,
     priority: c.priority,
-    updatedAt: new Date(c.updatedAt).toLocaleDateString("es-AR"),
+    updatedAt: formatFecha(c.updatedAt),
     interventionsCount: c._count?.interventions || 0
   }));
 
@@ -190,7 +191,7 @@ export function AreaDashboardView({
             <div className="text-xs space-y-1">
               <p className="font-bold">Protocolo de confidencialidad y protección de datos</p>
               <p className="text-rose-700 dark:text-rose-300 leading-relaxed">
-                Los legajos de esta dirección general contienen datos altamente sensibles amparados por la Ley 26.485 (Protección Integral a las Mujeres) y Ley 25.326 (Habeas Data). Todas las acciones y consultas quedan registradas en el Registro de Auditoría Unificado.
+                Los expedientes de esta dirección general contienen datos altamente sensibles amparados por la Ley 26.485 (Protección Integral a las Mujeres) y Ley 25.326 (Habeas Data). Todas las acciones y consultas quedan registradas en el Registro de Auditoría Unificado.
               </p>
             </div>
           </div>
@@ -199,14 +200,14 @@ export function AreaDashboardView({
 
       <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         <StatCard
-          label="Casos activos"
+          label="Expedientes abiertos"
           value={stats.activeCases}
           hint="En proceso o abiertos"
           icon={Clock}
           tone={statTone}
         />
         <StatCard
-          label="Urgencias críticas"
+          label="Urgentes"
           value={stats.urgentCases}
           hint={<span className="font-bold text-amber-700 dark:text-amber-400">Prioridad alta / urgente</span>}
           icon={AlertTriangle}
@@ -222,7 +223,7 @@ export function AreaDashboardView({
         <StatCard
           label="Familias asistidas"
           value={stats.uniquePersons}
-          hint={<span className="font-bold text-emerald-700 dark:text-emerald-400">Titulares únicos en área</span>}
+          hint={<span className="font-bold text-emerald-700 dark:text-emerald-400">Personas distintas con expedientes en el área</span>}
           icon={Users}
           tone="green"
         />
@@ -295,7 +296,7 @@ export function AreaDashboardView({
             <div className="relative w-full sm:w-64">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
               <Input
-                placeholder="Buscar carátula, DNI o vecino..."
+                placeholder="Buscar por carátula, DNI o titular"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-9 h-9 text-xs rounded-xl bg-muted/20 border-border/60 text-foreground"
@@ -319,7 +320,7 @@ export function AreaDashboardView({
               data={exportData}
               columns={exportColumns}
               filename={`expedientes_${areaTitle.toLowerCase().replace(/\s+/g, "_")}`}
-              title={`Nómina de Expedientes - ${areaTitle}`}
+              title={`Expedientes: ${areaTitle}`}
               subtitle="MUNICIPALIDAD DE TRES DE FEBRERO"
               label="Exportar"
             />
@@ -331,7 +332,7 @@ export function AreaDashboardView({
             <thead className="bg-muted/40 text-muted-foreground font-bold border-b border-border/40">
               <tr>
                 <th className="px-5 py-3.5">Carátula / asunto</th>
-                <th className="px-4 py-3.5">Titular / vecino</th>
+                <th className="px-4 py-3.5">Titular</th>
                 <th className="px-4 py-3.5">DNI</th>
                 <th className="px-4 py-3.5">Estado</th>
                 <th className="px-4 py-3.5">Prioridad</th>
@@ -369,7 +370,7 @@ export function AreaDashboardView({
                       <Button variant="ghost" size="sm" asChild className="h-8 text-xs font-bold text-primary hover:bg-primary/10 rounded-xl">
                         <Link href={`/cases/${c.id}`}>
                           <Eye className="h-3.5 w-3.5 mr-1" />
-                          <span>Ver legajo</span>
+                          <span>Ver expediente</span>
                         </Link>
                       </Button>
                     </td>

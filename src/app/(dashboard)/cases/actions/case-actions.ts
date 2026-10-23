@@ -39,12 +39,12 @@ export async function addCaseInterventionAction(caseId: string, description: str
       return { success: false, error: "Expediente no encontrado" };
     }
     if (!caseItem.personId) {
-      return { success: false, error: "El expediente debe tener un ciudadano asignado para registrar una intervención." };
+      return { success: false, error: "El expediente no tiene titular: cargalo antes de registrar una intervención." };
     }
 
     const validPerson = await ensurePersonInPrisma(caseItem.personId);
     if (!validPerson) {
-      return { success: false, error: "No se encontró el registro del ciudadano en la base de datos." };
+      return { success: false, error: "No se encontró a la persona titular del expediente." };
     }
 
     const intervention = await prisma.intervention.create({
@@ -114,7 +114,7 @@ export async function searchCitizensAction(query: string) {
 
     return { success: true, items: sanitized };
   } catch (error: any) {
-    return { success: false, error: actionErrorMessage(error, "No se pudo buscar ciudadanos"), items: [] };
+    return { success: false, error: actionErrorMessage(error, "No se pudo buscar a la persona"), items: [] };
   }
 }
 
@@ -145,7 +145,7 @@ export async function createCentralizedCaseAction(input: CreateCentralizedCaseIn
   const cleanAreaId = input.areaId?.trim();
 
   if (!cleanTitle || !cleanDni || !cleanAreaId) {
-    return { success: false, error: "Título, DNI del ciudadano y Área responsable son obligatorios" };
+    return { success: false, error: "Completá la carátula, el DNI del titular y el área." };
   }
 
   try {
@@ -192,7 +192,7 @@ export async function createCentralizedCaseAction(input: CreateCentralizedCaseIn
         action: "CREATE_CASE",
         entity: "Case",
         entityId: newCase.id,
-        details: `Apertura centralizada de expediente '${newCase.title}' para ciudadano DNI ${person.dni}`
+        details: `Apertura centralizada de expediente '${newCase.title}' para DNI ${person.dni}`
       }
     });
 

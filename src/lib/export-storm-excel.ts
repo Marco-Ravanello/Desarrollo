@@ -1,6 +1,7 @@
 import * as XLSX from "xlsx";
 import { StormVictimItem, EmergencyOperatorInfo, EmergencyExtraItem } from "@/types/emergency";
 import { extraQuantityText } from "@/lib/emergency-categories";
+import { formatFechaHora } from "@/lib/fechas";
 
 export function exportStormSheetToExcel(
   records: StormVictimItem[],
@@ -20,12 +21,12 @@ export function exportStormSheetToExcel(
   data.push(["MUNICIPALIDAD DE TRES DE FEBRERO - RELEVAMIENTO TERRITORIAL Y FICHA DE TORMENTA"]);
   data.push([`RESPONSABLE: ${operator.name.toUpperCase()}`]);
   data.push([`ÁREA: ${operator.areaName.toUpperCase()}`]);
-  data.push([`FECHA DE EMISIÓN: ${new Date().toLocaleDateString("es-AR")} ${new Date().toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" })}`]);
+  data.push([`FECHA DE EMISIÓN: ${formatFechaHora(new Date())} hs`]);
   data.push([]);
 
   data.push([
     "#",
-    "Nombre y Apellido",
+    "Nombre y apellido",
     "DNI",
     "Grupo Fam.",
     "Niños",

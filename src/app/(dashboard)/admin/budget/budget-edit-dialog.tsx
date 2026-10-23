@@ -47,11 +47,11 @@ export function BudgetEditDialog({ areaId, areaName, currentBudget }: { areaId: 
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Ajustar Presupuesto - {areaName}</DialogTitle>
+          <DialogTitle>Ajustar presupuesto: {areaName}</DialogTitle>
         </DialogHeader>
         <div className="py-4 space-y-4">
           <div className="space-y-2">
-            <Label>Presupuesto Anual ($)</Label>
+            <Label>Presupuesto anual ($)</Label>
             <Input
               type="number"
               value={amount}

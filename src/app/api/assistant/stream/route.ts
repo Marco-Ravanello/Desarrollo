@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 export async function POST(req: NextRequest) {
   const session = await auth();
   if (!session || !session.user) {
-    return NextResponse.json({ error: "No autorizado. Inicie sesión para continuar." }, { status: 401 });
+    return NextResponse.json({ error: "Tu sesión expiró. Volvé a iniciar sesión." }, { status: 401 });
   }
   if (!canUseAiAssistant(session.user.role)) {
     return NextResponse.json({ error: "Tu rol no tiene acceso al Asistente de IA." }, { status: 403 });

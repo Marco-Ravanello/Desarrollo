@@ -84,7 +84,7 @@ export function EmergencyView({ initialData, deniedAccess }: EmergencyViewProps)
       return;
     }
     exportStormSheetToExcel(records, operator, undefined, extraItems);
-    toast.success("Planilla Oficial descargada en formato Excel (.xlsx)");
+    toast.success("Planilla descargada en Excel (.xlsx)");
   };
 
   const handleRefresh = () => {
@@ -229,7 +229,7 @@ export function EmergencyView({ initialData, deniedAccess }: EmergencyViewProps)
           }`}
         >
           <FileSpreadsheet className="h-4 w-4" />
-          <span>Planilla Relevamiento ({records.length})</span>
+          <span>Planilla de relevamiento ({records.length})</span>
         </button>
 
         <button
@@ -291,7 +291,7 @@ export function EmergencyView({ initialData, deniedAccess }: EmergencyViewProps)
         <div className="space-y-4 animate-in fade-in duration-300">
           <div className="flex justify-between items-center">
             <h3 className="text-sm font-bold text-foreground">
-              Fichas Individuales Generadas ({records.length})
+              Fichas cargadas ({records.length})
             </h3>
             {viewer.canEdit && <Button
               onClick={handleOpenNewFicha}
@@ -320,7 +320,7 @@ export function EmergencyView({ initialData, deniedAccess }: EmergencyViewProps)
                 </div>
 
                 <div className="pt-2 border-t border-border/40 text-xs space-y-1">
-                  <p className="font-bold text-muted-foreground">Elementos Asignados:</p>
+                  <p className="font-bold text-muted-foreground">Elementos asignados:</p>
                   <div className="flex flex-wrap gap-1">
                     {r.cantidadColchon > 0 && <Badge variant="secondary" className="text-xs">{r.cantidadColchon} Colchones</Badge>}
                     {r.cantidadCama > 0 && <Badge variant="secondary" className="text-xs">{r.cantidadCama} Camas</Badge>}

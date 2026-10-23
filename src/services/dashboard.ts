@@ -168,7 +168,7 @@ async function loadDashboardStats(scope: DashboardScope) {
     status: v.status === "DISPONIBLE" ? "Disponible" : v.status === "EN_TALLER" ? "En Taller" : "Fuera de Servicio",
     statusVariant: v.status === "DISPONIBLE" ? "active" : v.status === "EN_TALLER" ? "maintenance" : "inactive",
     nextExpiry: v.vtvExpiry
-      ? `VTV: ${new Date(v.vtvExpiry).toLocaleDateString("es-AR", { month: "2-digit", year: "2-digit" })}`
+      ? `VTV: ${new Date(v.vtvExpiry).toLocaleDateString("es-AR", { month: "2-digit", year: "2-digit", timeZone: "UTC" })}`
       : "Al día",
   }));
 

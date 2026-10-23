@@ -14,8 +14,9 @@ import {
 } from "@/components/ui/dialog";
 import { createDerivationAction, respondDerivationAction } from "@/app/(dashboard)/cases/actions/case-actions";
 import type { DerivationRow } from "@/services/derivations";
+import { formatFecha } from "@/lib/fechas";
 
-const fecha = (iso: string) => new Date(iso).toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", year: "numeric" });
+const fecha = formatFecha;
 
 const ESTADO: Record<DerivationRow["status"], { label: string; className: string }> = {
   PENDIENTE: { label: "Esperando respuesta", className: "bg-amber-500/15 text-amber-800 dark:text-amber-300 border-amber-500/30" },

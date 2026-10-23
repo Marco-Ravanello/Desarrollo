@@ -25,7 +25,7 @@ const ROLES_THAT_EDIT = ["SUPERADMIN", "ADMIN_GENERAL", "DIRECCION_GENERAL"];
 export async function saveProviderAction(input: ProviderInput) {
   const session = await auth();
   if (!session?.user || !ROLES_THAT_EDIT.includes(session.user.role as string)) {
-    return { success: false, error: "No tiene permisos para modificar proveedores" };
+    return { success: false, error: "No tenés permiso para modificar proveedores." };
   }
 
   const parsed = ProviderSchema.safeParse(input);
@@ -78,7 +78,7 @@ export async function saveProviderAction(input: ProviderInput) {
 export async function deleteProviderAction(id: string) {
   const session = await auth();
   if (!session?.user || !ROLES_THAT_EDIT.includes(session.user.role as string)) {
-    return { success: false, error: "No tiene permisos para eliminar proveedores" };
+    return { success: false, error: "No tenés permiso para borrar proveedores." };
   }
 
   const provider = await prisma.provider.findUnique({

@@ -17,6 +17,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
+import { formatFechaHora } from "@/lib/fechas";
 
 export function NotificationBell() {
   const [notifications, setNotifications] = useState<any[]>([]);
@@ -110,7 +111,7 @@ export function NotificationBell() {
                     Ver detalles
                   </Link>
                 )}
-                <span className="text-xs text-muted-foreground mt-1">{new Date(n.createdAt).toLocaleString("es-AR")}</span>
+                <span className="text-xs text-muted-foreground mt-1">{formatFechaHora(n.createdAt)}</span>
               </DropdownMenuItem>
             ))
           )}

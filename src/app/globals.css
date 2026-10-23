@@ -170,3 +170,11 @@
     animation: none;
   }
 }
+
+/* Al imprimir no salen las pestañas ni lo marcado como no-print (los botones ya tienen print:hidden). */
+@media print {
+  [role="tablist"],
+  .no-print {
+    display: none !important;
+  }
+}

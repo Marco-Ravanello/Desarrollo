@@ -66,7 +66,7 @@ export function CreateVehicleForm() {
                 <Input id="fuelCardNumber" name="fuelCardNumber" placeholder="Número de tarjeta" />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="fuelMonthlyLimit">Cupo Mensual ($)</Label>
+                <Label htmlFor="fuelMonthlyLimit">Cupo mensual ($)</Label>
                 <Input id="fuelMonthlyLimit" name="fuelMonthlyLimit" type="number" placeholder="0.00" defaultValue="0" />
               </div>
               <div className="space-y-2">
@@ -100,7 +100,7 @@ export function CreateVehicleForm() {
               Cancelar
             </Button>
             <Button type="submit" disabled={loading} className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl shadow-md">
-              {loading ? "Registrando..." : "Guardar Vehículo"}
+              {loading ? "Registrando..." : "Guardar vehículo"}
             </Button>
           </div>
         </form>

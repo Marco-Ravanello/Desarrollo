@@ -13,8 +13,6 @@ import {
 import { PageHeader } from "@/components/layout/page-header";
 import { EmptyMessage } from "@/components/ui/empty-message";
 import Link from "next/link";
-import { format } from "date-fns";
-import { es } from "date-fns/locale";
 import { OrderItemsTable } from "./order-items-table";
 import { Progress } from "@/components/ui/progress";
 import { OrderTimeline } from "./order-timeline";
@@ -24,6 +22,7 @@ import { PrintOrderButton } from "./print-order-button";
 import { auth } from "@/auth";
 import { allowedOrderTransitions, canEditPurchaseOrders } from "@/lib/purchase-orders";
 import { getOrderStatusConfig } from "@/lib/status-styles";
+import { formatFechaHora } from "@/lib/fechas";
 
 export const metadata = { title: "Orden de compra" };
 
@@ -61,7 +60,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
         description={
           <span className="flex flex-wrap items-center gap-x-4 gap-y-1">
             <span className="flex items-center gap-1"><User className="h-3 w-3" /> Falta: <b className="text-foreground">{nextStep}</b></span>
-            <span className="flex items-center gap-1"><Calendar className="h-3 w-3" /> {format(new Date(order.createdAt), "dd/MM/yyyy HH:mm")}</span>
+            <span className="flex items-center gap-1"><Calendar className="h-3 w-3" /> {formatFechaHora(order.createdAt)}</span>
           </span>
         }
         icon={Briefcase}
@@ -307,7 +306,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
               )}
               <div className="flex justify-between">
                 <span>Última modif:</span>
-                <span>{format(new Date(order.updatedAt), "dd/MM/yyyy HH:mm")}</span>
+                <span>{formatFechaHora(order.updatedAt)}</span>
               </div>
             </CardContent>
           </Card>

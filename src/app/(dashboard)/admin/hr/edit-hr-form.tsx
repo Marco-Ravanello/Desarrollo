@@ -235,7 +235,7 @@ export function EditHRForm({ agent, areas, onComplete }: { agent: any, areas: an
       </div>
 
       <Button type="submit" disabled={loading} className="w-full h-12 rounded-xl font-bold text-base shadow-lg">
-        {loading ? "Guardando Cambios..." : "Guardar Cambios del Legajo"}
+        {loading ? "Guardando…" : "Guardar cambios"}
       </Button>
     </form>
   );

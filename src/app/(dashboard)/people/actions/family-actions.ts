@@ -31,7 +31,7 @@ export async function addFamilyMember(
   if (!member) {
     return {
       success: false,
-      error: `No se encontró ningún ciudadano con DNI ${cleanDni} en el padrón.`
+      error: `No se encontró a nadie con DNI ${cleanDni} en el padrón.`
     };
   }
 
@@ -41,7 +41,7 @@ export async function addFamilyMember(
   }
 
   if (person.id === member.id) {
-    return { success: false, error: "No puede vincular a la persona consigo misma" };
+    return { success: false, error: "No se puede vincular a la persona consigo misma." };
   }
 
   let familyId = person.familyId;

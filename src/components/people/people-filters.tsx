@@ -117,7 +117,7 @@ export function PeopleFilters({ barrios, programas }: PeopleFiltersProps) {
       <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-border/40 text-xs">
         <div className="flex items-center gap-2 flex-wrap">
           <span className="text-xs font-bold text-muted-foreground flex items-center gap-1">
-            <Filter className="h-3.5 w-3.5 text-primary" /> Filtros Activos:
+            <Filter className="h-3.5 w-3.5 text-primary" /> Filtros puestos:
           </span>
 
           {currentSearch && (

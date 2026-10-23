@@ -36,8 +36,8 @@ export default function LoginPage() {
           description: "Revisá los dos y probá de nuevo."
         });
       } else {
-        toast.success("¡Bienvenido al sistema!", {
-          description: "Ingresando a la plataforma institucional..."
+        toast.success("¡Hola!", {
+          description: "Entrando a la app…"
         });
         router.push("/dashboard");
       }

@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Separator } from "@/components/ui/separator";
 import { RESERVATION_STATUS, formatFechaHora, formatReservationRange } from "@/lib/vehicle-reservations";
+import { formatFecha, formatFechaCalendario } from "@/lib/fechas";
 
 export const metadata = { title: "Vehículo" };
 
@@ -106,7 +107,7 @@ export default async function VehicleDetailPage({ params }: { params: Promise<{ 
                    <span className="text-xs text-muted-foreground">Revisión técnica</span>
                 </div>
                 <Badge variant={isVtvClose ? "destructive" : "outline"} className="rounded-lg">
-                  {vehicle.vtvExpiry ? new Date(vehicle.vtvExpiry).toLocaleDateString() : "No registrado"}
+                  {vehicle.vtvExpiry ? formatFechaCalendario(vehicle.vtvExpiry) : "No registrado"}
                 </Badge>
               </div>
               <Separator />
@@ -116,7 +117,7 @@ export default async function VehicleDetailPage({ params }: { params: Promise<{ 
                    <span className="text-xs text-muted-foreground">Póliza vigente</span>
                 </div>
                 <Badge variant={isInsClose ? "destructive" : "outline"} className="rounded-lg">
-                  {vehicle.insuranceExpiry ? new Date(vehicle.insuranceExpiry).toLocaleDateString() : "No registrado"}
+                  {vehicle.insuranceExpiry ? formatFechaCalendario(vehicle.insuranceExpiry) : "No registrado"}
                 </Badge>
               </div>
             </CardContent>
@@ -199,7 +200,7 @@ export default async function VehicleDetailPage({ params }: { params: Promise<{ 
                   {vehicle.fuelRecords.map((fuel) => (
                     <TableRow key={fuel.id} className="hover:bg-muted/30 transition-colors border-border/40">
                       <TableCell className="text-sm text-foreground">
-                        {new Date(fuel.date).toLocaleDateString()}
+                        {formatFecha(fuel.date)}
                       </TableCell>
                       <TableCell className="font-bold text-emerald-700 dark:text-emerald-400">
                         ${Number(fuel.amount).toLocaleString("es-AR")}

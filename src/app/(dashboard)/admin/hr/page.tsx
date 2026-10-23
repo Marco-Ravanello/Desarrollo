@@ -31,6 +31,7 @@ import { EmptyMessage } from "@/components/ui/empty-message";
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { getAreaShortName } from "@/lib/area-theme";
+import { formatFechaCalendario } from "@/lib/fechas";
 
 export const metadata = { title: "Recursos Humanos" };
 
@@ -67,8 +68,8 @@ export default async function HRPage({
   }));
 
   const kpis = [
-    { title: "Total Personal", value: stats.total, icon: Users, tone: "blue" as const, sub: "Agentes registrados" },
-    { title: "Presupuesto Mensual", value: `$${stats.totalBudget.toLocaleString('es-AR')}`, icon: Wallet, tone: "green" as const, sub: "Costo total de nómina" },
+    { title: "Personal", value: stats.total, icon: Users, tone: "blue" as const, sub: "Agentes registrados" },
+    { title: "Presupuesto mensual", value: `$${stats.totalBudget.toLocaleString('es-AR')}`, icon: Wallet, tone: "green" as const, sub: "Costo total de nómina" },
     { title: "Nuevos (Mes)", value: stats.newThisMonth, icon: UserPlus, tone: "purple" as const, sub: "Altas este período" },
     { title: "Áreas Cubiertas", value: stats.areaCount, icon: BarChart2, tone: "orange" as const, sub: "Distribución municipal" },
   ];
@@ -104,7 +105,7 @@ export default async function HRPage({
     lastName: r.lastName,
     firstName: r.firstName,
     areaName: r.area?.name || "Sin Área",
-    position: r.position || "Sin Cargo",
+    position: r.position || "Sin cargo",
     contractType: r.contractType || "MENSUALIZADO",
     status: r.status || "ACTIVO",
     salary: r.salary ? `$ ${r.salary.toLocaleString("es-AR")}` : "$ 0"
@@ -230,12 +231,12 @@ export default async function HRPage({
                   <TableCell>
                     <div className="space-y-0.5">
                       <p className="font-bold text-sm text-foreground">{r.area?.name || "Sin Área"}</p>
-                      <p className="text-xs text-muted-foreground font-medium tracking-tighter">{r.position || "Sin Cargo"}</p>
+                      <p className="text-xs text-muted-foreground font-medium tracking-tighter">{r.position || "Sin cargo"}</p>
                     </div>
                   </TableCell>
                   <TableCell>
                      <p className="text-xs font-bold text-muted-foreground italic">
-                        {r.startDate ? new Date(r.startDate).toLocaleDateString('es-AR') : '-'}
+                        {r.startDate ? formatFechaCalendario(r.startDate) : '-'}
                      </p>
                   </TableCell>
                   <TableCell>
@@ -256,7 +257,7 @@ export default async function HRPage({
                       </Badge>
                       {r.statusUntil && (
                         <span className="text-xs font-bold text-muted-foreground flex items-center gap-0.5 italic">
-                           <Calendar className="h-2.5 w-2.5" /> Hasta {new Date(r.statusUntil).toLocaleDateString('es-AR')}
+                           <Calendar className="h-2.5 w-2.5" /> Hasta {formatFechaCalendario(r.statusUntil)}
                         </span>
                       )}
                     </div>
