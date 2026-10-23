@@ -3,8 +3,7 @@ import {
   diaDeVencimiento, diasEntre, formatFecha, formatFechaCalendario, formatFechaHora, formatFechaLarga, formatHora, formatVencimiento,
 } from "@/lib/fechas";
 import { lastLoginInfo } from "@/lib/user-activity";
-import { cleanSettings } from "@/services/municipal-settings";
-import { DEFAULT_MUNICIPAL_SETTINGS, toPublicSettings } from "@/types/settings";
+import { DEFAULT_MUNICIPAL_SETTINGS, cleanSettings, toPublicSettings } from "@/types/settings";
 
 describe("fechas y horas en hora argentina", () => {
   // 15:39 en Argentina = 18:39 UTC.

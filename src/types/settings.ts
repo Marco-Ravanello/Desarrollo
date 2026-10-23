@@ -31,6 +31,20 @@ export const DEFAULT_MUNICIPAL_SETTINGS: MunicipalSettings = {
   customLogoUrl: ""
 };
 
+export const SETTINGS_KEY = "muni-system-settings";
+
+const FIELDS = Object.keys(DEFAULT_MUNICIPAL_SETTINGS) as (keyof MunicipalSettings)[];
+
+/** Solo los campos conocidos y como texto: lo viejo que quedó guardado (controles que se sacaron) no pasa. */
+export function cleanSettings(input: unknown): MunicipalSettings {
+  const src = input && typeof input === "object" ? (input as Record<string, unknown>) : {};
+  const out = { ...DEFAULT_MUNICIPAL_SETTINGS };
+  for (const k of FIELDS) {
+    if (typeof src[k] === "string") out[k] = (src[k] as string).slice(0, k === "customLogoUrl" ? 3_000_000 : 300);
+  }
+  return out;
+}
+
 /** Lo que necesitan las pantallas y las impresiones. El logo propio va aparte (/api/logo) para no mandarlo en cada página. */
 export type PublicMunicipalSettings = Omit<MunicipalSettings, "customLogoUrl"> & {
   /** Dirección del logo propio, o null si se usa el de fábrica. */
