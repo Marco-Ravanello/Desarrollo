@@ -4,6 +4,7 @@ import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
 import { notifyDueFollowUps } from "@/services/follow-ups";
+import { notifyExpirations } from "@/services/expiry-notices";
 
 export async function getNotifications() {
   const session = await auth();
@@ -14,6 +15,12 @@ export async function getNotifications() {
     await notifyDueFollowUps(session.user.id);
   } catch (error) {
     console.error("No se pudieron revisar los seguimientos de hoy:", error);
+  }
+  // Y los vencimientos de VTV, seguros y convenios, para quien los tiene que vigilar.
+  try {
+    await notifyExpirations({ id: session.user.id, role: session.user.role, areaId: session.user.areaId });
+  } catch (error) {
+    console.error("No se pudieron revisar los vencimientos:", error);
   }
 
   return await prisma.notification.findMany({

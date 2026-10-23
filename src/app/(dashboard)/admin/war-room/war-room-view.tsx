@@ -1,7 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { CaseTag } from "@/components/cases/case-tag";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -24,17 +26,22 @@ interface WarRoomViewProps {
     suppliesBelowMin: number;
     suppliesTotal: number;
     committedBudgetFormatted: string;
+    committedBudgetFull: string;
     territorialAlerts: Array<{
       id: string;
       area: string;
       title: string;
+      tag: string | null;
+      titular: string | null;
       time: string;
       priority: string;
+      priorityLabel: string;
       status: string;
     }>;
     areaStatus: Array<{
       id: string;
       name: string;
+      fullName: string;
       activeCases: number;
       percentage: number;
       badgeText: string;
@@ -237,11 +244,11 @@ export function WarRoomView({ initialData }: WarRoomViewProps) {
               <DollarSign className="h-4 w-4" />
             </div>
           </div>
-          <div className="text-2xl sm:text-3xl font-bold font-mono tracking-tight text-emerald-700 dark:text-emerald-400 truncate">
+          <div className="text-2xl font-bold font-mono tracking-tight text-emerald-700 dark:text-emerald-400 truncate" title={initialData.committedBudgetFull}>
             {initialData.committedBudgetFormatted}
           </div>
-          <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-2 font-semibold">
-            Órdenes aprobadas
+          <div className="text-xs text-muted-foreground mt-2 font-semibold">
+            {initialData.committedBudgetFull} en órdenes aprobadas
           </div>
         </Card>
       </div>
@@ -262,24 +269,27 @@ export function WarRoomView({ initialData }: WarRoomViewProps) {
           <div className="space-y-3">
             {initialData.territorialAlerts.length > 0 ? (
               initialData.territorialAlerts.map((alert) => (
-                <div
+                <Link
                   key={alert.id}
-                  className="flex items-center justify-between p-4 rounded-2xl bg-muted/30 border border-border/40 hover:border-border/80 hover:bg-muted/50 transition-colors"
+                  href={`/cases/${alert.id}`}
+                  className="flex items-center justify-between gap-3 p-4 rounded-2xl bg-muted/30 border border-border/40 hover:border-border/80 hover:bg-muted/50 transition-colors"
                 >
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
+                  <div className="min-w-0 space-y-1">
+                    <div className="flex flex-wrap items-center gap-2">
                       <Badge className={`text-xs font-bold border-none ${
-                        alert.priority === 'URGENTE' || alert.priority === 'CRITICA' ? 'bg-rose-500 text-white' :
-                        alert.priority === 'ALTA' ? 'bg-amber-500 text-black' : 'bg-primary text-primary-foreground'
+                        alert.priority === 'URGENTE' ? 'bg-rose-600 text-white' :
+                        alert.priority === 'ALTA' ? 'bg-amber-500 text-black' : 'bg-muted text-foreground'
                       }`}>
-                        {alert.priority}
+                        {alert.priorityLabel}
                       </Badge>
+                      <CaseTag tag={alert.tag} />
                       <span className="text-xs font-bold text-muted-foreground">{alert.area}</span>
                     </div>
-                    <p className="text-sm font-bold text-foreground">{alert.title}</p>
+                    <p className="truncate text-sm font-bold text-foreground" title={alert.title}>{alert.title}</p>
+                    {alert.titular && <p className="truncate text-xs text-muted-foreground">{alert.titular}</p>}
                   </div>
                   <span className="text-xs font-mono font-semibold text-muted-foreground shrink-0">{alert.time}</span>
-                </div>
+                </Link>
               ))
             ) : (
               <div className="p-8 text-center text-muted-foreground font-medium">
@@ -299,9 +309,9 @@ export function WarRoomView({ initialData }: WarRoomViewProps) {
             {initialData.areaStatus.length > 0 ? (
               initialData.areaStatus.map((area) => (
                 <div key={area.id} className="p-3.5 rounded-2xl bg-muted/30 border border-border/40 space-y-2">
-                  <div className="flex justify-between items-center">
-                    <span className="font-bold text-foreground truncate max-w-[160px]">{area.name}</span>
-                    <Badge className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-none font-bold text-xs">{area.badgeText}</Badge>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="min-w-0 truncate font-bold text-foreground" title={area.fullName}>{area.name}</span>
+                    <span className="shrink-0 font-semibold text-muted-foreground">{area.badgeText}</span>
                   </div>
                   <div className="w-full bg-muted h-2 rounded-full overflow-hidden">
                     <div className="bg-primary h-full transition-all duration-500" style={{ width: `${area.percentage}%` }} />

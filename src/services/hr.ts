@@ -1,5 +1,6 @@
 import prisma from "@/lib/prisma";
 import { ContractType, HRStatus } from "@prisma/client";
+import { diaAR, diaDeVencimiento } from "@/lib/fechas";
 
 export async function getHRRecords(filters?: { query?: string, areaId?: string, status?: string }) {
   const where: any = {};
@@ -104,4 +105,41 @@ export async function createHRRecord(data: any) {
       tasks: data.tasks
     }
   });
+}
+
+export interface StaffAway {
+  id: string;
+  name: string;
+  status: "LICENCIA" | "VACACIONES";
+  /** Último día de la licencia ("AAAA-MM-DD"), si se cargó. */
+  until: string | null;
+  area: string | null;
+}
+
+/**
+ * Quién está de licencia o de vacaciones hoy: los que tienen ese estado y su "hasta" es hoy o más adelante
+ * (o no tiene fecha). Los que figuran de licencia con la fecha ya pasada se cuentan aparte, para revisarlos.
+ * Las fechas "hasta" se eligen con un calendario y quedan a la medianoche UTC de ese día.
+ */
+export async function getStaffAwayToday(now = new Date()): Promise<{ away: StaffAway[]; expired: number }> {
+  const today = new Date(`${diaAR(now)}T00:00:00Z`);
+  const status = { in: ["LICENCIA", "VACACIONES"] as HRStatus[] };
+  const [rows, expired] = await Promise.all([
+    prisma.hRRecord.findMany({
+      where: { status, OR: [{ statusUntil: null }, { statusUntil: { gte: today } }] },
+      select: { id: true, firstName: true, lastName: true, status: true, statusUntil: true, area: { select: { name: true } } },
+      orderBy: [{ statusUntil: { sort: "asc", nulls: "last" } }, { lastName: "asc" }],
+    }),
+    prisma.hRRecord.count({ where: { status, statusUntil: { lt: today } } }),
+  ]);
+  return {
+    away: rows.map((r) => ({
+      id: r.id,
+      name: `${r.lastName}, ${r.firstName}`,
+      status: r.status as StaffAway["status"],
+      until: r.statusUntil ? diaDeVencimiento(r.statusUntil) : null,
+      area: r.area?.name ?? null,
+    })),
+    expired,
+  };
 }

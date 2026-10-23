@@ -37,3 +37,12 @@ export function textoNormal(value: string | null | undefined): string {
   const s = (value ?? "").replace(/_/g, " ").trim().toLowerCase();
   return s ? s.charAt(0).toUpperCase() + s.slice(1) : "";
 }
+
+/** Importe corto para tarjetas angostas: 200000 → "$ 200 mil"; 1234567 → "$ 1,2 M"; 2500000000 → "$ 2.500 M". */
+export function formatPesosCorto(n: number | null | undefined): string {
+  const v = Number(n ?? 0);
+  const abs = Math.abs(v);
+  if (abs >= 1_000_000) return `$ ${formatNumber(v / 1_000_000, abs >= 100_000_000 || v % 1_000_000 === 0 ? 0 : 1)} M`;
+  if (abs >= 1_000) return `$ ${formatNumber(Math.round(v / 1_000))} mil`;
+  return formatPesos(v);
+}

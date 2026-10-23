@@ -93,3 +93,52 @@ export async function getProviderDetail(id: string) {
 
   return { provider, orders };
 }
+
+export interface ProviderOption {
+  id: string;
+  name: string;
+  cuit: string;
+  /** El último N° de proveedor que se usó en una orden suya (el alta de proveedores no lo guarda). */
+  lastNumber: string | null;
+}
+
+/** Proveedores dados de alta, para elegir en una orden de compra. */
+export async function getProviderOptions(): Promise<ProviderOption[]> {
+  const [providers, numbered] = await Promise.all([
+    prisma.provider.findMany({ select: { id: true, name: true, cuit: true }, orderBy: { name: "asc" } }),
+    prisma.purchaseOrder.findMany({
+      where: { providerNumber: { not: null } },
+      select: { providerId: true, providerCuit: true, providerNumber: true },
+      orderBy: { createdAt: "desc" },
+    }),
+  ]);
+  const numberOf = (p: { id: string; cuit: string }) => {
+    const cuit = normalizeCuit(p.cuit);
+    const o = numbered.find((x) => x.providerNumber?.trim() && (x.providerId === p.id || (cuit && normalizeCuit(x.providerCuit) === cuit)));
+    return o?.providerNumber?.trim() || null;
+  };
+  return providers.map((p) => ({ id: p.id, name: p.name, cuit: formatCuit(p.cuit), lastNumber: numberOf(p) }));
+}
+
+/**
+ * El proveedor que queda guardado en la orden. Si se eligió de la lista, el nombre y el CUIT salen del alta
+ * (no de lo que mande el navegador). Si se escribió a mano un CUIT que ya está dado de alta, la orden se une a ese proveedor.
+ */
+export async function resolveOrderProvider(input: { providerId?: string | null; providerName?: string | null; providerCuit?: string | null }):
+  Promise<{ ok: true; providerId: string | null; providerName: string | null; providerCuit: string | null } | { ok: false; error: string }> {
+  const id = input.providerId?.trim();
+  if (id) {
+    const p = await prisma.provider.findUnique({ where: { id }, select: { id: true, name: true, cuit: true } });
+    if (!p) return { ok: false, error: "El proveedor elegido ya no existe. Elegilo de nuevo de la lista." };
+    return { ok: true, providerId: p.id, providerName: p.name, providerCuit: formatCuit(p.cuit) };
+  }
+  const name = input.providerName?.trim() || null;
+  const cuit = input.providerCuit?.trim() || null;
+  const digits = normalizeCuit(cuit);
+  if (digits.length === 11) {
+    const all = await prisma.provider.findMany({ select: { id: true, name: true, cuit: true } });
+    const match = all.find((p) => normalizeCuit(p.cuit) === digits);
+    if (match) return { ok: true, providerId: match.id, providerName: match.name, providerCuit: formatCuit(match.cuit) };
+  }
+  return { ok: true, providerId: null, providerName: name, providerCuit: cuit ? formatCuit(cuit) : null };
+}

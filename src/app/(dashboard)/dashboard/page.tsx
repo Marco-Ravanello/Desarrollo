@@ -8,6 +8,7 @@ import { getTasks } from "@/services/system";
 import { countDerivationsToAnswer } from "@/services/derivations";
 import { getMyAssignedCases, type MyAssignedCase } from "@/services/cases";
 import { getRecentAuditActivity } from "@/services/audit";
+import { getStaffAwayToday, type StaffAway } from "@/services/hr";
 import { auth } from "@/auth";
 import prisma from "@/lib/prisma";
 import { hasPermission, PERMISSIONS } from "@/lib/permissions";
@@ -16,7 +17,7 @@ import {
   Users, FileText, CheckCircle2, ShieldCheck,
   Plus, UserPlus, ChevronRight, AlertTriangle,
   Car, Calendar, ArrowUpRight, LayoutDashboard, Wallet, FileSignature, ArrowRightLeft, FolderOpen,
-  Hourglass, Building2, UsersRound, CalendarCheck, ScrollText,
+  Hourglass, Building2, UsersRound, CalendarCheck, ScrollText, Palmtree,
 } from "lucide-react";
 import type { Role } from "@prisma/client";
 import { PageHeader } from "@/components/layout/page-header";
@@ -68,20 +69,20 @@ type KpiId =
   | "staleCases" | "pendingDerivations" | "myCases" | "followUpsToday";
 type SectionId =
   | "myCases" | "attention" | "budget" | "territorial" | "recentCases" | "tasks" | "vehicles"
-  | "areas" | "team" | "quietCases" | "followUps" | "activity";
+  | "areas" | "team" | "quietCases" | "followUps" | "activity" | "away";
 
 const LAYOUT: Record<Profile, { kpis: KpiId[]; sections: SectionId[] }> = {
   superadmin: {
     kpis: ["people", "activeCases", "urgentCases", "pendingOrders"],
-    sections: ["areas", "attention", "budget", "territorial", "recentCases", "tasks", "vehicles"],
+    sections: ["areas", "away", "attention", "budget", "territorial", "recentCases", "tasks", "vehicles"],
   },
   conduccion: {
     kpis: ["activeCases", "urgentCases", "staleCases", "pendingDerivations"],
-    sections: ["areas", "tasks", "territorial"],
+    sections: ["areas", "away", "tasks", "territorial"],
   },
   administracion: {
     kpis: ["people", "activeCases", "urgentCases", "pendingOrders"],
-    sections: ["attention", "budget", "vehicles", "territorial", "recentCases", "tasks"],
+    sections: ["attention", "budget", "away", "vehicles", "territorial", "recentCases", "tasks"],
   },
   area: {
     kpis: ["activeCases", "urgentCases", "staleCases", "pendingDerivations"],
@@ -171,7 +172,7 @@ export default async function DashboardPage({
   const wants = (id: KpiId | SectionId) => (layout.kpis as string[]).includes(id) || (layout.sections as string[]).includes(id);
   const userId = session?.user?.id;
 
-  const [stats, myTasks, area, derivationsToAnswer, myCases, staleCount, pendingDerivations, areaRows, team, quiet, followUps, activity] =
+  const [stats, myTasks, area, derivationsToAnswer, myCases, staleCount, pendingDerivations, areaRows, team, quiet, followUps, activity, away] =
     await Promise.all([
       getDashboardStats(scope),
       userId ? getTasks(userId).catch(() => []) : Promise.resolve([]),
@@ -185,6 +186,7 @@ export default async function DashboardPage({
       wants("quietCases") ? getQuietCases(scope).catch(() => []) : [],
       userId && wants("followUps") ? getFollowUpsDue(userId).catch(() => []) : [],
       wants("activity") ? getRecentAuditActivity().catch(() => []) : [],
+      wants("away") ? getStaffAwayToday().catch(() => ({ away: [], expired: 0 })) : { away: [], expired: 0 },
     ]);
 
   // Mismas tareas que muestra "Mis tareas": las del usuario que no están completadas.
@@ -408,6 +410,8 @@ export default async function DashboardPage({
               return <div key={id} className={span}><FollowUpsCard items={followUps} /></div>;
             case "activity":
               return <div key={id} className={span}><ActivityCard entries={activity} /></div>;
+            case "away":
+              return <div key={id} className={span}><AwayCard away={away.away} expired={away.expired} /></div>;
           }
         })}
       </div>
@@ -891,6 +895,51 @@ function ActivityCard({ entries }: { entries: Awaited<ReturnType<typeof getRecen
             );
           })}
         </div>
+      )}
+    </Card>
+  );
+}
+
+function AwayCard({ away, expired }: { away: StaffAway[]; expired: number }) {
+  const dayMonth = (d: string) => `${d.slice(8, 10)}/${d.slice(5, 7)}`;
+  return (
+    <Card className="rounded-2xl border border-border/60 bg-card p-5 shadow-sm h-full">
+      <CardHeaderRow
+        icon={Palmtree}
+        iconClass="text-primary"
+        title={away.length > 0 ? `De licencia hoy (${away.length})` : "De licencia hoy"}
+        href="/admin/hr"
+        linkLabel="Ver personal"
+      />
+      {away.length === 0 ? (
+        <EmptyMessage compact kind="done" icon={Palmtree} title="Hoy no falta nadie" description="Cuando en Recursos Humanos alguien figure de licencia o de vacaciones, aparece acá." />
+      ) : (
+        <div className="divide-y divide-border/20 mt-1">
+          {away.slice(0, 8).map((p) => (
+            <div key={p.id} className="flex items-center justify-between gap-2 py-2.5 px-1">
+              <div className="min-w-0">
+                <p className="text-xs font-medium text-foreground truncate">{p.name}</p>
+                <p className="text-xs text-muted-foreground truncate">
+                  {[p.status === "VACACIONES" ? "Vacaciones" : "Licencia", p.area ? getAreaShortName(p.area) : null].filter(Boolean).join(" · ")}
+                </p>
+              </div>
+              <span className="shrink-0 text-xs text-muted-foreground whitespace-nowrap">
+                {p.until ? `Hasta el ${dayMonth(p.until)}` : "Sin fecha de vuelta"}
+              </span>
+            </div>
+          ))}
+          {away.length > 8 && (
+            <Link href="/admin/hr" className="block py-2.5 px-1 text-xs font-medium text-primary hover:underline">
+              {plural(away.length - 8, "persona más", "personas más")}
+            </Link>
+          )}
+        </div>
+      )}
+      {expired > 0 && (
+        <p className="mt-3 rounded-lg bg-amber-500/10 px-3 py-2 text-xs text-amber-800 dark:text-amber-300">
+          {plural(expired, "persona sigue", "personas siguen")} de licencia con la fecha de vuelta ya pasada.{" "}
+          <Link href="/admin/hr?status=LICENCIA" className="font-semibold underline">Revisar</Link>
+        </p>
       )}
     </Card>
   );

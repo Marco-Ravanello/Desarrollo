@@ -1,6 +1,6 @@
 export const dynamic = "force-dynamic";
 
-import { getProviders } from "@/services/admin";
+import { getProviderOptions } from "@/services/providers";
 import { getAreas } from "@/services/cases";
 import { CreatePurchaseOrderForm } from "./create-order-form";
 import { PageHeader } from "@/components/layout/page-header";
@@ -10,7 +10,7 @@ export const metadata = { title: "Nueva orden de compra" };
 
 export default async function NewPurchaseOrderPage() {
   const [providers, areas] = await Promise.all([
-    getProviders(),
+    getProviderOptions(),
     getAreas()
   ]);
 
