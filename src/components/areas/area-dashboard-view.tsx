@@ -10,7 +10,8 @@ import { TableCards } from "@/components/ui/table";
 import { PageHeader } from "@/components/layout/page-header";
 import { StatCard } from "@/components/ui/stat-card";
 import { MobileList, MobileListItem, StatRow } from "@/components/ui/mobile-list";
-import { isProvisionalDni, splitCaseTitle } from "@/lib/case-summary";
+import { CASE_PRIORITY_LABEL, CASE_STATUS_LABEL, isProvisionalDni, splitCaseTitle } from "@/lib/case-summary";
+import { CaseTag } from "@/components/cases/case-tag";
 import { EmptyMessage } from "@/components/ui/empty-message";
 import {
   FolderPlus, Search, ShieldAlert, Users, AlertTriangle, Clock,
@@ -121,6 +122,7 @@ export function AreaDashboardView({
 
   const exportColumns = [
     { header: "Expediente", accessorKey: "title" },
+    { header: "Etiqueta", accessorKey: "tag" },
     { header: "Titular", accessorKey: "citizenName" },
     { header: "DNI", accessorKey: "dni" },
     { header: "Estado", accessorKey: "status" },
@@ -130,11 +132,12 @@ export function AreaDashboardView({
   ];
 
   const exportData = filteredCases.map((c) => ({
-    title: c.title,
+    title: splitCaseTitle(c.title).title,
+    tag: splitCaseTitle(c.title).tag ?? "",
     citizenName: `${c.person.lastName}, ${c.person.firstName}`,
-    dni: c.person.dni,
-    status: c.status,
-    priority: c.priority,
+    dni: isProvisionalDni(c.person.dni) ? "Sin DNI" : c.person.dni,
+    status: CASE_STATUS_LABEL[c.status] ?? c.status,
+    priority: CASE_PRIORITY_LABEL[c.priority] ?? c.priority,
     updatedAt: formatFecha(c.updatedAt),
     interventionsCount: c._count?.interventions || 0
   }));
@@ -232,7 +235,7 @@ export function AreaDashboardView({
       </StatRow>
 
       <Card className="bg-card text-card-foreground border border-border/60 shadow-xs rounded-2xl overflow-hidden">
-        <div className="p-4 sm:p-5 border-b border-border/40 bg-muted/20 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="p-4 sm:p-5 border-b border-border/40 bg-muted/20 flex flex-col xl:flex-row xl:items-center justify-between gap-4">
           <div className="flex max-w-full items-center gap-1.5 bg-muted/40 p-1 rounded-2xl border border-border/40 shrink-0 overflow-x-auto [scrollbar-width:none] [&>button]:shrink-0 [&>button]:whitespace-nowrap">
             <button
               type="button"
@@ -294,7 +297,7 @@ export function AreaDashboardView({
             </button>
           </div>
 
-          <div className="flex flex-col sm:flex-row items-center gap-2">
+          <div className="flex flex-col sm:flex-row sm:flex-wrap items-center gap-2">
             <div className="relative w-full sm:w-64">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
               <Input
@@ -352,34 +355,39 @@ export function AreaDashboardView({
           </MobileList>
         )}
         <TableCards className={filteredCases.length > 0 ? "hidden md:block" : undefined}>
-          <table className="w-full text-xs text-left">
+          <table className="w-full table-fixed text-xs text-left">
             <thead className="bg-muted/40 text-muted-foreground font-bold border-b border-border/40">
               <tr>
                 <th className="px-5 py-3.5">Carátula / asunto</th>
-                <th className="px-4 py-3.5">Titular</th>
-                <th className="px-4 py-3.5">DNI</th>
-                <th className="px-4 py-3.5">Estado</th>
-                <th className="px-4 py-3.5">Prioridad</th>
-                <th className="px-4 py-3.5">Intervenciones</th>
-                <th className="px-4 py-3.5 text-right">Acción</th>
+                <th className="w-44 px-4 py-3.5">Titular</th>
+                <th className="w-28 px-4 py-3.5">DNI</th>
+                <th className="w-28 px-4 py-3.5">Estado</th>
+                <th className="w-28 px-4 py-3.5">Prioridad</th>
+                <th className="w-36 px-4 py-3.5">Intervenciones</th>
+                <th className="w-16 px-4 py-3.5"><span className="sr-only">Ver</span></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border/30">
               {filteredCases.length > 0 ? (
-                filteredCases.map((c) => (
+                filteredCases.map((c) => {
+                  const shown = splitCaseTitle(c.title);
+                  return (
                   <tr key={c.id} className="hover:bg-muted/30 transition-colors">
-                    <td className="px-5 py-3.5 font-bold text-foreground max-w-xs truncate">
-                      <Link href={`/cases/${c.id}`} className="hover:text-primary transition-colors">
-                        {c.title}
-                      </Link>
+                    <td className="px-5 py-3.5 font-bold text-foreground">
+                      <div className="flex min-w-0 items-center gap-1.5">
+                        <CaseTag tag={shown.tag} />
+                        <Link href={`/cases/${c.id}`} title={c.title} className="min-w-0 truncate hover:text-primary transition-colors">
+                          {shown.title}
+                        </Link>
+                      </div>
                     </td>
                     <td className="px-4 py-3.5 text-foreground font-semibold">
-                      <Link href={`/people/${c.person.id}`} className="hover:underline">
+                      <Link href={`/people/${c.person.id}`} className="block truncate hover:underline" title={`${c.person.lastName}, ${c.person.firstName}`}>
                         {c.person.lastName}, {c.person.firstName}
                       </Link>
                     </td>
                     <td className="px-4 py-3.5 font-mono text-muted-foreground">
-                      {c.person.dni}
+                      {isProvisionalDni(c.person.dni) ? <span className="font-sans">Sin DNI</span> : c.person.dni}
                     </td>
                     <td className="px-4 py-3.5">
                       {renderStatusBadge(c.status)}
@@ -387,19 +395,19 @@ export function AreaDashboardView({
                     <td className="px-4 py-3.5">
                       {renderPriorityBadge(c.priority)}
                     </td>
-                    <td className="px-4 py-3.5 text-muted-foreground font-bold">
+                    <td className="px-4 py-3.5 whitespace-nowrap text-muted-foreground font-bold">
                       {plural(c._count?.interventions || 0, "intervención")}
                     </td>
                     <td className="px-4 py-3.5 text-right">
-                      <Button variant="ghost" size="sm" asChild className="h-8 text-xs font-bold text-primary hover:bg-primary/10 rounded-xl">
-                        <Link href={`/cases/${c.id}`}>
-                          <Eye className="h-3.5 w-3.5 mr-1" />
-                          <span>Ver expediente</span>
+                      <Button variant="ghost" size="icon" asChild className="h-8 w-8 text-primary hover:bg-primary/10 rounded-xl">
+                        <Link href={`/cases/${c.id}`} aria-label="Ver expediente" title="Ver expediente">
+                          <Eye className="h-4 w-4" />
                         </Link>
                       </Button>
                     </td>
                   </tr>
-                ))
+                  );
+                })
               ) : (
                 <tr>
                   <td colSpan={7} className="p-0">

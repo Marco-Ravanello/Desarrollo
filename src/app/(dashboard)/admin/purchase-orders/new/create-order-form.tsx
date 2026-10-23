@@ -11,12 +11,14 @@ import { createPurchaseOrderAction } from "../../actions/create-purchase-order";
 import { Plus, Trash2, Info } from "lucide-react";
 import { EmptyMessage } from "@/components/ui/empty-message";
 import dynamic from "next/dynamic";
+import type { ProviderOption } from "@/services/providers";
+import { ProviderPicker } from "./provider-picker";
 
 const OCRScanner = dynamic(() => import("@/components/ocr/ocr-scanner").then(mod => mod.OCRScanner), {
   ssr: false,
 });
 
-export function CreatePurchaseOrderForm({ providers, areas = [] }: { providers: any[]; areas?: any[] }) {
+export function CreatePurchaseOrderForm({ providers, areas = [] }: { providers: ProviderOption[]; areas?: any[] }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [orderData, setOrderData] = useState({
@@ -37,23 +39,17 @@ export function CreatePurchaseOrderForm({ providers, areas = [] }: { providers: 
   const [items, setItems] = useState<any[]>([]);
 
   const handleScanComplete = (data: any) => {
-    // Try to find provider by CUIT if found
-    let matchedProviderId = "";
-    if (data.cuit) {
-      const p = providers.find(p =>
-        p.cuit === data.cuit ||
-        p.cuit.replace(/-/g, '') === data.cuit.replace(/-/g, '')
-      );
-      if (p) matchedProviderId = p.id;
-    }
+    // Si el CUIT leído es de un proveedor dado de alta, se usa ese.
+    const scannedCuit = String(data.cuit || "").replace(/[^0-9]/g, "");
+    const matched = scannedCuit ? providers.find((p) => p.cuit.replace(/[^0-9]/g, "") === scannedCuit) : undefined;
 
     setOrderData(prev => ({
       ...prev,
       number: data.number || prev.number,
       amount: data.amount || prev.amount,
-      providerId: matchedProviderId || prev.providerId,
-      providerName: data.providerName || prev.providerName,
-      providerCuit: data.cuit || prev.providerCuit,
+      providerId: matched?.id || (data.providerName || data.cuit ? "" : prev.providerId),
+      providerName: matched?.name || data.providerName || prev.providerName,
+      providerCuit: matched?.cuit || data.cuit || prev.providerCuit,
       providerNumber: data.providerNumber || prev.providerNumber,
       expediente: data.expediente || prev.expediente,
       deliveryDate: data.deliveryDate ? data.deliveryDate.split('/').reverse().join('-') : prev.deliveryDate,
@@ -97,6 +93,12 @@ export function CreatePurchaseOrderForm({ providers, areas = [] }: { providers: 
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+
+    if (!orderData.providerId && !orderData.providerName.trim()) {
+      toast.error("Elegí el proveedor de la lista o escribilo a mano.");
+      document.getElementById("providerSearch")?.focus();
+      return;
+    }
 
     // Validation
     const itemsTotal = items.reduce((acc, item) => acc + (parseFloat(item.totalPrice) || 0), 0);
@@ -166,6 +168,14 @@ export function CreatePurchaseOrderForm({ providers, areas = [] }: { providers: 
                 ))}
               </select>
             </div>
+            <div className="md:col-span-2">
+              <ProviderPicker
+                providers={providers}
+                value={{ providerId: orderData.providerId, providerName: orderData.providerName, providerCuit: orderData.providerCuit }}
+                onChange={(p) => setOrderData((prev) => ({ ...prev, ...p }))}
+                onPick={(p) => setOrderData((prev) => ({ ...prev, providerNumber: p.lastNumber || prev.providerNumber }))}
+              />
+            </div>
             <div className="space-y-2">
               <Label htmlFor="providerNumber">N° de proveedor</Label>
               <Input
@@ -174,28 +184,6 @@ export function CreatePurchaseOrderForm({ providers, areas = [] }: { providers: 
                 placeholder="Ej: 20264"
                 value={orderData.providerNumber}
                 onChange={(e) => setOrderData({...orderData, providerNumber: e.target.value})}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="providerName">Nombre del proveedor</Label>
-              <Input
-                id="providerName"
-                name="providerName"
-                placeholder="Ej: Duarte Fernando Gabriel"
-                required
-                value={orderData.providerName}
-                onChange={(e) => setOrderData({...orderData, providerName: e.target.value})}
-              />
-              <input type="hidden" name="providerId" value={orderData.providerId} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="providerCuit">CUIT del proveedor</Label>
-              <Input
-                id="providerCuit"
-                name="providerCuit"
-                placeholder="Ej: 23-25249967-9"
-                value={orderData.providerCuit}
-                onChange={(e) => setOrderData({...orderData, providerCuit: e.target.value})}
               />
             </div>
             <div className="space-y-2">

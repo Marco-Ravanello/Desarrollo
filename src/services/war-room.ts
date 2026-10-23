@@ -2,6 +2,10 @@ import prisma from "@/lib/prisma";
 import { todayInArgentina } from "@/lib/follow-up-dates";
 import { plural } from "@/lib/formato";
 import { TZ_AR } from "@/lib/fechas";
+import { formatPesos, formatPesosCorto } from "@/lib/formato";
+import { CASE_PRIORITY_LABEL, splitCaseTitle } from "@/lib/case-summary";
+import { getAreaShortName } from "@/lib/area-theme";
+import type { Prisma } from "@prisma/client";
 
 function formatRelativeTime(date: Date) {
   const now = new Date();
@@ -15,7 +19,14 @@ function formatRelativeTime(date: Date) {
   return new Date(date).toLocaleDateString("es-AR", { day: "numeric", month: "short", timeZone: TZ_AR });
 }
 
-export async function getWarRoomData() {
+/**
+ * Lo que muestra la Sala de Situación. Sin permiso para ver Violencia de Género,
+ * esos expedientes no se listan ni se cuentan (mismo criterio que la lista de expedientes).
+ */
+export async function getWarRoomData({ canViewSensitive }: { canViewSensitive: boolean }) {
+  const caseScope: Prisma.CaseWhereInput = canViewSensitive
+    ? {}
+    : { NOT: { area: { name: { contains: "violencia", mode: "insensitive" } } } };
   try {
     let totalCitizens = 0;
     try {
@@ -37,13 +48,14 @@ export async function getWarRoomData() {
     ] = await Promise.all([
       prisma.case.count({
         where: {
+          ...caseScope,
           priority: { in: ['URGENTE', 'ALTA'] },
           status: { in: ['ABIERTO', 'EN_PROCESO', 'PENDIENTE'] }
         }
       }).catch(() => 0),
       // Cerrados hoy (día de Argentina): antes contaba todos los cerrados de la historia.
       prisma.case.count({
-        where: { status: 'CERRADO', updatedAt: { gte: new Date(`${todayInArgentina()}T00:00:00-03:00`) } }
+        where: { ...caseScope, status: 'CERRADO', updatedAt: { gte: new Date(`${todayInArgentina()}T00:00:00-03:00`) } }
       }).catch(() => 0),
       prisma.vehicle.count({ where: { status: 'DISPONIBLE' } }).catch(() => 0),
       prisma.vehicle.count().catch(() => 0),
@@ -52,6 +64,7 @@ export async function getWarRoomData() {
         _sum: { amount: true }
       }).catch(() => ({ _sum: { amount: null } })),
       prisma.case.findMany({
+        where: caseScope,
         take: 6,
         orderBy: { createdAt: 'desc' },
         include: {
@@ -60,6 +73,8 @@ export async function getWarRoomData() {
         }
       }).catch(() => []),
       prisma.area.findMany({
+        where: canViewSensitive ? {} : { NOT: { name: { contains: "violencia", mode: "insensitive" } } },
+        orderBy: { name: "asc" },
         include: {
           _count: {
             select: { cases: { where: { status: { in: ['ABIERTO', 'EN_PROCESO'] } } } }
@@ -70,22 +85,27 @@ export async function getWarRoomData() {
     ]);
 
     const budgetTotal = Number(committedBudgetAgg._sum.amount || 0);
-    const committedBudgetFormatted = budgetTotal > 0
-      ? `$ ${budgetTotal.toLocaleString("es-AR")}`
-      : "$ 0";
+    const committedBudgetFormatted = formatPesosCorto(budgetTotal);
+    const committedBudgetFull = formatPesos(budgetTotal);
 
     // Cuántos insumos están por debajo de su mínimo (antes era un porcentaje que no se entendía).
     const suppliesBelowMin = supplies.filter((item) => item.stock < item.minStock).length;
     const suppliesTotal = supplies.length;
 
-    const territorialAlerts = realCases.map((c) => ({
-      id: c.id,
-      area: c.area?.name || "Sin área",
-      title: `${c.title} — ${c.person ? `${c.person.lastName}, ${c.person.firstName}` : 'Sin titular'} ${c.person?.address ? `(${c.person.address})` : ''}`,
-      time: formatRelativeTime(c.createdAt),
-      priority: c.priority,
-      status: c.status
-    }));
+    const territorialAlerts = realCases.map((c) => {
+      const shown = splitCaseTitle(c.title);
+      return {
+        id: c.id,
+        area: c.area ? getAreaShortName(c.area.name) : "Sin área",
+        title: shown.title,
+        tag: shown.tag,
+        titular: c.person ? `${c.person.lastName}, ${c.person.firstName}` : null,
+        time: formatRelativeTime(c.createdAt),
+        priority: c.priority,
+        priorityLabel: CASE_PRIORITY_LABEL[c.priority] ?? c.priority,
+        status: c.status
+      };
+    });
 
     const totalActiveCasesAll = areasWithCases.reduce((acc, a) => acc + a._count.cases, 0);
     const areaStatus = areasWithCases.map((a) => {
@@ -93,10 +113,11 @@ export async function getWarRoomData() {
       const percentage = totalActiveCasesAll > 0 ? Math.round((activeCount / totalActiveCasesAll) * 100) : 0;
       return {
         id: a.id,
-        name: a.name,
+        name: getAreaShortName(a.name),
+        fullName: a.name,
         activeCases: activeCount,
         percentage,
-        badgeText: activeCount > 0 ? plural(activeCount, "expediente abierto") : "Sin expedientes abiertos"
+        badgeText: activeCount > 0 ? plural(activeCount, "abierto") : "Ninguno abierto"
       };
     });
 
@@ -109,6 +130,7 @@ export async function getWarRoomData() {
       suppliesBelowMin,
       suppliesTotal,
       committedBudgetFormatted,
+      committedBudgetFull,
       territorialAlerts,
       areaStatus
     };
@@ -123,6 +145,7 @@ export async function getWarRoomData() {
       suppliesBelowMin: 0,
       suppliesTotal: 0,
       committedBudgetFormatted: "$ 0",
+      committedBudgetFull: "$ 0",
       territorialAlerts: [],
       areaStatus: []
     };

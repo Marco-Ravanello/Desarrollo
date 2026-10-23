@@ -6,6 +6,7 @@ import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
 import { actionErrorMessage } from "@/lib/action-error";
 import { PURCHASING_EDIT_ROLES } from "@/lib/permissions";
+import { resolveOrderProvider } from "@/services/providers";
 
 export async function createPurchaseOrderAction(formData: FormData) {
   const session = await auth();
@@ -35,13 +36,16 @@ export async function createPurchaseOrderAction(formData: FormData) {
     return { success: false, error: "Número, proveedor e importe son requeridos" };
   }
 
+  const provider = await resolveOrderProvider({ providerId, providerName, providerCuit });
+  if (!provider.ok) return { success: false, error: provider.error };
+
   try {
     const order = await createPurchaseOrder({
       number,
       areaId: areaId || null,
-      providerId,
-      providerName,
-      providerCuit,
+      providerId: provider.providerId,
+      providerName: provider.providerName,
+      providerCuit: provider.providerCuit,
       providerNumber,
       amount,
       description,

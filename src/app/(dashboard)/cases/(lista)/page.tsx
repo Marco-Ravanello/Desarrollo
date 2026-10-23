@@ -19,6 +19,7 @@ import { hasPermission, PERMISSIONS } from "@/lib/permissions";
 import { getCaseStatusConfig } from "@/lib/status-styles";
 import { getAreaShortName } from "@/lib/area-theme";
 import { interventionTypeLabel } from "@/lib/intervention-types";
+import { CaseTag } from "@/components/cases/case-tag";
 import { CASE_PRIORITY_LABEL, CASE_STATUS_LABEL, STALE_DAYS, agoText, daysText, fechaCorta, isProvisionalDni, splitCaseTitle, summarizeCase } from "@/lib/case-summary";
 import { countMyOpenCases } from "@/services/case-assignment";
 import prisma from "@/lib/prisma";
@@ -363,11 +364,7 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
                         ) : (
                           <div className="space-y-1">
                             <div className="flex min-w-0 items-center gap-1.5">
-                              {shown.tag && (
-                                <span className="shrink-0 rounded-md border border-sky-500/30 bg-sky-500/10 px-1.5 py-0.5 text-xs font-bold text-sky-800 dark:text-sky-300">
-                                  {shown.tag}
-                                </span>
-                              )}
+                              <CaseTag tag={shown.tag} />
                               <Link href={`/cases/${c.id}`} title={c.title} className="block min-w-0 truncate font-bold text-xs text-foreground hover:underline">{shown.title}</Link>
                             </div>
                             {c.person ? (

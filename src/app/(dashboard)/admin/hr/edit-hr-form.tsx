@@ -163,9 +163,9 @@ export function EditHRForm({ agent, areas, onComplete }: { agent: any, areas: an
               <option value="BAJA">Baja / inactivo</option>
             </select>
           </div>
-          {status === "LICENCIA" && (
+          {(status === "LICENCIA" || status === "VACACIONES") && (
             <div className="space-y-2">
-              <Label htmlFor="statusUntil" className="font-bold text-foreground">Licencia hasta</Label>
+              <Label htmlFor="statusUntil" className="font-bold text-foreground">{status === "VACACIONES" ? "Vacaciones hasta" : "Licencia hasta"}</Label>
               <Input id="statusUntil" name="statusUntil" type="date" defaultValue={agent.statusUntil ? agent.statusUntil.split('T')[0] : ""} />
             </div>
           )}
