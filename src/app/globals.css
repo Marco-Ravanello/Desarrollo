@@ -178,3 +178,14 @@
     display: none !important;
   }
 }
+
+/* Mapas en modo oscuro: el fondo del mapa (calles) se oscurece; los puntos y marcadores quedan con sus colores. */
+.dark .leaflet-tile-pane {
+  filter: invert(1) hue-rotate(180deg) brightness(0.95) contrast(0.9);
+}
+.dark .leaflet-container {
+  background: hsl(var(--muted));
+}
+@media print {
+  .dark .leaflet-tile-pane { filter: none; }
+}

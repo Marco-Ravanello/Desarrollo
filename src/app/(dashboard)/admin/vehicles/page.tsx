@@ -18,6 +18,7 @@ import { auth } from "@/auth";
 import { RESERVATION_STATUS, formatReservationRange, isFleetAdmin, reservationActionsFor } from "@/lib/vehicle-reservations";
 import { ReservationActions } from "./requests/reservation-actions";
 import { formatFechaCalendario } from "@/lib/fechas";
+import { plural } from "@/lib/formato";
 
 export const metadata = { title: "Vehículos" };
 
@@ -120,7 +121,7 @@ export default async function VehiclesPage() {
         <StatCard
           label="Disponibles hoy"
           value={availableNow}
-          hint={`de ${totalVehicles} unidades`}
+          hint={`de ${plural(totalVehicles, "unidad")}`}
           icon={CheckCircle2}
           tone="green"
         />

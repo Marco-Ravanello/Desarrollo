@@ -29,6 +29,16 @@ export function daysBetween(from: Date, to: Date): number {
   return Math.max(0, Math.round((b - a) / 86_400_000));
 }
 
+/**
+ * Desde cuándo un expediente sin movimiento cuenta como quieto: medianoche argentina de hace
+ * STALE_DAYS - 1 días. Lo que no tuvo intervenciones desde ahí lleva STALE_DAYS días o más quieto
+ * (mismo criterio que summarizeCase, para usar en las consultas a la base).
+ */
+export function staleCutoff(now: Date = new Date()): Date {
+  const today = dayKey(now);
+  return new Date(Date.parse(`${today}T00:00:00-03:00`) - (STALE_DAYS - 1) * 86_400_000);
+}
+
 /** "hoy", "1 día", "12 días". */
 export function daysText(days: number): string {
   if (days <= 0) return "hoy";

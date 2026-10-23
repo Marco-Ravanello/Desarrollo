@@ -11,8 +11,9 @@ import { StatCard } from "@/components/ui/stat-card";
 import { EmptyMessage } from "@/components/ui/empty-message";
 import Link from "next/link";
 import { formatFechaCalendario, formatFechaHora } from "@/lib/fechas";
+import { agreementTitle } from "@/lib/page-titles";
 
-export const metadata = { title: "Convenio" };
+export const generateMetadata = agreementTitle;
 
 export default async function AgreementDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;

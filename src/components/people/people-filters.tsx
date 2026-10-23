@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { MobileFilters } from "@/components/ui/mobile-filters";
 import { Search, MapPin, HeartHandshake, X, RotateCcw, Filter, ListOrdered } from "lucide-react";
 
 interface PeopleFiltersProps {
@@ -63,7 +64,7 @@ export function PeopleFilters({ barrios, programas }: PeopleFiltersProps) {
     (currentLimit && currentLimit !== "20");
 
   return (
-    <Card className="p-5 bg-card text-card-foreground border border-border/60 rounded-2xl shadow-xs space-y-4">
+    <Card className="p-4 sm:p-5 bg-card text-card-foreground border border-border/60 rounded-2xl shadow-xs space-y-4">
       <form onSubmit={handleSearchSubmit} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3">
         <div className="lg:col-span-5 relative">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -75,6 +76,7 @@ export function PeopleFilters({ barrios, programas }: PeopleFiltersProps) {
           />
         </div>
 
+        <MobileFilters active={[currentBarrio !== "all", currentPrograma !== "all"].filter(Boolean).length}>
         <div className="lg:col-span-3">
           <select
             aria-label="Filtrar por barrio"
@@ -107,6 +109,8 @@ export function PeopleFilters({ barrios, programas }: PeopleFiltersProps) {
           </select>
         </div>
 
+        </MobileFilters>
+
         <div className="lg:col-span-1 flex items-center gap-2">
           <Button type="submit" className="h-11 w-full rounded-2xl px-4 text-xs font-bold bg-primary text-primary-foreground gap-2">
             <Search className="h-4 w-4" /> Buscar
@@ -114,7 +118,7 @@ export function PeopleFilters({ barrios, programas }: PeopleFiltersProps) {
         </div>
       </form>
 
-      <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-border/40 text-xs">
+      <div className={`flex-wrap items-center justify-between gap-3 pt-2 border-t border-border/40 text-xs ${hasActiveFilters ? "flex" : "hidden md:flex"}`}>
         <div className="flex items-center gap-2 flex-wrap">
           <span className="text-xs font-bold text-muted-foreground flex items-center gap-1">
             <Filter className="h-3.5 w-3.5 text-primary" /> Filtros puestos:

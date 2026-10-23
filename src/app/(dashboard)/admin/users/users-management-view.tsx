@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { UniversalExportMenu } from "@/components/ui/universal-export-menu";
 import { PageHeader } from "@/components/layout/page-header";
 import { StatCard } from "@/components/ui/stat-card";
+import { StatRow } from "@/components/ui/mobile-list";
 import { EmptyMessage } from "@/components/ui/empty-message";
 import { TableCards } from "@/components/ui/table";
 import {
@@ -184,7 +185,7 @@ export function UsersManagementView({
         }
       />
 
-      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+      <StatRow>
         <StatCard
           label="Usuarios"
           value={totalUsers}
@@ -213,11 +214,11 @@ export function UsersManagementView({
           icon={Shield}
           tone="purple"
         />
-      </div>
+      </StatRow>
 
       <Card className="bg-card text-card-foreground border border-border/60 shadow-xs rounded-2xl overflow-hidden">
         <div className="p-4 sm:p-5 border-b border-border/40 bg-muted/20 flex flex-col xl:flex-row xl:items-center justify-between gap-4">
-          <div className="flex flex-wrap items-center gap-1.5 bg-muted/40 p-1 rounded-2xl border border-border/40 shrink-0">
+          <div className="-mx-4 flex items-center gap-1.5 overflow-x-auto px-4 [scrollbar-width:none] [&>button]:shrink-0 [&>button]:whitespace-nowrap sm:mx-0 sm:flex-wrap sm:overflow-visible sm:bg-muted/40 sm:p-1 sm:rounded-2xl sm:border sm:border-border/40 shrink-0">
             <button
               type="button"
               onClick={() => setStatusFilter("TODOS")}
@@ -301,7 +302,47 @@ export function UsersManagementView({
           </div>
         </div>
 
-        <TableCards>
+        {filteredUsers.length > 0 && (
+          <ul aria-label="Usuarios" className="md:hidden divide-y divide-border/50">
+            {filteredUsers.map((u) => {
+              const isSelf = currentUserId === u.id;
+              return (
+                <li key={u.id} className="flex items-center gap-2 px-4 py-2.5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditingUser(u);
+                      setIsEditDialogOpen(true);
+                    }}
+                    className="min-w-0 flex-1 text-left"
+                  >
+                    <span className="block truncate text-sm font-semibold text-foreground">
+                      {u.name || "Sin nombre"}{isSelf && <span className="font-normal text-primary"> (vos)</span>}
+                    </span>
+                    <span className="block truncate text-xs text-muted-foreground">
+                      {roleLabel(u.role)} · {u.area?.name || "Sin área"}
+                    </span>
+                    {u.lastLogin && (
+                      <span className={`block truncate text-xs ${u.isActive && u.lastLogin.unused ? "font-semibold text-amber-700 dark:text-amber-400" : "text-muted-foreground/80"}`}>
+                        {u.lastLogin.days === null ? u.lastLogin.label : `Entró: ${u.lastLogin.label.toLowerCase()}`}
+                      </span>
+                    )}
+                  </button>
+                  <Badge
+                    variant="outline"
+                    className={`shrink-0 text-xs font-bold ${u.isActive ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30" : "bg-rose-500/15 text-rose-700 dark:text-rose-300 border-rose-500/30"}`}
+                  >
+                    {u.isActive ? "Activa" : "Suspendida"}
+                  </Badge>
+                  {isSuperadmin && !isSelf && (
+                    <TemporaryPasswordButton userId={u.id} userName={u.name || u.email || "esta persona"} isActive={u.isActive} />
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        )}
+        <TableCards className={filteredUsers.length > 0 ? "hidden md:block" : undefined}>
           <table className="w-full text-xs text-left">
             <thead className="bg-muted/40 text-muted-foreground font-bold border-b border-border/40">
               <tr>

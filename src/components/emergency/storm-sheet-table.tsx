@@ -17,6 +17,7 @@ import {
 } from "@/app/(dashboard)/admin/actions/emergency-actions";
 import { saveFichaOrQueue } from "@/lib/emergency-offline";
 import { SIN_BARRIO, STORM_BARRIOS, matchStormBarrio, stormBarrioLabel } from "@/lib/storm-barrios";
+import { barrioLabel } from "@/lib/person-display";
 
 interface StormSheetTableProps {
   records: StormVictimItem[];
@@ -93,7 +94,7 @@ export function StormSheetTable({
     // El barrio del padrón se elige en el desplegable si está en la lista; si no, queda como referencia.
     const barrioPadron = matchStormBarrio(s.barrio);
     if (barrioPadron) setFastBarrio(barrioPadron);
-    else if (s.barrio && !fastRef) setFastRef(`Barrio ${s.barrio}`);
+    else if (s.barrio && !fastRef) setFastRef(barrioLabel(s.barrio));
     setFastGrupoFam(s.grupoFamiliar);
     if (s.ninos) setFastNinos(s.ninos);
     setShowSuggestions(false);

@@ -12,6 +12,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { PageBreadcrumbs } from "@/components/layout/breadcrumbs-context";
 import { PageHeader } from "@/components/layout/page-header";
 import { StatCard } from "@/components/ui/stat-card";
+import { MobileList, MobileListItem, StatRow } from "@/components/ui/mobile-list";
+import { MobileFilters } from "@/components/ui/mobile-filters";
 import { EmptyMessage } from "@/components/ui/empty-message";
 import { hasPermission, PERMISSIONS } from "@/lib/permissions";
 import { getCaseStatusConfig } from "@/lib/status-styles";
@@ -19,6 +21,7 @@ import { getAreaShortName } from "@/lib/area-theme";
 import { interventionTypeLabel } from "@/lib/intervention-types";
 import { CASE_PRIORITY_LABEL, CASE_STATUS_LABEL, STALE_DAYS, agoText, daysText, fechaCorta, isProvisionalDni, splitCaseTitle, summarizeCase } from "@/lib/case-summary";
 import { countMyOpenCases } from "@/services/case-assignment";
+import prisma from "@/lib/prisma";
 import {
   FileText, ShieldAlert, CheckCircle2, Clock, Plus, Search,
   ArrowRight, ClipboardList, ArrowRightLeft, AlertTriangle, UserCheck
@@ -33,6 +36,7 @@ interface CasesPageProps {
     status?: string;
     priority?: string;
     assigned?: string;
+    quiet?: string;
     page?: string;
     limit?: string;
   }>;
@@ -55,8 +59,11 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
   if (!session?.user?.id) redirect("/login");
 
   const { q, area, status, priority, page, limit } = await searchParams;
-  const assignedRaw = (await searchParams).assigned;
-  const assigned = assignedRaw === "mine" || assignedRaw === "none" ? assignedRaw : undefined;
+  const { assigned: assignedRaw, quiet: quietRaw } = await searchParams;
+  // "mine", "none" o el id de un profesional (desde el equipo del área en el inicio).
+  const assigned =
+    assignedRaw === "mine" || assignedRaw === "none" || (assignedRaw && /^c[a-z0-9]{20,30}$/.test(assignedRaw)) ? assignedRaw : undefined;
+  const quiet = quietRaw === "1";
   const pageNum = Math.max(1, Number(page) || 1);
   const limitNum = Math.max(1, Math.min(100, Number(limit) || 20));
 
@@ -69,6 +76,7 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
       status,
       priority,
       assigned,
+      quiet,
       userId: session.user.id,
       page: pageNum,
       limit: limitNum,
@@ -78,6 +86,13 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
     countDerivationsToAnswer(session.user),
     countMyOpenCases(session.user.id),
   ]);
+  const assignedUser =
+    assigned && assigned !== "mine" && assigned !== "none"
+      ? await prisma.user.findUnique({ where: { id: assigned }, select: { name: true, username: true } }).catch(() => null)
+      : null;
+  const assignedLabel = assigned
+    ? ASSIGNED_LABELS[assigned] ?? `A cargo de ${assignedUser?.name || assignedUser?.username || "otra persona"}`
+    : null;
   const now = new Date();
 
   const getPriorityBadge = (p: string) => {
@@ -104,6 +119,7 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
     if (status) params.set("status", status);
     if (priority) params.set("priority", priority);
     if (assigned) params.set("assigned", assigned);
+    if (quiet) params.set("quiet", "1");
     params.set("page", String(n));
     return `/cases?${params.toString()}`;
   };
@@ -149,12 +165,12 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
       />
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+      <StatRow>
         <StatCard label="Todos" value={data.stats.totalAll} hint="Expedientes cargados" icon={FileText} tone="blue" />
         <StatCard label="En curso" value={data.stats.active} hint="Abiertos o en proceso" icon={Clock} tone="green" />
         <StatCard label="Urgentes" value={data.stats.urgent} hint="Prioridad urgente" icon={ShieldAlert} tone="red" />
         <StatCard label="Cerrados" value={data.stats.closed} hint="Ya resueltos" icon={CheckCircle2} tone="slate" />
-      </div>
+      </StatRow>
 
       {/* Filters Form */}
       <Card className="rounded-2xl border-border/60 bg-card p-4 shadow-xs">
@@ -174,6 +190,7 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
               Buscar
             </Button>
           </div>
+          <MobileFilters active={[area && area !== "all", status && status !== "all", priority && priority !== "all", assigned, quiet].filter(Boolean).length}>
           <div>
             <select
               name="area"
@@ -226,17 +243,24 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
               <option value="all">Cualquier profesional a cargo</option>
               <option value="mine">Mis expedientes</option>
               <option value="none">Sin profesional a cargo</option>
+              {assignedUser && <option value={assigned}>{assignedLabel}</option>}
             </select>
           </div>
+          <label className="flex items-center gap-2 text-xs text-muted-foreground sm:col-span-2 lg:col-span-4">
+            <input type="checkbox" name="quiet" value="1" defaultChecked={quiet} className="h-4 w-4 rounded border-border" />
+            Solo los que no tuvieron intervenciones hace {STALE_DAYS} días o más
+          </label>
+          </MobileFilters>
         </form>
-        {(q || (area && area !== "all") || (status && status !== "all") || (priority && priority !== "all") || assigned) && (
+        {(q || (area && area !== "all") || (status && status !== "all") || (priority && priority !== "all") || assigned || quiet) && (
           <div className="flex flex-wrap items-center gap-2 mt-3 pt-3 border-t border-border/40 text-xs">
             <span className="text-xs font-bold text-muted-foreground">Filtros activos:</span>
             {q && <Badge variant="secondary" className="text-xs">Texto: {q}</Badge>}
             {area && area !== "all" && <Badge variant="secondary" className="text-xs">Área: {areasList.find((a) => a.id === area)?.name || area}</Badge>}
             {status && status !== "all" && <Badge variant="secondary" className="text-xs">Estado: {STATUS_LABELS[status] || status}</Badge>}
             {priority && priority !== "all" && <Badge variant="secondary" className="text-xs">Prioridad: {CASE_PRIORITY_LABEL[priority]?.replace(/^Prioridad /, "") ?? priority}</Badge>}
-            {assigned && <Badge variant="secondary" className="text-xs">{ASSIGNED_LABELS[assigned]}</Badge>}
+            {assignedLabel && <Badge variant="secondary" className="text-xs">{assignedLabel}</Badge>}
+            {quiet && <Badge variant="secondary" className="text-xs">Sin movimiento hace {STALE_DAYS} días o más</Badge>}
             <Button variant="ghost" size="sm" asChild className="h-6 text-xs text-muted-foreground hover:text-foreground">
               <Link href="/cases">Limpiar filtros</Link>
             </Button>
@@ -263,7 +287,48 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
             }
           />
         ) : (
-          <Table>
+          <>
+          <MobileList label="Expedientes">
+            {data.cases.map((c) => {
+              const restricted = !canViewSensitive && c.area.name.toLowerCase().includes("violencia");
+              const shown = splitCaseTitle(c.title);
+              const summary = summarizeCase({
+                status: c.status,
+                createdAt: c.createdAt,
+                closedAt: c.status === "CERRADO" ? c.updatedAt : null,
+                lastInterventionAt: c.interventions[0]?.date ?? null,
+                now,
+              });
+              const titular = c.person ? `${c.person.lastName}, ${c.person.firstName}` : null;
+              return (
+                <MobileListItem
+                  key={c.id}
+                  href={restricted ? undefined : `/cases/${c.id}`}
+                  title={restricted ? "Expediente reservado" : titular ?? shown.title}
+                  subtitle={
+                    restricted
+                      ? getAreaShortName(c.area.name)
+                      : [titular ? shown.title : null, shown.tag, getAreaShortName(c.area.name)].filter(Boolean).join(" · ")
+                  }
+                  meta={
+                    restricted
+                      ? undefined
+                      : summary.stale
+                        ? <span className="font-semibold text-amber-800 dark:text-amber-300">Sin movimiento hace {summary.quietDays} días</span>
+                        : `Última intervención: ${c.interventions[0] && summary.lastInterventionDays !== null ? agoText(summary.lastInterventionDays) : "ninguna"}`
+                  }
+                  aside={
+                    <>
+                      {getStatusBadge(c.status)}
+                      {getPriorityBadge(c.priority)}
+                    </>
+                  }
+                />
+              );
+            })}
+          </MobileList>
+          <div className="hidden md:block">
+          <Table mobileCards={false}>
               <TableHeader>
                 <TableRow className="border-border/60 bg-muted/30">
                   <TableHead className="text-xs font-bold text-muted-foreground">Expediente</TableHead>
@@ -378,6 +443,8 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
                 })}
               </TableBody>
             </Table>
+          </div>
+          </>
         )}
       </Card>
 

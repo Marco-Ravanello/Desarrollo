@@ -98,7 +98,7 @@ export function FuelReportView({ vehicles }: { vehicles: any[] }) {
                  <div className="flex justify-between items-center">
                    <CardTitle className="text-lg">{v.brand} {v.model} - <span className="font-mono">{v.plate}</span></CardTitle>
                    <div className="text-right">
-                     <p className="text-xs text-muted-foreground">Tarjeta: {v.fuelCardNumber || "N/A"}</p>
+                     <p className="text-xs text-muted-foreground">Tarjeta: {v.fuelCardNumber || "sin tarjeta"}</p>
                    </div>
                  </div>
                </CardHeader>

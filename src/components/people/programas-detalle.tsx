@@ -4,6 +4,7 @@ import { EmptyMessage } from "@/components/ui/empty-message";
 import { Baby, HeartHandshake, Home, Layers, MapPin, Phone } from "lucide-react";
 import type { FichaSocialProgramaDetalle } from "@/services/ficha-social";
 import { plural } from "@/lib/formato";
+import { barrioLabel } from "@/lib/person-display";
 
 /** Detalle de cada programa social que cobra la persona, tal como figura en el padrón. */
 export function ProgramasDetalle({
@@ -77,7 +78,7 @@ export function ProgramasDetalle({
                     {reg.datos_contacto.barrio && (
                       <div className="flex items-center gap-1.5">
                         <Home className="h-3 w-3 text-primary shrink-0" />
-                        <span className="text-foreground font-medium">Barrio {reg.datos_contacto.barrio}</span>
+                        <span className="text-foreground font-medium">{barrioLabel(reg.datos_contacto.barrio)}</span>
                       </div>
                     )}
                   </div>

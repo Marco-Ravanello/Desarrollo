@@ -14,8 +14,9 @@ import Link from "next/link";
 import { Separator } from "@/components/ui/separator";
 import { RESERVATION_STATUS, formatFechaHora, formatReservationRange } from "@/lib/vehicle-reservations";
 import { formatFecha, formatFechaCalendario } from "@/lib/fechas";
+import { vehicleTitle } from "@/lib/page-titles";
 
-export const metadata = { title: "Vehículo" };
+export const generateMetadata = vehicleTitle;
 
 export default async function VehicleDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -84,7 +85,7 @@ export default async function VehicleDetailPage({ params }: { params: Promise<{ 
               <Separator />
               <div className="flex justify-between items-center">
                 <span className="text-sm text-muted-foreground">Tarjeta YPF</span>
-                <span className="font-mono text-sm text-foreground">{vehicle.fuelCardNumber || "N/A"}</span>
+                <span className="font-mono text-sm text-foreground">{vehicle.fuelCardNumber || "Sin tarjeta"}</span>
               </div>
               <Separator />
               <div className="flex justify-between items-center">

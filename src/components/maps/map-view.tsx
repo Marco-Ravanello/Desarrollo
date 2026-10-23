@@ -18,6 +18,7 @@ import type { MapCaseItem, MapLayerPoints, MapStormItem } from "@/services/map-l
 import { getMapLayerItemsAction, getMapPeopleAction } from "@/app/(dashboard)/maps/actions";
 import { APPROX_COLOR, CASE_COLOR, EXACT_COLOR, PROGRAM_COLORS, STORM_COLOR } from "@/lib/map-colors";
 import { formatFecha } from "@/lib/fechas";
+import { barrioLabel } from "@/lib/person-display";
 
 const HeatmapView = dynamic(
   () => import("./heatmap-view").then((mod) => mod.HeatmapView),
@@ -229,7 +230,7 @@ function ClusterLayer({
 function addressLine(person: MapPerson): string {
   const direccion = person.direccion?.trim() || "";
   const barrio = person.barrio?.trim() || "";
-  const place = barrio && !direccion.toLowerCase().includes(barrio.toLowerCase()) ? `Barrio ${barrio}` : barrio ? "" : person.localidad;
+  const place = barrio && !direccion.toLowerCase().includes(barrio.toLowerCase()) ? barrioLabel(barrio) : barrio ? "" : person.localidad;
   return [direccion, place].filter(Boolean).join(" · ") || "Tres de Febrero";
 }
 

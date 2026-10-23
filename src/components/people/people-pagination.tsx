@@ -50,7 +50,7 @@ export function PeoplePagination({
   };
 
   return (
-    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 px-2 border-t border-border/40 text-xs">
+    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 px-4 pb-4 md:px-2 md:pb-0 border-t border-border/40 text-xs">
       <p className="text-muted-foreground font-semibold">
         Mostrando <b className="text-foreground font-bold">{startItem}</b> a{" "}
         <b className="text-foreground font-bold">{endItem}</b> de{" "}

@@ -30,8 +30,10 @@ import { AssignCaseControl } from "@/components/cases/assign-case";
 import { canAssignCase, canTakeCase, getAssignableUsers } from "@/services/case-assignment";
 import { canCloseOrReopenCase } from "@/lib/case-closing";
 import { CloseReopenCaseButton } from "@/components/cases/close-reopen-case";
+import { caseTitle } from "@/lib/page-titles";
+import { MobileActions } from "@/components/layout/mobile-actions";
 
-export const metadata = { title: "Expediente" };
+export const generateMetadata = caseTitle;
 
 export default async function CaseDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
@@ -132,6 +134,7 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
         icon={ClipboardList}
         actions={
           <>
+            <MobileActions>
             {canScheduleFollowUp && <ScheduleFollowUpButton caseId={caseData.id} today={today} />}
             {canCloseOrReopen && <CloseReopenCaseButton caseId={caseData.id} mode={isClosed ? "reopen" : "close"} />}
             {canDerive && (
@@ -142,7 +145,8 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
                 triggerClassName=""
               />
             )}
-            <Button variant="ghost" size="icon" asChild className="rounded-xl">
+            </MobileActions>
+            <Button variant="ghost" size="icon" asChild className="hidden md:inline-flex rounded-xl">
               <Link href={areaUrl} aria-label="Volver"><ArrowLeft className="h-4 w-4" /></Link>
             </Button>
           </>
