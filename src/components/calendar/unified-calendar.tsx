@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import {
-  ChevronLeft, ChevronRight, Calendar, User, Briefcase,
-  Clock, CheckSquare, ShoppingBag, Plus, X, Globe, Eye,
-  Edit2, Save, Trash2, ArrowRight, Car, MapPin, Sparkles
+  ChevronLeft, ChevronRight, Calendar, CalendarDays, User, Briefcase,
+  Clock, CheckSquare, ShoppingBag, Plus, X, Eye, Search,
+  Edit2, ArrowRight, Car
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
@@ -20,7 +20,11 @@ import {
   reschedulePurchaseOrderAction,
   createSharedTaskAction
 } from "@/app/(dashboard)/admin/actions/calendar-actions";
-import { formatFechaHora, formatHora } from "@/lib/fechas";
+import { formatFechaHora, formatFechaCalendario, formatHora } from "@/lib/fechas";
+import {
+  WEEKDAY_LETTER, WEEKDAY_SHORT, chipsThatFit, dateOnlyToLocal, isDateOnly, localDayKey, localTimeKey,
+  monthCells, shortEventLabel, startOfWeekMonday, type AgendaEventType
+} from "@/lib/agenda";
 
 interface UnifiedCalendarProps {
   reservations: any[];
@@ -32,19 +36,90 @@ interface UnifiedCalendarProps {
 
 type CalendarViewType = "month" | "week" | "day" | "agenda";
 
+interface AgendaEvent {
+  id: string;
+  type: AgendaEventType;
+  title: string;
+  /** Lo que entra en la casilla de un día: la patente, la orden o la tarea. */
+  short: string;
+  startDate: Date;
+  endDate: Date;
+  /** Solo fecha, sin hora (la entrega de una orden). */
+  allDay: boolean;
+  color: string;
+  icon: typeof Car;
+  raw: any;
+  isOwner?: boolean;
+}
+
 const HOURS = Array.from({ length: 15 }, (_, i) => i + 7);
+
+const MONTH_NAMES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+
+/** Cómo se ve cada tipo: el filtro de arriba, las casillas y el punto del celular. */
+const TYPES: Record<AgendaEventType, {
+  label: string;
+  kind: string;
+  icon: typeof Car;
+  color: string;
+  dot: string;
+  on: string;
+  badge: string;
+}> = {
+  reservation: {
+    label: "Vehículos",
+    kind: "Reserva de vehículo",
+    icon: Car,
+    color: "bg-blue-500/10 text-blue-800 dark:text-blue-300 border-l-4 border-l-blue-500 border-border/40 hover:bg-blue-500/20",
+    dot: "bg-blue-500",
+    on: "border-blue-500/40 bg-blue-500/10 text-blue-800 dark:text-blue-300",
+    badge: "bg-blue-500/20 text-blue-800 dark:text-blue-300",
+  },
+  order: {
+    label: "Entregas",
+    kind: "Entrega de orden de compra",
+    icon: ShoppingBag,
+    color: "bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 border-l-4 border-l-emerald-500 border-border/40 hover:bg-emerald-500/20",
+    dot: "bg-emerald-500",
+    on: "border-emerald-500/40 bg-emerald-500/10 text-emerald-800 dark:text-emerald-300",
+    badge: "bg-emerald-500/20 text-emerald-800 dark:text-emerald-300",
+  },
+  task: {
+    label: "Tareas",
+    kind: "Tarea",
+    icon: CheckSquare,
+    color: "bg-amber-500/10 text-amber-800 dark:text-amber-300 border-l-4 border-l-amber-500 border-border/40 hover:bg-amber-500/20",
+    dot: "bg-amber-500",
+    on: "border-amber-500/40 bg-amber-500/10 text-amber-800 dark:text-amber-300",
+    badge: "bg-amber-500/20 text-amber-800 dark:text-amber-300",
+  },
+};
+
+const TYPE_ORDER: AgendaEventType[] = ["reservation", "order", "task"];
+
+const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+const sameDay = (a: Date, b: Date) => a.toDateString() === b.toDateString();
+
+/** Lo que está en ese día (las reservas de varios días aparecen en cada uno), primero lo de todo el día. */
+function eventsOnDay(events: AgendaEvent[], date: Date): AgendaEvent[] {
+  const dayStart = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const dayEnd = new Date(dayStart.getFullYear(), dayStart.getMonth(), dayStart.getDate() + 1);
+  return events
+    .filter((e) => e.startDate < dayEnd && (e.endDate > dayStart || e.startDate >= dayStart))
+    .sort((a, b) => Number(b.allDay) - Number(a.allDay) || a.startDate.getTime() - b.startDate.getTime());
+}
 
 export function UnifiedCalendar({ reservations = [], purchaseOrders = [], tasks = [], users = [], currentUserId }: UnifiedCalendarProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [miniCalMonth, setMiniCalMonth] = useState(new Date());
   const [view, setView] = useState<CalendarViewType>("week");
+  const [showPicker, setShowPicker] = useState(false);
+  const [showPast, setShowPast] = useState(false);
 
-  const [showReservations, setShowReservations] = useState(true);
-  const [showOrders, setShowOrders] = useState(true);
-  const [showTasks, setShowTasks] = useState(true);
+  const [visible, setVisible] = useState<Record<AgendaEventType, boolean>>({ reservation: true, order: true, task: true });
   const [searchQuery, setSearchQuery] = useState("");
 
-  const [selectedEvent, setSelectedEvent] = useState<any | null>(null);
+  const [selectedEvent, setSelectedEvent] = useState<AgendaEvent | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [isRescheduling, setIsRescheduling] = useState(false);
   const [rescheduleDate, setRescheduleDate] = useState("");
@@ -59,10 +134,17 @@ export function UnifiedCalendar({ reservations = [], purchaseOrders = [], tasks 
   const [isSaving, setIsSaving] = useState(false);
 
   const [nowClock, setNowClock] = useState(new Date());
+  // Las fechas dependen de la hora de la compu de cada persona: la agenda se arma recién en el navegador
+  // (si se arma en el servidor, que está en otra zona horaria, los días y las horas no coinciden).
+  const [mounted, setMounted] = useState(false);
 
   // En el celular la semana no entra: arranca en la lista de próximos eventos.
   useEffect(() => {
     if (window.matchMedia("(max-width: 767px)").matches) setView("agenda");
+    setCurrentDate(new Date());
+    setMiniCalMonth(new Date());
+    setNowClock(new Date());
+    setMounted(true);
   }, []);
 
   useEffect(() => {
@@ -70,100 +152,99 @@ export function UnifiedCalendar({ reservations = [], purchaseOrders = [], tasks 
     return () => clearInterval(timer);
   }, []);
 
-  const prevMonth = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
-  const nextMonth = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
-  const prevWeek = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate() - 7));
-  const nextWeek = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate() + 7));
-  const prevDay = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate() - 1));
-  const nextDay = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate() + 1));
-  const monthNames = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+  const shift = (days: number, months = 0) =>
+    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + months, months ? 1 : currentDate.getDate() + days));
+  const goPrev = () => (view === "month" ? shift(0, -1) : shift(view === "day" ? -1 : -7));
+  const goNext = () => (view === "month" ? shift(0, 1) : shift(view === "day" ? 1 : 7));
 
-  const allEvents: any[] = [];
+  const goToDay = (date: Date) => {
+    setCurrentDate(date);
+    setView("day");
+    setShowPicker(false);
+  };
 
-  if (showReservations && Array.isArray(reservations)) {
-    reservations.forEach((r) => {
-      if (!r) return;
-      const brand = r.vehicle?.brand || "Vehículo";
-      const model = r.vehicle?.model || "Oficial";
-      const plate = r.vehicle?.plate || "S/P";
+  // Todo lo que esta persona puede ver, sin mirar los filtros (para contar cuántos hay de cada tipo).
+  const baseEvents: AgendaEvent[] = [];
 
-      allEvents.push({
-        id: r.id,
-        type: "reservation",
-        title: `Reserva: ${brand} ${model} (${plate})`,
-        startDate: new Date(r.startDate),
-        endDate: new Date(r.endDate),
-        color: "bg-blue-500/10 text-blue-700 dark:text-blue-400 border-l-4 border-l-blue-500 border-border/40 hover:bg-blue-500/20",
-        badgeBg: "bg-blue-500/20 text-blue-700 dark:text-blue-400 border-blue-500/30",
-        icon: Car,
-        raw: r
-      });
+  reservations.forEach((r) => {
+    if (!r) return;
+    const brand = r.vehicle?.brand || "Vehículo";
+    const model = r.vehicle?.model || "";
+    const plate = r.vehicle?.plate || "sin patente";
+    baseEvents.push({
+      id: r.id,
+      type: "reservation",
+      title: `${brand} ${model}`.trim() + ` (${plate})`,
+      short: shortEventLabel("reservation", r),
+      startDate: new Date(r.startDate),
+      endDate: new Date(r.endDate),
+      allDay: false,
+      color: TYPES.reservation.color,
+      icon: Car,
+      raw: r,
     });
-  }
+  });
 
-  if (showOrders && Array.isArray(purchaseOrders)) {
-    purchaseOrders.forEach((o) => {
-      if (o && o.deliveryDate) {
-        allEvents.push({
-          id: o.id,
-          type: "order",
-          title: `Entrega OC: N° ${o.number || "S/N"}`,
-          startDate: new Date(o.deliveryDate),
-          endDate: new Date(o.deliveryDate),
-          color: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-l-4 border-l-emerald-500 border-border/40 hover:bg-emerald-500/20",
-          badgeBg: "bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border-emerald-500/30",
-          icon: ShoppingBag,
-          raw: o
-        });
-      }
+  purchaseOrders.forEach((o) => {
+    if (!o?.deliveryDate) return;
+    const stored = new Date(o.deliveryDate);
+    const allDay = isDateOnly(stored);
+    const start = allDay ? dateOnlyToLocal(stored) : stored;
+    baseEvents.push({
+      id: o.id,
+      type: "order",
+      title: `Entrega de la orden N° ${o.number || "sin número"}`,
+      short: shortEventLabel("order", o),
+      startDate: start,
+      endDate: start,
+      allDay,
+      color: TYPES.order.color,
+      icon: ShoppingBag,
+      raw: o,
     });
-  }
+  });
 
-  if (showTasks && Array.isArray(tasks)) {
-    tasks.forEach((t) => {
-      if (t && t.dueDate) {
-        const isOwner = t.userId === currentUserId;
-        const isAllowedViewer = t.viewerIds && t.viewerIds.split(",").map((s: string) => s.trim()).includes(currentUserId);
-
-        if (isOwner || isAllowedViewer) {
-          allEvents.push({
-            id: t.id,
-            type: "task",
-            title: `Tarea: ${t.title || "Sin título"}`,
-            startDate: new Date(t.dueDate),
-            endDate: new Date(t.dueDate),
-            color: "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-l-4 border-l-amber-500 border-border/40 hover:bg-amber-500/20",
-            badgeBg: "bg-amber-500/20 text-amber-800 dark:text-amber-400 border-amber-500/30",
-            icon: CheckSquare,
-            raw: t,
-            isOwner
-          });
-        }
-      }
+  tasks.forEach((t) => {
+    if (!t?.dueDate) return;
+    const isOwner = t.userId === currentUserId;
+    const isAllowedViewer = t.viewerIds && t.viewerIds.split(",").map((s: string) => s.trim()).includes(currentUserId);
+    if (!isOwner && !isAllowedViewer) return;
+    baseEvents.push({
+      id: t.id,
+      type: "task",
+      title: t.title || "Tarea sin título",
+      short: shortEventLabel("task", t),
+      startDate: new Date(t.dueDate),
+      endDate: new Date(t.dueDate),
+      allDay: false,
+      color: TYPES.task.color,
+      icon: CheckSquare,
+      raw: t,
+      isOwner,
     });
-  }
+  });
 
-  const filteredEvents = allEvents.filter((e) =>
-    e.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (e.raw?.description && e.raw.description.toLowerCase().includes(searchQuery.toLowerCase()))
+  const counts: Record<AgendaEventType, number> = { reservation: 0, order: 0, task: 0 };
+  baseEvents.forEach((e) => (counts[e.type] += 1));
+
+  const q = searchQuery.trim().toLowerCase();
+  const filteredEvents = baseEvents.filter(
+    (e) =>
+      visible[e.type] &&
+      (!q || e.title.toLowerCase().includes(q) || (e.raw?.description && String(e.raw.description).toLowerCase().includes(q)))
   );
 
-  const daysInMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
-  const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).getDay();
+  const startOfWeek = startOfWeekMonday(currentDate);
+  const weekDays: Date[] = Array.from({ length: 7 }, (_, i) => new Date(startOfWeek.getFullYear(), startOfWeek.getMonth(), startOfWeek.getDate() + i));
 
-  const startOfWeek = new Date(currentDate);
-  const day = startOfWeek.getDay();
-  const diff = startOfWeek.getDate() - day + (day === 0 ? -6 : 1);
-  startOfWeek.setDate(diff);
+  const openEvent = (e: AgendaEvent) => {
+    setSelectedEvent(e);
+    setRescheduleDate(localDayKey(e.startDate));
+    setRescheduleTime(localTimeKey(e.startDate));
+    if (e.type === "reservation") setRescheduleEndTime(localTimeKey(e.endDate));
+  };
 
-  const weekDays: Date[] = [];
-  for (let i = 0; i < 7; i++) {
-    const d = new Date(startOfWeek);
-    d.setDate(startOfWeek.getDate() + i);
-    weekDays.push(d);
-  }
-
-  const handleDragStart = (e: React.DragEvent, eventItem: any) => {
+  const handleDragStart = (e: React.DragEvent, eventItem: AgendaEvent) => {
     e.dataTransfer.setData("text/plain", JSON.stringify({ id: eventItem.id, type: eventItem.type }));
     e.dataTransfer.effectAllowed = "move";
   };
@@ -182,13 +263,14 @@ export function UnifiedCalendar({ reservations = [], purchaseOrders = [], tasks 
       const computedStart = new Date(targetDate);
       computedStart.setHours(targetHour, targetMinute, 0, 0);
 
-      const toastId = toast.loading("Actualizando horario del evento...");
+      const toastId = toast.loading("Cambiando la fecha…");
       let res;
 
       if (type === "task") {
         res = await rescheduleTaskAction(id, computedStart.toISOString());
       } else if (type === "order") {
-        res = await reschedulePurchaseOrderAction(id, computedStart.toISOString());
+        // La entrega es solo un día: se guarda como las fechas del calendario (medianoche UTC).
+        res = await reschedulePurchaseOrderAction(id, `${localDayKey(targetDate)}T00:00:00.000Z`);
       } else if (type === "reservation") {
         // Se mueve con la misma duración que tenía.
         const original = reservations.find((r) => r?.id === id);
@@ -199,21 +281,21 @@ export function UnifiedCalendar({ reservations = [], purchaseOrders = [], tasks 
 
       if (res?.success) {
         toast.success(
-          res && "backToPending" in res && res.backToPending ? "Reserva movida. Vuelve a quedar pendiente de aprobación." : "Evento reprogramado con éxito",
+          res && "backToPending" in res && res.backToPending ? "Reserva movida. Vuelve a quedar pendiente de aprobación." : "Listo, se cambió la fecha.",
           { id: toastId }
         );
       } else {
-        toast.error(res?.error || "Error al reprogramar el evento", { id: toastId });
+        toast.error(res?.error || "No se pudo cambiar la fecha.", { id: toastId });
       }
     } catch (err: any) {
-      toast.error("Error al procesar el arrastre: " + err.message);
+      toast.error("No se pudo mover: " + err.message);
     }
   };
 
   const handleReschedule = async () => {
     if (!selectedEvent) return;
     setIsRescheduling(true);
-    const toastId = toast.loading("Actualizando fecha del evento...");
+    const toastId = toast.loading("Cambiando la fecha…");
 
     try {
       let res;
@@ -225,17 +307,17 @@ export function UnifiedCalendar({ reservations = [], purchaseOrders = [], tasks 
         const computedEnd = new Date(`${rescheduleDate}T${rescheduleEndTime}:00`);
         res = await rescheduleReservationAction(selectedEvent.id, computedStart.toISOString(), computedEnd.toISOString());
       } else if (selectedEvent.type === "order") {
-        res = await reschedulePurchaseOrderAction(selectedEvent.id, computedStart.toISOString());
+        res = await reschedulePurchaseOrderAction(selectedEvent.id, `${rescheduleDate}T00:00:00.000Z`);
       }
 
       if (res?.success) {
         toast.success(
-          res && "backToPending" in res && res.backToPending ? "Reserva movida. Vuelve a quedar pendiente de aprobación." : "Fecha reprogramada con éxito",
+          res && "backToPending" in res && res.backToPending ? "Reserva movida. Vuelve a quedar pendiente de aprobación." : "Listo, se cambió la fecha.",
           { id: toastId }
         );
         setSelectedEvent(null);
       } else {
-        toast.error(res?.error || "Error al reprogramar el evento", { id: toastId });
+        toast.error(res?.error || "No se pudo cambiar la fecha.", { id: toastId });
       }
     } catch (e: any) {
       toast.error(e.message || "Ocurrió un error inesperado", { id: toastId });
@@ -286,18 +368,18 @@ export function UnifiedCalendar({ reservations = [], purchaseOrders = [], tasks 
     return formatHora(date);
   };
 
-  // Mini Calendar Calculations
-  const miniDaysInMonth = new Date(miniCalMonth.getFullYear(), miniCalMonth.getMonth() + 1, 0).getDate();
-  const miniFirstDay = new Date(miniCalMonth.getFullYear(), miniCalMonth.getMonth(), 1).getDay();
+  /** "10:00" o "Todo el día"; las reservas, de punta a punta. */
+  const whenLabel = (e: AgendaEvent) => {
+    if (e.allDay) return "Todo el día";
+    if (e.type === "reservation") {
+      return sameDay(e.startDate, e.endDate)
+        ? `${formatTime(e.startDate)} a ${formatTime(e.endDate)}`
+        : `${formatTime(e.startDate)} hasta el ${e.endDate.getDate()}/${e.endDate.getMonth() + 1} ${formatTime(e.endDate)}`;
+    }
+    return formatTime(e.startDate);
+  };
 
-  const datesWithEventsSet = useMemo(() => {
-    const dates = new Set<string>();
-    allEvents.forEach((e) => {
-      const key = `${e.startDate.getFullYear()}-${e.startDate.getMonth()}-${e.startDate.getDate()}`;
-      dates.add(key);
-    });
-    return dates;
-  }, [allEvents]);
+  const datesWithEvents = new Set(filteredEvents.map((e) => localDayKey(e.startDate)));
 
   // Current Time Line percentage calculation (7:00 to 22:00)
   const isTodayWeek = weekDays.some((d) => d.toDateString() === nowClock.toDateString());
@@ -308,311 +390,339 @@ export function UnifiedCalendar({ reservations = [], purchaseOrders = [], tasks 
   const totalMinutesInGrid = 15 * 60; // 15 hours * 60 = 900 mins
   const timeLinePercentage = (timeLineMinutesFrom7 / totalMinutesInGrid) * 100;
 
-  return (
-    <div className="grid grid-cols-1 xl:grid-cols-[17rem_minmax(0,1fr)] gap-6">
-      <div className="space-y-6 min-w-0">
-        <Card className="bg-card text-card-foreground border border-border/60 shadow-xs p-5 space-y-5 rounded-2xl">
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-foreground">
-                {monthNames[miniCalMonth.getMonth()]} {miniCalMonth.getFullYear()}
-              </span>
-              <div className="flex items-center gap-1">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setMiniCalMonth(new Date(miniCalMonth.getFullYear(), miniCalMonth.getMonth() - 1, 1))}
-                  aria-label="Mes anterior"
-                  className="h-7 w-7 rounded-xl text-foreground"
-                >
-                  <ChevronLeft className="h-3.5 w-3.5" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setMiniCalMonth(new Date(miniCalMonth.getFullYear(), miniCalMonth.getMonth() + 1, 1))}
-                  aria-label="Mes siguiente"
-                  className="h-7 w-7 rounded-xl text-foreground"
-                >
-                  <ChevronRight className="h-3.5 w-3.5" />
-                </Button>
-              </div>
-            </div>
+  const monthLower = (d: Date) => MONTH_NAMES[d.getMonth()].toLowerCase();
+  const heading =
+    view === "month"
+      ? `${MONTH_NAMES[currentDate.getMonth()]} ${currentDate.getFullYear()}`
+      : view === "week"
+      ? weekDays[0].getMonth() === weekDays[6].getMonth()
+        ? `Semana del ${weekDays[0].getDate()} al ${weekDays[6].getDate()} de ${monthLower(weekDays[6])}`
+        : `Semana del ${weekDays[0].getDate()} de ${monthLower(weekDays[0])} al ${weekDays[6].getDate()} de ${monthLower(weekDays[6])}`
+      : view === "day"
+      ? `${capitalize(currentDate.toLocaleDateString("es-AR", { weekday: "long" }))} ${currentDate.getDate()} de ${monthLower(currentDate)}`
+      : "Lo que viene";
 
-            <div className="grid grid-cols-7 text-center text-xs font-bold text-muted-foreground py-1 border-b border-border/30">
-              {["D", "L", "M", "M", "J", "V", "S"].map((d, idx) => (
-                <span key={idx}>{d}</span>
-              ))}
-            </div>
+  // Lista: desde hoy en adelante; lo anterior, a pedido.
+  const todayStart = new Date(nowClock.getFullYear(), nowClock.getMonth(), nowClock.getDate());
+  const sortedEvents = [...filteredEvents].sort((a, b) => a.startDate.getTime() - b.startDate.getTime());
+  const pastEvents = sortedEvents.filter((e) => (e.type === "reservation" ? e.endDate : e.startDate) < todayStart);
+  const listEvents = showPast ? sortedEvents : sortedEvents.filter((e) => !pastEvents.includes(e));
 
-            <div className="grid grid-cols-7 text-center gap-y-1 text-xs">
-              {Array.from({ length: miniFirstDay }).map((_, i) => (
-                <div key={`mini-empty-${i}`} className="h-7" />
-              ))}
+  // Una reserva larga ocupa varias filas: el nombre va en la primera y después sigue como una barrita.
+  const continuesFrom = (e: AgendaEvent, slotStart: Date, hour: number, minute: number) =>
+    e.type === "reservation" && e.startDate < slotStart && !(hour === HOURS[0] && minute === 0);
 
-              {Array.from({ length: miniDaysInMonth }).map((_, i) => {
-                const dayNum = i + 1;
-                const testDate = new Date(miniCalMonth.getFullYear(), miniCalMonth.getMonth(), dayNum);
-                const isSelected = currentDate.toDateString() === testDate.toDateString();
-                const isToday = new Date().toDateString() === testDate.toDateString();
-                const eventKey = `${testDate.getFullYear()}-${testDate.getMonth()}-${testDate.getDate()}`;
-                const hasEvent = datesWithEventsSet.has(eventKey);
+  const eventButton = (e: AgendaEvent, className: string, children: React.ReactNode) => (
+    <button
+      key={e.id}
+      type="button"
+      draggable
+      onDragStart={(ev) => handleDragStart(ev, e)}
+      onClick={(ev) => {
+        ev.stopPropagation();
+        openEvent(e);
+      }}
+      title={`${e.title} (${whenLabel(e)})`}
+      className={`w-full text-left cursor-grab active:cursor-grabbing shadow-2xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${e.color} ${className}`}
+    >
+      {children}
+    </button>
+  );
 
-                return (
-                  <button
-                    key={dayNum}
-                    type="button"
-                    onClick={() => {
-                      setCurrentDate(testDate);
-                      setView("day");
-                    }}
-                    className={`h-7 w-7 mx-auto rounded-xl font-bold flex flex-col items-center justify-center relative transition-all ${
-                      isSelected
-                        ? "bg-primary text-primary-foreground shadow-xs font-bold"
-                        : isToday
-                        ? "border border-primary text-primary font-bold"
-                        : "hover:bg-muted text-foreground"
-                    }`}
-                  >
-                    <span>{dayNum}</span>
-                    {hasEvent && !isSelected && (
-                      <span className="w-1 h-1 rounded-full bg-primary absolute bottom-0.5" />
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+  const miniCalendar = (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <span className="text-sm font-bold text-foreground">
+          {MONTH_NAMES[miniCalMonth.getMonth()]} {miniCalMonth.getFullYear()}
+        </span>
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setMiniCalMonth(new Date(miniCalMonth.getFullYear(), miniCalMonth.getMonth() - 1, 1))}
+            aria-label="Mes anterior"
+            className="h-7 w-7 rounded-xl text-foreground"
+          >
+            <ChevronLeft className="h-3.5 w-3.5" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setMiniCalMonth(new Date(miniCalMonth.getFullYear(), miniCalMonth.getMonth() + 1, 1))}
+            aria-label="Mes siguiente"
+            className="h-7 w-7 rounded-xl text-foreground"
+          >
+            <ChevronRight className="h-3.5 w-3.5" />
+          </Button>
+        </div>
+      </div>
 
-          <div className="pt-2 border-t border-border/40">
-            <Input
-              placeholder="Buscar en la agenda"
-              aria-label="Buscar en la agenda"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="bg-muted/30 border-border/60 text-foreground rounded-xl text-xs h-9"
-            />
-          </div>
+      <div className="grid grid-cols-7 text-center text-xs font-bold text-muted-foreground py-1 border-b border-border/30">
+        {WEEKDAY_LETTER.map((d, idx) => (
+          <span key={idx} aria-hidden>{d}</span>
+        ))}
+      </div>
 
-          <div className="space-y-2">
-            <span className="text-xs font-bold text-muted-foreground">
-              Capas de actividad operativa
-            </span>
-
-            <div className="grid grid-cols-1 gap-2.5">
-              <div
-                onClick={() => setShowReservations(!showReservations)}
-                className={`p-3 rounded-2xl border cursor-pointer transition-all flex items-center justify-between ${
-                  showReservations
-                    ? "bg-blue-500/10 border-blue-500/30 text-blue-700 dark:text-blue-400 shadow-2xs"
-                    : "bg-muted/20 border-border/40 opacity-60 hover:opacity-100"
-                }`}
-              >
-                <div className="flex items-center gap-2.5">
-                  <div className="p-2 rounded-xl bg-blue-500/20">
-                    <Car className="h-4 w-4" />
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold text-foreground">Flota & Vehículos</p>
-                    <p className="text-xs text-muted-foreground">Reservas activas</p>
-                  </div>
-                </div>
-                <Badge className="bg-blue-500/20 text-blue-700 dark:text-blue-400 border-none font-bold text-xs">
-                  {reservations.length}
-                </Badge>
-              </div>
-
-              <div
-                onClick={() => setShowOrders(!showOrders)}
-                className={`p-3 rounded-2xl border cursor-pointer transition-all flex items-center justify-between ${
-                  showOrders
-                    ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-400 shadow-2xs"
-                    : "bg-muted/20 border-border/40 opacity-60 hover:opacity-100"
-                }`}
-              >
-                <div className="flex items-center gap-2.5">
-                  <div className="p-2 rounded-xl bg-emerald-500/20">
-                    <ShoppingBag className="h-4 w-4" />
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold text-foreground">Entregas & Depósito</p>
-                    <p className="text-xs text-muted-foreground">Órdenes pactadas</p>
-                  </div>
-                </div>
-                <Badge className="bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border-none font-bold text-xs">
-                  {purchaseOrders.length}
-                </Badge>
-              </div>
-
-              <div
-                onClick={() => setShowTasks(!showTasks)}
-                className={`p-3 rounded-2xl border cursor-pointer transition-all flex items-center justify-between ${
-                  showTasks
-                    ? "bg-amber-500/10 border-amber-500/30 text-amber-700 dark:text-amber-400 shadow-2xs"
-                    : "bg-muted/20 border-border/40 opacity-60 hover:opacity-100"
-                }`}
-              >
-                <div className="flex items-center gap-2.5">
-                  <div className="p-2 rounded-xl bg-amber-500/20">
-                    <CheckSquare className="h-4 w-4" />
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold text-foreground">Tareas & Alertas</p>
-                    <p className="text-xs text-muted-foreground">Compromisos compartidos</p>
-                  </div>
-                </div>
-                <Badge className="bg-amber-500/20 text-amber-800 dark:text-amber-400 border-none font-bold text-xs">
-                  {tasks.length}
-                </Badge>
-              </div>
-            </div>
-          </div>
-
-          <div className="pt-2 border-t border-border/40">
-            <Button
-              onClick={() => setShowAddModal(true)}
-              className="w-full h-auto min-h-11 whitespace-normal rounded-2xl gap-2 font-bold text-sm shadow-sm"
+      <div className="grid grid-cols-7 text-center gap-y-1 text-xs">
+        {monthCells(miniCalMonth.getFullYear(), miniCalMonth.getMonth()).map((date, i) => {
+          if (!date) return <div key={`mini-empty-${i}`} className="h-8" />;
+          const isSelected = sameDay(currentDate, date);
+          const isToday = sameDay(nowClock, date);
+          const hasEvent = datesWithEvents.has(localDayKey(date));
+          return (
+            <button
+              key={i}
+              type="button"
+              onClick={() => goToDay(date)}
+              aria-label={`Ver el ${date.getDate()} de ${monthLower(date)}${hasEvent ? " (tiene compromisos)" : ""}`}
+              className={`h-8 w-8 mx-auto rounded-xl font-bold flex flex-col items-center justify-center relative transition-colors ${
+                isSelected
+                  ? "bg-primary text-primary-foreground shadow-xs"
+                  : isToday
+                  ? "border border-primary text-primary"
+                  : "hover:bg-muted text-foreground"
+              }`}
             >
-              <Plus className="h-4 w-4 shrink-0" /> Nueva tarea compartida
-            </Button>
+              <span>{date.getDate()}</span>
+              {hasEvent && !isSelected && <span className="w-1 h-1 rounded-full bg-primary absolute bottom-0.5" />}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+
+  const newTaskButton = (className: string) => (
+    <Button onClick={() => setShowAddModal(true)} className={`gap-2 font-bold ${className}`}>
+      <Plus className="h-4 w-4 shrink-0" /> Nueva tarea
+    </Button>
+  );
+
+  const allDayRow = (days: Date[], gridClass: string, labelClass: string) => {
+    const perDay = days.map((d) => eventsOnDay(filteredEvents, d).filter((e) => e.allDay));
+    if (perDay.every((list) => list.length === 0)) return null;
+    return (
+      <div className={`${gridClass} border-b border-border/40 bg-muted/10`}>
+        <div className={labelClass}>Todo el día</div>
+        {days.map((date, idx) => (
+          <div
+            key={idx}
+            onDragOver={handleDragOver}
+            onDrop={(ev) => handleDropOnSlot(ev, date, 9, 0)}
+            className="border-r border-border/40 last:border-r-0 p-1 flex flex-col gap-1"
+          >
+            {perDay[idx].map((e) => {
+              const IconComp = e.icon;
+              return eventButton(
+                e,
+                "rounded-lg px-1.5 py-1 text-xs font-semibold flex items-center gap-1 min-w-0",
+                <>
+                  <IconComp className="h-3 w-3 shrink-0" />
+                  <span className="truncate">{e.short}</span>
+                </>
+              );
+            })}
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  if (!mounted) {
+    return (
+      <Card className="h-[32rem] animate-pulse rounded-2xl border border-border/60 bg-muted/30" aria-busy="true">
+        <span className="sr-only">Cargando la agenda…</span>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="grid grid-cols-1 2xl:grid-cols-[17rem_minmax(0,1fr)] gap-6">
+      <div className="hidden 2xl:block min-w-0">
+        <Card className="bg-card text-card-foreground border border-border/60 shadow-xs p-5 space-y-5 rounded-2xl">
+          {miniCalendar}
+          <div className="pt-4 border-t border-border/40">
+            {newTaskButton("w-full rounded-2xl min-h-11")}
           </div>
         </Card>
       </div>
 
-      <div className="space-y-6 min-w-0">
+      <div className="min-w-0">
         <Card className="bg-card text-card-foreground border border-border/60 shadow-xs overflow-hidden rounded-2xl">
-          <div className="p-5 border-b border-border/40 flex flex-col md:flex-row justify-between items-center gap-4 bg-muted/20">
-            <div className="flex items-center gap-3">
-              <div className="p-2.5 bg-primary/10 text-primary rounded-2xl border border-primary/20">
-                <Calendar className="h-5 w-5" />
+          <div className="p-4 sm:p-5 border-b border-border/40 bg-muted/20 space-y-4">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+              <h2 className="font-bold text-lg sm:text-xl text-foreground">{heading}</h2>
+
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                {view !== "agenda" && (
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center bg-muted/60 p-1 rounded-2xl border border-border/40">
+                      <Button variant="ghost" size="icon" onClick={goPrev} aria-label="Anterior" className="h-8 w-8 rounded-xl text-foreground">
+                        <ChevronLeft className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setCurrentDate(new Date())}
+                        className="h-8 px-3 rounded-xl text-xs font-bold text-foreground"
+                      >
+                        Hoy
+                      </Button>
+                      <Button variant="ghost" size="icon" onClick={goNext} aria-label="Siguiente" className="h-8 w-8 rounded-xl text-foreground">
+                        <ChevronRight className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowPicker(!showPicker)}
+                      aria-expanded={showPicker}
+                      className="2xl:hidden h-10 rounded-2xl gap-1.5 text-xs font-bold"
+                    >
+                      <CalendarDays className="h-4 w-4" /> Elegir fecha
+                    </Button>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-4 bg-muted/60 p-1 rounded-2xl border border-border/40" role="group" aria-label="Cómo ver la agenda">
+                  {(["month", "week", "day", "agenda"] as CalendarViewType[]).map((v) => (
+                    <Button
+                      key={v}
+                      onClick={() => setView(v)}
+                      variant="ghost"
+                      size="sm"
+                      aria-pressed={view === v}
+                      className={`h-8 text-xs font-bold px-3 rounded-xl ${
+                        view === v ? "bg-background text-foreground shadow-xs hover:bg-background" : "text-muted-foreground"
+                      }`}
+                    >
+                      {v === "month" ? "Mes" : v === "week" ? "Semana" : v === "day" ? "Día" : "Lista"}
+                    </Button>
+                  ))}
+                </div>
               </div>
-              <h3 className="font-bold text-xl text-foreground">
-                {view === "month" && `${monthNames[currentDate.getMonth()]} ${currentDate.getFullYear()}`}
-                {view === "week" && `Semana del ${weekDays[0].getDate()} de ${monthNames[weekDays[0].getMonth()].toLowerCase()}`}
-                {view === "day" && `${currentDate.toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long" })}`}
-                {view === "agenda" && `Agenda general`}
-              </h3>
             </div>
 
-            <div className="flex flex-wrap items-center gap-2">
-              <div className="flex items-center bg-muted/60 p-1 rounded-2xl border border-border/40">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={view === "month" ? prevMonth : view === "week" ? prevWeek : view === "day" ? prevDay : prevWeek}
-                  aria-label="Anterior"
-                  className="h-8 w-8 rounded-xl text-foreground"
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setCurrentDate(new Date())}
-                  className="h-8 px-3 rounded-xl text-xs font-bold text-foreground"
-                >
-                  Hoy
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={view === "month" ? nextMonth : view === "week" ? nextWeek : view === "day" ? nextDay : nextWeek}
-                  aria-label="Siguiente"
-                  className="h-8 w-8 rounded-xl text-foreground"
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
+            <div className="flex flex-col gap-2 md:flex-row md:items-center">
+              <div className="grid grid-cols-3 gap-2 sm:flex sm:flex-wrap" role="group" aria-label="Qué mostrar">
+                {TYPE_ORDER.map((type) => {
+                  const t = TYPES[type];
+                  const on = visible[type];
+                  const IconComp = t.icon;
+                  return (
+                    <button
+                      key={type}
+                      type="button"
+                      aria-pressed={on}
+                      title={on ? `Ocultar ${t.label.toLowerCase()}` : `Mostrar ${t.label.toLowerCase()}`}
+                      onClick={() => setVisible({ ...visible, [type]: !on })}
+                      className={`flex h-9 min-w-0 items-center justify-center gap-1 sm:gap-1.5 rounded-full border px-2 sm:px-3 text-xs font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                        on ? t.on : "border-border/60 bg-background text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      <IconComp className="hidden sm:block h-3.5 w-3.5 shrink-0" />
+                      <span className={`truncate ${on ? "" : "line-through decoration-1"}`}>{t.label}</span>
+                      <span className="tabular-nums opacity-80">{counts[type]}</span>
+                    </button>
+                  );
+                })}
               </div>
 
-              <div className="flex bg-muted/60 p-1 rounded-2xl border border-border/40">
-                {(["month", "week", "day", "agenda"] as CalendarViewType[]).map((v) => (
-                  <Button
-                    key={v}
-                    onClick={() => setView(v)}
-                    variant={view === v ? "secondary" : "ghost"}
-                    size="sm"
-                    className={`h-8 text-xs font-bold px-3 rounded-xl ${
-                      view === v ? "bg-background text-foreground shadow-xs" : "text-muted-foreground"
-                    }`}
-                  >
-                    {v === "month" ? "Mes" : v === "week" ? "Semana" : v === "day" ? "Día" : "Lista"}
-                  </Button>
-                ))}
+              <div className="flex items-center gap-2 md:ml-auto">
+                <div className="relative flex-1 md:w-60 md:flex-none">
+                  <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    placeholder="Buscar en la agenda"
+                    aria-label="Buscar en la agenda"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="bg-background border-border/60 text-foreground rounded-full text-xs h-9 pl-8"
+                  />
+                </div>
+                {newTaskButton("2xl:hidden h-9 rounded-full text-xs")}
               </div>
             </div>
+
+            {showPicker && view !== "agenda" && (
+              <div className="2xl:hidden rounded-2xl border border-border/60 bg-card p-4 max-w-sm">{miniCalendar}</div>
+            )}
           </div>
 
           {view === "month" && (
             <div>
               <div className="grid grid-cols-7 text-center border-b border-border/40 bg-muted/30 py-2.5">
-                {["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"].map((day) => (
+                {WEEKDAY_SHORT.map((day) => (
                   <div key={day} className="text-xs font-bold text-muted-foreground">
                     {day}
                   </div>
                 ))}
               </div>
-              <div className="grid grid-cols-7 border-b border-border/40">
-                {Array.from({ length: firstDayOfMonth }).map((_, i) => (
-                  <div key={`empty-${i}`} className="h-32 border-b border-r border-border/40 bg-muted/10" />
-                ))}
-
-                {Array.from({ length: daysInMonth }).map((_, i) => {
-                  const d = i + 1;
-                  const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), d);
-                  const isToday = new Date().toDateString() === date.toDateString();
-
-                  const dayEvents = filteredEvents.filter((e) => {
-                    const start = new Date(e.startDate);
-                    start.setHours(0, 0, 0, 0);
-                    const end = new Date(e.endDate);
-                    end.setHours(23, 59, 59, 999);
-                    return start <= date && end >= date;
-                  });
+              <div className="grid grid-cols-7">
+                {monthCells(currentDate.getFullYear(), currentDate.getMonth()).map((date, i) => {
+                  if (!date) return <div key={`empty-${i}`} className="min-h-[4.5rem] sm:h-32 border-b border-r border-border/40 bg-muted/10" />;
+                  const isToday = sameDay(nowClock, date);
+                  const dayEvents = eventsOnDay(filteredEvents, date);
+                  const { shown, more } = chipsThatFit(dayEvents, 3);
 
                   return (
                     <div
-                      key={d}
+                      key={i}
                       onDragOver={handleDragOver}
                       onDrop={(ev) => handleDropOnSlot(ev, date, 9, 0)}
-                      className={`h-32 border-b border-r border-border/40 p-1.5 flex flex-col overflow-y-auto cursor-pointer relative group transition-colors hover:bg-muted/20 ${
+                      onClick={() => goToDay(date)}
+                      className={`min-h-[4.5rem] sm:h-32 border-b border-r border-border/40 p-1 sm:p-1.5 flex flex-col cursor-pointer transition-colors hover:bg-muted/20 ${
                         isToday ? "bg-primary/5" : ""
                       }`}
                     >
-                      <span
-                        className={`text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center mb-1.5 ${
-                          isToday ? "bg-primary text-primary-foreground font-bold" : "text-muted-foreground"
+                      <button
+                        type="button"
+                        onClick={(ev) => {
+                          ev.stopPropagation();
+                          goToDay(date);
+                        }}
+                        aria-label={`Ver el ${date.getDate()} de ${monthLower(date)}${dayEvents.length ? `: ${dayEvents.length} ${dayEvents.length === 1 ? "compromiso" : "compromisos"}` : ""}`}
+                        className={`text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center mb-1 shrink-0 hover:ring-2 hover:ring-primary/30 ${
+                          isToday ? "bg-primary text-primary-foreground" : "text-muted-foreground"
                         }`}
                       >
-                        {d}
-                      </span>
+                        {date.getDate()}
+                      </button>
 
-                      <div className="space-y-1">
-                        {dayEvents.map((e) => {
-                          const IconComp = e.icon;
-                          return (
-                            <div
-                              key={e.id}
-                              draggable
-                              onDragStart={(ev) => handleDragStart(ev, e)}
-                              onClick={(ev) => {
-                                ev.stopPropagation();
-                                setSelectedEvent(e);
-                                setSearchQuery("");
-                                setRescheduleDate(e.startDate.toISOString().split("T")[0]);
-                                setRescheduleTime(e.startDate.toTimeString().split(" ")[0].substring(0, 5));
-                                if (e.type === "reservation") {
-                                  setRescheduleEndTime(e.endDate.toTimeString().split(" ")[0].substring(0, 5));
-                                }
-                              }}
-                              className={`text-xs px-1.5 py-1 rounded-lg border font-bold truncate leading-tight shadow-2xs cursor-grab active:cursor-grabbing transition-all hover:scale-102 flex items-center gap-1 ${e.color}`}
-                              title={`${e.title} (${formatTime(e.startDate)})`}
-                            >
-                              <IconComp className="h-3 w-3 shrink-0" />
-                              <span className="truncate">{e.title}</span>
-                            </div>
-                          );
-                        })}
+                      {/* En compu: hora y nombre corto. */}
+                      <div className="hidden sm:flex flex-col gap-1 min-h-0">
+                        {shown.map((e) =>
+                          eventButton(
+                            e,
+                            "rounded-md px-1.5 py-0.5 text-xs leading-5 flex items-center gap-1 min-w-0",
+                            <>
+                              {!e.allDay && <span className="tabular-nums font-semibold shrink-0">{formatTime(e.startDate)}</span>}
+                              <span className="truncate font-medium">{e.short}</span>
+                            </>
+                          )
+                        )}
+                        {more > 0 && (
+                          <button
+                            type="button"
+                            onClick={(ev) => {
+                              ev.stopPropagation();
+                              goToDay(date);
+                            }}
+                            className="text-left px-1.5 text-xs font-bold text-primary hover:underline"
+                          >
+                            +{more} más
+                          </button>
+                        )}
                       </div>
+
+                      {/* En el celular no entra el texto: un punto de color por compromiso. */}
+                      {dayEvents.length > 0 && (
+                        <div className="sm:hidden flex flex-wrap items-center gap-1 px-0.5" aria-hidden>
+                          {dayEvents.slice(0, 4).map((e) => (
+                            <span key={e.id} className={`h-2 w-2 rounded-full ${TYPES[e.type].dot}`} />
+                          ))}
+                          {dayEvents.length > 4 && <span className="text-[10px] font-bold text-muted-foreground">+{dayEvents.length - 4}</span>}
+                        </div>
+                      )}
                     </div>
                   );
                 })}
@@ -628,24 +738,18 @@ export function UnifiedCalendar({ reservations = [], purchaseOrders = [], tasks 
                     Horario
                   </div>
                   {weekDays.map((date, idx) => {
-                    const isToday = new Date().toDateString() === date.toDateString();
+                    const isToday = sameDay(nowClock, date);
                     return (
-                      <div
+                      <button
                         key={idx}
-                        className={`flex flex-col items-center justify-center border-r border-border/40 last:border-r-0 py-1 ${
+                        type="button"
+                        onClick={() => goToDay(date)}
+                        aria-label={`Ver el ${date.getDate()} de ${monthLower(date)}`}
+                        className={`flex flex-col items-center justify-center border-r border-border/40 last:border-r-0 py-1 hover:bg-muted/40 ${
                           isToday ? "bg-primary/10" : ""
                         }`}
                       >
-                        <div className="flex items-center gap-1">
-                          <span className="text-xs font-bold text-muted-foreground">
-                            {["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"][idx]}
-                          </span>
-                          {isToday && (
-                            <Badge className="bg-primary text-primary-foreground text-xs font-bold px-1 py-0 h-3.5">
-                              Hoy
-                            </Badge>
-                          )}
-                        </div>
+                        <span className="text-xs font-bold text-muted-foreground">{WEEKDAY_SHORT[idx]}</span>
                         <span
                           className={`text-sm font-bold w-7 h-7 rounded-full flex items-center justify-center mt-1 ${
                             isToday ? "bg-primary text-primary-foreground shadow-xs" : "text-foreground"
@@ -653,10 +757,16 @@ export function UnifiedCalendar({ reservations = [], purchaseOrders = [], tasks 
                         >
                           {date.getDate()}
                         </span>
-                      </div>
+                      </button>
                     );
                   })}
                 </div>
+
+                {allDayRow(
+                  weekDays,
+                  "grid grid-cols-[3.5rem_repeat(7,minmax(0,1fr))]",
+                  "text-[11px] leading-tight font-bold text-muted-foreground p-1 border-r border-border/40 flex items-center justify-center text-center"
+                )}
 
                 <div className="divide-y divide-border/20 max-h-[620px] overflow-y-auto custom-scrollbar relative">
                   {showTimeLine && (
@@ -686,18 +796,17 @@ export function UnifiedCalendar({ reservations = [], purchaseOrders = [], tasks 
                           </div>
 
                           {weekDays.map((date, dayIdx) => {
-                            const isToday = new Date().toDateString() === date.toDateString();
+                            const isToday = sameDay(nowClock, date);
                             const currentSlotStart = new Date(date);
                             currentSlotStart.setHours(hour, minute, 0, 0);
                             const currentSlotEnd = new Date(currentSlotStart);
                             currentSlotEnd.setMinutes(currentSlotStart.getMinutes() + 30);
 
                             const slotEvents = filteredEvents.filter((e) => {
-                              const start = new Date(e.startDate);
-                              const end = new Date(e.endDate);
+                              if (e.allDay) return false;
                               return (
-                                (start < currentSlotEnd && end > currentSlotStart) ||
-                                (start.getTime() === currentSlotStart.getTime() && e.type !== "reservation")
+                                (e.startDate < currentSlotEnd && e.endDate > currentSlotStart) ||
+                                (e.startDate >= currentSlotStart && e.startDate < currentSlotEnd && e.type !== "reservation")
                               );
                             });
 
@@ -710,35 +819,18 @@ export function UnifiedCalendar({ reservations = [], purchaseOrders = [], tasks 
                                   isToday ? "bg-primary/5" : ""
                                 }`}
                               >
-                                {slotEvents.map((e) => {
-                                  const IconComp = e.icon;
-                                  return (
-                                    <div
-                                      key={e.id}
-                                      draggable
-                                      onDragStart={(ev) => handleDragStart(ev, e)}
-                                      onClick={() => {
-                                        setSelectedEvent(e);
-                                        setSearchQuery("");
-                                        setRescheduleDate(e.startDate.toISOString().split("T")[0]);
-                                        setRescheduleTime(e.startDate.toTimeString().split(" ")[0].substring(0, 5));
-                                        if (e.type === "reservation") {
-                                          setRescheduleEndTime(e.endDate.toTimeString().split(" ")[0].substring(0, 5));
-                                        }
-                                      }}
-                                      className={`p-1.5 rounded-xl text-xs font-bold leading-tight cursor-grab active:cursor-grabbing shadow-2xs transition-all hover:scale-102 hover:shadow-xs flex items-center justify-between gap-1 ${e.color}`}
-                                      title={`${e.title} (${formatTime(e.startDate)} - ${formatTime(e.endDate)})`}
-                                    >
-                                      <div className="flex items-center gap-1 min-w-0">
-                                        <IconComp className="h-3 w-3 shrink-0" />
-                                        <span className="truncate">{e.title}</span>
-                                      </div>
-                                      <Badge variant="outline" className={`text-xs font-mono px-1 py-0 h-3.5 border-none font-bold ${e.badgeBg}`}>
-                                        {formatTime(e.startDate)}
-                                      </Badge>
-                                    </div>
-                                  );
-                                })}
+                                {slotEvents.map((e) =>
+                                  continuesFrom(e, currentSlotStart, hour, minute) ? (
+                                    eventButton(e, "h-2 rounded-full", null)
+                                  ) : eventButton(
+                                    e,
+                                    "p-1.5 rounded-xl text-xs leading-tight flex items-center gap-1 min-w-0",
+                                    <>
+                                      <span className="tabular-nums font-semibold shrink-0">{formatTime(e.startDate)}</span>
+                                      <span className="truncate font-medium">{e.short}</span>
+                                    </>
+                                  )
+                                )}
                               </div>
                             );
                           })}
@@ -752,129 +844,120 @@ export function UnifiedCalendar({ reservations = [], purchaseOrders = [], tasks 
           )}
 
           {view === "day" && (
-            <div className="grid grid-cols-1 divide-y divide-border/20 max-h-[620px] overflow-y-auto custom-scrollbar">
-              {HOURS.map((hour) => {
-                return [0, 30].map((minute) => {
-                  const isFullHour = minute === 0;
-                  const timeStr = `${hour.toString().padStart(2, "0")}:${minute.toString().padStart(2, "0")}`;
-                  const currentSlotStart = new Date(currentDate);
-                  currentSlotStart.setHours(hour, minute, 0, 0);
-                  const currentSlotEnd = new Date(currentSlotStart);
-                  currentSlotEnd.setMinutes(currentSlotStart.getMinutes() + 30);
+            <div>
+              {allDayRow(
+                [currentDate],
+                "grid grid-cols-[minmax(4.5rem,16.666%)_1fr]",
+                "text-xs font-bold text-muted-foreground p-3 border-r border-border/40 flex items-center justify-center bg-muted/20"
+              )}
+              <div className="grid grid-cols-1 divide-y divide-border/20 max-h-[620px] overflow-y-auto custom-scrollbar">
+                {HOURS.map((hour) => {
+                  return [0, 30].map((minute) => {
+                    const isFullHour = minute === 0;
+                    const timeStr = `${hour.toString().padStart(2, "0")}:${minute.toString().padStart(2, "0")}`;
+                    const currentSlotStart = new Date(currentDate);
+                    currentSlotStart.setHours(hour, minute, 0, 0);
+                    const currentSlotEnd = new Date(currentSlotStart);
+                    currentSlotEnd.setMinutes(currentSlotStart.getMinutes() + 30);
 
-                  const slotEvents = filteredEvents.filter((e) => {
-                    const start = new Date(e.startDate);
-                    const end = new Date(e.endDate);
+                    const slotEvents = filteredEvents.filter((e) => {
+                      if (e.allDay) return false;
+                      return (
+                        (e.startDate < currentSlotEnd && e.endDate > currentSlotStart) ||
+                        (e.startDate >= currentSlotStart && e.startDate < currentSlotEnd && e.type !== "reservation")
+                      );
+                    });
+
                     return (
-                      (start < currentSlotEnd && end > currentSlotStart) ||
-                      (start.getTime() === currentSlotStart.getTime() && e.type !== "reservation")
+                      <div
+                        key={timeStr}
+                        onDragOver={handleDragOver}
+                        onDrop={(ev) => handleDropOnSlot(ev, currentDate, hour, minute)}
+                        className={`grid grid-cols-[minmax(4.5rem,16.666%)_1fr] hover:bg-muted/20 min-h-[50px] ${
+                          isFullHour ? "border-b border-border/40" : "border-b border-dashed border-border/20"
+                        }`}
+                      >
+                        <div className="text-xs font-mono font-bold text-muted-foreground p-3 border-r border-border/40 flex items-center justify-center bg-muted/20 select-none">
+                          {timeStr}
+                        </div>
+
+                        <div className="p-2 flex flex-wrap gap-2 items-center min-w-0">
+                          {slotEvents.map((e) => {
+                            const IconComp = e.icon;
+                            if (continuesFrom(e, currentSlotStart, hour, minute)) return eventButton(e, "h-2 rounded-full", null);
+                            return eventButton(
+                              e,
+                              "w-auto max-w-full p-2 rounded-xl text-xs flex items-center gap-2",
+                              <>
+                                <IconComp className="h-4 w-4 shrink-0" />
+                                <span className="font-semibold min-w-0 break-words">{e.title}</span>
+                                <span className="tabular-nums shrink-0 opacity-80">{whenLabel(e)}</span>
+                              </>
+                            );
+                          })}
+                        </div>
+                      </div>
                     );
                   });
-
-                  return (
-                    <div
-                      key={timeStr}
-                      onDragOver={handleDragOver}
-                      onDrop={(ev) => handleDropOnSlot(ev, currentDate, hour, minute)}
-                      className={`grid grid-cols-12 hover:bg-muted/20 min-h-[50px] ${
-                        isFullHour ? "border-b border-border/40" : "border-b border-dashed border-border/20"
-                      }`}
-                    >
-                      <div className="col-span-2 text-xs font-mono font-bold text-muted-foreground p-3 border-r border-border/40 flex items-center justify-center bg-muted/20 select-none">
-                        {timeStr}
-                      </div>
-
-                      <div className="col-span-10 p-2 flex flex-wrap gap-2 items-center">
-                        {slotEvents.map((e) => {
-                          const IconComp = e.icon;
-                          return (
-                            <div
-                              key={e.id}
-                              draggable
-                              onDragStart={(ev) => handleDragStart(ev, e)}
-                              onClick={() => {
-                                setSelectedEvent(e);
-                                setSearchQuery("");
-                                setRescheduleDate(e.startDate.toISOString().split("T")[0]);
-                                setRescheduleTime(e.startDate.toTimeString().split(" ")[0].substring(0, 5));
-                                if (e.type === "reservation") {
-                                  setRescheduleEndTime(e.endDate.toTimeString().split(" ")[0].substring(0, 5));
-                                }
-                              }}
-                              className={`p-2 rounded-xl text-xs font-bold cursor-grab active:cursor-grabbing shadow-2xs flex items-center gap-2 transition-transform hover:scale-102 ${e.color}`}
-                            >
-                              <IconComp className="h-4 w-4 shrink-0" />
-                              <span className="font-bold">{e.title}</span>
-                              <Badge className={`text-xs font-mono font-bold border-none ${e.badgeBg}`}>
-                                {formatTime(e.startDate)} - {formatTime(e.endDate)}
-                              </Badge>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  );
-                });
-              })}
+                })}
+              </div>
             </div>
           )}
 
           {view === "agenda" && (
-            <div className="divide-y divide-border/20 p-6 max-h-[620px] overflow-y-auto custom-scrollbar">
-              {filteredEvents.length === 0 ? (
-                <EmptyMessage title="No hay compromisos en estas fechas" description="Probá con otra semana o con otro filtro." icon={Calendar} className="py-20" />
+            <div className="p-2 sm:p-4 max-h-[620px] overflow-y-auto custom-scrollbar">
+              {pastEvents.length > 0 && (
+                <div className="px-2 pb-2">
+                  <Button variant="link" size="sm" className="h-auto p-0 text-xs" onClick={() => setShowPast(!showPast)}>
+                    {showPast
+                      ? "Ocultar los anteriores a hoy"
+                      : `Ver ${pastEvents.length === 1 ? "el anterior" : `los ${pastEvents.length} anteriores`} a hoy`}
+                  </Button>
+                </div>
+              )}
+              {listEvents.length === 0 ? (
+                <EmptyMessage
+                  kind={baseEvents.length ? "search" : "empty"}
+                  title={baseEvents.length ? "No hay nada desde hoy con estos filtros" : "No hay nada agendado"}
+                  description={baseEvents.length ? "Probá con otro filtro o mirá los anteriores." : "Las reservas, las entregas y tus tareas van a aparecer acá."}
+                  icon={Calendar}
+                  className="py-16"
+                />
               ) : (
-                filteredEvents
-                  .sort((a, b) => a.startDate.getTime() - b.startDate.getTime())
-                  .map((e) => {
-                    const IconComp = e.icon;
+                <ul className="divide-y divide-border/30">
+                  {listEvents.map((e) => {
+                    const t = TYPES[e.type];
+                    const detail = e.raw?.description || e.raw?.reason;
                     return (
-                      <div
-                        key={e.id}
-                        onClick={() => {
-                          setSelectedEvent(e);
-                          setSearchQuery("");
-                          setRescheduleDate(e.startDate.toISOString().split("T")[0]);
-                          setRescheduleTime(e.startDate.toTimeString().split(" ")[0].substring(0, 5));
-                          if (e.type === "reservation") {
-                            setRescheduleEndTime(e.endDate.toTimeString().split(" ")[0].substring(0, 5));
-                          }
-                        }}
-                        className="py-4 flex items-start md:items-center justify-between gap-4 group cursor-pointer hover:bg-muted/20 px-4 rounded-2xl transition-all"
-                      >
-                        <div className="flex items-start md:items-center gap-4">
-                          <div className="p-2.5 bg-muted rounded-2xl text-center shrink-0 w-16 shadow-2xs border border-border/40">
-                            <p className="text-xs font-bold text-muted-foreground">
-                              {e.startDate.toLocaleDateString("es-AR", { weekday: "short" })}
+                      <li key={e.id}>
+                        <button
+                          type="button"
+                          onClick={() => openEvent(e)}
+                          className="w-full text-left py-3 px-2 sm:px-3 flex items-start gap-3 rounded-xl hover:bg-muted/30 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        >
+                          <div className={`w-12 shrink-0 rounded-xl border border-border/40 py-1.5 text-center ${sameDay(e.startDate, nowClock) ? "bg-primary text-primary-foreground" : "bg-muted"}`}>
+                            <p className="text-[11px] font-bold leading-none opacity-80">
+                              {capitalize(e.startDate.toLocaleDateString("es-AR", { weekday: "short" }).replace(".", ""))}
                             </p>
-                            <p className="text-lg font-bold text-foreground">
-                              {e.startDate.getDate()}
-                            </p>
+                            <p className="text-lg font-bold leading-tight">{e.startDate.getDate()}</p>
+                            <p className="text-[11px] font-semibold leading-none opacity-80">{monthLower(e.startDate).slice(0, 3)}</p>
                           </div>
 
-                          <div>
-                            <h4 className="font-bold text-sm text-foreground group-hover:text-primary transition-colors flex items-center gap-2">
-                              <IconComp className="h-4 w-4 shrink-0 text-primary" />
-                              {e.title}
-                              <Badge className={`rounded-full px-2.5 py-0.5 text-xs font-bold border-none ${e.badgeBg}`}>
-                                {e.type === "reservation" ? "Reserva" : e.type === "order" ? "Entrega OC" : "Tarea"}
-                              </Badge>
-                            </h4>
-                            <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">
-                              {e.raw?.description || e.raw?.reason || "Sin detalles adicionales."}
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-semibold text-foreground break-words line-clamp-2">{e.title}</p>
+                            <p className="mt-0.5 flex flex-wrap items-center gap-x-1.5 text-xs text-muted-foreground">
+                              <span className={`h-2 w-2 shrink-0 rounded-full ${t.dot}`} aria-hidden />
+                              <span>{t.kind}</span>
+                              <span aria-hidden>·</span>
+                              <span className="tabular-nums">{whenLabel(e)}</span>
                             </p>
+                            {detail && <p className="mt-0.5 text-xs text-muted-foreground line-clamp-1">{detail}</p>}
                           </div>
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-bold text-muted-foreground flex items-center gap-1 font-mono">
-                            <Clock className="h-3.5 w-3.5 text-primary" />
-                            {formatTime(e.startDate)}
-                          </span>
-                        </div>
-                      </div>
+                        </button>
+                      </li>
                     );
-                  })
+                  })}
+                </ul>
               )}
             </div>
           )}
@@ -888,14 +971,15 @@ export function UnifiedCalendar({ reservations = [], purchaseOrders = [], tasks 
               variant="ghost"
               size="icon"
               onClick={() => setSelectedEvent(null)}
+              aria-label="Cerrar"
               className="absolute right-4 top-4 h-8 w-8 rounded-full"
             >
               <X className="h-4 w-4" />
             </Button>
 
             <div className="space-y-2">
-              <Badge className={`rounded-full px-3 py-0.5 text-xs font-bold tracking-widest border-none w-fit ${selectedEvent.badgeBg}`}>
-                {selectedEvent.type === "reservation" ? "Reserva de vehículo" : selectedEvent.type === "order" ? "Entrega de orden" : "Tarea administrativa"}
+              <Badge className={`rounded-full px-3 py-0.5 text-xs font-bold border-none w-fit ${TYPES[selectedEvent.type].badge}`}>
+                {TYPES[selectedEvent.type].kind}
               </Badge>
               <h3 className="text-xl font-bold text-foreground tracking-tight">{selectedEvent.title}</h3>
             </div>
@@ -913,7 +997,7 @@ export function UnifiedCalendar({ reservations = [], purchaseOrders = [], tasks 
                   </div>
                   <div className="flex items-center gap-2.5 text-sm font-semibold text-foreground">
                     <Briefcase className="h-4 w-4 text-blue-500" />
-                    <span>Área: <span className="text-muted-foreground font-medium">{selectedEvent.raw?.user?.area?.name || "Sin Área"}</span></span>
+                    <span>Área: <span className="text-muted-foreground font-medium">{selectedEvent.raw?.user?.area?.name || "Sin área"}</span></span>
                   </div>
                   {selectedEvent.raw?.reason && (
                     <div className="pt-2 border-t border-border/20 text-xs text-muted-foreground italic font-medium">
@@ -927,7 +1011,7 @@ export function UnifiedCalendar({ reservations = [], purchaseOrders = [], tasks 
                 <>
                   <div className="flex items-center gap-2.5 text-sm font-semibold text-foreground">
                     <Clock className="h-4 w-4 text-emerald-500" />
-                    <span>Entrega pactada: <span className="text-muted-foreground font-medium">{formatFechaHora(selectedEvent.startDate)}</span></span>
+                    <span>Entrega pactada: <span className="text-muted-foreground font-medium">{selectedEvent.allDay ? formatFechaCalendario(selectedEvent.raw?.deliveryDate) : formatFechaHora(selectedEvent.startDate)}</span></span>
                   </div>
                   <div className="flex items-center gap-2.5 text-sm font-semibold text-foreground">
                     <User className="h-4 w-4 text-emerald-500" />
@@ -968,7 +1052,7 @@ export function UnifiedCalendar({ reservations = [], purchaseOrders = [], tasks 
 
             <div className="space-y-4 pt-4 border-t border-border/20">
               <h4 className="text-xs font-bold text-muted-foreground flex items-center gap-1.5">
-                <Edit2 className="h-3.5 w-3.5" /> Reprogramar horarios de logística
+                <Edit2 className="h-3.5 w-3.5" /> Cambiar la fecha
               </h4>
 
               <div className="flex flex-col gap-4">
@@ -983,21 +1067,24 @@ export function UnifiedCalendar({ reservations = [], purchaseOrders = [], tasks 
                     />
                   </div>
 
-                  <div className="space-y-2">
-                    <Label className="text-xs font-bold text-muted-foreground">
-                      {selectedEvent.type === "reservation" ? "Hora de inicio" : "Hora"}
-                    </Label>
-                    <Input
-                      type="time"
-                      value={rescheduleTime}
-                      onChange={(e) => setRescheduleTime(e.target.value)}
-                      className="bg-muted/40 border-border/60 rounded-xl text-xs"
-                    />
-                  </div>
+                  {/* La entrega de una orden es solo un día, sin hora. */}
+                  {selectedEvent.type !== "order" && (
+                    <div className="space-y-2">
+                      <Label className="text-xs font-bold text-muted-foreground">
+                        {selectedEvent.type === "reservation" ? "Hora de salida" : "Hora"}
+                      </Label>
+                      <Input
+                        type="time"
+                        value={rescheduleTime}
+                        onChange={(e) => setRescheduleTime(e.target.value)}
+                        className="bg-muted/40 border-border/60 rounded-xl text-xs"
+                      />
+                    </div>
+                  )}
 
                   {selectedEvent.type === "reservation" && (
-                    <div className="space-y-2 col-span-2">
-                      <Label className="text-xs font-bold text-muted-foreground">Hora fin</Label>
+                    <div className="space-y-2 md:col-span-2">
+                      <Label className="text-xs font-bold text-muted-foreground">Hora de vuelta</Label>
                       <Input
                         type="time"
                         value={rescheduleEndTime}
@@ -1032,9 +1119,11 @@ export function UnifiedCalendar({ reservations = [], purchaseOrders = [], tasks 
               <Link
                 href={
                   selectedEvent.type === "reservation"
-                    ? "/admin/vehicles"
+                    ? selectedEvent.raw?.vehicleId ? `/admin/vehicles/${selectedEvent.raw.vehicleId}` : "/admin/vehicles"
                     : selectedEvent.type === "order"
                     ? `/admin/purchase-orders/${selectedEvent.id}`
+                    : selectedEvent.raw?.caseId
+                    ? `/cases/${selectedEvent.raw.caseId}`
                     : "/tasks"
                 }
                 className="text-xs text-primary font-bold hover:underline flex items-center gap-1"
@@ -1053,6 +1142,7 @@ export function UnifiedCalendar({ reservations = [], purchaseOrders = [], tasks 
               variant="ghost"
               size="icon"
               onClick={() => setShowAddModal(false)}
+              aria-label="Cerrar"
               className="absolute right-4 top-4 h-8 w-8 rounded-full"
             >
               <X className="h-4 w-4" />
@@ -1132,7 +1222,7 @@ export function UnifiedCalendar({ reservations = [], purchaseOrders = [], tasks 
                         <div className="w-5 h-5 rounded-full bg-accent/20 text-accent flex items-center justify-center font-bold text-xs uppercase">
                           {u.name?.[0]}
                         </div>
-                        {u.name} <span className="text-xs text-muted-foreground font-medium italic">({u.area?.name || "Sin Área"})</span>
+                        {u.name} <span className="text-xs text-muted-foreground font-medium italic">({u.area?.name || "Sin área"})</span>
                       </span>
                     </label>
                   ))}
