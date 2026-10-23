@@ -14,21 +14,43 @@ import Link from "next/link";
 import { PageHeader } from "@/components/layout/page-header";
 import { StatCard } from "@/components/ui/stat-card";
 import { Progress } from "@/components/ui/progress";
+import { auth } from "@/auth";
+import { RESERVATION_STATUS, formatReservationRange, isFleetAdmin, reservationActionsFor } from "@/lib/vehicle-reservations";
+import { ReservationActions } from "./requests/reservation-actions";
 
 export const metadata = { title: "Vehículos" };
 
 export default async function VehiclesPage() {
   const now = new Date();
+  const session = await auth();
+  const me = { id: session?.user?.id || "", role: session?.user?.role };
+  const fleetAdmin = isFleetAdmin(me.role);
+
+  const yesterday = new Date(now.getTime() - 86400000);
+  const myReservations = me.id
+    ? await prisma.vehicleReservation.findMany({
+        where: {
+          userId: me.id,
+          OR: [{ status: "EN_CURSO" }, { status: { in: ["PENDIENTE", "APROBADA"] }, endDate: { gte: yesterday } }],
+        },
+        include: { vehicle: { select: { plate: true, brand: true, model: true } } },
+        orderBy: { startDate: "asc" },
+      })
+    : [];
 
   const vehicles = await prisma.vehicle.findMany({
     include: {
       _count: { select: { reservations: true } },
+      // En uso (salió y no volvió) o reservado para este momento.
       reservations: {
         where: {
-          status: { in: ['APROBADA', 'EN_CURSO'] },
-          startDate: { lte: now },
-          endDate: { gte: now }
+          OR: [
+            { status: 'EN_CURSO' },
+            { status: 'APROBADA', startDate: { lte: now }, endDate: { gte: now } },
+          ]
         },
+        include: { user: { select: { name: true } } },
+        orderBy: { status: 'desc' },
         take: 1
       },
       fuelRecords: {
@@ -82,11 +104,13 @@ export default async function VehiclesPage() {
                 <Fuel className="mr-2 h-4 w-4 text-amber-500"/> Carga combustible
               </Link>
             </Button>
-            <Button asChild className="rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground">
-              <Link href="/admin/vehicles/new">
-                <Plus className="mr-2 h-4 w-4"/> Nueva unidad
-              </Link>
-            </Button>
+            {fleetAdmin && (
+              <Button asChild className="rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground">
+                <Link href="/admin/vehicles/new">
+                  <Plus className="mr-2 h-4 w-4"/> Nueva unidad
+                </Link>
+              </Button>
+            )}
           </>
         }
       />
@@ -125,6 +149,39 @@ export default async function VehiclesPage() {
         />
       </div>
 
+      {myReservations.length > 0 && (
+        <Card className="rounded-2xl shadow-xs border border-border/60 bg-card text-card-foreground overflow-hidden">
+          <CardHeader className="bg-muted/30">
+            <CardTitle className="text-lg">Mis reservas</CardTitle>
+            <CardDescription>Si ya no vas a usar el vehículo, cancelá la reserva para que lo pueda usar otra persona.</CardDescription>
+          </CardHeader>
+          <CardContent className="p-0">
+            <ul className="divide-y divide-border/40">
+              {myReservations.map((r) => {
+                const st = RESERVATION_STATUS[r.status];
+                return (
+                  <li key={r.id} className="flex flex-wrap items-center justify-between gap-3 px-6 py-4">
+                    <div className="min-w-0">
+                      <p className="text-sm font-bold text-foreground">
+                        <span className="font-mono">{r.vehicle.plate}</span> · {r.vehicle.brand} {r.vehicle.model}
+                      </p>
+                      <p className="text-xs text-muted-foreground">{formatReservationRange(r.startDate, r.endDate)}{r.reason ? ` · ${r.reason}` : ""}</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline" className={`text-xs font-bold ${st.className}`}>{st.label}</Badge>
+                      <ReservationActions
+                        reservationId={r.id}
+                        actions={reservationActionsFor(me, r).filter((a) => a === "CANCELADA")}
+                      />
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          </CardContent>
+        </Card>
+      )}
+
       <Card className="rounded-2xl shadow-xs border border-border/60 bg-card text-card-foreground overflow-hidden">
         <CardHeader className="bg-muted/30 flex flex-row items-center justify-between space-y-0">
           <div>
@@ -155,7 +212,9 @@ export default async function VehiclesPage() {
                   const fuelLimit = Number(v.fuelMonthlyLimit) || 0;
                   const fuelPercent = fuelLimit > 0 ? Math.min((monthlyFuel / fuelLimit) * 100, 100) : 0;
 
-                  const isOccupied = v.reservations.length > 0;
+                  const current = v.reservations[0];
+                  const inUse = current?.status === 'EN_CURSO';
+                  const isOccupied = Boolean(current);
                   const isMaintenance = v.status === 'EN_TALLER';
 
                   const isVtvClose = v.vtvExpiry && v.vtvExpiry < thirtyDaysFromNow;
@@ -179,8 +238,10 @@ export default async function VehiclesPage() {
                           <Badge className="bg-rose-500/10 text-rose-700 dark:text-rose-400 hover:bg-rose-500/20 border-none rounded-full px-3">En taller</Badge>
                         ) : isOccupied ? (
                           <div className="flex flex-col gap-1">
-                            <Badge className="bg-amber-500/10 text-amber-700 dark:text-amber-400 hover:bg-amber-500/20 border-none rounded-full px-3 w-fit">Ocupado</Badge>
-                            <span className="text-xs text-muted-foreground italic">Reservado</span>
+                            <Badge className="bg-amber-500/10 text-amber-700 dark:text-amber-400 hover:bg-amber-500/20 border-none rounded-full px-3 w-fit">
+                              {inUse ? "En uso" : "Reservado ahora"}
+                            </Badge>
+                            <span className="text-xs text-muted-foreground">{current.user?.name || "Sin nombre"}</span>
                           </div>
                         ) : (
                           <Badge className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/20 border-none rounded-full px-3">Disponible</Badge>

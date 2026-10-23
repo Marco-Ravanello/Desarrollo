@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import { reservationStatusLabel } from "@/lib/vehicle-reservations";
 import { createVehicleReservationAction } from "../../actions/vehicle-actions";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Combobox } from "@/components/ui/combobox";
@@ -45,6 +46,11 @@ export function ReserveVehicleForm({ vehicleId, vehicles }: { vehicleId: string,
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+
+    if (startDateStr && endDateStr && new Date(endDateStr) <= new Date(startDateStr)) {
+      toast.error("La devolución tiene que ser después de la salida.");
+      return;
+    }
 
     if (conflictReservation) {
       toast.error("Existe un conflicto de horario con una reserva existente. Por favor elija otra franja horaria.");
@@ -148,7 +154,7 @@ export function ReserveVehicleForm({ vehicleId, vehicles }: { vehicleId: string,
                     Esta unidad ya cuenta con una reserva registrada por <b>{conflictReservation.user?.name || "otro agente"}</b> en el período seleccionado:
                   </p>
                   <div className="p-2.5 rounded-xl bg-rose-500/15 font-mono text-xs font-bold">
-                    📅 {formatRange(conflictReservation.startDate, conflictReservation.endDate)} ({conflictReservation.status})
+                    📅 {formatRange(conflictReservation.startDate, conflictReservation.endDate)} ({reservationStatusLabel(conflictReservation.status).toLowerCase()})
                   </div>
                   <p className="text-xs italic">Por favor, modifique la fecha/hora o elija otro vehículo para continuar.</p>
                 </div>
@@ -238,7 +244,7 @@ export function ReserveVehicleForm({ vehicleId, vehicles }: { vehicleId: string,
                             {isOngoing ? "En Curso" : isApproved ? "Aprobada" : "Pendiente"}
                           </span>
                           <Badge variant="secondary" className="text-xs font-bold">
-                            {r.status}
+                            {reservationStatusLabel(r.status)}
                           </Badge>
                         </div>
 

@@ -4,7 +4,9 @@ import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
 import { actionErrorMessage } from "@/lib/action-error";
-import { PURCHASING_EDIT_ROLES } from "@/lib/permissions";
+import { FLEET_ADMIN_ROLES, PURCHASING_EDIT_ROLES } from "@/lib/permissions";
+import { formatReservationRange, isFleetAdmin, reservationStatusLabel } from "@/lib/vehicle-reservations";
+import { conflictMessage, findBlockingReservation, lockVehicle } from "@/services/vehicle-reservations";
 
 const parseLocalDate = (dateStr: string | null) => {
   if (!dateStr) return null;
@@ -38,28 +40,74 @@ export async function rescheduleTaskAction(id: string, dueDateStr: string, viewe
   }
 }
 
+/**
+ * Mover una reserva en la Agenda. Se controla que el vehículo esté libre en el horario nuevo.
+ * Si quien la pidió mueve una reserva ya aprobada, vuelve a quedar pendiente de aprobación.
+ */
 export async function rescheduleReservationAction(id: string, startDateStr: string, endDateStr: string) {
   const session = await auth();
   if (!session?.user?.id) return { success: false, error: "No tenés permiso para hacer esto o tu sesión expiró. Si sigue pasando, volvé a iniciar sesión." };
+  const userId = session.user.id;
+
+  const startDate = parseLocalDate(startDateStr);
+  const endDate = parseLocalDate(endDateStr);
+  if (!startDate || !endDate || isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+    return { success: false, error: "No se entendió el horario nuevo. Probá de nuevo." };
+  }
+  if (endDate <= startDate) return { success: false, error: "La devolución tiene que ser después de la salida." };
 
   try {
-    const reservation = await prisma.vehicleReservation.findUnique({ where: { id } });
-    if (!reservation) return { success: false, error: "Reserva no encontrada" };
-    if (reservation.userId !== session.user.id && session.user.role !== "SUPERADMIN" && session.user.role !== "ADMIN_GENERAL") {
-      return { success: false, error: "No autorizado para modificar esta reserva" };
+    const reservation = await prisma.vehicleReservation.findUnique({ where: { id }, include: { vehicle: true } });
+    if (!reservation) return { success: false, error: "No encontramos esa reserva." };
+    const admin = isFleetAdmin(session.user.role);
+    if (reservation.userId !== userId && !admin) {
+      return { success: false, error: "Solo quien pidió la reserva, o quien administra la flota, la puede mover." };
+    }
+    if (reservation.status !== "PENDIENTE" && reservation.status !== "APROBADA") {
+      return { success: false, error: `Esta reserva está ${reservationStatusLabel(reservation.status).toLowerCase()} y ya no se puede mover.` };
     }
 
-    await prisma.vehicleReservation.update({
-      where: { id },
-      data: {
-        startDate: parseLocalDate(startDateStr)!,
-        endDate: parseLocalDate(endDateStr)!
-      }
+    const backToPending = reservation.status === "APROBADA" && !admin;
+    const error = await prisma.$transaction(async (tx) => {
+      await lockVehicle(tx, reservation.vehicleId);
+      const conflict = await findBlockingReservation(reservation.vehicleId, startDate, endDate, reservation.id, tx);
+      if (conflict) return conflictMessage(conflict);
+      const { count } = await tx.vehicleReservation.updateMany({
+        where: { id, status: reservation.status },
+        data: { startDate, endDate, ...(backToPending ? { status: "PENDIENTE" as const } : {}) },
+      });
+      return count === 0 ? "Otra persona cambió esta reserva recién. Recargá la página para ver cómo quedó." : null;
     });
+    if (error) return { success: false, error };
+
+    const range = formatReservationRange(startDate, endDate);
+    await prisma.auditLog.create({
+      data: {
+        userId,
+        action: "RESERVATION_RESCHEDULE",
+        entity: "VehicleReservation",
+        entityId: id,
+        details: `Reserva movida: ${reservation.vehicle.plate}, de ${formatReservationRange(reservation.startDate, reservation.endDate)} a ${range}${backToPending ? ". Vuelve a pendiente de aprobación" : ""}`,
+      },
+    });
+    if (backToPending) {
+      const admins = await prisma.user.findMany({ where: { role: { in: FLEET_ADMIN_ROLES }, NOT: { id: userId } }, select: { id: true } });
+      if (admins.length > 0) {
+        await prisma.notification.createMany({
+          data: admins.map((a) => ({
+            userId: a.id,
+            title: "Una reserva aprobada cambió de horario",
+            message: `${session.user.name} movió el ${reservation.vehicle.plate} al ${range}. Hay que aprobarla de nuevo.`,
+            link: "/admin/vehicles/requests",
+          })),
+        });
+      }
+    }
 
     revalidatePath("/admin/calendar");
+    revalidatePath("/admin/vehicles");
     revalidatePath("/admin/vehicles/requests");
-    return { success: true };
+    return { success: true, backToPending };
   } catch (error: any) {
     return { success: false, error: actionErrorMessage(error, "No se pudo reprogramar la reserva") };
   }

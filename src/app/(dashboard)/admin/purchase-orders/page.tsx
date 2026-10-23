@@ -11,6 +11,8 @@ import Link from "next/link";
 import { TableFilter } from "@/components/ui/table-filter";
 import { OrderTableRow } from "./order-table-row";
 import { EmptyState } from "@/components/ui/empty-state";
+import { auth } from "@/auth";
+import { allowedOrderTransitions, canEditPurchaseOrders } from "@/lib/purchase-orders";
 
 export const metadata = { title: "Órdenes de compra" };
 
@@ -19,7 +21,8 @@ export default async function PurchaseOrdersPage({
 }: {
   searchParams: Promise<{ status?: string; q?: string; page?: string }>;
 }) {
-  const params = await searchParams;
+  const [params, session] = await Promise.all([searchParams, auth()]);
+  const role = session?.user?.role;
   const status = params.status;
   const query = params.q || "";
   const page = parseInt(params.page || "1") || 1;
@@ -40,9 +43,11 @@ export default async function PurchaseOrdersPage({
         description={<>Módulo de Administración General • Seguimiento y adjudicación de compras públicas ({totalCount} registros).</>}
         icon={Briefcase}
         actions={
-          <Button asChild className="rounded-2xl h-11 px-5 font-bold text-xs bg-primary text-primary-foreground shadow-lg shadow-primary/20">
-            <Link href="/admin/purchase-orders/new"><Plus className="mr-2 h-4 w-4"/> Nueva orden</Link>
-          </Button>
+          canEditPurchaseOrders(role) ? (
+            <Button asChild className="rounded-2xl h-11 px-5 font-bold text-xs bg-primary text-primary-foreground shadow-lg shadow-primary/20">
+              <Link href="/admin/purchase-orders/new"><Plus className="mr-2 h-4 w-4"/> Nueva orden</Link>
+            </Button>
+          ) : undefined
         }
       />
 
@@ -72,10 +77,12 @@ export default async function PurchaseOrdersPage({
             label="Estado"
             param="status"
             options={[
-              { label: "Pendiente Aprobación", value: "PENDIENTE_APROBACION" },
+              { label: "Borrador", value: "BORRADOR" },
+              { label: "Pendiente de aprobación", value: "PENDIENTE_APROBACION" },
               { label: "Aprobada", value: "APROBADA" },
               { label: "Cumplida", value: "CUMPLIDA" },
               { label: "Rechazada", value: "RECHAZADA" },
+              { label: "Cancelada", value: "CANCELADA" },
             ]}
           />
         </div>
@@ -97,7 +104,7 @@ export default async function PurchaseOrdersPage({
                 </TableHeader>
                 <TableBody className="divide-y divide-border/40">
                   {orders.map((o: any) => (
-                    <OrderTableRow key={o.id} o={o} />
+                    <OrderTableRow key={o.id} o={o} allowed={allowedOrderTransitions(role, o.status)} />
                   ))}
                 </TableBody>
               </Table>

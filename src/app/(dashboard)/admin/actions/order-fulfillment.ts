@@ -21,7 +21,13 @@ export async function updateItemFulfillmentAction(itemId: string, increment: num
       include: { order: true }
     });
 
-    if (!item) throw new Error("Ítem no encontrado");
+    if (!item) return { success: false, error: "No encontramos ese renglón de la orden." };
+    if (item.order.status !== "APROBADA") {
+      return { success: false, error: "Solo se registran entregas de órdenes aprobadas." };
+    }
+    if (!Number.isFinite(increment) || increment <= 0) {
+      return { success: false, error: "La cantidad entregada tiene que ser mayor que cero." };
+    }
 
     const newFulfilled = Number(item.fulfilledQuantity) + increment;
 
@@ -42,7 +48,7 @@ export async function updateItemFulfillmentAction(itemId: string, increment: num
         action: 'UPDATE_FULFILLMENT',
         entity: 'PurchaseOrder',
         entityId: item.orderId,
-        details: `Registrada entrega de ${increment} ${item.unitOfMeasure || 'unidades'} para "${item.description.substring(0, 30)}..."`
+        details: `Entrega de ${increment.toLocaleString("es-AR")} ${item.unitOfMeasure || (increment === 1 ? "unidad" : "unidades")} de "${item.description.length > 40 ? `${item.description.slice(0, 40)}…` : item.description}"`
       }
     });
 
@@ -59,6 +65,15 @@ export async function updateItemFulfillmentAction(itemId: string, increment: num
         await prisma.purchaseOrder.update({
             where: { id: item.orderId },
             data: { status: "CUMPLIDA" }
+        });
+        await prisma.auditLog.create({
+          data: {
+            userId: session.user.id,
+            action: "PURCHASE_ORDER_STATUS_CUMPLIDA",
+            entity: "PurchaseOrder",
+            entityId: item.orderId,
+            details: `Orden N° ${item.order.number}: se entregó todo y pasó a "Cumplida".`
+          }
         });
     }
 

@@ -1,26 +1,7 @@
 import prisma from "@/lib/prisma";
-import { z } from "zod";
 import { MUNICIPAL_LOCALITIES } from "@/lib/constants/localities";
 import { normalizeDni } from "@/lib/padron-import";
-import { personAddress } from "@/lib/person-display";
-
-export const CreatePersonSchema = z.object({
-  dni: z.string().min(1),
-  firstName: z.string().min(1),
-  lastName: z.string().min(1),
-  birthDate: z.string().or(z.date()).optional().nullable(),
-  address: z.string().min(1),
-  phone: z.string().optional().nullable(),
-  email: z.string().email().or(z.string().length(0)).optional().nullable(),
-});
-
-export const UpdatePersonSchema = z.object({
-  firstName: z.string().optional(),
-  lastName: z.string().optional(),
-  address: z.string().optional(),
-  phone: z.string().optional().nullable(),
-  email: z.string().email().or(z.string().length(0)).optional().nullable(),
-});
+import { parseFechaNacimiento, personAddress } from "@/lib/person-display";
 
 export interface GetPeopleOptions {
   query?: string;
@@ -479,7 +460,8 @@ export async function getPersonById(id: string) {
         phone: p.telefono || null,
         email: p.email || null,
         gender: p.genero || "No especificado",
-        birthDate: null,
+        birthDate: parseFechaNacimiento(p.fecha_nacimiento) ? new Date(`${parseFechaNacimiento(p.fecha_nacimiento)}T12:00:00Z`) : null,
+        fechaNacimientoTexto: !parseFechaNacimiento(p.fecha_nacimiento) && p.fecha_nacimiento?.trim() ? p.fecha_nacimiento.trim() : null,
         edadAprox: p.edad_aprox || "No registrada",
         barrio: p.barrio || "",
         localidad: p.localidad || "Tres de Febrero",
@@ -700,41 +682,6 @@ export async function getPeopleForMap(limit = 1500) {
 }
 
 /**
- * Geocodifica una dirección forzando el contexto de Tres de Febrero.
- */
-async function geocodeAddress(address: string) {
-  try {
-    const fullQuery = `${address}, Tres de Febrero, Buenos Aires, Argentina`;
-    const encodedQuery = encodeURIComponent(fullQuery);
-    const url = `https://nominatim.openstreetmap.org/search?q=${encodedQuery}&format=json&limit=1&countrycodes=ar`;
-
-    const response = await fetch(url, {
-      headers: {
-        'User-Agent': 'MuniGestio-TresDeFebrero/1.0'
-      }
-    });
-
-    if (!response.ok) throw new Error("OSM Request failed");
-
-    const data = await response.json();
-
-    if (data && data.length > 0) {
-      return {
-        lat: parseFloat(data[0].lat),
-        lng: parseFloat(data[0].lon)
-      };
-    }
-  } catch (error) {
-    console.error("Geocoding error:", error);
-  }
-
-  return {
-    lat: null,
-    lng: null
-  };
-}
-
-/**
  * Persona que ya está cargada con ese DNI, en el Registro Único o en el padrón.
  * "Cargar persona" la usa para avisar en vez de pisar sus datos.
  */
@@ -755,71 +702,6 @@ export async function findExistingPersonByDni(dni: string): Promise<{ id: string
   if (person) return { id: person.id, nombre: `${person.lastName}, ${person.firstName}` };
 
   return null;
-}
-
-/** Da de alta a una persona nueva. Si el DNI ya existe no toca nada (ver findExistingPersonByDni). */
-export async function createPerson(rawData: z.infer<typeof CreatePersonSchema>) {
-  const data = CreatePersonSchema.parse({ ...rawData, dni: rawData.dni?.trim() });
-  const coords = await geocodeAddress(data.address);
-  const nombreCompleto = `${data.lastName}, ${data.firstName}`;
-
-  // 1. Crear en la tabla Person (usando DNI como ID para compatibilidad de rutas).
-  // Es "create" y no "upsert": si el DNI ya existe falla con P2002 y no pisa los datos de nadie.
-  const person = await prisma.person.create({
-    data: {
-      id: data.dni,
-      dni: data.dni,
-      firstName: data.firstName,
-      lastName: data.lastName,
-      birthDate: data.birthDate ? new Date(data.birthDate) : null,
-      address: data.address,
-      phone: data.phone || null,
-      email: data.email || null,
-      latitude: coords.lat,
-      longitude: coords.lng,
-    }
-  });
-
-  // 2. Sumarla a padron_unificado para que aparezca enseguida en el listado general.
-  // Si ya hay una fila con ese DNI se deja como está: sus datos y su ubicación vienen del padrón original.
-  try {
-    await prisma.$executeRawUnsafe(
-      `INSERT INTO padron_unificado (dni, nombre_completo, direccion, telefono, email, latitude, longitude, cantidad_programas)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, 0)
-       ON CONFLICT (dni) DO NOTHING;`,
-      data.dni,
-      nombreCompleto,
-      data.address,
-      data.phone || null,
-      data.email || null,
-      coords.lat,
-      coords.lng
-    );
-  } catch (err) {
-    console.error("Error sincronizando nuevo ciudadano en padron_unificado:", err);
-  }
-
-  return person;
-}
-
-export async function updatePerson(id: string, rawData: z.infer<typeof UpdatePersonSchema>) {
-  const data = UpdatePersonSchema.parse(rawData);
-  let coords = undefined;
-  if (data.address) {
-    coords = await geocodeAddress(data.address);
-  }
-
-  return await prisma.person.update({
-    where: { id },
-    data: {
-      firstName: data.firstName,
-      lastName: data.lastName,
-      address: data.address,
-      phone: data.phone,
-      email: data.email || null,
-      ...(coords ? { latitude: coords.lat, longitude: coords.lng } : {})
-    }
-  });
 }
 
 /** Integrantes del grupo familiar cargado en el Registro Único (los que se pueden desvincular). */

@@ -4,17 +4,8 @@ import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
 import { OrderStatus } from "@prisma/client";
-import { hasPermission, PERMISSIONS } from "@/lib/permissions";
 import { actionErrorMessage } from "@/lib/action-error";
-
-const ALLOWED_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
-  BORRADOR: ["PENDIENTE_APROBACION", "CANCELADA"],
-  PENDIENTE_APROBACION: ["APROBADA", "RECHAZADA", "BORRADOR", "CANCELADA"],
-  APROBADA: ["CUMPLIDA", "CANCELADA"],
-  RECHAZADA: ["BORRADOR"],
-  CUMPLIDA: [],
-  CANCELADA: []
-};
+import { canChangeOrderStatus, orderStatusLabel, ORDER_STATUS_LABEL } from "@/lib/purchase-orders";
 
 export async function updatePurchaseOrderStatusAction(id: string, newStatus: string, reason?: string) {
   const session = await auth();
@@ -22,8 +13,11 @@ export async function updatePurchaseOrderStatusAction(id: string, newStatus: str
     return { success: false, error: "No tenés permiso para hacer esto o tu sesión expiró. Si sigue pasando, volvé a iniciar sesión." };
   }
 
-  const userRole = session.user.role as any;
+  const userRole = session.user.role;
   const targetStatus = newStatus.trim().toUpperCase() as OrderStatus;
+  if (!(targetStatus in ORDER_STATUS_LABEL)) {
+    return { success: false, error: "Ese estado no existe." };
+  }
 
   try {
     const currentOrder = await prisma.purchaseOrder.findUnique({
@@ -32,34 +26,28 @@ export async function updatePurchaseOrderStatusAction(id: string, newStatus: str
     });
 
     if (!currentOrder) {
-      return { success: false, error: "Orden de compra no encontrada" };
+      return { success: false, error: "No encontramos la orden de compra." };
     }
 
     const currentStatus = currentOrder.status;
-
-    const allowed = ALLOWED_TRANSITIONS[currentStatus] || [];
-    if (!allowed.includes(targetStatus)) {
+    if (currentStatus === targetStatus) {
+      return { success: true, status: targetStatus };
+    }
+    if (!canChangeOrderStatus(userRole, currentStatus, targetStatus)) {
       return {
         success: false,
-        error: `No es posible cambiar el estado de '${currentStatus}' a '${targetStatus}'.`
+        error: `Tu rol no puede pasar la orden de "${orderStatusLabel(currentStatus)}" a "${orderStatusLabel(targetStatus)}".`
       };
     }
 
-    if (targetStatus === "APROBADA" || targetStatus === "CANCELADA") {
-      const canApprove =
-        userRole === "SUPERADMIN" ||
-        userRole === "ADMIN_GENERAL" ||
-        hasPermission(userRole, PERMISSIONS.APPROVE_PURCHASE_ORDER);
-
-      if (!canApprove) {
-        return { success: false, error: "No tiene permisos suficientes para aprobar o cancelar órdenes de compra." };
-      }
-    }
-
-    const updatedOrder = await prisma.purchaseOrder.update({
-      where: { id },
+    // Solo si nadie la cambió mientras tanto.
+    const { count } = await prisma.purchaseOrder.updateMany({
+      where: { id, status: currentStatus },
       data: { status: targetStatus }
     });
+    if (count === 0) {
+      return { success: false, error: "Otra persona cambió esta orden recién. Recargá la página para ver cómo quedó." };
+    }
 
     await prisma.auditLog.create({
       data: {
@@ -67,7 +55,7 @@ export async function updatePurchaseOrderStatusAction(id: string, newStatus: str
         action: `PURCHASE_ORDER_STATUS_${targetStatus}`,
         entity: "PurchaseOrder",
         entityId: id,
-        details: `Orden N° ${currentOrder.number}: Estado cambiado de ${currentStatus} a ${targetStatus}. Motivo: ${reason || "Actualización por operador"}`
+        details: `Orden N° ${currentOrder.number}: pasó de "${orderStatusLabel(currentStatus)}" a "${orderStatusLabel(targetStatus)}".${reason ? ` Motivo: ${reason}` : ""}`
       }
     });
 

@@ -11,13 +11,15 @@ interface OrderItemsTableProps {
   orderId: string;
   orderStatus: string;
   items: any[];
+  /** Puede registrar entregas (Auditoría solo consulta). */
+  canRecord: boolean;
 }
 
-export function OrderItemsTable({ orderId, orderStatus, items }: OrderItemsTableProps) {
+export function OrderItemsTable({ orderId, orderStatus, items, canRecord }: OrderItemsTableProps) {
   const [selectedItem, setSelectedItem] = useState<any>(null);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
 
-  const canEdit = orderStatus === "APROBADA" || orderStatus === "CUMPLIDA";
+  const canEdit = canRecord && (orderStatus === "APROBADA" || orderStatus === "CUMPLIDA");
   const totalItems = items.length;
   const fulfilledItems = items.filter(i => Number(i.fulfilledQuantity) >= Number(i.quantity)).length;
 
