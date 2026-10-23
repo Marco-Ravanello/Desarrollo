@@ -23,7 +23,7 @@ import {
 import { formatFechaHora, formatFechaCalendario, formatHora } from "@/lib/fechas";
 import {
   WEEKDAY_LETTER, WEEKDAY_SHORT, chipsThatFit, dateOnlyToLocal, isDateOnly, localDayKey, localTimeKey,
-  monthCells, shortEventLabel, startOfWeekMonday, type AgendaEventType
+  isTaskVisibleTo, monthCells, shortEventLabel, startOfWeekMonday, visibleHourRange, type AgendaEventType
 } from "@/lib/agenda";
 
 interface UnifiedCalendarProps {
@@ -51,8 +51,6 @@ interface AgendaEvent {
   raw: any;
   isOwner?: boolean;
 }
-
-const HOURS = Array.from({ length: 15 }, (_, i) => i + 7);
 
 const MONTH_NAMES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
 
@@ -206,9 +204,8 @@ export function UnifiedCalendar({ reservations = [], purchaseOrders = [], tasks 
 
   tasks.forEach((t) => {
     if (!t?.dueDate) return;
+    if (!isTaskVisibleTo(t, currentUserId)) return;
     const isOwner = t.userId === currentUserId;
-    const isAllowedViewer = t.viewerIds && t.viewerIds.split(",").map((s: string) => s.trim()).includes(currentUserId);
-    if (!isOwner && !isAllowedViewer) return;
     baseEvents.push({
       id: t.id,
       type: "task",
@@ -381,14 +378,32 @@ export function UnifiedCalendar({ reservations = [], purchaseOrders = [], tasks 
 
   const datesWithEvents = new Set(filteredEvents.map((e) => localDayKey(e.startDate)));
 
-  // Current Time Line percentage calculation (7:00 to 22:00)
-  const isTodayWeek = weekDays.some((d) => d.toDateString() === nowClock.toDateString());
-  const nowHours = nowClock.getHours();
-  const nowMinutes = nowClock.getMinutes();
-  const showTimeLine = isTodayWeek && nowHours >= 7 && nowHours < 22;
-  const timeLineMinutesFrom7 = (nowHours - 7) * 60 + nowMinutes;
-  const totalMinutesInGrid = 15 * 60; // 15 hours * 60 = 900 mins
-  const timeLinePercentage = (timeLineMinutesFrom7 / totalMinutesInGrid) * 100;
+  // Semana y Día: el horario de trabajo, estirado si hay algo antes o después.
+  const gridDays = view === "day" ? [currentDate] : weekDays;
+  const [fromHour, toHour] = visibleHourRange(filteredEvents, gridDays);
+  const gridHours = Array.from({ length: toHour - fromHour }, (_, i) => fromHour + i);
+  const gridHasEvents = gridDays.some((d) => eventsOnDay(filteredEvents, d).length > 0);
+  const gridEnd = new Date(gridDays[gridDays.length - 1].getFullYear(), gridDays[gridDays.length - 1].getMonth(), gridDays[gridDays.length - 1].getDate() + 1);
+  const nextEvent = filteredEvents
+    .filter((e) => e.startDate >= gridEnd)
+    .sort((a, b) => a.startDate.getTime() - b.startDate.getTime())[0];
+
+  // La línea roja de la hora actual va dentro de la media hora que corresponde, a la altura justa.
+  const showNow = gridDays.some((d) => sameDay(d, nowClock));
+  const nowLine = (hour: number, minute: number) => {
+    if (!showNow || nowClock.getHours() !== hour || Math.floor(nowClock.getMinutes() / 30) * 30 !== minute) return null;
+    return (
+      <div
+        className="pointer-events-none absolute inset-x-0 z-20 border-t-2 border-rose-500"
+        style={{ top: `${((nowClock.getMinutes() - minute) / 30) * 100}%` }}
+        aria-hidden
+      >
+        <span className="absolute -left-1 -top-[5px] h-2 w-2 rounded-full bg-rose-500" />
+      </div>
+    );
+  };
+
+  const hourLabel = (hour: number, minute: number) => (minute === 0 ? `${String(hour).padStart(2, "0")}:00` : "");
 
   const monthLower = (d: Date) => MONTH_NAMES[d.getMonth()].toLowerCase();
   const heading =
@@ -410,7 +425,7 @@ export function UnifiedCalendar({ reservations = [], purchaseOrders = [], tasks 
 
   // Una reserva larga ocupa varias filas: el nombre va en la primera y después sigue como una barrita.
   const continuesFrom = (e: AgendaEvent, slotStart: Date, hour: number, minute: number) =>
-    e.type === "reservation" && e.startDate < slotStart && !(hour === HOURS[0] && minute === 0);
+    e.type === "reservation" && e.startDate < slotStart && !(hour === fromHour && minute === 0);
 
   const eventButton = (e: AgendaEvent, className: string, children: React.ReactNode) => (
     <button
@@ -496,6 +511,33 @@ export function UnifiedCalendar({ reservations = [], purchaseOrders = [], tasks 
     <Button onClick={() => setShowAddModal(true)} className={`gap-2 font-bold ${className}`}>
       <Plus className="h-4 w-4 shrink-0" /> Nueva tarea
     </Button>
+  );
+
+  const emptyGrid = gridHasEvents ? null : (
+    <div className="flex flex-col gap-3 border-b border-border/40 bg-muted/10 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+      <p className="text-sm text-muted-foreground">
+        {view === "day" ? "No hay nada agendado este día." : "No hay nada agendado esta semana."}
+        {nextEvent && ` Lo próximo es el ${nextEvent.startDate.toLocaleDateString("es-AR", { weekday: "long" })} ${nextEvent.startDate.getDate()} de ${MONTH_NAMES[nextEvent.startDate.getMonth()].toLowerCase()}.`}
+      </p>
+      <div className="flex shrink-0 gap-2">
+        {nextEvent && (
+          <Button variant="outline" size="sm" className="rounded-full text-xs" onClick={() => setCurrentDate(nextEvent.startDate)}>
+            Ir a lo próximo
+          </Button>
+        )}
+        <Button
+          size="sm"
+          className="rounded-full text-xs gap-1.5"
+          onClick={() => {
+            const first = gridDays.find((d) => d >= new Date(nowClock.getFullYear(), nowClock.getMonth(), nowClock.getDate())) ?? gridDays[0];
+            setNewTaskDueDate(localDayKey(first));
+            setShowAddModal(true);
+          }}
+        >
+          <Plus className="h-3.5 w-3.5" /> Agendar una tarea
+        </Button>
+      </div>
+    </div>
   );
 
   const allDayRow = (days: Date[], gridClass: string, labelClass: string) => {
@@ -732,10 +774,11 @@ export function UnifiedCalendar({ reservations = [], purchaseOrders = [], tasks 
 
           {view === "week" && (
             <div className="overflow-x-auto custom-scrollbar">
+              {emptyGrid}
               <div className="min-w-[640px] relative">
                 <div className="grid grid-cols-[3.5rem_repeat(7,minmax(0,1fr))] border-b border-border/40 bg-muted/30 py-3 text-center">
-                  <div className="text-xs font-bold text-muted-foreground border-r border-border/40">
-                    Horario
+                  <div className="text-xs font-bold text-muted-foreground border-r border-border/40 flex items-center justify-center">
+                    Hora
                   </div>
                   {weekDays.map((date, idx) => {
                     const isToday = sameDay(nowClock, date);
@@ -768,18 +811,8 @@ export function UnifiedCalendar({ reservations = [], purchaseOrders = [], tasks 
                   "text-[11px] leading-tight font-bold text-muted-foreground p-1 border-r border-border/40 flex items-center justify-center text-center"
                 )}
 
-                <div className="divide-y divide-border/20 max-h-[620px] overflow-y-auto custom-scrollbar relative">
-                  {showTimeLine && (
-                    <div
-                      className="absolute left-0 right-0 z-30 pointer-events-none flex items-center"
-                      style={{ top: `${timeLinePercentage}%` }}
-                    >
-                      <div className="w-2 h-2 rounded-full bg-rose-500 animate-ping absolute -left-1" />
-                      <div className="w-full border-b-2 border-rose-500 shadow-sm" />
-                    </div>
-                  )}
-
-                  {HOURS.map((hour) => {
+                <div className="divide-y divide-border/20">
+                  {gridHours.map((hour) => {
                     return [0, 30].map((minute) => {
                       const isFullHour = minute === 0;
                       const timeStr = `${hour.toString().padStart(2, "0")}:${minute.toString().padStart(2, "0")}`;
@@ -787,12 +820,13 @@ export function UnifiedCalendar({ reservations = [], purchaseOrders = [], tasks 
                       return (
                         <div
                           key={timeStr}
-                          className={`grid grid-cols-[3.5rem_repeat(7,minmax(0,1fr))] hover:bg-muted/20 ${
+                          className={`relative grid grid-cols-[3.5rem_repeat(7,minmax(0,1fr))] hover:bg-muted/20 ${
                             isFullHour ? "border-b border-border/40" : "border-b border-dashed border-border/20"
                           }`}
                         >
-                          <div className="text-xs font-mono font-bold text-muted-foreground p-1.5 border-r border-border/40 flex items-center justify-center bg-muted/20 select-none">
-                            {timeStr}
+                          {nowLine(hour, minute)}
+                          <div className="text-xs tabular-nums font-semibold text-muted-foreground px-1.5 pt-1 border-r border-border/40 flex justify-center bg-muted/20 select-none">
+                            {hourLabel(hour, minute)}
                           </div>
 
                           {weekDays.map((date, dayIdx) => {
@@ -845,13 +879,14 @@ export function UnifiedCalendar({ reservations = [], purchaseOrders = [], tasks 
 
           {view === "day" && (
             <div>
+              {emptyGrid}
               {allDayRow(
                 [currentDate],
-                "grid grid-cols-[minmax(4.5rem,16.666%)_1fr]",
+                "grid grid-cols-[4.5rem_minmax(0,1fr)]",
                 "text-xs font-bold text-muted-foreground p-3 border-r border-border/40 flex items-center justify-center bg-muted/20"
               )}
-              <div className="grid grid-cols-1 divide-y divide-border/20 max-h-[620px] overflow-y-auto custom-scrollbar">
-                {HOURS.map((hour) => {
+              <div className="grid grid-cols-1 divide-y divide-border/20">
+                {gridHours.map((hour) => {
                   return [0, 30].map((minute) => {
                     const isFullHour = minute === 0;
                     const timeStr = `${hour.toString().padStart(2, "0")}:${minute.toString().padStart(2, "0")}`;
@@ -873,12 +908,13 @@ export function UnifiedCalendar({ reservations = [], purchaseOrders = [], tasks 
                         key={timeStr}
                         onDragOver={handleDragOver}
                         onDrop={(ev) => handleDropOnSlot(ev, currentDate, hour, minute)}
-                        className={`grid grid-cols-[minmax(4.5rem,16.666%)_1fr] hover:bg-muted/20 min-h-[50px] ${
+                        className={`relative grid grid-cols-[4.5rem_minmax(0,1fr)] hover:bg-muted/20 min-h-[44px] ${
                           isFullHour ? "border-b border-border/40" : "border-b border-dashed border-border/20"
                         }`}
                       >
-                        <div className="text-xs font-mono font-bold text-muted-foreground p-3 border-r border-border/40 flex items-center justify-center bg-muted/20 select-none">
-                          {timeStr}
+                        {nowLine(hour, minute)}
+                        <div className="text-xs tabular-nums font-semibold text-muted-foreground px-3 pt-2 border-r border-border/40 flex justify-center bg-muted/20 select-none">
+                          {hourLabel(hour, minute)}
                         </div>
 
                         <div className="p-2 flex flex-wrap gap-2 items-center min-w-0">

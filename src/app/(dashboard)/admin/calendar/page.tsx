@@ -5,6 +5,7 @@ import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { UnifiedCalendar } from "@/components/calendar/unified-calendar";
 import { PageHeader } from "@/components/layout/page-header";
+import { getAgendaTasks } from "@/services/agenda";
 import { Calendar as CalendarIcon } from "lucide-react";
 
 export const metadata = { title: "Agenda" };
@@ -41,17 +42,7 @@ export default async function AdminCalendarPage() {
       }
     }).catch(() => []),
 
-    prisma.task.findMany({
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            area: { select: { name: true } }
-          }
-        }
-      }
-    }).catch(() => []),
+    getAgendaTasks(session.user.id).catch(() => []),
 
     prisma.user.findMany({
       include: {
