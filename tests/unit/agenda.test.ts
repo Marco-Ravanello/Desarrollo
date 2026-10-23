@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
-  chipsThatFit, dateOnlyToLocal, isDateOnly, localDayKey, monthCells, shortEventLabel, startOfWeekMonday, weekdayFromMonday,
+  chipsThatFit, dateOnlyToLocal, isDateOnly, isTaskVisibleTo, localDayKey, monthCells, shortEventLabel, startOfWeekMonday,
+  visibleHourRange, weekdayFromMonday,
 } from "@/lib/agenda";
 
 describe("semanas de lunes a domingo", () => {
@@ -48,5 +49,37 @@ describe("nombre corto y casillas", () => {
   it("deja lugar para el \"+N más\" cuando no entran todos", () => {
     expect(chipsThatFit([1, 2, 3], 3)).toEqual({ shown: [1, 2, 3], more: 0 });
     expect(chipsThatFit([1, 2, 3, 4, 5], 3)).toEqual({ shown: [1, 2], more: 3 });
+  });
+});
+
+describe("horas de la semana y el día", () => {
+  const lunes = new Date(2026, 9, 26);
+  const at = (h: number, m = 0, d = 26) => new Date(2026, 9, d, h, m);
+
+  it("muestra el horario de trabajo si no hay nada fuera de él", () => {
+    expect(visibleHourRange([], [lunes])).toEqual([8, 18]);
+    expect(visibleHourRange([{ startDate: at(10), endDate: at(12) }], [lunes])).toEqual([8, 18]);
+  });
+
+  it("se estira para lo que empieza temprano o termina tarde", () => {
+    expect(visibleHourRange([{ startDate: at(6, 30), endDate: at(7) }], [lunes])).toEqual([6, 18]);
+    expect(visibleHourRange([{ startDate: at(19), endDate: at(20, 15) }], [lunes])).toEqual([8, 21]);
+    // Una tarea (empieza y termina a la misma hora) ocupa esa hora.
+    expect(visibleHourRange([{ startDate: at(21), endDate: at(21) }], [lunes])).toEqual([8, 22]);
+  });
+
+  it("no mira otros días ni lo que es de todo el día", () => {
+    expect(visibleHourRange([{ startDate: at(5, 0, 27), endDate: at(6, 0, 27) }], [lunes])).toEqual([8, 18]);
+    expect(visibleHourRange([{ startDate: at(0), endDate: at(0), allDay: true }], [lunes])).toEqual([8, 18]);
+  });
+});
+
+describe("quién ve cada tarea", () => {
+  it("quien la creó y quienes están en la lista, con el id entero", () => {
+    const t = { userId: "u1", viewerIds: "u2, u3" };
+    expect(isTaskVisibleTo(t, "u1")).toBe(true);
+    expect(isTaskVisibleTo(t, "u3")).toBe(true);
+    expect(isTaskVisibleTo(t, "u")).toBe(false);
+    expect(isTaskVisibleTo({ userId: "u1", viewerIds: null }, "u2")).toBe(false);
   });
 });

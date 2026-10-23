@@ -68,3 +68,36 @@ export function chipsThatFit<T>(events: T[], max = 3): { shown: T[]; more: numbe
   // Si no entran todos, se deja un lugar para el "+N más".
   return { shown: events.slice(0, max - 1), more: events.length - (max - 1) };
 }
+
+/** Una tarea se ve en la Agenda de quien la creó y de quienes están en su lista para compartir. */
+export function isTaskVisibleTo(task: { userId: string; viewerIds?: string | null }, userId: string): boolean {
+  if (task.userId === userId) return true;
+  return (task.viewerIds ?? "").split(",").map((s) => s.trim()).includes(userId);
+}
+
+/** El horario de trabajo que se muestra en las vistas Semana y Día si no hay nada antes ni después. */
+export const WORK_HOURS: [number, number] = [8, 18];
+
+/**
+ * Qué horas mostrar en la grilla de esos días: el horario de trabajo, estirado para que entre
+ * lo que empieza antes o termina después. Devuelve [primera hora, hora en que termina la grilla].
+ */
+export function visibleHourRange(
+  events: { startDate: Date; endDate: Date; allDay?: boolean }[],
+  days: Date[],
+  base: [number, number] = WORK_HOURS
+): [number, number] {
+  let [from, to] = base;
+  for (const day of days) {
+    const dayStart = new Date(day.getFullYear(), day.getMonth(), day.getDate());
+    const dayEnd = new Date(dayStart.getFullYear(), dayStart.getMonth(), dayStart.getDate() + 1);
+    for (const e of events) {
+      if (e.allDay || e.startDate >= dayEnd || (e.endDate <= dayStart && e.startDate < dayStart)) continue;
+      const start = e.startDate < dayStart ? 0 : e.startDate.getHours();
+      const end = e.endDate >= dayEnd ? 24 : Math.max(e.endDate.getHours() + (e.endDate.getMinutes() > 0 ? 1 : 0), start + 1);
+      from = Math.min(from, start);
+      to = Math.max(to, end);
+    }
+  }
+  return [from, to];
+}
