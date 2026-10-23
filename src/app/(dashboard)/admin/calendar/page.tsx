@@ -5,7 +5,7 @@ import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { UnifiedCalendar } from "@/components/calendar/unified-calendar";
 import { PageHeader } from "@/components/layout/page-header";
-import { Car, ShoppingBag, CheckSquare, Calendar as CalendarIcon } from "lucide-react";
+import { Calendar as CalendarIcon } from "lucide-react";
 
 export const metadata = { title: "Agenda" };
 
@@ -93,26 +93,13 @@ export default async function AdminCalendarPage() {
     <div className="space-y-6 animate-in fade-in duration-500 pb-20">
       <PageHeader
         title="Agenda"
-        description="Tareas, reservas de vehículos y eventos en un mismo calendario. Arrastrá un evento para cambiarle la fecha."
-        icon={CalendarIcon}
-        actions={
+        description={
           <>
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-blue-500/10 border border-blue-500/20 text-blue-700 dark:text-blue-400 text-xs font-bold">
-              <Car className="h-3.5 w-3.5" />
-              <span>{serializedReservations.length} Móviles en servicio</span>
-            </div>
-
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-xs font-bold">
-              <ShoppingBag className="h-3.5 w-3.5" />
-              <span>{serializedOrders.length} Entregas de Compras</span>
-            </div>
-
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-400 text-xs font-bold">
-              <CheckSquare className="h-3.5 w-3.5" />
-              <span>{serializedTasks.length} Tareas Compartidas</span>
-            </div>
+            Reservas de vehículos, entregas de órdenes de compra y tus tareas en un mismo calendario.
+            <span className="hidden lg:inline"> Arrastrá un evento para cambiarle la fecha.</span>
           </>
         }
+        icon={CalendarIcon}
       />
 
       <UnifiedCalendar
