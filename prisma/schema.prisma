@@ -105,6 +105,8 @@ model Case {
   assignedToId  String?
   assignedTo    User?          @relation(fields: [assignedToId], references: [id], onDelete: SetNull)
   assignedAt    DateTime?
+  /// Etiquetas para filtrar y contar (adulto mayor, discapacidad…). Las claves están en src/lib/case-labels.ts.
+  labels        String[]       @default([])
   interventions Intervention[]
   derivations   Derivation[]
   followUps     Task[]
@@ -117,6 +119,7 @@ model Case {
   @@index([areaId])
   @@index([status])
   @@index([assignedToId])
+  @@index([labels], type: Gin)
 }
 
 enum CaseStatus {

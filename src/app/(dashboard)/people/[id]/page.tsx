@@ -1,4 +1,5 @@
 export const dynamic = "force-dynamic";
+import { InitialsAvatar } from "@/components/ui/initials-avatar";
 import { getPersonById, getRegistroFamilyMembers } from "@/services/people";
 import { getFichaSocialByDniFromDb } from "@/services/ficha-social-db";
 import { getFichaHistorial } from "@/services/ficha-historial";
@@ -126,7 +127,7 @@ export default async function PersonDetailPage({
       <div className="space-y-3">
         <PageHeader
           title={nombre}
-          icon={Users}
+          leading={<InitialsAvatar name={nombre} seed={dni} size="lg" square />}
           actions={editData && addressOptions ? <EditPersonDialog person={editData} options={addressOptions} /> : undefined}
         />
         <div className="flex flex-wrap gap-2 items-center">

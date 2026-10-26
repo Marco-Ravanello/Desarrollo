@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { initialsColor, initialsOf } from "@/lib/initials";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -42,8 +43,8 @@ export function ViewHRDetail({ agent }: { agent: any }) {
       <div className="flex flex-col items-center text-center space-y-3 bg-muted/20 p-6 rounded-2xl border border-border/50">
         <Avatar className="h-28 w-24 border-4 border-background shadow-xl rounded-2xl">
           <AvatarImage src={agent.imageUrl || ""} alt={agent.firstName} className="object-cover" />
-          <AvatarFallback className="bg-primary text-primary-foreground font-bold text-3xl">
-            {agent.firstName?.[0]}{agent.lastName?.[0]}
+          <AvatarFallback className={`rounded-2xl font-bold text-3xl ${initialsColor(agent.dni || agent.id)}`}>
+            {initialsOf(agent.firstName, agent.lastName)}
           </AvatarFallback>
         </Avatar>
         <div>

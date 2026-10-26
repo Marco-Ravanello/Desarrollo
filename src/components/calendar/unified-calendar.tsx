@@ -1,5 +1,6 @@
 "use client";
 
+import { InitialsAvatar } from "@/components/ui/initials-avatar";
 import { useState, useEffect } from "react";
 import {
   ChevronLeft, ChevronRight, Calendar, CalendarDays, User, Briefcase,
@@ -1255,9 +1256,7 @@ export function UnifiedCalendar({ reservations = [], purchaseOrders = [], tasks 
                         className="rounded text-amber-600 focus:ring-amber-500 h-4.5 w-4.5 border-border"
                       />
                       <span className="group-hover:text-primary transition-colors flex items-center gap-2">
-                        <div className="w-5 h-5 rounded-full bg-accent/20 text-accent flex items-center justify-center font-bold text-xs uppercase">
-                          {u.name?.[0]}
-                        </div>
+                        <InitialsAvatar name={u.name} seed={u.id} size="xs" />
                         {u.name} <span className="text-xs text-muted-foreground font-medium italic">({u.area?.name || "Sin área"})</span>
                       </span>
                     </label>

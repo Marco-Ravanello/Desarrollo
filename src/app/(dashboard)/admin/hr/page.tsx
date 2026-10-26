@@ -12,6 +12,7 @@ import {
   Plus, Calendar, Wallet, PieChart, Briefcase
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { initialsColor, initialsOf } from "@/lib/initials";
 import {
   Sheet,
   SheetContent,
@@ -216,8 +217,8 @@ export default async function HRPage({
                     <div className="flex items-center gap-4">
                       <Avatar className="h-12 w-12 border-2 border-card shadow-xs ring-1 ring-border">
                         <AvatarImage src={r.imageUrl || ""} alt={r.firstName} className="object-cover" />
-                        <AvatarFallback className="bg-primary text-primary-foreground font-bold text-sm uppercase">
-                          {r.firstName?.[0]}{r.lastName?.[0]}
+                        <AvatarFallback className={`font-bold text-sm ${initialsColor(r.dni || r.id)}`}>
+                          {initialsOf(r.firstName, r.lastName)}
                         </AvatarFallback>
                       </Avatar>
                       <div>

@@ -1,4 +1,5 @@
 "use client";
+import { InitialsAvatar } from "@/components/ui/initials-avatar";
 import * as React from "react";
 import {
   Search, Users, FileText, CheckCircle2, LayoutDashboard, MapPin,
@@ -157,9 +158,7 @@ export function GlobalSearch() {
                             <FileText className="h-4 w-4" />
                           </div>
                         ) : (
-                          <div className="h-9 w-9 shrink-0 bg-blue-500/15 text-blue-600 dark:text-blue-400 rounded-full flex items-center justify-center font-bold text-xs uppercase">
-                            {r.title[0]}
-                          </div>
+                          <InitialsAvatar name={r.title} seed={r.dni || r.id} />
                         )}
                         <div className="flex min-w-0 flex-1 flex-col">
                           <span className="truncate font-semibold text-sm text-foreground">{r.title}</span>
@@ -188,9 +187,7 @@ export function GlobalSearch() {
                           onSelect={() => navigate(c.url)}
                           className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-muted aria-selected:bg-muted transition-all group"
                         >
-                          <div className="h-9 w-9 bg-blue-500/15 text-blue-700 dark:text-blue-400 rounded-full flex items-center justify-center font-bold text-xs uppercase group-aria-selected:bg-blue-600 group-aria-selected:text-white transition-colors">
-                            {c.title[0]}
-                          </div>
+                          <InitialsAvatar name={c.title} seed={c.dni || c.id} />
                           <div className="flex flex-col">
                             <span className="font-semibold text-sm text-foreground">{c.title}</span>
                             <span className="text-xs text-muted-foreground font-mono">{c.subtitle}</span>

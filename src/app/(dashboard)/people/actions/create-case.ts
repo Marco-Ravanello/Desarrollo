@@ -29,7 +29,8 @@ export async function createCaseAction(formData: FormData) {
       personId: person.id,
       areaId,
       title,
-      description
+      description,
+      labels: formData.getAll("labels"),
     });
 
     await prisma.auditLog.create({

@@ -45,6 +45,7 @@ const PATH_DICTIONARY: Record<string, string> = {
   "cambiar-clave": "Cambiar mi contraseña",
   derivaciones: "Derivaciones",
   duplicados: "Posibles duplicados",
+  calidad: "Calidad de datos",
   cruces: "Cruces de programas",
   tasks: "Mis tareas",
   agreements: "Convenios",

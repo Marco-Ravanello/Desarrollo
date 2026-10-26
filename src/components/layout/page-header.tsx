@@ -6,6 +6,8 @@ interface PageHeaderProps {
   description?: React.ReactNode;
   /** Ícono de lucide-react que acompaña al título. */
   icon?: React.ComponentType<{ className?: string }>;
+  /** En lugar del ícono (por ejemplo, las iniciales de la persona). */
+  leading?: React.ReactNode;
   /** Etiqueta corta junto al título (se oculta en celulares). */
   badge?: React.ReactNode;
   /** Botones o menús que van a la derecha del título. */
@@ -17,7 +19,7 @@ interface PageHeaderProps {
  * Encabezado común de todas las pantallas: mismo tamaño de título,
  * descripción y lugar para los botones.
  */
-export function PageHeader({ title, description, icon: Icon, badge, actions, className }: PageHeaderProps) {
+export function PageHeader({ title, description, icon: Icon, leading, badge, actions, className }: PageHeaderProps) {
   return (
     <div
       className={cn(
@@ -26,7 +28,9 @@ export function PageHeader({ title, description, icon: Icon, badge, actions, cla
       )}
     >
       <div className="flex min-w-0 items-start gap-3.5">
-        {Icon && (
+        {leading ? (
+          <div className="hidden shrink-0 sm:flex">{leading}</div>
+        ) : Icon && (
           <div className="hidden h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary ring-1 ring-primary/15 dark:bg-primary/20 dark:text-blue-300 sm:flex">
             <Icon className="h-5 w-5" />
           </div>

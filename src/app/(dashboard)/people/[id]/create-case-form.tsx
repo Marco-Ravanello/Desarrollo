@@ -7,10 +7,12 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { createCaseAction } from "../actions/create-case";
 import { Plus } from "lucide-react";
+import { CaseLabelPicker } from "@/components/cases/case-labels-editor";
 
 export function CreateCaseForm({ personId, areas }: { personId: string, areas: any[] }) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [labels, setLabels] = useState<string[]>([]);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -21,6 +23,7 @@ export function CreateCaseForm({ personId, areas }: { personId: string, areas: a
     if (res.success) {
       toast.success("Expediente creado");
       setOpen(false);
+      setLabels([]);
     } else {
       toast.error(res.error);
     }
@@ -67,6 +70,14 @@ export function CreateCaseForm({ personId, areas }: { personId: string, areas: a
           className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
           placeholder="Detalles del problema o solicitud..."
         />
+      </div>
+
+      <div className="space-y-2">
+        <Label>Etiquetas (opcional)</Label>
+        <CaseLabelPicker value={labels} onChange={setLabels} />
+        {labels.map((k) => (
+          <input key={k} type="hidden" name="labels" value={k} />
+        ))}
       </div>
 
       <div className="flex gap-2 justify-end">

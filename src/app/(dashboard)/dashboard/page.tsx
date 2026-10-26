@@ -1,5 +1,6 @@
 export const dynamic = "force-dynamic";
 
+import { InitialsAvatar } from "@/components/ui/initials-avatar";
 import {
   getDashboardStats, countStaleCases, countPendingDerivations, getAreaOverview, getAreaTeam, getQuietCases, getFollowUpsDue,
   type DashboardStats, type AreaOverviewRow, type TeamMemberRow, type QuietCase, type DueFollowUp, type DashboardScope,
@@ -784,8 +785,11 @@ function TeamCard({ rows, areaId, areaName }: { rows: TeamMemberRow[]; areaId: s
               href={listHref(r.userId)}
               className="flex items-center justify-between gap-3 py-2.5 px-1 rounded-lg hover:bg-muted/20 transition-colors group"
             >
-              <span className={`min-w-0 truncate text-xs font-medium group-hover:text-primary ${r.userId ? "text-foreground" : "italic text-muted-foreground"}`}>
-                {r.name}
+              <span className="flex min-w-0 items-center gap-2.5">
+                {r.userId && <InitialsAvatar name={r.name} seed={r.userId} size="sm" />}
+                <span className={`min-w-0 truncate text-xs font-medium group-hover:text-primary ${r.userId ? "text-foreground" : "italic text-muted-foreground"}`}>
+                  {r.name}
+                </span>
               </span>
               <span className="flex shrink-0 items-center gap-2 text-xs">
                 <span className="text-foreground">{plural(r.open, "expediente")}</span>

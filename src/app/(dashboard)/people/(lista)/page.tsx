@@ -1,5 +1,7 @@
 export const dynamic = "force-dynamic";
 
+import { InitialsAvatar } from "@/components/ui/initials-avatar";
+import { PADRON_GAPS, isPadronGap } from "@/lib/padron-quality";
 import { getPaginatedPeople, getPeopleFilterOptions, getPeopleStats } from "@/services/people";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
@@ -39,11 +41,13 @@ export default async function PeoplePage({
     search?: string;
     barrio?: string;
     programa?: string;
+    falta?: string;
     page?: string;
     limit?: string;
   }>;
 }) {
-  const { search, barrio, programa, page, limit } = await searchParams;
+  const { search, barrio, programa, page, limit, falta: faltaRaw } = await searchParams;
+  const falta = isPadronGap(faltaRaw) ? faltaRaw : undefined;
 
   const pageNum = Math.max(1, Number(page) || 1);
   const limitNum = Math.max(1, Math.min(100, Number(limit) || 20));
@@ -53,6 +57,7 @@ export default async function PeoplePage({
       query: search,
       barrio,
       programa,
+      falta,
       page: pageNum,
       limit: limitNum
     }),
@@ -138,6 +143,15 @@ export default async function PeoplePage({
         programas={filterOptions.programas}
       />
 
+      {falta && (
+        <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-border/60 bg-muted/30 px-4 py-2.5 text-xs">
+          <span className="font-bold text-foreground">Mostrando: {PADRON_GAPS[falta].label.toLowerCase()}</span>
+          <span className="text-muted-foreground">({plural(total, "persona")})</span>
+          <Link href="/people/calidad" className="font-semibold text-primary hover:underline">Volver a la calidad de datos</Link>
+          <Link href="/people" className="ml-auto font-semibold text-muted-foreground hover:text-foreground">Quitar este filtro</Link>
+        </div>
+      )}
+
       {/* Tabla de Ciudadanos */}
       <Card className="border border-border/60 shadow-sm overflow-hidden rounded-2xl bg-card p-0 md:p-4 space-y-4">
           {people.length > 0 && (
@@ -147,6 +161,7 @@ export default async function PeoplePage({
                   key={p.id}
                   href={`/people/${p.id}`}
                   title={`${p.lastName}, ${p.firstName}`}
+                  leading={<InitialsAvatar name={p.firstName} lastName={p.lastName} seed={p.dni} />}
                   subtitle={[`DNI ${p.dni}`, p.barrio ? barrioLabel(p.barrio) : p.address].filter(Boolean).join(" · ")}
                   meta={
                     p.programasActivos?.length
@@ -186,7 +201,8 @@ export default async function PeoplePage({
                 people.map((p: any) => (
                   <TableRow key={p.id} className="group transition-colors hover:bg-muted/30">
                     <TableCell className="font-bold text-sm text-foreground py-4 px-6">
-                      <Link href={`/people/${p.id}`} className="hover:text-primary transition-colors flex items-center gap-1.5">
+                      <Link href={`/people/${p.id}`} className="hover:text-primary transition-colors flex items-center gap-3">
+                        <InitialsAvatar name={p.firstName} lastName={p.lastName} seed={p.dni} />
                         <span>{p.lastName}, {p.firstName}</span>
                       </Link>
                     </TableCell>

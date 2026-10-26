@@ -1,5 +1,6 @@
 "use client";
 
+import { InitialsAvatar } from "@/components/ui/initials-avatar";
 import { ArrowRight, Home, Info, Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -28,9 +29,7 @@ function MiembroCard({ m, onOpen }: { m: MiembroFamiliar; onOpen: (dni: string) 
   return (
     <div className="flex flex-col gap-3 rounded-2xl border border-border/40 bg-muted/30 p-4">
       <div className="flex items-start gap-3">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary">
-          {m.nombre.charAt(0).toUpperCase()}
-        </div>
+        <InitialsAvatar name={m.nombre} seed={m.dni} className="h-10 w-10 text-sm" />
         <div className="min-w-0 space-y-1">
           <p className="break-words text-sm font-bold leading-tight text-foreground">{m.nombre}</p>
           <p className="text-xs text-muted-foreground">

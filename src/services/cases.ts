@@ -1,6 +1,7 @@
 import prisma from "@/lib/prisma";
 import { CASE_STATUS_LABEL, staleCutoff, summarizeCase } from "@/lib/case-summary";
 import { pickAreaByKeywords } from "@/lib/area-theme";
+import { isCaseLabel, normalizeCaseLabels } from "@/lib/case-labels";
 
 export async function getCasesByArea(areaName: string) {
   return await prisma.case.findMany({
@@ -26,7 +27,8 @@ export async function createCase(data: any) {
       title: data.title,
       description: data.description,
       status: 'ABIERTO',
-      priority: data.priority || 'MEDIA'
+      priority: data.priority || 'MEDIA',
+      labels: normalizeCaseLabels(data.labels),
     }
   });
 }
@@ -158,6 +160,8 @@ export interface GetCasesFilters {
   userId?: string;
   /** Solo los que no tuvieron intervenciones hace STALE_DAYS días o más (sin cerrar). */
   quiet?: boolean;
+  /** Solo los que tienen esta etiqueta (clave de src/lib/case-labels.ts). */
+  label?: string;
 }
 
 export async function getAllCases(filters: GetCasesFilters = {}) {
@@ -189,6 +193,9 @@ export async function getAllCases(filters: GetCasesFilters = {}) {
     where.assignedToId = null;
   } else if (filters.assigned && filters.assigned !== "mine") {
     where.assignedToId = filters.assigned;
+  }
+  if (filters.label && isCaseLabel(filters.label)) {
+    where.labels = { has: filters.label };
   }
   if (filters.quiet) {
     const cutoff = staleCutoff();

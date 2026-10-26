@@ -1,5 +1,6 @@
 "use client";
 
+import { InitialsAvatar } from "@/components/ui/initials-avatar";
 import { useState, useEffect, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
@@ -15,6 +16,7 @@ import {
 import Link from "next/link";
 import { searchCitizensAction, createCentralizedCaseAction } from "../actions/case-actions";
 import { barrioLabel } from "@/lib/person-display";
+import { CaseLabelPicker } from "@/components/cases/case-labels-editor";
 
 type PriorityType = "BAJA" | "MEDIA" | "ALTA" | "URGENTE";
 
@@ -89,6 +91,7 @@ export function NewCaseForm({
 
   const [areaId, setAreaId] = useState<string>(preselectedAreaId || "");
   const [priority, setPriority] = useState<PriorityType>("MEDIA");
+  const [labels, setLabels] = useState<string[]>([]);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
 
@@ -153,6 +156,7 @@ export function NewCaseForm({
         description: description.trim() || undefined,
         areaId,
         priority,
+        labels,
         dni: selectedPerson.dni,
         firstName: selectedPerson.firstName,
         lastName: selectedPerson.lastName,
@@ -247,9 +251,7 @@ export function NewCaseForm({
           ) : (
             <div className="p-4 rounded-2xl bg-muted/30 border border-primary/30 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div className="flex items-center gap-3.5">
-                <div className="h-12 w-12 rounded-2xl bg-primary/10 text-primary border border-primary/20 flex items-center justify-center font-bold text-base">
-                  {selectedPerson.firstName[0]}{selectedPerson.lastName[0]}
-                </div>
+                <InitialsAvatar name={selectedPerson.firstName} lastName={selectedPerson.lastName} seed={selectedPerson.dni} square className="h-12 w-12 text-base" />
                 <div>
                   <h4 className="text-base font-bold text-foreground">
                     {selectedPerson.lastName}, {selectedPerson.firstName}
@@ -341,6 +343,12 @@ export function NewCaseForm({
                 })}
               </div>
             </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label className="text-xs font-bold text-foreground">Etiquetas (opcional)</Label>
+            <p className="text-xs text-muted-foreground">Para encontrar y contar después los expedientes de cada situación. Se pueden cambiar más adelante.</p>
+            <CaseLabelPicker value={labels} onChange={setLabels} />
           </div>
 
           {isViolenceArea && (

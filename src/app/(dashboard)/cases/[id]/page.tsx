@@ -32,6 +32,7 @@ import { canCloseOrReopenCase } from "@/lib/case-closing";
 import { CloseReopenCaseButton } from "@/components/cases/close-reopen-case";
 import { caseTitle } from "@/lib/page-titles";
 import { MobileActions } from "@/components/layout/mobile-actions";
+import { CaseLabelsEditor } from "@/components/cases/case-labels-editor";
 
 export const generateMetadata = caseTitle;
 
@@ -181,6 +182,8 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
         }
       />
 
+      <CaseLabelsEditor caseId={caseData.id} labels={caseData.labels ?? []} canEdit={canEditSocialRecords(session.user.role)} />
+
       {pendingDerivation && (
         <DerivationCard d={pendingDerivation} canRespond={canRespondDerivation(session.user, pendingDerivation.toAreaId)} />
       )}
@@ -202,7 +205,7 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
           <Card className="rounded-2xl border border-border/60 shadow-sm bg-card space-y-4 p-6">
             <div className="pb-2 border-b border-border/40">
               <CardTitle className="text-lg font-bold text-foreground">Historia del expediente</CardTitle>
-              <CardDescription>Intervenciones, derivaciones, seguimientos, apertura y cierre, de lo más nuevo a lo más viejo.</CardDescription>
+              <CardDescription>Intervenciones, derivaciones, seguimientos, etiquetas, apertura y cierre, de lo más nuevo a lo más viejo.</CardDescription>
             </div>
 
             <FollowUpList items={followUps} today={today} currentUserId={session.user.id!} />
