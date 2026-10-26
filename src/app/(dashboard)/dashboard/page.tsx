@@ -778,8 +778,8 @@ function TeamCard({ rows, areaId, areaName }: { rows: TeamMemberRow[]; areaId: s
         icon={UsersRound}
         iconClass="text-primary"
         title={areaName ? `Equipo de ${getAreaShortName(areaName)}` : "Equipo del área"}
-        href={areaId ? `/cases?area=${areaId}&status=ACTIVOS` : "/cases"}
-        linkLabel="Ver expedientes"
+        href={areaId ? `/cases/equipo?area=${areaId}` : "/cases"}
+        linkLabel={areaId ? "Ver la carga del equipo" : "Ver expedientes"}
       />
       {!areaId ? (
         <EmptyMessage compact icon={UsersRound} title="Tu usuario no tiene un área asignada" description="Pedile a quien administra los usuarios que te asigne tu área." />

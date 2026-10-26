@@ -2,6 +2,7 @@ import type { Role } from "@prisma/client";
 import prisma from "@/lib/prisma";
 import { MANAGEMENT_ROLES } from "@/lib/permissions";
 import { canAssignCase, canTakeCase, isEligibleAssignee } from "@/lib/case-assignment";
+import { countOpenCasesByUser } from "@/services/team-workload";
 
 // Profesional a cargo de un expediente: la conducción y quien dirige el área
 // lo asignan o lo cambian; alguien del área puede tomar uno que no tiene a nadie.
@@ -19,9 +20,16 @@ export async function getAssignableUsers(caseItem: { areaId: string; areaName: s
     select: { id: true, name: true, email: true, role: true, areaId: true, isActive: true },
     orderBy: { name: "asc" },
   });
-  return users
-    .filter((u) => isEligibleAssignee(u, caseItem))
-    .map((u) => ({ id: u.id, name: u.name || u.email || "Usuario", sameArea: u.areaId === caseItem.areaId }));
+  const eligible = users.filter((u) => isEligibleAssignee(u, caseItem));
+  // Cuántos expedientes abiertos tiene cada uno, para elegir sin sobrecargar a nadie.
+  const open = await countOpenCasesByUser(eligible.map((u) => u.id));
+  return eligible.map((u) => ({
+    id: u.id,
+    name: u.name || u.email || "Usuario",
+    sameArea: u.areaId === caseItem.areaId,
+    role: u.role,
+    open: open.get(u.id) ?? 0,
+  }));
 }
 
 /** Asigna (o quita, con assigneeId null) el profesional a cargo. */

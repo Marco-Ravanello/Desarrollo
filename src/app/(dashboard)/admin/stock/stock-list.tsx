@@ -12,6 +12,7 @@ import { EmptyMessage } from "@/components/ui/empty-message";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
 import { formatFechaHora } from "@/lib/fechas";
+import { getAreaShortName } from "@/lib/area-theme";
 
 export function StockList({ supplies }: { supplies: any[] }) {
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -39,7 +40,7 @@ export function StockList({ supplies }: { supplies: any[] }) {
 
     const tableData = supplies.map(s => [
       s.name,
-      s.area?.name || "Depósito General",
+      s.area?.name || "Depósito general",
       s.stock.toString(),
       s.minStock.toString(),
       s.stock <= s.minStock ? "BAJO" : "OK"
@@ -80,7 +81,7 @@ export function StockList({ supplies }: { supplies: any[] }) {
                 <div className="text-xs text-muted-foreground">{item.description}</div>
               </TableCell>
               <TableCell>
-                <Badge variant="outline">{item.area?.name || "Gral."}</Badge>
+                <Badge variant="outline">{item.area ? getAreaShortName(item.area.name) : "Depósito general"}</Badge>
               </TableCell>
               <TableCell>
                 {editingId === item.id ? (

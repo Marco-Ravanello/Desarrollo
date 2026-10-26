@@ -37,7 +37,7 @@ export function CreateSupplyForm({ areas }: { areas: any[] }) {
     <Card>
       <CardHeader>
         <CardTitle className="text-lg">Nuevo insumo</CardTitle>
-        <CardDescription>Agregar un nuevo artículo al inventario.</CardDescription>
+        <CardDescription>Sumá un insumo al depósito.</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -48,7 +48,7 @@ export function CreateSupplyForm({ areas }: { areas: any[] }) {
 
           <div className="space-y-2">
             <Label htmlFor="description">Descripción</Label>
-            <Input id="description" name="description" placeholder="Opcional..." />
+            <Input id="description" name="description" placeholder="Opcional" />
           </div>
 
           <div className="grid grid-cols-2 gap-4">

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { initialsColor, initialsOf } from "@/lib/initials";
+import { contractTypeLabel, hrStatusLabel } from "@/lib/hr-labels";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -50,18 +51,18 @@ export function ViewHRDetail({ agent }: { agent: any }) {
         <div>
           <h3 className="text-2xl font-bold text-foreground">{agent.firstName} {agent.lastName}</h3>
           <p className="text-xs font-bold text-muted-foreground mt-0.5">
-            DNI {agent.dni} • Legajo #{agent.fileNumber || 'S/L'}
+            DNI {agent.dni} • {agent.fileNumber ? `Legajo ${agent.fileNumber}` : "Sin legajo"}
           </p>
         </div>
 
         <div className="flex items-center gap-2">
-          <Badge className={`rounded-full px-3.5 py-1 text-xs font-bold tracking-wider border-none ${
+          <Badge className={`rounded-full px-3.5 py-1 text-xs font-semibold border-none ${
             agent.status === 'ACTIVO' ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30' :
             agent.status === 'LICENCIA' ? 'bg-amber-500/15 text-amber-800 dark:text-amber-400 border border-amber-500/30' :
             agent.status === 'VACACIONES' ? 'bg-blue-500/15 text-blue-700 dark:text-blue-400 border border-blue-500/30' :
             'bg-rose-500/15 text-rose-700 dark:text-rose-400 border border-rose-500/30'
           }`}>
-            {agent.status || 'ACTIVO'}
+            {hrStatusLabel(agent.status)}
           </Badge>
           {agent.statusUntil && (
             <span className="text-xs font-semibold text-muted-foreground flex items-center gap-1">
@@ -166,7 +167,7 @@ export function ViewHRDetail({ agent }: { agent: any }) {
                 </div>
                 <div>
                   <p className="text-xs font-bold text-muted-foreground">Tipo de contrato</p>
-                  <p className="text-sm font-bold text-foreground">{agent.contractType?.replace('_', ' ') || 'MENSUALIZADO'}</p>
+                  <p className="text-sm font-bold text-foreground">{contractTypeLabel(agent.contractType)}</p>
                 </div>
               </div>
 

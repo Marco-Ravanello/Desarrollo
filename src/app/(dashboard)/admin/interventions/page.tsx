@@ -3,15 +3,17 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Download, Upload, FileSpreadsheet, Loader2, AlertCircle, CheckCircle2, HandHeart } from "lucide-react";
+import { Download, Upload, FileDown, FileSpreadsheet, Loader2, AlertCircle, CheckCircle2, HandHeart } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
 import * as XLSX from "xlsx";
-import { exportInterventionsAction, importInterventionsAction } from "./actions";
+import { exportInterventionsAction, getImportAreasAction, importInterventionsAction } from "./actions";
+import { buildImportTemplate } from "@/lib/intervention-import";
 import { toast } from "sonner";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 export default function InterventionsAdminPage() {
   const [exporting, setExporting] = useState(false);
+  const [preparingTemplate, setPreparingTemplate] = useState(false);
   const [importing, setImporting] = useState(false);
   const [results, setResults] = useState<{ createdCount: number, errors: string[] } | null>(null);
 
@@ -27,11 +29,34 @@ export default function InterventionsAdminPage() {
       const workbook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(workbook, worksheet, "Intervenciones");
       XLSX.writeFile(workbook, `Intervenciones_Municipal_${new Date().toISOString().split('T')[0]}.xlsx`);
-      toast.success("Exportación completada");
+      toast.success(result.rows.length === 1 ? "Listo, se bajó 1 intervención." : `Listo, se bajaron ${result.rows.length.toLocaleString("es-AR")} intervenciones.`);
     } catch {
       toast.error("No se pudo exportar. Revisá la conexión y probá de nuevo.");
     } finally {
       setExporting(false);
+    }
+  };
+
+  const handleTemplate = async () => {
+    setPreparingTemplate(true);
+    try {
+      const res = await getImportAreasAction();
+      if (!res.success) {
+        toast.error(res.error);
+        return;
+      }
+      const template = buildImportTemplate(res.areas);
+      const workbook = XLSX.utils.book_new();
+      for (const sheet of template) {
+        const ws = XLSX.utils.aoa_to_sheet(sheet.rows);
+        ws["!cols"] = sheet.widths.map((wch) => ({ wch }));
+        XLSX.utils.book_append_sheet(workbook, ws, sheet.name);
+      }
+      XLSX.writeFile(workbook, "Planilla_modelo_intervenciones.xlsx");
+    } catch {
+      toast.error("No se pudo armar la planilla. Revisá la conexión y probá de nuevo.");
+    } finally {
+      setPreparingTemplate(false);
     }
   };
 
@@ -81,61 +106,59 @@ export default function InterventionsAdminPage() {
     <div className="space-y-8 max-w-5xl mx-auto">
       <PageHeader
         title="Importar datos"
-        description="Subí planillas de intervenciones o descargá las que ya están cargadas."
+        description="Subí intervenciones desde una planilla de Excel o bajá las que ya están cargadas."
         icon={HandHeart}
       />
 
       <div className="grid gap-6 md:grid-cols-2">
-        <Card className="rounded-2xl border-none shadow-xl overflow-hidden group hover:shadow-2xl transition-all">
-          <CardHeader className="bg-emerald-500/5">
-            <div className="bg-emerald-500/15 w-12 h-12 rounded-2xl flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
-                <Download className="text-emerald-700 dark:text-emerald-400" />
+        <Card className="rounded-2xl border border-border/60 shadow-sm">
+          <CardHeader>
+            <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-xl bg-blue-500/10">
+              <Upload className="h-5 w-5 text-blue-600 dark:text-blue-300" />
             </div>
-            <CardTitle>Exportar a Excel</CardTitle>
-            <CardDescription>Obtenga el listado completo de intervenciones del sistema.</CardDescription>
+            <CardTitle>Subir intervenciones</CardTitle>
+            <CardDescription>Cargá intervenciones que estaban en planillas. Bajá la planilla modelo, completala y subila.</CardDescription>
           </CardHeader>
-          <CardContent className="pt-6">
-            <Button
-              onClick={handleExport}
-              disabled={exporting}
-              className="w-full rounded-xl"
-            >
-              {exporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileSpreadsheet className="mr-2 h-4 w-4" />}
-              Bajar planilla modelo
-            </Button>
+          <CardContent className="space-y-4">
+            <p className="text-xs text-muted-foreground">
+              <strong className="text-foreground">Columnas:</strong> DNI, Area, Caso, Descripcion y Fecha (dd/mm/aaaa). Nombre y Apellido solo hacen falta si la persona no está en el Registro Único ni en el padrón. Las filas incompletas no se cargan y se listan abajo con el motivo.
+            </p>
+            <div className="grid gap-2 sm:grid-cols-2">
+              <Button variant="outline" onClick={handleTemplate} disabled={preparingTemplate} className="w-full rounded-xl">
+                {preparingTemplate ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileDown className="mr-2 h-4 w-4" />}
+                Bajar planilla modelo
+              </Button>
+              <div className="relative">
+                <input
+                  type="file"
+                  accept=".xlsx, .xls"
+                  aria-label="Elegir la planilla para subir"
+                  onChange={handleImport}
+                  disabled={importing}
+                  className="absolute inset-0 z-10 h-full w-full cursor-pointer opacity-0 disabled:cursor-not-allowed"
+                />
+                <Button disabled={importing} className="w-full rounded-xl" tabIndex={-1}>
+                  {importing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
+                  Subir planilla
+                </Button>
+              </div>
+            </div>
           </CardContent>
         </Card>
 
-        <Card className="rounded-2xl border-none shadow-xl overflow-hidden group hover:shadow-2xl transition-all">
-          <CardHeader className="bg-blue-500/5">
-            <div className="bg-blue-500/15 w-12 h-12 rounded-2xl flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
-                <Upload className="text-blue-600" />
+        <Card className="rounded-2xl border border-border/60 shadow-sm">
+          <CardHeader>
+            <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10">
+              <Download className="h-5 w-5 text-emerald-700 dark:text-emerald-400" />
             </div>
-            <CardTitle>Importar desde Excel</CardTitle>
-            <CardDescription>Cargá datos históricos desde tus planillas.</CardDescription>
+            <CardTitle>Bajar las intervenciones cargadas</CardTitle>
+            <CardDescription>Todas las intervenciones de la app en una planilla de Excel. La descarga queda anotada en Auditoría.</CardDescription>
           </CardHeader>
-          <CardContent className="pt-6 space-y-4">
-            <div className="text-xs text-muted-foreground mb-2">
-              <strong>Columnas:</strong> DNI, Area, Caso, Descripcion y Fecha (dd/mm/aaaa). Nombre y apellido solo hacen falta si la persona no está en el Registro Único ni en el padrón. Las filas incompletas no se cargan y se listan abajo con el motivo.
-            </div>
-            <div className="relative">
-              <input
-                type="file"
-                accept=".xlsx, .xls"
-                aria-label="Elegir la planilla"
-                onChange={handleImport}
-                disabled={importing}
-                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
-              />
-              <Button
-                disabled={importing}
-                variant="outline"
-                className="w-full border-blue-500/30 text-blue-600 hover:bg-blue-500/10 rounded-xl"
-              >
-                {importing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
-                Elegir archivo
-              </Button>
-            </div>
+          <CardContent>
+            <Button variant="outline" onClick={handleExport} disabled={exporting} className="w-full rounded-xl">
+              {exporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileSpreadsheet className="mr-2 h-4 w-4" />}
+              Bajar intervenciones a Excel
+            </Button>
           </CardContent>
         </Card>
       </div>

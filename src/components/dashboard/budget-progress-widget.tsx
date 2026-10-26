@@ -130,7 +130,7 @@ export function BudgetProgressWidget({
             <span className="text-xs font-bold text-muted-foreground block">
               Total ejecutado
             </span>
-            <span className="text-lg font-bold text-foreground tracking-tight font-mono">
+            <span className="text-lg font-bold text-foreground tracking-tight tabular-nums">
               {formatCurrency(executedAmount)}
             </span>
             <span className="text-xs text-emerald-700 dark:text-emerald-400 font-semibold block mt-0.5">
@@ -142,7 +142,7 @@ export function BudgetProgressWidget({
             <span className="text-xs font-bold text-muted-foreground block">
               Saldo remanente
             </span>
-            <span className="text-lg font-bold text-emerald-700 dark:text-emerald-400 tracking-tight font-mono">
+            <span className="text-lg font-bold text-emerald-700 dark:text-emerald-400 tracking-tight tabular-nums">
               {formatCurrency(remainingBudget)}
             </span>
             <span className="text-xs text-muted-foreground block mt-0.5">
@@ -154,7 +154,7 @@ export function BudgetProgressWidget({
             <span className="text-xs font-bold text-muted-foreground block">
               Presupuesto anual
             </span>
-            <span className="text-lg font-bold text-foreground tracking-tight font-mono">
+            <span className="text-lg font-bold text-foreground tracking-tight tabular-nums">
               {formatCurrency(effectiveBudget)}
             </span>
             <span className="text-xs text-muted-foreground block mt-0.5">
@@ -188,7 +188,7 @@ export function BudgetProgressWidget({
           </div>
 
           {/* Multi-stop Ticks (0%, 25%, 50%, 75%, 100%) */}
-          <div className="relative flex justify-between items-center text-xs font-mono font-bold text-muted-foreground px-0.5">
+          <div className="relative flex justify-between items-center text-xs tabular-nums font-bold text-muted-foreground px-0.5">
             <div className="flex flex-col items-start">
               <span>0%</span>
               <span className="text-xs font-normal opacity-75">$0</span>
@@ -241,7 +241,7 @@ export function BudgetProgressWidget({
                     <div key={a.name || idx} className="p-3.5 rounded-2xl bg-muted/30 border border-border/40 space-y-2">
                       <div className="flex items-center justify-between text-xs font-bold">
                         <span className="text-foreground truncate max-w-[200px]">{a.name}</span>
-                        <span className="font-mono text-emerald-700 dark:text-emerald-400">{areaPercent}%</span>
+                        <span className="tabular-nums text-emerald-700 dark:text-emerald-400">{areaPercent}%</span>
                       </div>
 
                       <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
@@ -251,7 +251,7 @@ export function BudgetProgressWidget({
                         />
                       </div>
 
-                      <div className="flex justify-between items-center text-xs text-muted-foreground font-mono">
+                      <div className="flex justify-between items-center text-xs text-muted-foreground tabular-nums">
                         <span>Ejecutado: {formatCurrency(areaExecuted)}</span>
                         <span>Partida: {formatCurrency(areaAnnual)}</span>
                       </div>

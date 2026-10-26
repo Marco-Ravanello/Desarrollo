@@ -28,9 +28,10 @@ export default async function StockPage() {
       />
 
       <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-        <StatCard label="Total items" value={supplies.length} icon={Package} tone="blue" />
+        <StatCard label="Insumos" value={supplies.length} hint="Cargados en el depósito" icon={Package} tone="blue" />
         <StatCard
-          label="Alertas de reposición"
+          label="Para reponer"
+          hint={lowStockCount > 0 ? "Debajo del mínimo" : "Ninguno bajo el mínimo"}
           value={<span className={lowStockCount > 0 ? "text-rose-600" : undefined}>{lowStockCount}</span>}
           icon={AlertCircle}
           tone={lowStockCount > 0 ? "red" : "slate"}
@@ -45,7 +46,7 @@ export default async function StockPage() {
         <Card className="lg:col-span-2 border-none shadow-sm">
           <CardHeader>
             <CardTitle>Inventario actual</CardTitle>
-            <CardDescription>Lista de insumos registrados y niveles de stock.</CardDescription>
+            <CardDescription>Cuánto hay de cada insumo y cuáles están debajo del mínimo.</CardDescription>
           </CardHeader>
           <CardContent>
             <StockList supplies={supplies} />

@@ -107,7 +107,7 @@ export function FuelForm({ vehicles }: { vehicles: any[] }) {
             required
             value={fuelData.ticketNumber}
             onChange={(e) => setFuelData({...fuelData, ticketNumber: e.target.value})}
-            className="rounded-xl font-mono"
+            className="rounded-xl"
           />
         </div>
       </div>
@@ -121,13 +121,13 @@ export function FuelForm({ vehicles }: { vehicles: any[] }) {
                 name="liters"
                 type="number"
                 step="0.01"
-                placeholder="0.00"
+                placeholder="0"
                 required
                 value={fuelData.liters}
                 onChange={(e) => setFuelData({...fuelData, liters: e.target.value})}
-                className="rounded-xl pr-10"
+                className="rounded-xl pr-14"
             />
-            <span className="absolute right-3 top-2.5 text-muted-foreground text-sm font-bold">Lts</span>
+            <span className="absolute right-3 top-2.5 text-muted-foreground text-sm">litros</span>
           </div>
         </div>
         <div className="space-y-2">
@@ -139,7 +139,7 @@ export function FuelForm({ vehicles }: { vehicles: any[] }) {
                 name="amount"
                 type="number"
                 step="0.01"
-                placeholder="0.00"
+                placeholder="0"
                 required
                 value={fuelData.amount}
                 onChange={(e) => setFuelData({...fuelData, amount: e.target.value})}

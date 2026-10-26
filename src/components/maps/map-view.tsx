@@ -504,7 +504,7 @@ function LayerRow({
       <span className="min-w-0">
         <span className="block leading-tight">
           {label}
-          {count ? <span className="font-mono text-muted-foreground"> · {count}</span> : null}
+          {count ? <span className="tabular-nums text-muted-foreground"> · {count}</span> : null}
           {loading ? <Loader2 className="ml-1 inline h-3 w-3 animate-spin text-muted-foreground" /> : null}
         </span>
         {hint ? <span className="block text-xs font-medium text-muted-foreground">{hint}</span> : null}
@@ -752,7 +752,7 @@ export function MapView({
                       </span>
                       <span className="min-w-0 leading-tight">
                         {name}
-                        <span className="font-mono text-muted-foreground"> · {programCounts[k].toLocaleString("es-AR")}</span>
+                        <span className="tabular-nums text-muted-foreground"> · {programCounts[k].toLocaleString("es-AR")}</span>
                       </span>
                     </p>
                   ))

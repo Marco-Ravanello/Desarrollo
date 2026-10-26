@@ -137,7 +137,7 @@ export function EditHRForm({ agent, areas, onComplete }: { agent: any, areas: an
 
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="salary" className="font-bold text-foreground">Sueldo / Haber Mensual ($ ARS)</Label>
+            <Label htmlFor="salary" className="font-bold text-foreground">Sueldo mensual ($)</Label>
             <Input id="salary" name="salary" type="number" step="0.01" defaultValue={agent.salary || ""} placeholder="Ej: 450000" />
           </div>
           <div className="space-y-2">
