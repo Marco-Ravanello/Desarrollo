@@ -108,6 +108,7 @@ export async function searchGlobalAction(query: string) {
 
   const padronResults = padronCitizens.map((p: any) => ({
     id: p.dni,
+    dni: p.dni,
     title: p.nombre_completo,
     subtitle: `DNI ${p.dni}${p.barrio ? ` • ${p.barrio}` : ''}`,
     url: `/people/${p.dni}`
@@ -118,6 +119,7 @@ export async function searchGlobalAction(query: string) {
   const mergedCitizens = [
     ...citizens.map((c: any) => ({
       id: c.id,
+      dni: c.dni,
       title: `${c.lastName}, ${c.firstName}`,
       subtitle: `DNI ${c.dni}`,
       url: `/people/${c.id}`

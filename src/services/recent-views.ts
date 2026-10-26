@@ -8,6 +8,8 @@ export interface RecentItem {
   title: string;
   subtitle: string;
   url: string;
+  /** De las personas, para el color de sus iniciales. */
+  dni?: string;
 }
 
 function nameFromPadron(nombreCompleto: string | null): string {
@@ -70,7 +72,7 @@ export async function getRecentItems(rawRefs: unknown, canViewSensitive: boolean
       const name = p ? `${p.firstName} ${p.lastName}`.trim() : fromPadron ? nameFromPadron(fromPadron.nombre_completo) : "";
       if (!name) continue;
       const dni = p?.dni || fromPadron?.dni || "";
-      items.push({ kind: "person", id: ref.id, title: name, subtitle: dni ? `DNI ${dni}` : "", url: `/people/${ref.id}` });
+      items.push({ kind: "person", id: ref.id, title: name, subtitle: dni ? `DNI ${dni}` : "", url: `/people/${ref.id}`, dni: dni || undefined });
     }
   }
   return items;

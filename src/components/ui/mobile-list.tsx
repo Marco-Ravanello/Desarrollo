@@ -25,12 +25,15 @@ interface MobileListItemProps {
   meta?: React.ReactNode;
   /** A la derecha: estado o fecha. */
   aside?: React.ReactNode;
+  /** A la izquierda: las iniciales de la persona. */
+  leading?: React.ReactNode;
   className?: string;
 }
 
-export function MobileListItem({ href, title, subtitle, meta, aside, className }: MobileListItemProps) {
+export function MobileListItem({ href, title, subtitle, meta, aside, leading, className }: MobileListItemProps) {
   const body = (
     <>
+      {leading}
       <div className="min-w-0 flex-1">
         <div className="truncate text-sm font-semibold text-foreground">{title}</div>
         {subtitle && <div className="truncate text-xs text-muted-foreground">{subtitle}</div>}

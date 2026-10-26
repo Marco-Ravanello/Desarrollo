@@ -1,4 +1,5 @@
 import prisma from "@/lib/prisma";
+import { PADRON_GAPS, isPadronGap, type PadronGap } from "@/lib/padron-quality";
 import { MUNICIPAL_LOCALITIES } from "@/lib/constants/localities";
 import { normalizeDni } from "@/lib/padron-import";
 import { parseFechaNacimiento, personAddress, barrioLabel } from "@/lib/person-display";
@@ -11,6 +12,8 @@ export interface GetPeopleOptions {
   limit?: number;
   /** Solo personas con un punto real en el mapa (latitud y longitud cargadas). */
   withLocation?: boolean;
+  /** Solo a quienes les falta ese dato (panel de calidad del padrón). */
+  falta?: PadronGap;
 }
 
 export interface PaginatedPeopleResult {
@@ -124,6 +127,10 @@ export async function getPaginatedPeople(options: GetPeopleOptions = {}): Promis
     whereConditions.push("latitude IS NOT NULL AND longitude IS NOT NULL");
   }
 
+  if (options.falta && isPadronGap(options.falta)) {
+    whereConditions.push(PADRON_GAPS[options.falta].sql);
+  }
+
   const whereClause = whereConditions.join(" AND ");
 
   try {
@@ -144,7 +151,8 @@ export async function getPaginatedPeople(options: GetPeopleOptions = {}): Promis
     );
 
     // Para el mapa no se cae al Registro Único: si nadie del padrón está ubicado, no hay puntos.
-    if ((rows && rows.length > 0) || options.withLocation) {
+    // Tampoco con el filtro de datos faltantes: es del padrón.
+    if ((rows && rows.length > 0) || options.withLocation || options.falta) {
       const mappedPeople = rows.map((r: any) => {
         let lastName = "";
         let firstName = "";

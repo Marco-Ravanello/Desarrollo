@@ -20,6 +20,9 @@ import { getCaseStatusConfig } from "@/lib/status-styles";
 import { getAreaShortName } from "@/lib/area-theme";
 import { interventionTypeLabel } from "@/lib/intervention-types";
 import { CaseTag } from "@/components/cases/case-tag";
+import { CaseLabelChips } from "@/components/cases/case-label-chips";
+import { caseLabelName, isCaseLabel } from "@/lib/case-labels";
+import { getCaseLabelCounts } from "@/services/case-labels";
 import { CASE_PRIORITY_LABEL, CASE_STATUS_LABEL, STALE_DAYS, agoText, daysText, fechaCorta, isProvisionalDni, splitCaseTitle, summarizeCase } from "@/lib/case-summary";
 import { countMyOpenCases } from "@/services/case-assignment";
 import prisma from "@/lib/prisma";
@@ -28,7 +31,7 @@ import {
   ArrowRight, ClipboardList, ArrowRightLeft, AlertTriangle, UserCheck
 } from "lucide-react";
 import Link from "next/link";
-import { plural } from "@/lib/formato";
+import { formatNumber, plural } from "@/lib/formato";
 
 interface CasesPageProps {
   searchParams: Promise<{
@@ -38,6 +41,7 @@ interface CasesPageProps {
     priority?: string;
     assigned?: string;
     quiet?: string;
+    label?: string;
     page?: string;
     limit?: string;
   }>;
@@ -60,7 +64,8 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
   if (!session?.user?.id) redirect("/login");
 
   const { q, area, status, priority, page, limit } = await searchParams;
-  const { assigned: assignedRaw, quiet: quietRaw } = await searchParams;
+  const { assigned: assignedRaw, quiet: quietRaw, label: labelRaw } = await searchParams;
+  const label = isCaseLabel(labelRaw) ? labelRaw : undefined;
   // "mine", "none" o el id de un profesional (desde el equipo del área en el inicio).
   const assigned =
     assignedRaw === "mine" || assignedRaw === "none" || (assignedRaw && /^c[a-z0-9]{20,30}$/.test(assignedRaw)) ? assignedRaw : undefined;
@@ -70,7 +75,7 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
 
   const canViewSensitive = hasPermission(session.user.role as any, PERMISSIONS.VIEW_SENSITIVE_CASES);
 
-  const [data, areasList, derivationsToAnswer, myOpenCases] = await Promise.all([
+  const [data, areasList, derivationsToAnswer, myOpenCases, labelCounts] = await Promise.all([
     getAllCases({
       query: q,
       areaId: area,
@@ -78,6 +83,7 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
       priority,
       assigned,
       quiet,
+      label,
       userId: session.user.id,
       page: pageNum,
       limit: limitNum,
@@ -86,6 +92,7 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
     getAreas(),
     countDerivationsToAnswer(session.user),
     countMyOpenCases(session.user.id),
+    getCaseLabelCounts({ canViewSensitive }),
   ]);
   const assignedUser =
     assigned && assigned !== "mine" && assigned !== "none"
@@ -121,6 +128,7 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
     if (priority) params.set("priority", priority);
     if (assigned) params.set("assigned", assigned);
     if (quiet) params.set("quiet", "1");
+    if (label) params.set("label", label);
     params.set("page", String(n));
     return `/cases?${params.toString()}`;
   };
@@ -191,7 +199,7 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
               Buscar
             </Button>
           </div>
-          <MobileFilters active={[area && area !== "all", status && status !== "all", priority && priority !== "all", assigned, quiet].filter(Boolean).length}>
+          <MobileFilters active={[area && area !== "all", status && status !== "all", priority && priority !== "all", assigned, quiet, label].filter(Boolean).length}>
           <div>
             <select
               name="area"
@@ -247,13 +255,28 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
               {assignedUser && <option value={assigned}>{assignedLabel}</option>}
             </select>
           </div>
-          <label className="flex items-center gap-2 text-xs text-muted-foreground sm:col-span-2 lg:col-span-4">
+          <div>
+            <select
+              name="label"
+              aria-label="Etiqueta"
+              defaultValue={label || ""}
+              className="w-full h-10 px-3 rounded-xl bg-muted/30 border border-border/60 text-xs font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+            >
+              <option value="">Cualquier etiqueta</option>
+              {labelCounts.map((l) => (
+                <option key={l.key} value={l.key}>
+                  {l.label} ({formatNumber(l.total)})
+                </option>
+              ))}
+            </select>
+          </div>
+          <label className="flex items-center gap-2 text-xs text-muted-foreground sm:col-span-2 lg:col-span-3">
             <input type="checkbox" name="quiet" value="1" defaultChecked={quiet} className="h-4 w-4 rounded border-border" />
             Solo los que no tuvieron intervenciones hace {STALE_DAYS} días o más
           </label>
           </MobileFilters>
         </form>
-        {(q || (area && area !== "all") || (status && status !== "all") || (priority && priority !== "all") || assigned || quiet) && (
+        {(q || (area && area !== "all") || (status && status !== "all") || (priority && priority !== "all") || assigned || quiet || label) && (
           <div className="flex flex-wrap items-center gap-2 mt-3 pt-3 border-t border-border/40 text-xs">
             <span className="text-xs font-bold text-muted-foreground">Filtros activos:</span>
             {q && <Badge variant="secondary" className="text-xs">Texto: {q}</Badge>}
@@ -262,6 +285,7 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
             {priority && priority !== "all" && <Badge variant="secondary" className="text-xs">Prioridad: {CASE_PRIORITY_LABEL[priority]?.replace(/^Prioridad /, "") ?? priority}</Badge>}
             {assignedLabel && <Badge variant="secondary" className="text-xs">{assignedLabel}</Badge>}
             {quiet && <Badge variant="secondary" className="text-xs">Sin movimiento hace {STALE_DAYS} días o más</Badge>}
+            {label && <Badge variant="secondary" className="text-xs">Etiqueta: {caseLabelName(label)}</Badge>}
             <Button variant="ghost" size="sm" asChild className="h-6 text-xs text-muted-foreground hover:text-foreground">
               <Link href="/cases">Limpiar filtros</Link>
             </Button>
@@ -309,7 +333,7 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
                   subtitle={
                     restricted
                       ? getAreaShortName(c.area.name)
-                      : [titular ? shown.title : null, shown.tag, getAreaShortName(c.area.name)].filter(Boolean).join(" · ")
+                      : [titular ? shown.title : null, shown.tag, getAreaShortName(c.area.name), ...c.labels.map((k) => caseLabelName(k))].filter(Boolean).join(" · ")
                   }
                   meta={
                     restricted
@@ -381,6 +405,7 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
                             ) : (
                               <div className="text-xs text-muted-foreground">Sin titular</div>
                             )}
+                            <CaseLabelChips labels={c.labels} max={3} />
                           </div>
                         )}
                       </TableCell>

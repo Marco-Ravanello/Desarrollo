@@ -1,5 +1,6 @@
 "use client";
 
+import { InitialsAvatar } from "@/components/ui/initials-avatar";
 import { useState, useTransition } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -361,9 +362,7 @@ export function UsersManagementView({
                     <tr key={u.id} className="hover:bg-muted/30 transition-colors">
                       <td className="px-5 py-3.5 font-bold text-foreground">
                         <div className="flex items-center gap-3">
-                          <div className="h-9 w-9 rounded-xl bg-primary/10 text-primary border border-primary/20 flex items-center justify-center font-bold text-xs shrink-0">
-                            {(u.name || u.email || "?")[0].toUpperCase()}
-                          </div>
+                          <InitialsAvatar name={u.name || u.username || u.email} seed={u.id} square />
                           <div className="min-w-0">
                             <p className="text-xs font-bold text-foreground leading-tight">
                               {u.name || "Sin nombre"}

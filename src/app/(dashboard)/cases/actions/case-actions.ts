@@ -11,6 +11,8 @@ import { editIntervention } from "@/services/interventions";
 import { assignCase } from "@/services/case-assignment";
 import { completeFollowUp, scheduleFollowUp } from "@/services/follow-ups";
 import { isInterventionType } from "@/lib/intervention-types";
+import { normalizeCaseLabels } from "@/lib/case-labels";
+import { updateCaseLabels } from "@/services/case-labels";
 
 export async function addCaseInterventionAction(caseId: string, description: string, type?: string) {
   const session = await auth();
@@ -129,6 +131,8 @@ export interface CreateCentralizedCaseInput {
   address?: string;
   phone?: string;
   email?: string;
+  /** Claves de src/lib/case-labels.ts; las que no son de la lista se ignoran. */
+  labels?: string[];
 }
 
 export async function createCentralizedCaseAction(input: CreateCentralizedCaseInput) {
@@ -170,7 +174,8 @@ export async function createCentralizedCaseAction(input: CreateCentralizedCaseIn
         areaId: cleanAreaId,
         personId: person.id,
         status: "ABIERTO",
-        priority: input.priority || "MEDIA"
+        priority: input.priority || "MEDIA",
+        labels: normalizeCaseLabels(input.labels),
       }
     });
 
@@ -316,5 +321,23 @@ export async function completeFollowUpAction(taskId: string) {
     return { success: result.success, error: result.success ? undefined : result.error };
   } catch (error: any) {
     return { success: false, error: actionErrorMessage(error, "No se pudo marcar el seguimiento") };
+  }
+}
+
+/** Cambia las etiquetas del expediente (adulto mayor, discapacidad…). */
+export async function updateCaseLabelsAction(caseId: string, labels: string[]) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return { success: false, error: "No tenés permiso para hacer esto o tu sesión expiró. Si sigue pasando, volvé a iniciar sesión." };
+  }
+  try {
+    const result = await updateCaseLabels(session.user, caseId, labels);
+    if (result.success) {
+      revalidatePath(`/cases/${caseId}`);
+      revalidatePath("/cases");
+    }
+    return result;
+  } catch (error: any) {
+    return { success: false, error: actionErrorMessage(error, "No se pudieron guardar las etiquetas") };
   }
 }

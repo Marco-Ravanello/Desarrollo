@@ -11,7 +11,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { InitialsAvatar } from "@/components/ui/initials-avatar";
 import { Badge } from "@/components/ui/badge";
 import { UserCog, UserPlus, Settings, LogOut, ChevronDown, KeyRound } from "lucide-react";
 import Link from "next/link";
@@ -36,8 +36,6 @@ export function UserNav({ variant = "header", isCollapsed = false }: UserNavProp
     userRole === "ADMIN_GENERAL" ||
     hasPermission(userRole, PERMISSIONS.MANAGE_USERS);
 
-  const initial = user.name?.[0]?.toUpperCase() || "U";
-
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -47,11 +45,7 @@ export function UserNav({ variant = "header", isCollapsed = false }: UserNavProp
             className="w-full flex items-center gap-2.5 p-1 rounded-2xl hover:bg-muted/60 transition-colors text-left focus:outline-none group"
             title="Opciones de cuenta y perfil"
           >
-            <Avatar className="h-9 w-9 rounded-xl border border-primary/20 shrink-0 shadow-xs">
-              <AvatarFallback className="bg-primary/10 text-primary font-bold text-xs">
-                {initial}
-              </AvatarFallback>
-            </Avatar>
+            <InitialsAvatar name={user.name || "Usuario"} seed={user.id} size="md" square className="shadow-xs" />
             {!isCollapsed && (
               <div className="min-w-0 flex-1 flex items-center justify-between">
                 <div className="min-w-0 truncate">
@@ -72,11 +66,7 @@ export function UserNav({ variant = "header", isCollapsed = false }: UserNavProp
             size="sm"
             className="h-9 gap-2 px-2.5 rounded-xl text-xs font-bold text-foreground hover:bg-muted/60"
           >
-            <Avatar className="h-7 w-7 rounded-lg border border-primary/20 shrink-0">
-              <AvatarFallback className="bg-primary/10 text-primary font-bold text-xs">
-                {initial}
-              </AvatarFallback>
-            </Avatar>
+            <InitialsAvatar name={user.name || "Usuario"} seed={user.id} size="sm" square className="h-7 w-7 rounded-lg" />
             <span className="hidden lg:inline-block max-w-[120px] truncate">{user.name || "Agente"}</span>
             <ChevronDown className="h-3.5 w-3.5 text-muted-foreground hidden lg:block" />
           </Button>

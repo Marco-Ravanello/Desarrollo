@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { hasPermission, PERMISSIONS } from "@/lib/permissions";
 import { getReportData, parseReportPeriod } from "@/services/reports";
+import { getCaseLabelCounts } from "@/services/case-labels";
 import { getCaseStatusConfig, getOrderStatusConfig } from "@/lib/status-styles";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -47,7 +48,14 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
 
   const { desde, hasta } = await searchParams;
   const period = parseReportPeriod(desde, hasta);
-  const data = await getReportData(period);
+  const [data, labelCounts] = await Promise.all([
+    getReportData(period),
+    getCaseLabelCounts({
+      canViewSensitive: hasPermission(session.user.role as any, PERMISSIONS.VIEW_SENSITIVE_CASES),
+      createdFrom: period.from,
+      createdTo: period.to,
+    }),
+  ]);
   const periodLabel = `${shortDate(period.fromStr)} al ${shortDate(period.toStr)}`;
   const fileSuffix = `${period.fromStr}_${period.toStr}`;
 
@@ -70,6 +78,10 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
   }));
   const caseRows = data.caseStatus.map((c) => ({ estado: getCaseStatusConfig(c.status).label, cantidad: c.count }));
   const orderRows = data.orderStatus.map((o) => ({ estado: getOrderStatusConfig(o.status).label, cantidad: o.count, monto: money(o.amount) }));
+  const labelRows = [...labelCounts]
+    .sort((a, b) => b.total - a.total)
+    .map((l) => ({ key: l.key, etiqueta: l.label, cantidad: l.total, sinCerrar: l.open }));
+  const anyLabel = labelRows.some((l) => l.cantidad > 0);
   const providerRows = data.topProviders.map((p) => ({ name: p.name, cuit: p.cuit || "Sin CUIT", orders: p.orders, executed: money(p.executed) }));
 
   const empty = <EmptyMessage kind="search" compact title="No hay registros en este período" description="Probá con un período más largo." />;
@@ -256,6 +268,63 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
           </CardContent>
         </Card>
       </div>
+
+      <Card className="shadow-none">
+        <CardHeader className="flex flex-row items-center justify-between gap-3">
+          <div>
+            <CardTitle className="text-base">Expedientes por etiqueta</CardTitle>
+            <CardDescription>Expedientes abiertos en el período con cada etiqueta. Uno puede tener varias.</CardDescription>
+          </div>
+          {anyLabel && (
+            <UniversalExportMenu
+              label="Exportar"
+              data={labelRows}
+              filename={`reporte_etiquetas_${fileSuffix}`}
+              title="Expedientes por etiqueta"
+              subtitle={`Período: ${periodLabel}`}
+              columns={[
+                { header: "Etiqueta", accessorKey: "etiqueta" },
+                { header: "Expedientes", accessorKey: "cantidad" },
+                { header: "Sin cerrar", accessorKey: "sinCerrar" },
+              ]}
+            />
+          )}
+        </CardHeader>
+        <CardContent>
+          {!anyLabel ? (
+            <EmptyMessage
+              compact
+              title="Ningún expediente del período tiene etiquetas"
+              description="Las etiquetas se ponen al abrir el expediente o desde su página, con el botón Agregar etiquetas."
+            />
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Etiqueta</TableHead>
+                  <TableHead className="text-right">Expedientes</TableHead>
+                  <TableHead className="text-right">Sin cerrar</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {labelRows.map((l) => (
+                  <TableRow key={l.key} className={l.cantidad === 0 ? "text-muted-foreground" : undefined}>
+                    <TableCell>
+                      {l.cantidad > 0 ? (
+                        <Link href={`/cases?label=${l.key}`} className="font-medium text-primary hover:underline">{l.etiqueta}</Link>
+                      ) : (
+                        l.etiqueta
+                      )}
+                    </TableCell>
+                    <TableCell className="text-right font-medium tabular-nums">{l.cantidad.toLocaleString("es-AR")}</TableCell>
+                    <TableCell className="text-right tabular-nums">{l.sinCerrar.toLocaleString("es-AR")}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
 
       <Card className="shadow-none">
         <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">

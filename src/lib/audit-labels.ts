@@ -40,6 +40,7 @@ const ACTIONS: Record<string, { label: string; group: AuditGroup }> = {
   CREATE_INTERVENTION: { label: "Cargó una intervención", group: "expedientes" },
   EDIT_INTERVENTION: { label: "Corrigió una intervención", group: "expedientes" },
   SCHEDULE_FOLLOW_UP: { label: "Agendó un seguimiento", group: "expedientes" },
+  CASE_LABELS: { label: "Cambió las etiquetas de un expediente", group: "expedientes" },
   CASE_DERIVATION_CREATED: { label: "Derivó un expediente", group: "expedientes" },
   CASE_DERIVATION_ACCEPTED: { label: "Aceptó una derivación", group: "expedientes" },
   CASE_DERIVATION_REJECTED: { label: "Rechazó una derivación", group: "expedientes" },

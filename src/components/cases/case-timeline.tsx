@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ArrowRightLeft, CalendarClock, Check, FolderOpen, Lock, RotateCcw, MessageSquareText, User, UserCheck, X, Clock } from "lucide-react";
+import { ArrowRightLeft, CalendarClock, Check, FolderOpen, Lock, RotateCcw, MessageSquareText, Tags, User, UserCheck, X, Clock } from "lucide-react";
 import { INTERVENTION_TYPES } from "@/lib/intervention-types";
 import type { InterventionRow } from "@/services/interventions";
 import type { CaseEvent } from "@/services/case-timeline";
@@ -17,12 +17,14 @@ const DERIVACIONES = "DERIVACIONES";
 const EXPEDIENTE = "EXPEDIENTE";
 const ASIGNACIONES = "ASIGNACIONES";
 const SEGUIMIENTOS = "SEGUIMIENTOS";
+const ETIQUETAS = "ETIQUETAS";
 
 /** Grupo de cada movimiento para el filtro: el tipo de intervención, derivaciones, profesional a cargo, o apertura y cierre. */
 function groupOf(item: Item) {
   if (item.kind === "INTERVENCION") return item.row.type ?? NO_TYPE;
   if (item.event.kind === "ASIGNACION") return ASIGNACIONES;
   if (item.event.kind === "SEGUIMIENTO") return SEGUIMIENTOS;
+  if (item.event.kind === "ETIQUETAS") return ETIQUETAS;
   return item.event.kind === "DERIVACION" || item.event.kind === "RESPUESTA" ? DERIVACIONES : EXPEDIENTE;
 }
 
@@ -32,6 +34,7 @@ function eventIcon(e: CaseEvent) {
   if (e.kind === "REAPERTURA") return { Icon: RotateCcw, className: "bg-blue-500/15 text-blue-600 dark:text-blue-400" };
   if (e.kind === "ASIGNACION") return { Icon: UserCheck, className: "bg-teal-500/15 text-teal-700 dark:text-teal-300" };
   if (e.kind === "SEGUIMIENTO") return { Icon: CalendarClock, className: "bg-amber-500/15 text-amber-800 dark:text-amber-300" };
+  if (e.kind === "ETIQUETAS") return { Icon: Tags, className: "bg-violet-500/15 text-violet-700 dark:text-violet-300" };
   if (e.kind === "RESPUESTA")
     return e.outcome === "RECHAZADA"
       ? { Icon: X, className: "bg-rose-500/15 text-rose-600 dark:text-rose-400" }
@@ -89,6 +92,7 @@ export function CaseTimeline({ interventions, events }: { interventions: Interve
     ...(counts.has(DERIVACIONES) ? [{ value: DERIVACIONES, label: "Derivaciones" }] : []),
     ...(counts.has(ASIGNACIONES) ? [{ value: ASIGNACIONES, label: "Profesional a cargo" }] : []),
     ...(counts.has(SEGUIMIENTOS) ? [{ value: SEGUIMIENTOS, label: "Seguimientos" }] : []),
+    ...(counts.has(ETIQUETAS) ? [{ value: ETIQUETAS, label: "Etiquetas" }] : []),
     ...(counts.has(EXPEDIENTE) ? [{ value: EXPEDIENTE, label: "Apertura y cierre" }] : []),
   ];
   const visible = filter === "TODO" ? items : items.filter((item) => groupOf(item) === filter);
