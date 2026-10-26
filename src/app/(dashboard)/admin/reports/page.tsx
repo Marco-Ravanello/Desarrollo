@@ -7,6 +7,7 @@ import { hasPermission, PERMISSIONS } from "@/lib/permissions";
 import { getReportData, parseReportPeriod } from "@/services/reports";
 import { getCaseLabelCounts } from "@/services/case-labels";
 import { getProgramMovementCounts } from "@/services/program-enrollment";
+import { isPadronProgramColumn, programHref } from "@/lib/padron-programs";
 import { getCaseStatusConfig, getOrderStatusConfig } from "@/lib/status-styles";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -368,7 +369,13 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
               <TableBody>
                 {programMoves.map((p) => (
                   <TableRow key={p.column}>
-                    <TableCell className="font-medium">{p.label}</TableCell>
+                    <TableCell className="font-medium">
+                      {isPadronProgramColumn(p.column) ? (
+                        <Link href={programHref(p.column)} className="hover:text-primary hover:underline">{p.label}</Link>
+                      ) : (
+                        p.label
+                      )}
+                    </TableCell>
                     <TableCell className="text-right tabular-nums">{p.altas.toLocaleString("es-AR")}</TableCell>
                     <TableCell className="text-right tabular-nums">{p.bajas.toLocaleString("es-AR")}</TableCell>
                   </TableRow>

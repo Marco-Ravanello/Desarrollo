@@ -56,6 +56,7 @@ model Area {
   supplies    SupplyItem[]
   purchaseOrders PurchaseOrder[]
   agreements  Agreement[]
+  programas   ProgramaArea[]
 }
 
 model Person {
@@ -598,6 +599,19 @@ model PadronDuplicadoDescartado {
 
 /// Altas y bajas de una persona en un programa del padrón, con fecha y quién la hizo. Es la historia:
 /// si la persona está hoy en el programa lo dice su columna prog_... en padron_unificado.
+/// Qué área tiene a cargo cada programa del padrón. Esa área y la conducción dan sus altas y bajas;
+/// un programa sin área lo puede manejar cualquiera que carga datos sociales.
+model ProgramaArea {
+  programa    String   @id // columna prog_... de padron_unificado
+  areaId      String?
+  area        Area?    @relation(fields: [areaId], references: [id], onDelete: SetNull)
+  updatedById String?
+  updatedAt   DateTime @updatedAt
+
+  @@index([areaId])
+  @@map("programas_areas")
+}
+
 model PadronMovimiento {
   id        String   @id @default(cuid())
   dni       String

@@ -10,6 +10,7 @@ import { countDerivationsToAnswer } from "@/services/derivations";
 import { getMyAssignedCases, type MyAssignedCase } from "@/services/cases";
 import { getRecentAuditActivity } from "@/services/audit";
 import { getStaffAwayToday, type StaffAway } from "@/services/hr";
+import { getProgramSummaries, type ProgramSummary } from "@/services/programs";
 import { auth } from "@/auth";
 import prisma from "@/lib/prisma";
 import { hasPermission, PERMISSIONS } from "@/lib/permissions";
@@ -18,7 +19,7 @@ import {
   Users, FileText, CheckCircle2, ShieldCheck,
   Plus, UserPlus, ChevronRight, AlertTriangle,
   Car, Calendar, ArrowUpRight, LayoutDashboard, Wallet, FileSignature, ArrowRightLeft, FolderOpen,
-  Hourglass, Building2, UsersRound, CalendarCheck, ScrollText, Palmtree,
+  Hourglass, Building2, UsersRound, CalendarCheck, ScrollText, Palmtree, Layers,
 } from "lucide-react";
 import type { Role } from "@prisma/client";
 import { PageHeader } from "@/components/layout/page-header";
@@ -70,12 +71,12 @@ type KpiId =
   | "staleCases" | "pendingDerivations" | "myCases" | "followUpsToday";
 type SectionId =
   | "myCases" | "attention" | "budget" | "territorial" | "recentCases" | "tasks" | "vehicles"
-  | "areas" | "team" | "quietCases" | "followUps" | "activity" | "away";
+  | "areas" | "team" | "quietCases" | "followUps" | "activity" | "away" | "programs";
 
 const LAYOUT: Record<Profile, { kpis: KpiId[]; sections: SectionId[] }> = {
   superadmin: {
     kpis: ["people", "activeCases", "urgentCases", "pendingOrders"],
-    sections: ["areas", "away", "attention", "budget", "territorial", "recentCases", "tasks", "vehicles"],
+    sections: ["areas", "away", "programs", "attention", "budget", "territorial", "recentCases", "tasks", "vehicles"],
   },
   conduccion: {
     kpis: ["activeCases", "urgentCases", "staleCases", "pendingDerivations"],
@@ -87,7 +88,7 @@ const LAYOUT: Record<Profile, { kpis: KpiId[]; sections: SectionId[] }> = {
   },
   area: {
     kpis: ["activeCases", "urgentCases", "staleCases", "pendingDerivations"],
-    sections: ["team", "quietCases", "attention", "tasks", "budget"],
+    sections: ["team", "quietCases", "programs", "attention", "tasks", "budget"],
   },
   operativo: {
     kpis: ["myCases", "followUpsToday", "myTasks", "urgentCases"],
@@ -173,7 +174,7 @@ export default async function DashboardPage({
   const wants = (id: KpiId | SectionId) => (layout.kpis as string[]).includes(id) || (layout.sections as string[]).includes(id);
   const userId = session?.user?.id;
 
-  const [stats, myTasks, area, derivationsToAnswer, myCases, staleCount, pendingDerivations, areaRows, team, quiet, followUps, activity, away] =
+  const [stats, myTasks, area, derivationsToAnswer, myCases, staleCount, pendingDerivations, areaRows, team, quiet, followUps, activity, away, programs] =
     await Promise.all([
       getDashboardStats(scope),
       userId ? getTasks(userId).catch(() => []) : Promise.resolve([]),
@@ -188,7 +189,12 @@ export default async function DashboardPage({
       userId && wants("followUps") ? getFollowUpsDue(userId).catch(() => []) : [],
       wants("activity") ? getRecentAuditActivity().catch(() => []) : [],
       wants("away") ? getStaffAwayToday().catch(() => ({ away: [], expired: 0 })) : { away: [], expired: 0 },
+      wants("programs") ? getProgramSummaries().catch(() => []) : [],
     ]);
+  // Con un área: los programas que tiene a cargo. Sin área (Superadmin): los que tienen más personas.
+  const homePrograms = areaId
+    ? programs.filter((p) => p.owner?.areaId === areaId)
+    : [...programs].sort((a, b) => b.people - a.people).slice(0, 6);
 
   // Mismas tareas que muestra "Mis tareas": las del usuario que no están completadas.
   // Los seguimientos que ya aparecen en "Seguimientos para hoy" no se repiten.
@@ -413,6 +419,8 @@ export default async function DashboardPage({
               return <div key={id} className={span}><ActivityCard entries={activity} /></div>;
             case "away":
               return <div key={id} className={span}><AwayCard away={away.away} expired={away.expired} /></div>;
+            case "programs":
+              return <div key={id} className={span}><ProgramsCard programs={homePrograms} ownArea={Boolean(areaId)} /></div>;
           }
         })}
       </div>
@@ -944,6 +952,48 @@ function AwayCard({ away, expired }: { away: StaffAway[]; expired: number }) {
           {plural(expired, "persona sigue", "personas siguen")} de licencia con la fecha de vuelta ya pasada.{" "}
           <Link href="/admin/hr?status=LICENCIA" className="font-semibold underline">Revisar</Link>
         </p>
+      )}
+    </Card>
+  );
+}
+
+function ProgramsCard({ programs, ownArea }: { programs: ProgramSummary[]; ownArea: boolean }) {
+  return (
+    <Card className="rounded-2xl border border-border/60 bg-card p-5 shadow-sm h-full">
+      <CardHeaderRow
+        icon={Layers}
+        iconClass="text-primary"
+        title={ownArea ? "Programas de tu área" : "Programas"}
+        href="/people/programas"
+        linkLabel="Ver todos"
+      />
+      {programs.length === 0 ? (
+        <EmptyMessage
+          compact
+          icon={Layers}
+          title={ownArea ? "Tu área todavía no tiene programas a cargo" : "No hay programas"}
+          description="La conducción elige qué área tiene a cargo cada programa, en Registro Único, Más, Programas."
+        />
+      ) : (
+        <div className="divide-y divide-border/20 mt-1">
+          {programs.map((p) => (
+            <Link
+              key={p.column}
+              href={`/people/programas/${p.slug}`}
+              className="flex items-center justify-between gap-3 py-2.5 px-1 rounded-lg hover:bg-muted/20 transition-colors group"
+            >
+              <div className="min-w-0">
+                <p className="text-xs font-medium text-foreground truncate group-hover:text-primary transition-colors">{p.label}</p>
+                <p className="text-xs text-muted-foreground">
+                  {p.altas + p.bajas > 0
+                    ? `Últimos 30 días: ${plural(p.altas, "alta")}, ${plural(p.bajas, "baja")}`
+                    : "Sin altas ni bajas en los últimos 30 días"}
+                </p>
+              </div>
+              <span className="shrink-0 text-xs font-semibold text-foreground tabular-nums">{plural(p.people, "persona")}</span>
+            </Link>
+          ))}
+        </div>
       )}
     </Card>
   );

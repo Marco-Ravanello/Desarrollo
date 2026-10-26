@@ -2,6 +2,8 @@ import prisma from "@/lib/prisma";
 import type { PadronUnificado, Prisma } from "@prisma/client";
 import { canManageProgramEnrollment } from "@/lib/permissions";
 import { todayInArgentina } from "@/lib/follow-up-dates";
+import { canManageProgram } from "@/lib/program-ownership";
+import { getProgramOwners, programManageError } from "@/services/programs";
 import {
   PADRON_PROGRAMS, addProgramToList, findPadronProgram, isPadronProgramColumn, programColumnFor, removeProgramFromList, splitProgramList,
   type PadronProgramColumn,
@@ -61,6 +63,8 @@ export async function enrollInProgram(
   if ("error" in checked) return { success: false, error: checked.error };
   const note = (input.note ?? "").trim().slice(0, PROGRAM_NOTE_MAX) || null;
   const fecha = dayToDate(checked.day);
+  const notAllowed = await programManageError(user, column);
+  if (notAllowed) return { success: false, error: notAllowed };
 
   return prisma.$transaction(async (tx) => {
     let row = await lockPadronRow(tx, dni);
@@ -134,6 +138,8 @@ export async function withdrawFromProgram(
   const reason = (input.reason ?? "").trim().slice(0, PROGRAM_NOTE_MAX);
   if (!reason) return { success: false, error: "Escribí el motivo de la baja." };
   const fecha = dayToDate(checked.day);
+  const notAllowed = await programManageError(user, column);
+  if (notAllowed) return { success: false, error: notAllowed };
 
   return prisma.$transaction(async (tx) => {
     const row = await lockPadronRow(tx, dni);
@@ -212,12 +218,25 @@ export async function getWithdrawnPrograms(dni: string, db: typeof prisma | Pris
   return new Set(rows.filter((r) => r.tipo === "BAJA").map((r) => r.programa));
 }
 
-export type ProgramOption = { column: PadronProgramColumn; label: string };
+export type ProgramOption = {
+  column: PadronProgramColumn;
+  label: string;
+  /** Área que tiene a cargo el programa, si tiene. */
+  areaName: string | null;
+  /** Si quien mira puede darle altas y bajas en este programa. */
+  canManage: boolean;
+};
 
-/** En qué programas está hoy la persona y en cuáles se la puede dar de alta. */
-export async function getProgramEnrollment(dni: string): Promise<{ inPadron: boolean; active: ProgramOption[]; available: ProgramOption[] }> {
-  const row = await prisma.padronUnificado.findUnique({ where: { dni } });
-  const all = PADRON_PROGRAMS.map((p) => ({ column: p.column, label: p.label }));
+/** En qué programas está hoy la persona y en cuáles se la puede dar de alta, según quién mira. */
+export async function getProgramEnrollment(
+  dni: string,
+  viewer: { role?: string | null; areaId?: string | null } = {}
+): Promise<{ inPadron: boolean; active: ProgramOption[]; available: ProgramOption[] }> {
+  const [row, owners] = await Promise.all([prisma.padronUnificado.findUnique({ where: { dni } }), getProgramOwners()]);
+  const all: ProgramOption[] = PADRON_PROGRAMS.map((p) => {
+    const owner = owners.get(p.column);
+    return { column: p.column, label: p.label, areaName: owner?.areaName ?? null, canManage: canManageProgram(viewer, owner?.areaId) };
+  });
   if (!row) return { inPadron: false, active: [], available: all };
   const active = all.filter((p) => isInProgram(row as any, p.column));
   return { inPadron: true, active, available: all.filter((p) => !active.some((a) => a.column === p.column)) };

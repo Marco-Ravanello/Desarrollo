@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { ArrowDownRight, ArrowUpRight, History, Loader2, LogOut, Plus } from "lucide-react";
@@ -13,6 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import { enrollInProgramAction, withdrawFromProgramAction } from "@/app/(dashboard)/people/actions/program-enrollment-actions";
 import type { ProgramMovement, ProgramOption } from "@/services/program-enrollment";
+import { programHref } from "@/lib/padron-programs";
 
 const NOTE_MAX = 300;
 const ORIGEN: Record<string, string> = { IMPORTACION: "por planilla", TORMENTA: "por ficha de tormenta" };
@@ -181,12 +183,15 @@ export function ProgramEnrollmentPanel({
 }) {
   const [showAll, setShowAll] = useState(false);
   const shown = showAll ? history : history.slice(0, 5);
+  // Cada área da altas solo en sus programas (la conducción, en todos).
+  const enrollable = available.filter((p) => p.canManage);
+  const restricted = canManage && [...active, ...available].some((p) => !p.canManage);
 
   return (
     <div className="space-y-4 rounded-2xl border border-border/60 bg-card p-4 sm:p-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h3 className="text-sm font-bold text-foreground">Programas en los que está hoy</h3>
-        {canManage && <EnrollDialog dni={dni} available={available} today={today} />}
+        {canManage && enrollable.length > 0 && <EnrollDialog dni={dni} available={enrollable} today={today} />}
       </div>
 
       {active.length === 0 ? (
@@ -195,11 +200,17 @@ export function ProgramEnrollmentPanel({
         <ul className="flex flex-wrap gap-2">
           {active.map((p) => (
             <li key={p.column} className="flex items-center gap-1 rounded-xl border border-border/60 bg-muted/30 py-1 pl-3 pr-1 text-xs font-semibold text-foreground">
-              {p.label}
-              {canManage && <WithdrawDialog dni={dni} program={p} today={today} />}
+              <Link href={programHref(p.column)} className="hover:text-primary hover:underline">{p.label}</Link>
+              {canManage && p.canManage && <WithdrawDialog dni={dni} program={p} today={today} />}
             </li>
           ))}
         </ul>
+      )}
+
+      {restricted && (
+        <p className="text-xs text-muted-foreground">
+          Las altas y bajas de cada programa las da el área que lo tiene a cargo. Acá ves los botones de los programas que maneja tu área.
+        </p>
       )}
 
       <div className="space-y-2 border-t border-border/40 pt-3">

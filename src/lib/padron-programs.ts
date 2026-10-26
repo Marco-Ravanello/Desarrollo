@@ -67,3 +67,17 @@ export function removeProgramFromList(list: string | null | undefined, column: P
   const items = splitProgramList(list).filter((p) => programColumnFor(p) !== column);
   return items.length ? items.join(" | ") : null;
 }
+
+/** Cada programa tiene su página en /people/programas/<slug>, con la columna sin "prog_". */
+export function programSlug(column: PadronProgramColumn): string {
+  return column.slice("prog_".length);
+}
+
+export function programFromSlug(slug: string | null | undefined) {
+  const column = `prog_${(slug ?? "").trim()}`;
+  return isPadronProgramColumn(column) ? findPadronProgram(column)! : null;
+}
+
+export function programHref(column: PadronProgramColumn): string {
+  return `/people/programas/${programSlug(column)}`;
+}
