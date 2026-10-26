@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import {
   CheckCircle2, Circle, Trash2, Plus, Search, Calendar as CalendarIcon,
-  AlertTriangle, Filter, Sparkles, FileText, Clock
+  AlertTriangle, Filter, Sparkles, FileText, Clock, Users
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,6 +14,8 @@ import { addTaskAction, toggleTaskAction, deleteTaskAction } from "./actions";
 import { toast } from "sonner";
 import Link from "next/link";
 import { diaAR, diaDeVencimiento, diasEntre, formatVencimiento } from "@/lib/fechas";
+import { parseViewerIds } from "@/lib/tasks";
+import { EditTaskDialog, type ShareableUser } from "./edit-task-dialog";
 
 type PriorityType = "BAJA" | "MEDIA" | "ALTA" | "URGENTE";
 
@@ -28,9 +30,12 @@ interface TaskItem {
   createdAt: string | Date;
   /** Seguimiento agendado desde un expediente. */
   case?: { id: string; title: string } | null;
+  /** Con quién se comparte ("id1,id2"). */
+  viewerIds?: string | null;
 }
 
-export function TaskList({ initialTasks, userId }: { initialTasks: TaskItem[], userId: string }) {
+export function TaskList({ initialTasks, userId, users = [] }: { initialTasks: TaskItem[]; userId: string; users?: ShareableUser[] }) {
+  const userName = new Map(users.map((u) => [u.id, u.name]));
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [dueDate, setDueDate] = useState("");
@@ -412,6 +417,15 @@ export function TaskList({ initialTasks, userId }: { initialTasks: TaskItem[], u
                         </p>
                       )}
 
+                      {parseViewerIds(t.viewerIds).length > 0 && (
+                        <p className="flex items-center gap-1 text-xs text-muted-foreground">
+                          <Users className="h-3 w-3 shrink-0" />
+                          <span className="truncate">
+                            Compartida con {parseViewerIds(t.viewerIds).map((id) => userName.get(id) ?? "un usuario dado de baja").join(", ")}
+                          </span>
+                        </p>
+                      )}
+
                       {t.case && (
                         <Link
                           href={`/cases/${t.case.id}`}
@@ -425,6 +439,7 @@ export function TaskList({ initialTasks, userId }: { initialTasks: TaskItem[], u
                   </div>
 
                   <div className="flex items-center justify-end gap-2 shrink-0 border-t sm:border-t-0 pt-2 sm:pt-0 border-border/30">
+                    <EditTaskDialog task={t} users={users} />
                     <Button
                       variant="ghost"
                       size="icon"
@@ -433,6 +448,7 @@ export function TaskList({ initialTasks, userId }: { initialTasks: TaskItem[], u
                       className="h-8 w-8 text-muted-foreground hover:text-rose-500 hover:bg-rose-500/10 rounded-xl transition-colors"
                     >
                       <Trash2 className="h-4 w-4" />
+                      <span className="sr-only">Borrar la tarea {t.title}</span>
                     </Button>
                   </div>
                 </CardContent>

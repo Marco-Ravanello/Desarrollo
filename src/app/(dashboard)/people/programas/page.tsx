@@ -7,7 +7,9 @@ import { auth } from "@/auth";
 import { canAssignProgramArea } from "@/lib/program-ownership";
 import { formatNumber, plural } from "@/lib/formato";
 import { getAreaShortName } from "@/lib/area-theme";
+import prisma from "@/lib/prisma";
 import { getProgramSummaries } from "@/services/programs";
+import { ProgramAreaSelect } from "@/components/programs/program-area-select";
 import { PageHeader } from "@/components/layout/page-header";
 import { PageBreadcrumbs } from "@/components/layout/breadcrumbs-context";
 import { Card } from "@/components/ui/card";
@@ -20,8 +22,11 @@ export default async function ProgramsPage() {
   const session = await auth();
   if (!session?.user?.id) redirect("/login");
 
-  const programs = await getProgramSummaries();
   const canAssign = canAssignProgramArea(session.user.role);
+  const [programs, areas] = await Promise.all([
+    getProgramSummaries(),
+    canAssign ? prisma.area.findMany({ select: { id: true, name: true }, orderBy: { name: "asc" } }) : Promise.resolve([]),
+  ]);
   const withoutArea = programs.filter((p) => !p.owner).length;
   const myArea = session.user.areaId;
   const total = programs.reduce((a, p) => a + p.people, 0);
@@ -48,7 +53,7 @@ export default async function ProgramsPage() {
       {canAssign && withoutArea > 0 && (
         <div role="status" className="rounded-2xl border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-foreground">
           {withoutArea === 1 ? "Hay 1 programa sin área a cargo." : `Hay ${withoutArea} programas sin área a cargo.`}{" "}
-          Mientras no tengan área, cualquiera que carga datos les puede dar altas y bajas. El área se elige en la página de cada programa.
+          Mientras no tengan área, cualquiera que carga datos les puede dar altas y bajas. Elegila en la columna “Área a cargo”: se guarda al elegirla.
         </div>
       )}
 
@@ -73,7 +78,9 @@ export default async function ProgramsPage() {
                 </TableCell>
                 <TableCell className="text-right tabular-nums">{formatNumber(p.people)}</TableCell>
                 <TableCell>
-                  {p.owner ? (
+                  {canAssign ? (
+                    <ProgramAreaSelect column={p.column} label={p.label} currentAreaId={p.owner?.areaId ?? null} areas={areas} />
+                  ) : p.owner ? (
                     <span className={p.owner.areaId === myArea ? "font-semibold text-primary dark:text-blue-300" : "text-foreground"}>
                       {getAreaShortName(p.owner.areaName)}
                       {p.owner.areaId === myArea && <span className="font-normal text-muted-foreground"> (tu área)</span>}
