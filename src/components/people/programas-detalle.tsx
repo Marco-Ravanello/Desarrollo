@@ -19,8 +19,8 @@ export function ProgramasDetalle({
     return (
       <EmptyMessage
         compact
-        title="No figura en ningún programa social"
-        description="Si cobra alguno, aparece acá cuando se importa el padrón."
+        title="No hay detalle de programas"
+        description="Cuando se la da de alta en un programa o se importa una planilla, el detalle aparece acá."
         icon={Layers}
         className="rounded-2xl border border-dashed border-border/60"
       />

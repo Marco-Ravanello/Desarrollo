@@ -30,12 +30,15 @@ import { RememberVisit } from "@/components/search/remember-visit";
 import { PageHeader } from "@/components/layout/page-header";
 import { EmptyMessage } from "@/components/ui/empty-message";
 import { ProgramasDetalle } from "@/components/people/programas-detalle";
+import { ProgramEnrollmentPanel } from "@/components/people/program-enrollment";
+import { getProgramEnrollment, getProgramHistory } from "@/services/program-enrollment";
+import { todayInArgentina } from "@/lib/follow-up-dates";
 import { GrupoFamiliarLinks } from "@/components/people/grupo-familiar-links";
 import { FichaHistorialView } from "@/components/people/ficha-historial";
 import { plural } from "@/lib/formato";
 import { getCaseStatusConfig } from "@/lib/status-styles";
 import { isSensitiveArea } from "@/lib/sensitive-areas";
-import { canEditSocialRecords, hasPermission, PERMISSIONS } from "@/lib/permissions";
+import { canEditSocialRecords, canManageProgramEnrollment, hasPermission, PERMISSIONS } from "@/lib/permissions";
 import { formatFecha, formatFechaHora } from "@/lib/fechas";
 import { barrioLabel } from "@/lib/person-display";
 import { personTitle } from "@/lib/page-titles";
@@ -82,7 +85,7 @@ export default async function PersonDetailPage({
   const dni = person?.dni || cleanDni(id);
   if (!dni) notFound();
 
-  const [ficha, historial, grupo, registroFamily, areas, cambiosDatos, editData, addressOptions] = await Promise.all([
+  const [ficha, historial, grupo, registroFamily, areas, cambiosDatos, editData, addressOptions, enrollment, programHistory] = await Promise.all([
     getFichaSocialByDniFromDb(dni),
     getFichaHistorial(dni, { canViewSensitive }),
     getGrupoFamiliar(dni, { canViewSensitive }),
@@ -91,7 +94,10 @@ export default async function PersonDetailPage({
     getPersonDataChanges(dni),
     person && canEdit ? getPersonEditData(dni) : Promise.resolve(null),
     person && canEdit ? getAddressOptions() : Promise.resolve(null),
+    getProgramEnrollment(dni),
+    getProgramHistory(dni),
   ]);
+  const canManagePrograms = canManageProgramEnrollment(userRole) && (Boolean(person) || enrollment.inPadron);
 
   // Sin legajo ni padrón, pero con fichas de emergencia: se muestra lo que hay.
   if (!person && historial.fichasTormenta.length === 0) notFound();
@@ -106,7 +112,10 @@ export default async function PersonDetailPage({
   const documents: any[] = (person?.documents || []).filter((d: any) => !d.caseId || allowedCaseIds.has(d.caseId));
 
   const programas: string[] = ficha.programas_activos || person?.programasActivos || [];
-  const totalProgramas = Object.keys(ficha.detalle_programas || {}).length || programas.length;
+  // Con la persona en el padrón cuenta lo mismo que muestra "Programas en los que está hoy".
+  const totalProgramas = enrollment.inPadron
+    ? enrollment.active.length
+    : Object.keys(ficha.detalle_programas || {}).length || programas.length;
   const historiaCount = historial.intervencionesTotal + historial.fichasTormenta.length + cambiosDatos.length;
   const familiaCount = grupo.declarados.length + grupo.mismoDomicilio.length;
   const activeTab: Tab = TABS.includes(tab as Tab) ? (tab as Tab) : "datos";
@@ -211,7 +220,17 @@ export default async function PersonDetailPage({
           </TabsContent>
 
           <TabsContent value="programas" className="p-4 sm:p-6">
-            <ProgramasDetalle detalle={ficha.detalle_programas} nombreTitular={ficha.nombre_detectado} />
+            <div className="space-y-6">
+              <ProgramEnrollmentPanel
+                dni={dni}
+                active={enrollment.active}
+                available={enrollment.available}
+                history={programHistory}
+                canManage={canManagePrograms}
+                today={todayInArgentina()}
+              />
+              <ProgramasDetalle detalle={ficha.detalle_programas} nombreTitular={ficha.nombre_detectado} />
+            </div>
           </TabsContent>
 
           <TabsContent value="expedientes" className="p-4 sm:p-6 space-y-6">

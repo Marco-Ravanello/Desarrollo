@@ -1,5 +1,6 @@
 import prisma from "@/lib/prisma";
 import { normalizeDni } from "@/lib/padron-import";
+import { todayInArgentina } from "@/lib/follow-up-dates";
 
 // Personas de las fichas de tormenta en el padrón unificado.
 
@@ -81,6 +82,20 @@ export async function addStormPersonToPadron(data: StormPadronData, userId: stri
       barrio,
     },
   });
+
+  await prisma.padronMovimiento
+    .create({
+      data: {
+        dni,
+        programa: STORM_PROGRAM.column,
+        tipo: "ALTA",
+        fecha: new Date(`${todayInArgentina(now)}T00:00:00.000Z`),
+        motivo: "Ficha de tormenta",
+        origen: "TORMENTA",
+        userId,
+      },
+    })
+    .catch((err) => console.warn("No se pudo anotar el alta en el programa:", err));
 
   await prisma.auditLog
     .create({

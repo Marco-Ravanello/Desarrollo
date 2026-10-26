@@ -54,7 +54,7 @@ export async function importPadronChunkAction(
   const name = String(fileName || "").slice(0, 120);
 
   try {
-    const { counts, errors } = await applyPadronImport(access.records, program.column, program.label, name);
+    const { counts, errors } = await applyPadronImport(access.records, program.column, program.label, name, session.user.id);
 
     await prisma.auditLog
       .create({
