@@ -19,10 +19,10 @@ describe("etiquetas de los expedientes", () => {
     const person = await prisma.person.create({ data: { dni: "95000001", firstName: "Ana", lastName: "Prueba" } });
     const a = await prisma.case.create({ data: { title: "Uno", areaId: social.id, personId: person.id } });
     const b = await prisma.case.create({ data: { title: "Dos", areaId: social.id, personId: person.id, status: "CERRADO", labels: ["ADULTO_MAYOR"] } });
-    const c = await prisma.case.create({ data: { title: "Tres", areaId: vg.id, personId: person.id, labels: ["ADULTO_MAYOR", "SALUD"] } });
+    const c = await prisma.case.create({ data: { title: "Tres", areaId: vg.id, personId: person.id, labels: ["ADULTO_MAYOR", "INTERNACION"] } });
 
     loginAs(auditor as any);
-    expect((await updateCaseLabelsAction(a.id, ["SALUD"])).success).toBe(false);
+    expect((await updateCaseLabelsAction(a.id, ["INTERNACION"])).success).toBe(false);
 
     loginAs(operativo as any);
     // Las que no son de la lista se ignoran; el orden es el de la lista.
@@ -32,14 +32,14 @@ describe("etiquetas de los expedientes", () => {
     // Sin permiso para Violencia de Género no se pueden cambiar las de ese expediente.
     expect((await updateCaseLabelsAction(c.id, [])).success).toBe(false);
 
-    await updateCaseLabelsAction(a.id, ["ADULTO_MAYOR", "SALUD"]);
+    await updateCaseLabelsAction(a.id, ["ADULTO_MAYOR", "INTERNACION"]);
     const events = await getCaseEvents({ id: a.id, createdAt: a.createdAt, areaName: social.name }, []);
     expect(events.filter((e) => e.kind === "ETIQUETAS").map((e) => e.detail)).toEqual([
       "Agregó: Adulto mayor, Discapacidad.",
-      "Agregó: Salud. Quitó: Discapacidad.",
+      "Agregó: Internación. Quitó: Discapacidad.",
     ]);
     // Guardar lo mismo no agrega nada a la historia.
-    await updateCaseLabelsAction(a.id, ["SALUD", "ADULTO_MAYOR"]);
+    await updateCaseLabelsAction(a.id, ["INTERNACION", "ADULTO_MAYOR"]);
     expect(await prisma.auditLog.count({ where: { action: "CASE_LABELS", entityId: a.id } })).toBe(2);
 
     const filtered = await getAllCases({ label: "ADULTO_MAYOR", canViewSensitive: false });
@@ -49,10 +49,10 @@ describe("etiquetas de los expedientes", () => {
 
     const counts = await getCaseLabelCounts({ canViewSensitive: false });
     expect(counts.find((x) => x.key === "ADULTO_MAYOR")).toMatchObject({ total: 2, open: 1 });
-    expect(counts.find((x) => x.key === "SALUD")).toMatchObject({ total: 1, open: 1 });
-    expect(counts.find((x) => x.key === "VIVIENDA")).toMatchObject({ total: 0, open: 0 });
+    expect(counts.find((x) => x.key === "INTERNACION")).toMatchObject({ total: 1, open: 1 });
+    expect(counts.find((x) => x.key === "EMBARAZO")).toMatchObject({ total: 0, open: 0 });
     const all = await getCaseLabelCounts({ canViewSensitive: true });
-    expect(all.find((x) => x.key === "SALUD")).toMatchObject({ total: 2, open: 2 });
+    expect(all.find((x) => x.key === "INTERNACION")).toMatchObject({ total: 2, open: 2 });
     // Reportes: solo los abiertos en el período.
     const none = await getCaseLabelCounts({ canViewSensitive: true, createdFrom: new Date("2099-01-01") });
     expect(none.every((x) => x.total === 0)).toBe(true);

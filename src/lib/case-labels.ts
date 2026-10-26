@@ -6,13 +6,9 @@ export const CASE_LABELS = [
   { key: "DISCAPACIDAD", label: "Discapacidad" },
   { key: "NINEZ", label: "Niñez y adolescencia" },
   { key: "EMBARAZO", label: "Embarazo" },
-  { key: "SALUD", label: "Salud" },
+  { key: "INTERNACION", label: "Internación" },
   { key: "CONSUMO", label: "Consumo problemático" },
   { key: "SITUACION_CALLE", label: "Situación de calle" },
-  { key: "VIVIENDA", label: "Vivienda" },
-  { key: "ALIMENTACION", label: "Alimentación" },
-  { key: "SIN_INGRESOS", label: "Sin ingresos" },
-  { key: "DOCUMENTACION", label: "Documentación" },
 ] as const;
 
 export type CaseLabelKey = (typeof CASE_LABELS)[number]["key"];
@@ -34,7 +30,7 @@ export function normalizeCaseLabels(input: unknown): CaseLabelKey[] {
   return CASE_LABELS.map((l) => l.key).filter((k) => wanted.has(k));
 }
 
-/** Para la historia del expediente: "Agregó: Adulto mayor. Quitó: Salud." (null si no cambió nada). */
+/** Para la historia del expediente: "Agregó: Adulto mayor. Quitó: Internación." (null si no cambió nada). */
 export function describeLabelChange(before: string[], after: string[]): string | null {
   const added = after.filter((k) => !before.includes(k)).map((k) => caseLabelName(k) ?? k);
   const removed = before.filter((k) => !after.includes(k)).map((k) => caseLabelName(k) ?? k);
