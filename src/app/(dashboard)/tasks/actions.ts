@@ -6,6 +6,7 @@ import { auth } from "@/auth";
 import prisma from "@/lib/prisma";
 import { actionErrorMessage } from "@/lib/action-error";
 import { followUpDueDate } from "@/lib/follow-up-dates";
+import { updateTask, type TaskEdit } from "@/services/tasks";
 
 type TaskActionResult = { success: true } | { success: false; error: string };
 
@@ -92,5 +93,22 @@ export async function deleteTaskAction(id: string): Promise<TaskActionResult> {
 
   revalidatePath("/tasks");
   revalidatePath("/admin/calendar");
+  return { success: true };
+}
+
+/** Guarda los cambios de una tarea (título, notas, fecha, prioridad y con quién se comparte). */
+export async function updateTaskAction(id: string, input: TaskEdit): Promise<TaskActionResult> {
+  const session = await auth();
+  if (!session?.user?.id) return { success: false, error: "Tu sesión expiró. Volvé a iniciar sesión." };
+  try {
+    const result = await updateTask(session.user, id, input);
+    if (!result.success) return result;
+  } catch (error) {
+    console.error("Error en updateTaskAction:", error);
+    return { success: false, error: actionErrorMessage(error, "No se pudo guardar la tarea") };
+  }
+  revalidatePath("/tasks");
+  revalidatePath("/admin/calendar");
+  revalidatePath("/dashboard");
   return { success: true };
 }
