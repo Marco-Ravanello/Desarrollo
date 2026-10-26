@@ -29,3 +29,41 @@ export type PadronProgramColumn = (typeof PADRON_PROGRAMS)[number]["column"];
 export function findPadronProgram(column: string) {
   return PADRON_PROGRAMS.find((p) => p.column === column);
 }
+
+export function isPadronProgramColumn(column: unknown): column is PadronProgramColumn {
+  return typeof column === "string" && PADRON_PROGRAMS.some((p) => p.column === column);
+}
+
+const stripAccents = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "");
+
+/**
+ * La columna de un programa a partir de su nombre. Las columnas se armaron con el nombre de cada programa
+ * sin tildes ni signos ("Curso de Árbitros (Deportes)" → prog_curso_de_arbitros_deportes), así que el
+ * nombre que figura en el padrón o en una participación lleva siempre a su columna. Null si no es de la lista.
+ */
+export function programColumnFor(name: string | null | undefined): PadronProgramColumn | null {
+  const raw = (name ?? "").trim();
+  if (!raw) return null;
+  const byLabel = PADRON_PROGRAMS.find((p) => p.label.toLowerCase() === raw.toLowerCase());
+  if (byLabel) return byLabel.column;
+  const slug = "prog_" + stripAccents(raw).toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "");
+  return isPadronProgramColumn(slug) ? slug : null;
+}
+
+/** Los programas de `programas_activos` ("A | B | C") como lista. */
+export function splitProgramList(list: string | null | undefined): string[] {
+  return (list ?? "").split("|").map((p) => p.trim()).filter(Boolean);
+}
+
+/** Suma el programa a `programas_activos` si no estaba (con cualquier forma de escribirlo). */
+export function addProgramToList(list: string | null | undefined, column: PadronProgramColumn): string {
+  const items = splitProgramList(list);
+  if (items.some((p) => programColumnFor(p) === column)) return items.join(" | ");
+  return [...items, findPadronProgram(column)!.label].join(" | ");
+}
+
+/** Saca el programa de `programas_activos` (con cualquier forma de escribirlo); null si queda vacío. */
+export function removeProgramFromList(list: string | null | undefined, column: PadronProgramColumn): string | null {
+  const items = splitProgramList(list).filter((p) => programColumnFor(p) !== column);
+  return items.length ? items.join(" | ") : null;
+}

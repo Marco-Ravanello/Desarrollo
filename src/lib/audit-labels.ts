@@ -48,6 +48,8 @@ const ACTIONS: Record<string, { label: string; group: AuditGroup }> = {
   // Personas y padrón
   ADD_FAMILY_MEMBER: { label: "Sumó un integrante a la familia", group: "personas" },
   PADRON_IMPORT: { label: "Importó una planilla al padrón", group: "personas" },
+  PADRON_PROGRAMA_ALTA: { label: "Dio de alta a una persona en un programa", group: "personas" },
+  PADRON_PROGRAMA_BAJA: { label: "Dio de baja a una persona de un programa", group: "personas" },
   PADRON_GEO_UPDATE: { label: "Ubicó una dirección en el mapa", group: "personas" },
   PADRON_DUPLICADO_UNIDO: { label: "Unió dos personas repetidas", group: "personas" },
   PADRON_DUPLICADO_DESCARTADO: { label: "Marcó que no son la misma persona", group: "personas" },

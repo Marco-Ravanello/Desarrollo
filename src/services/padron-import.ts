@@ -2,6 +2,7 @@ import prisma from "@/lib/prisma";
 import type { PadronUnificado, Prisma } from "@prisma/client";
 import type { PadronImportRecord, RowProblem } from "@/lib/padron-import";
 import type { PadronProgramColumn } from "@/lib/padron-programs";
+import { todayInArgentina } from "@/lib/follow-up-dates";
 
 // Suma personas de una planilla al padrón unificado y las marca en un programa.
 // A quien ya está en el padrón solo se le completan los datos vacíos: nunca se
@@ -90,7 +91,8 @@ export async function applyPadronImport(
   records: PadronImportRecord[],
   column: PadronProgramColumn,
   label: string,
-  fileName: string
+  fileName: string,
+  userId?: string | null
 ): Promise<{ counts: PadronImportCounts; errors: RowProblem[] }> {
   const now = new Date();
   const today = `${pad(now.getDate())}/${pad(now.getMonth() + 1)}/${now.getFullYear()}`;
@@ -144,6 +146,22 @@ export async function applyPadronImport(
             direccion: record.direccion || existing?.direccion || null,
             localidad: record.localidad || existing?.localidad || null,
             barrio: record.barrio || existing?.barrio || null,
+          })),
+        });
+      }
+
+      if (joining.length > 0) {
+        // La historia de altas: cada persona que entra al programa por la planilla.
+        const fecha = new Date(`${todayInArgentina(now)}T00:00:00.000Z`);
+        await tx.padronMovimiento.createMany({
+          data: joining.map(({ record }) => ({
+            dni: record.dni,
+            programa: column,
+            tipo: "ALTA",
+            fecha,
+            motivo: fileName ? `Planilla ${fileName.slice(0, 120)}` : "Importación de planilla",
+            origen: "IMPORTACION",
+            userId: userId ?? null,
           })),
         });
       }

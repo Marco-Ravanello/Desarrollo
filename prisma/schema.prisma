@@ -596,6 +596,29 @@ model PadronDuplicadoDescartado {
   @@map("padron_duplicados_descartados")
 }
 
+/// Altas y bajas de una persona en un programa del padrón, con fecha y quién la hizo. Es la historia:
+/// si la persona está hoy en el programa lo dice su columna prog_... en padron_unificado.
+model PadronMovimiento {
+  id        String   @id @default(cuid())
+  dni       String
+  /// Columna del programa en padron_unificado (prog_...).
+  programa  String
+  /// ALTA o BAJA
+  tipo      String
+  /// Día en que empezó o terminó (medianoche UTC).
+  fecha     DateTime
+  /// Motivo de la baja, o nota del alta.
+  motivo    String?
+  /// APP (desde la ficha), IMPORTACION (planilla) o TORMENTA (ficha de emergencia).
+  origen    String   @default("APP")
+  userId    String?
+  createdAt DateTime @default(now())
+
+  @@index([dni])
+  @@index([programa, fecha])
+  @@map("padron_movimientos")
+}
+
 model ParticipacionPrograma {
   id                 BigInt   @id @default(autoincrement())
   dni                String

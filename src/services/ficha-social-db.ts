@@ -1,4 +1,6 @@
 import prisma from "@/lib/prisma";
+import { getWithdrawnPrograms } from "@/services/program-enrollment";
+import { programColumnFor } from "@/lib/padron-programs";
 import { cleanDni, type FichaSocialPersonaResponse, type RelacionFamiliar, type FichaSocialProgramaDetalle } from "@/services/ficha-social";
 
 // Consulta directa a la base. Vive aparte de ficha-social.ts porque ese archivo
@@ -26,10 +28,18 @@ export async function getFichaSocialByDniFromDb(rawDni: string): Promise<FichaSo
 
     const persona = padronRows[0];
 
-    const partRows: any[] = await prisma.$queryRawUnsafe(
-      `SELECT * FROM participaciones_programas WHERE dni = $1 ORDER BY programa ASC;`,
-      dni
-    );
+    const [allPartRows, withdrawn]: [any[], Set<string>] = await Promise.all([
+      prisma.$queryRawUnsafe<any[]>(
+        `SELECT * FROM participaciones_programas WHERE dni = $1 ORDER BY programa ASC;`,
+        dni
+      ),
+      getWithdrawnPrograms(dni).catch(() => new Set<string>()),
+    ]);
+    // De los programas de los que se dio de baja no se muestra el detalle (queda en la historia de altas y bajas).
+    const partRows = allPartRows.filter((p) => {
+      const column = programColumnFor(p.programa);
+      return !column || !withdrawn.has(column);
+    });
 
     const relaciones: RelacionFamiliar[] = [];
     if (persona.nombres_familiares) {

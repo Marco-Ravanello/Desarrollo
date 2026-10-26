@@ -6,6 +6,7 @@ import { auth } from "@/auth";
 import { hasPermission, PERMISSIONS } from "@/lib/permissions";
 import { getReportData, parseReportPeriod } from "@/services/reports";
 import { getCaseLabelCounts } from "@/services/case-labels";
+import { getProgramMovementCounts } from "@/services/program-enrollment";
 import { getCaseStatusConfig, getOrderStatusConfig } from "@/lib/status-styles";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -48,13 +49,14 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
 
   const { desde, hasta } = await searchParams;
   const period = parseReportPeriod(desde, hasta);
-  const [data, labelCounts] = await Promise.all([
+  const [data, labelCounts, programMoves] = await Promise.all([
     getReportData(period),
     getCaseLabelCounts({
       canViewSensitive: hasPermission(session.user.role as any, PERMISSIONS.VIEW_SENSITIVE_CASES),
       createdFrom: period.from,
       createdTo: period.to,
     }),
+    getProgramMovementCounts(period.from, period.to),
   ]);
   const periodLabel = `${shortDate(period.fromStr)} al ${shortDate(period.toStr)}`;
   const fileSuffix = `${period.fromStr}_${period.toStr}`;
@@ -318,6 +320,57 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
                     </TableCell>
                     <TableCell className="text-right font-medium tabular-nums">{l.cantidad.toLocaleString("es-AR")}</TableCell>
                     <TableCell className="text-right tabular-nums">{l.sinCerrar.toLocaleString("es-AR")}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card className="shadow-none">
+        <CardHeader className="flex flex-row items-center justify-between gap-3">
+          <div>
+            <CardTitle className="text-base">Altas y bajas en los programas</CardTitle>
+            <CardDescription>Personas que entraron a cada programa o salieron de él en el período, desde su ficha o por planilla.</CardDescription>
+          </div>
+          {programMoves.length > 0 && (
+            <UniversalExportMenu
+              label="Exportar"
+              data={programMoves.map((p) => ({ programa: p.label, altas: p.altas, bajas: p.bajas }))}
+              filename={`reporte_altas_bajas_${fileSuffix}`}
+              title="Altas y bajas en los programas"
+              subtitle={`Período: ${periodLabel}`}
+              columns={[
+                { header: "Programa", accessorKey: "programa" },
+                { header: "Altas", accessorKey: "altas" },
+                { header: "Bajas", accessorKey: "bajas" },
+              ]}
+            />
+          )}
+        </CardHeader>
+        <CardContent>
+          {programMoves.length === 0 ? (
+            <EmptyMessage
+              compact
+              title="No hubo altas ni bajas en este período"
+              description="Se registran cuando se da de alta o de baja a una persona desde su ficha, o cuando se importa una planilla."
+            />
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Programa</TableHead>
+                  <TableHead className="text-right">Altas</TableHead>
+                  <TableHead className="text-right">Bajas</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {programMoves.map((p) => (
+                  <TableRow key={p.column}>
+                    <TableCell className="font-medium">{p.label}</TableCell>
+                    <TableCell className="text-right tabular-nums">{p.altas.toLocaleString("es-AR")}</TableCell>
+                    <TableCell className="text-right tabular-nums">{p.bajas.toLocaleString("es-AR")}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>

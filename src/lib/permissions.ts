@@ -94,6 +94,11 @@ export function canManageEmergencyStock(role?: Role | string | null): boolean {
   return canEditSocialRecords(role) && !isEmergencySurveyor(role);
 }
 
+/** Dar de alta y de baja a una persona en un programa del padrón: quien puede editar sus datos (no el relevador). */
+export function canManageProgramEnrollment(role?: Role | string | null): boolean {
+  return canEditSocialRecords(role) && !isEmergencySurveyor(role);
+}
+
 /** Ver las entregas de emergencia y sus constancias: quien maneja el stock y Auditoría (no el relevador). */
 export function canViewStormDeliveries(role?: Role | string | null): boolean {
   return canManageEmergencyStock(role) || role === "AUDITOR";
