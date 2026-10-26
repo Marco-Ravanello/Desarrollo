@@ -2,7 +2,7 @@
 
 import { useState, type ReactNode } from "react";
 import Link from "next/link";
-import { ChevronDown, CopyCheck, Gauge, MoreHorizontal, Network, Plus, Shuffle, Upload } from "lucide-react";
+import { ChevronDown, CopyCheck, Gauge, Layers, MoreHorizontal, Network, Plus, Shuffle, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -38,6 +38,11 @@ export function PeopleHeaderActions({ canImport, importContent }: { canImport: b
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-56 rounded-2xl p-1.5">
+          <DropdownMenuItem asChild className={itemClass}>
+            <Link href="/people/programas">
+              <Layers className="h-4 w-4 text-muted-foreground" /> Programas
+            </Link>
+          </DropdownMenuItem>
           <DropdownMenuItem asChild className={itemClass}>
             <Link href="/ficha-social/cruces">
               <Shuffle className="h-4 w-4 text-muted-foreground" /> Cruces de programas

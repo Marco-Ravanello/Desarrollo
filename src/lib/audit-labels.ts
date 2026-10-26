@@ -50,6 +50,7 @@ const ACTIONS: Record<string, { label: string; group: AuditGroup }> = {
   PADRON_IMPORT: { label: "Importó una planilla al padrón", group: "personas" },
   PADRON_PROGRAMA_ALTA: { label: "Dio de alta a una persona en un programa", group: "personas" },
   PADRON_PROGRAMA_BAJA: { label: "Dio de baja a una persona de un programa", group: "personas" },
+  PROGRAMA_AREA: { label: "Cambió el área a cargo de un programa", group: "personas" },
   PADRON_GEO_UPDATE: { label: "Ubicó una dirección en el mapa", group: "personas" },
   PADRON_DUPLICADO_UNIDO: { label: "Unió dos personas repetidas", group: "personas" },
   PADRON_DUPLICADO_DESCARTADO: { label: "Marcó que no son la misma persona", group: "personas" },
@@ -266,6 +267,8 @@ export function auditLink(log: { action: string; entity: string; entityId: strin
       return "/admin/users";
     case "Area":
       return "/admin/budget";
+    case "Programa":
+      return entityId.startsWith("prog_") ? `/people/programas/${entityId.slice(5)}` : null;
     case "SystemSetting":
       return entityId === "muni-emergency-mode" ? "/admin/emergency" : "/admin/settings";
     case "StormVictimRecord":

@@ -94,7 +94,7 @@ export default async function PersonDetailPage({
     getPersonDataChanges(dni),
     person && canEdit ? getPersonEditData(dni) : Promise.resolve(null),
     person && canEdit ? getAddressOptions() : Promise.resolve(null),
-    getProgramEnrollment(dni),
+    getProgramEnrollment(dni, { role: userRole, areaId: session?.user?.areaId }),
     getProgramHistory(dni),
   ]);
   const canManagePrograms = canManageProgramEnrollment(userRole) && (Boolean(person) || enrollment.inPadron);
