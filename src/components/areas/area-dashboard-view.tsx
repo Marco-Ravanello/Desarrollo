@@ -247,7 +247,7 @@ export function AreaDashboardView({
               }`}
             >
               <span>Activos</span>
-              <Badge variant="secondary" className="text-xs px-1.5 py-0 rounded-md font-mono">
+              <Badge variant="secondary" className="text-xs px-1.5 py-0 rounded-md tabular-nums">
                 {stats.activeCases}
               </Badge>
             </button>

@@ -10,8 +10,14 @@ import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
 import { assignCaseAction } from "@/app/(dashboard)/cases/actions/case-actions";
+import { suggestAssignee } from "@/lib/team-workload";
+import { plural } from "@/lib/formato";
+import type { Role } from "@prisma/client";
 
-type Option = { id: string; name: string; sameArea: boolean };
+type Option = { id: string; name: string; sameArea: boolean; role: Role; open: number };
+
+const optionLabel = (o: Option, currentUserId: string) =>
+  `${o.name}${o.id === currentUserId ? " (vos)" : ""} · ${o.open === 0 ? "ningún expediente" : plural(o.open, "abierto")}`;
 
 const selectClass =
   "flex h-10 w-full rounded-xl border border-border/60 bg-muted/30 px-3 py-2 text-xs font-bold text-foreground focus:outline-none focus:ring-2 focus:ring-primary";
@@ -60,6 +66,7 @@ export function AssignCaseControl({
 
   const area = options.filter((o) => o.sameArea);
   const others = options.filter((o) => !o.sameArea);
+  const suggested = suggestAssignee(options);
 
   return (
     <Dialog
@@ -102,18 +109,27 @@ export function AssignCaseControl({
               {area.length > 0 && (
                 <optgroup label={areaLabel}>
                   {area.map((o) => (
-                    <option key={o.id} value={o.id}>{o.name}{o.id === currentUserId ? " (vos)" : ""}</option>
+                    <option key={o.id} value={o.id}>{optionLabel(o, currentUserId)}</option>
                   ))}
                 </optgroup>
               )}
               {others.length > 0 && (
                 <optgroup label="Conducción">
                   {others.map((o) => (
-                    <option key={o.id} value={o.id}>{o.name}{o.id === currentUserId ? " (vos)" : ""}</option>
+                    <option key={o.id} value={o.id}>{optionLabel(o, currentUserId)}</option>
                   ))}
                 </optgroup>
               )}
             </select>
+            {suggested && selected !== suggested.id && (
+              <p className="text-xs text-muted-foreground">
+                Con menos expedientes abiertos en el área: <span className="font-semibold text-foreground">{suggested.name}</span>{" "}
+                ({suggested.open === 0 ? "ninguno" : plural(suggested.open, "abierto")}).{" "}
+                <button type="button" onClick={() => setSelected(suggested.id)} className="font-semibold text-primary hover:underline">
+                  Elegir
+                </button>
+              </p>
+            )}
             {area.length === 0 && (
               <p className="text-xs text-muted-foreground">No hay usuarios activos cargados en {areaLabel}.</p>
             )}

@@ -82,7 +82,7 @@ export function InterventionItem({ row }: { row: InterventionRow }) {
 
   return (
     <div className="flex flex-col gap-2 sm:flex-row sm:gap-4 p-4 rounded-2xl border border-border/60 bg-muted/20 hover:border-border transition-colors">
-      <div className="text-xs font-mono font-bold text-muted-foreground flex items-baseline gap-2 sm:min-w-[92px] sm:flex-col sm:items-start sm:justify-center sm:gap-0 sm:border-r sm:border-border/40 sm:pr-3">
+      <div className="text-xs tabular-nums font-bold text-muted-foreground flex items-baseline gap-2 sm:min-w-[92px] sm:flex-col sm:items-start sm:justify-center sm:gap-0 sm:border-r sm:border-border/40 sm:pr-3">
         <span>{fecha}</span>
         <span className="text-xs text-muted-foreground">{hora}</span>
       </div>

@@ -1,4 +1,5 @@
 import prisma from "@/lib/prisma";
+import { currentMonthRange } from "@/lib/hr-labels";
 import { ContractType, HRStatus } from "@prisma/client";
 import { diaAR, diaDeVencimiento } from "@/lib/fechas";
 
@@ -37,8 +38,8 @@ export async function getHRRecordById(id: string) {
 }
 
 export async function getHRStats() {
-  const now = new Date();
-  const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  // "Ingresaron este mes" se cuenta por la fecha de ingreso, no por cuándo se cargó en la app.
+  const month = currentMonthRange();
 
   const [
     total,
@@ -46,24 +47,32 @@ export async function getHRStats() {
     newThisMonth,
     areasWithStaff,
     totalBudgetAgg,
-    budgetByAreaAgg
+    budgetByAreaAgg,
+    withSalary,
+    areasTotal,
+    inPayroll
   ] = await Promise.all([
     prisma.hRRecord.count(),
     prisma.hRRecord.count({ where: { status: 'ACTIVO' } }),
-    prisma.hRRecord.count({ where: { createdAt: { gte: firstDayOfMonth } } }),
+    prisma.hRRecord.count({ where: { startDate: { gte: month.from, lt: month.to } } }),
     prisma.hRRecord.groupBy({
       by: ['areaId'],
       _count: { _all: true },
       where: { NOT: { areaId: null } }
     }),
+    // Los sueldos son de quienes siguen en la planta: los dados de baja no cuentan.
     prisma.hRRecord.aggregate({
-      _sum: { salary: true }
+      _sum: { salary: true },
+      where: { NOT: { status: 'BAJA' } }
     }),
     prisma.hRRecord.groupBy({
       by: ['areaId'],
       _sum: { salary: true },
-      where: { NOT: { areaId: null } }
-    })
+      where: { NOT: [{ areaId: null }, { status: 'BAJA' }] }
+    }),
+    prisma.hRRecord.count({ where: { salary: { gt: 0 }, NOT: { status: 'BAJA' } } }),
+    prisma.area.count(),
+    prisma.hRRecord.count({ where: { NOT: { status: 'BAJA' } } })
   ]);
 
   const totalBudget = Number(totalBudgetAgg._sum.salary || 0);
@@ -75,8 +84,17 @@ export async function getHRStats() {
     }
   });
 
+  const staffByArea: Record<string, number> = {};
+  areasWithStaff.forEach(r => {
+    if (r.areaId) staffByArea[r.areaId] = r._count._all;
+  });
+
   return {
     total,
+    inPayroll,
+    withSalary,
+    areasTotal,
+    staffByArea,
     active,
     newThisMonth,
     areaCount: areasWithStaff.length,

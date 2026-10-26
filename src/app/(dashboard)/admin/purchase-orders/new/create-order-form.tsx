@@ -344,7 +344,7 @@ export function CreatePurchaseOrderForm({ providers, areas = [] }: { providers: 
                    </tbody>
                    <tfoot className="bg-muted/30">
                       <tr>
-                        <td colSpan={4} className="p-3 text-right font-bold text-muted-foreground">Total Ítems:</td>
+                        <td colSpan={4} className="p-3 text-right font-bold text-muted-foreground">Total:</td>
                         <td className="p-3 text-right font-bold text-blue-700 dark:text-blue-300">
                           ${items.reduce((acc, item) => acc + (parseFloat(item.totalPrice) || 0), 0).toLocaleString("es-AR")}
                         </td>

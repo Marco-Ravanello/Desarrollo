@@ -55,6 +55,16 @@ export async function exportInterventionsAction() {
   }
 }
 
+/** Nombres de las áreas, para la hoja "Áreas" de la planilla modelo. */
+export async function getImportAreasAction() {
+  const session = await auth();
+  if (!session?.user?.id || !MANAGEMENT_ROLES.includes(session.user.role)) {
+    return { success: false as const, error: "Tu rol no tiene permiso para importar datos." };
+  }
+  const areas = await prisma.area.findMany({ select: { name: true }, orderBy: { name: "asc" } });
+  return { success: true as const, areas: areas.map((a) => a.name) };
+}
+
 export async function importInterventionsAction(data: any[]) {
   const session = await auth();
   if (session?.user && !MANAGEMENT_ROLES.includes(session.user.role)) {

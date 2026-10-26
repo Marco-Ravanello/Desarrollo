@@ -137,6 +137,8 @@ const ROUTE_ACCESS: { prefix: string; allowed: (role: Role) => boolean }[] = [
   // Revisar y unir personas repetidas del padrón
   { prefix: "/people/duplicados", allowed: (r) => MANAGEMENT_ROLES.includes(r) },
   { prefix: "/cases/new", allowed: (r) => canEditSocialRecords(r) },
+  // Carga del equipo: la conducción y quien dirige un área
+  { prefix: "/cases/equipo", allowed: (r) => MANAGEMENT_ROLES.includes(r) || r === "DIRECTOR_AREA" },
   // Ubicar en el mapa las direcciones del padrón
   { prefix: "/maps/ubicar", allowed: (r) => MANAGEMENT_ROLES.includes(r) },
 ];

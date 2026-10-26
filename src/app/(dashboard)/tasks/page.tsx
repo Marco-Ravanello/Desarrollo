@@ -58,7 +58,7 @@ export default async function TasksPage() {
         <Card className="col-span-2 lg:col-span-1 bg-card text-card-foreground border border-border/60 rounded-2xl p-4 sm:p-5 shadow-sm flex flex-col justify-between">
           <div className="flex items-center justify-between">
             <span className="text-xs font-medium text-muted-foreground sm:text-sm">Progreso general</span>
-            <span className="text-xs font-bold font-mono text-primary">{progressPercentage}%</span>
+            <span className="text-xs font-bold tabular-nums text-primary">{progressPercentage}%</span>
           </div>
           <div className="my-3">
             <Progress value={progressPercentage} className="h-2 rounded-full" />
@@ -88,7 +88,7 @@ export default async function TasksPage() {
         <StatCard
           label="Tareas realizadas"
           value={completedTasks}
-          hint="Completadas exitosamente"
+          hint="Ya hechas"
           icon={CheckCircle2}
           tone="green"
         />

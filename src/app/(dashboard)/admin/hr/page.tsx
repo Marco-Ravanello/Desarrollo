@@ -33,6 +33,8 @@ import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { getAreaShortName } from "@/lib/area-theme";
 import { formatFechaCalendario } from "@/lib/fechas";
+import { formatNumber, formatPesos, plural } from "@/lib/formato";
+import { contractTypeLabel, hrStatusLabel } from "@/lib/hr-labels";
 
 export const metadata = { title: "Recursos Humanos" };
 
@@ -68,12 +70,24 @@ export default async function HRPage({
     color: a.color
   }));
 
+  const noSalaries = stats.withSalary === 0;
   const kpis = [
-    { title: "Personal", value: stats.total, icon: Users, tone: "blue" as const, sub: "Agentes registrados" },
-    { title: "Presupuesto mensual", value: `$${stats.totalBudget.toLocaleString('es-AR')}`, icon: Wallet, tone: "green" as const, sub: "Costo total de nómina" },
-    { title: "Nuevos (Mes)", value: stats.newThisMonth, icon: UserPlus, tone: "purple" as const, sub: "Altas este período" },
-    { title: "Áreas Cubiertas", value: stats.areaCount, icon: BarChart2, tone: "orange" as const, sub: "Distribución municipal" },
+    { title: "Personal", value: formatNumber(stats.total), icon: Users, tone: "blue" as const, sub: plural(stats.active, "activo", "activos") + " hoy" },
+    {
+      title: "Sueldos del mes",
+      value: noSalaries ? "Sin cargar" : formatPesos(stats.totalBudget),
+      icon: Wallet,
+      tone: "green" as const,
+      sub: noSalaries
+        ? "Todavía no hay sueldos cargados"
+        : stats.withSalary < stats.inPayroll
+          ? `Con sueldo cargado: ${formatNumber(stats.withSalary)} de ${formatNumber(stats.inPayroll)}`
+          : "Suma de los sueldos cargados",
+    },
+    { title: "Ingresaron este mes", value: formatNumber(stats.newThisMonth), icon: UserPlus, tone: "purple" as const, sub: "Según la fecha de ingreso" },
+    { title: "Áreas con personal", value: formatNumber(stats.areaCount), icon: BarChart2, tone: "orange" as const, sub: `De ${plural(stats.areasTotal, "área")}` },
   ];
+  const areasWithSalary = sanitizedAreas.filter((a) => (stats.budgetByArea[a.id] || 0) > 0);
 
   const sanitizedRecords = records.map(r => ({
     ...r,
@@ -101,15 +115,15 @@ export default async function HRPage({
   ];
 
   const exportData = sanitizedRecords.map(r => ({
-    fileNumber: r.fileNumber || "S/L",
+    fileNumber: r.fileNumber || "Sin legajo",
     dni: r.dni,
     lastName: r.lastName,
     firstName: r.firstName,
-    areaName: r.area?.name || "Sin Área",
+    areaName: r.area?.name || "Sin área",
     position: r.position || "Sin cargo",
-    contractType: r.contractType || "MENSUALIZADO",
-    status: r.status || "ACTIVO",
-    salary: r.salary ? `$ ${r.salary.toLocaleString("es-AR")}` : "$ 0"
+    contractType: contractTypeLabel(r.contractType),
+    status: hrStatusLabel(r.status),
+    salary: r.salary ? formatPesos(r.salary) : "Sin cargar"
   }));
 
   return (
@@ -124,8 +138,8 @@ export default async function HRPage({
               data={exportData}
               columns={exportColumns}
               filename="nomina_personal_municipal"
-              title="Nómina oficial de agentes municipales"
-              subtitle="RECURSOS HUMANOS Y LIQUIDACIÓN DE SUELDOS"
+              title="Nómina del personal"
+              subtitle="Recursos Humanos"
               label="Exportar nómina"
               orientation="landscape"
            />
@@ -160,23 +174,26 @@ export default async function HRPage({
         ))}
       </div>
 
-      {/* Area Budget Summary - New Section */}
       <Card className="rounded-2xl border border-border/60 shadow-xs bg-card text-card-foreground">
         <CardContent className="p-6">
-            <h3 className="text-sm font-bold text-muted-foreground mb-6 flex items-center gap-2">
-                <PieChart className="h-4 w-4" /> Distribución salarial por área
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
-                {sanitizedAreas.map(area => {
-                    const areaBudget = stats.budgetByArea[area.id] || 0;
-                    return (
-                        <div key={area.id} className="bg-muted/30 p-4 rounded-2xl border border-border/40 shadow-xs">
-                            <p className="text-xs font-semibold text-muted-foreground truncate mb-1" title={area.name}>{getAreaShortName(area.name)}</p>
-                            <p className="text-sm font-bold text-card-foreground">${areaBudget.toLocaleString('es-AR')}</p>
-                        </div>
-                    )
-                })}
+          <h3 className="text-sm font-semibold text-foreground mb-4 flex items-center gap-2">
+            <PieChart className="h-4 w-4 text-muted-foreground" /> Sueldos por área
+          </h3>
+          {areasWithSalary.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              Todavía no hay sueldos cargados. Cuando cargues el sueldo de cada agente (desde “Editar legajo”, en el menú de su fila), acá vas a ver cuánto suma cada área.
+            </p>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+              {areasWithSalary.map((area) => (
+                <div key={area.id} className="bg-muted/30 p-4 rounded-2xl border border-border/40">
+                  <p className="text-xs font-semibold text-muted-foreground truncate mb-1" title={area.name}>{getAreaShortName(area.name)}</p>
+                  <p className="text-sm font-bold text-card-foreground tabular-nums">{formatPesos(stats.budgetByArea[area.id] || 0)}</p>
+                  <p className="text-xs text-muted-foreground">{plural(stats.staffByArea[area.id] || 0, "agente")}</p>
+                </div>
+              ))}
             </div>
+          )}
         </CardContent>
       </Card>
 
@@ -223,26 +240,26 @@ export default async function HRPage({
                       </Avatar>
                       <div>
                         <p className="font-bold text-foreground group-hover:text-primary transition-colors">{r.firstName} {r.lastName}</p>
-                        <p className="text-xs font-bold text-muted-foreground tracking-widest flex items-center gap-2">
-                           {r.fileNumber || 'S/L'} <span className="text-border">•</span> DNI {r.dni}
+                        <p className="text-xs text-muted-foreground flex items-center gap-2">
+                           {r.fileNumber ? `Legajo ${r.fileNumber}` : "Sin legajo"} <span className="text-border">•</span> DNI {r.dni}
                         </p>
                       </div>
                     </div>
                   </TableCell>
                   <TableCell>
                     <div className="space-y-0.5">
-                      <p className="font-bold text-sm text-foreground">{r.area?.name || "Sin Área"}</p>
-                      <p className="text-xs text-muted-foreground font-medium tracking-tighter">{r.position || "Sin cargo"}</p>
+                      <p className="font-semibold text-sm text-foreground">{r.area ? getAreaShortName(r.area.name) : "Sin área"}</p>
+                      <p className="text-xs text-muted-foreground">{r.position || "Sin cargo"}</p>
                     </div>
                   </TableCell>
                   <TableCell>
-                     <p className="text-xs font-bold text-muted-foreground italic">
+                     <p className="text-xs text-muted-foreground">
                         {r.startDate ? formatFechaCalendario(r.startDate) : '-'}
                      </p>
                   </TableCell>
                   <TableCell>
                     <div className="flex flex-col gap-1">
-                      <Badge className={`rounded-full px-3 py-0.5 text-xs font-bold tracking-widest border-none w-fit ${
+                      <Badge className={`rounded-full px-3 py-0.5 text-xs font-semibold border-none w-fit ${
                         r.status === 'ACTIVO' ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400' :
                         r.status === 'LICENCIA' ? 'bg-amber-500/10 text-amber-700 dark:text-amber-400' :
                         r.status === 'VACACIONES' ? 'bg-blue-500/10 text-blue-600' :
@@ -254,10 +271,10 @@ export default async function HRPage({
                           r.status === 'VACACIONES' ? 'bg-blue-600' :
                           'bg-rose-600'
                         }`} />
-                        {r.status || 'ACTIVO'}
+                        {hrStatusLabel(r.status)}
                       </Badge>
                       {r.statusUntil && (
-                        <span className="text-xs font-bold text-muted-foreground flex items-center gap-0.5 italic">
+                        <span className="text-xs text-muted-foreground flex items-center gap-1">
                            <Calendar className="h-2.5 w-2.5" /> Hasta {formatFechaCalendario(r.statusUntil)}
                         </span>
                       )}
@@ -273,7 +290,7 @@ export default async function HRPage({
         </Table>
 
         <div className="p-6 border-t border-border/40 bg-muted/20 flex flex-col md:flex-row items-center justify-between gap-4">
-           <p className="text-xs font-bold text-muted-foreground italic">Mostrando {sanitizedRecords.length} agentes municipales</p>
+           <p className="text-xs text-muted-foreground">{sanitizedRecords.length === 1 ? "Se muestra 1 agente" : `Se muestran ${formatNumber(sanitizedRecords.length)} agentes`}</p>
         </div>
       </div>
     </div>

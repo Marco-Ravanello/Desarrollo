@@ -15,7 +15,7 @@ import { StatCard } from "@/components/ui/stat-card";
 import { MobileList, MobileListItem, StatRow } from "@/components/ui/mobile-list";
 import { MobileFilters } from "@/components/ui/mobile-filters";
 import { EmptyMessage } from "@/components/ui/empty-message";
-import { hasPermission, PERMISSIONS } from "@/lib/permissions";
+import { hasPermission, MANAGEMENT_ROLES, PERMISSIONS } from "@/lib/permissions";
 import { getCaseStatusConfig } from "@/lib/status-styles";
 import { getAreaShortName } from "@/lib/area-theme";
 import { interventionTypeLabel } from "@/lib/intervention-types";
@@ -28,7 +28,7 @@ import { countMyOpenCases } from "@/services/case-assignment";
 import prisma from "@/lib/prisma";
 import {
   FileText, ShieldAlert, CheckCircle2, Clock, Plus, Search,
-  ArrowRight, ClipboardList, ArrowRightLeft, AlertTriangle, UserCheck
+  ArrowRight, ClipboardList, ArrowRightLeft, AlertTriangle, UserCheck, UsersRound
 } from "lucide-react";
 import Link from "next/link";
 import { formatNumber, plural } from "@/lib/formato";
@@ -74,6 +74,7 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
   const limitNum = Math.max(1, Math.min(100, Number(limit) || 20));
 
   const canViewSensitive = hasPermission(session.user.role as any, PERMISSIONS.VIEW_SENSITIVE_CASES);
+  const canSeeTeam = MANAGEMENT_ROLES.includes(session.user.role) || session.user.role === "DIRECTOR_AREA";
 
   const [data, areasList, derivationsToAnswer, myOpenCases, labelCounts] = await Promise.all([
     getAllCases({
@@ -164,6 +165,13 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
                 )}
               </Link>
             </Button>
+            {canSeeTeam && (
+              <Button asChild variant="outline" className="rounded-xl font-bold text-xs gap-1.5">
+                <Link href={area ? `/cases/equipo?area=${encodeURIComponent(area)}` : "/cases/equipo"}>
+                  <UsersRound className="h-4 w-4" /> Carga del equipo
+                </Link>
+              </Button>
+            )}
             <Button asChild className="rounded-xl font-bold text-xs gap-1.5 shadow-sm">
               <Link href="/cases/new">
                 <Plus className="h-4 w-4" /> Nuevo expediente

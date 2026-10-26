@@ -14,7 +14,7 @@ import { addTaskAction, toggleTaskAction, deleteTaskAction } from "./actions";
 import { toast } from "sonner";
 import Link from "next/link";
 import { diaAR, diaDeVencimiento, diasEntre, formatVencimiento } from "@/lib/fechas";
-import { parseViewerIds } from "@/lib/tasks";
+import { parseViewerIds, TASK_PRIORITIES } from "@/lib/tasks";
 import { EditTaskDialog, type ShareableUser } from "./edit-task-dialog";
 
 type PriorityType = "BAJA" | "MEDIA" | "ALTA" | "URGENTE";
@@ -170,26 +170,26 @@ export function TaskList({ initialTasks, userId, users = [] }: { initialTasks: T
     switch (val) {
       case "URGENTE":
         return (
-          <Badge className="bg-rose-500/15 text-rose-700 dark:text-rose-400 border border-rose-500/30 text-xs font-bold">
-            🔴 Urgente
+          <Badge className="bg-rose-500/15 text-rose-700 dark:text-rose-400 border border-rose-500/30 text-xs font-bold gap-1.5">
+            <PriorityDot priority="URGENTE" /> Urgente
           </Badge>
         );
       case "ALTA":
         return (
-          <Badge className="bg-amber-500/15 text-amber-800 dark:text-amber-400 border border-amber-500/30 text-xs font-bold">
-            🟠 Alta
+          <Badge className="bg-amber-500/15 text-amber-800 dark:text-amber-400 border border-amber-500/30 text-xs font-bold gap-1.5">
+            <PriorityDot priority="ALTA" /> Alta
           </Badge>
         );
       case "MEDIA":
         return (
-          <Badge className="bg-blue-500/15 text-blue-700 dark:text-blue-400 border border-blue-500/30 text-xs font-bold">
-            🟡 Normal
+          <Badge className="bg-blue-500/15 text-blue-700 dark:text-blue-400 border border-blue-500/30 text-xs font-bold gap-1.5">
+            <PriorityDot priority="MEDIA" /> Normal
           </Badge>
         );
       case "BAJA":
         return (
-          <Badge className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 text-xs font-bold">
-            🟢 Baja
+          <Badge className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 text-xs font-bold gap-1.5">
+            <PriorityDot priority="BAJA" /> Baja
           </Badge>
         );
     }
@@ -202,15 +202,16 @@ export function TaskList({ initialTasks, userId, users = [] }: { initialTasks: T
           <form onSubmit={handleAdd} className="space-y-3">
             <div className="flex flex-col sm:flex-row gap-2">
               <Input
-                placeholder="¿Qué compromiso o trámite hay que realizar?..."
+                aria-label="Qué hay que hacer"
+                placeholder="¿Qué hay que hacer?"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="flex-1 h-11 rounded-2xl bg-muted/30 border-border/60 text-xs sm:text-sm text-foreground font-medium"
+                className="flex-1 h-11 rounded-2xl bg-muted/30 border-border/60 text-sm text-foreground font-medium"
               />
               <Button
                 type="submit"
                 disabled={isPending}
-                className="h-11 px-5 rounded-2xl font-bold text-xs bg-primary hover:bg-primary/90 text-primary-foreground gap-2 shrink-0 shadow-sm"
+                className="hidden sm:inline-flex h-11 px-5 rounded-2xl font-bold text-xs gap-2 shrink-0 shadow-sm"
               >
                 <Plus className="h-4 w-4" />
                 <span>Agregar tarea</span>
@@ -218,38 +219,31 @@ export function TaskList({ initialTasks, userId, users = [] }: { initialTasks: T
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
-              <div className="sm:col-span-1">
-                <Input
-                  placeholder="Notas opcionales o detalles..."
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  className="h-9 rounded-xl bg-muted/20 border-border/60 text-xs text-foreground"
-                />
-              </div>
+              <Input
+                aria-label="Notas"
+                placeholder="Notas (opcional)"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                className="h-9 rounded-xl bg-muted/20 border-border/60 text-xs text-foreground"
+              />
 
-              <div className="flex items-center gap-1.5">
-                <span className="text-xs font-bold text-muted-foreground shrink-0">Prioridad:</span>
-                <div className="flex items-center gap-1 bg-muted/30 p-1 rounded-xl border border-border/40 w-full justify-between">
-                  {(["URGENTE", "ALTA", "MEDIA", "BAJA"] as PriorityType[]).map((p) => {
-                    const isSel = priority === p;
-                    const labels: Record<PriorityType, string> = {
-                      URGENTE: "🔴 URG",
-                      ALTA: "🟠 ALTA",
-                      MEDIA: "🟡 NOR",
-                      BAJA: "🟢 BAJA"
-                    };
+              <div className="flex items-center gap-2">
+                <span id="nueva-tarea-prioridad" className="text-xs font-semibold text-muted-foreground shrink-0">Prioridad</span>
+                <div role="group" aria-labelledby="nueva-tarea-prioridad" className="grid w-full grid-cols-4 gap-1 rounded-xl border border-border/40 bg-muted/30 p-1">
+                  {TASK_PRIORITIES.map((p) => {
+                    const isSel = priority === p.value;
                     return (
                       <button
-                        key={p}
+                        key={p.value}
                         type="button"
-                        onClick={() => setPriority(p)}
-                        className={`text-xs font-bold px-2 py-1 rounded-lg transition-all ${
-                          isSel
-                            ? "bg-primary text-primary-foreground shadow-xs"
-                            : "text-muted-foreground hover:text-foreground"
+                        aria-pressed={isSel}
+                        onClick={() => setPriority(p.value)}
+                        className={`flex items-center justify-center gap-1 rounded-lg px-1.5 py-1 text-xs font-semibold transition-colors ${
+                          isSel ? "bg-primary text-primary-foreground shadow-xs" : "text-muted-foreground hover:text-foreground"
                         }`}
                       >
-                        {labels[p]}
+                        {!isSel && <PriorityDot priority={p.value} />}
+                        {p.label}
                       </button>
                     );
                   })}
@@ -257,9 +251,9 @@ export function TaskList({ initialTasks, userId, users = [] }: { initialTasks: T
               </div>
 
               <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-muted-foreground shrink-0">Vencimiento:</span>
+                <label htmlFor="nueva-tarea-fecha" className="text-xs font-semibold text-muted-foreground shrink-0">Fecha</label>
                 <Input
-                  aria-label="Fecha de vencimiento"
+                  id="nueva-tarea-fecha"
                   type="date"
                   value={dueDate}
                   onChange={(e) => setDueDate(e.target.value)}
@@ -267,6 +261,11 @@ export function TaskList({ initialTasks, userId, users = [] }: { initialTasks: T
                 />
               </div>
             </div>
+
+            <Button type="submit" disabled={isPending} className="sm:hidden h-11 w-full rounded-2xl font-bold text-xs gap-2">
+              <Plus className="h-4 w-4" />
+              <span>Agregar tarea</span>
+            </Button>
           </form>
         </CardContent>
       </Card>
@@ -283,7 +282,7 @@ export function TaskList({ initialTasks, userId, users = [] }: { initialTasks: T
             }`}
           >
             <span>Pendientes</span>
-            <Badge variant="secondary" className="text-xs px-1.5 py-0 rounded-md font-mono">
+            <Badge variant="secondary" className="text-xs px-1.5 py-0 rounded-md tabular-nums">
               {countPendientes}
             </Badge>
           </button>
@@ -297,7 +296,7 @@ export function TaskList({ initialTasks, userId, users = [] }: { initialTasks: T
             }`}
           >
             <span>Realizadas</span>
-            <Badge variant="secondary" className="text-xs px-1.5 py-0 rounded-md font-mono">
+            <Badge variant="secondary" className="text-xs px-1.5 py-0 rounded-md tabular-nums">
               {countRealizadas}
             </Badge>
           </button>
@@ -311,7 +310,7 @@ export function TaskList({ initialTasks, userId, users = [] }: { initialTasks: T
             }`}
           >
             <span>Todas</span>
-            <Badge variant="secondary" className="text-xs px-1.5 py-0 rounded-md font-mono">
+            <Badge variant="secondary" className="text-xs px-1.5 py-0 rounded-md tabular-nums">
               {countTodas}
             </Badge>
           </button>
@@ -321,7 +320,7 @@ export function TaskList({ initialTasks, userId, users = [] }: { initialTasks: T
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
             <Input
-              placeholder="Buscar en tareas..."
+              placeholder="Buscar en tareas"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-9 h-9 text-xs rounded-xl bg-muted/20 border-border/60 text-foreground"
@@ -334,11 +333,11 @@ export function TaskList({ initialTasks, userId, users = [] }: { initialTasks: T
             onChange={(e) => setPriorityFilter(e.target.value)}
             className="h-9 px-3 rounded-xl bg-muted/20 border border-border/60 text-xs font-bold text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
           >
-            <option value="TODAS">Prioridad: Todas</option>
-            <option value="URGENTE">🔴 Urgente</option>
-            <option value="ALTA">🟠 Alta</option>
-            <option value="MEDIA">🟡 Normal</option>
-            <option value="BAJA">🟢 Baja</option>
+            <option value="TODAS">Todas las prioridades</option>
+            <option value="URGENTE">Urgente</option>
+            <option value="ALTA">Alta</option>
+            <option value="MEDIA">Normal</option>
+            <option value="BAJA">Baja</option>
           </select>
         </div>
       </div>
@@ -459,4 +458,16 @@ export function TaskList({ initialTasks, userId, users = [] }: { initialTasks: T
       </div>
     </div>
   );
+}
+
+const DOT_CLASS: Record<string, string> = {
+  URGENTE: "bg-rose-500",
+  ALTA: "bg-amber-500",
+  MEDIA: "bg-blue-500",
+  BAJA: "bg-emerald-500",
+};
+
+/** Punto de color de la prioridad (siempre va con el nombre al lado). */
+function PriorityDot({ priority }: { priority: string }) {
+  return <span aria-hidden className={`inline-block h-2 w-2 shrink-0 rounded-full ${DOT_CLASS[priority] ?? DOT_CLASS.MEDIA}`} />;
 }

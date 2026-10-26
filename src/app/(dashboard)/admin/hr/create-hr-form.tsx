@@ -127,7 +127,7 @@ export function CreateHRForm({ areas }: { areas: any[] }) {
 
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="salary" className="font-bold text-foreground">Sueldo / Haber Mensual ($ ARS)</Label>
+            <Label htmlFor="salary" className="font-bold text-foreground">Sueldo mensual ($)</Label>
             <Input id="salary" name="salary" type="number" step="0.01" placeholder="Ej: 450000" />
           </div>
           <div className="space-y-2">

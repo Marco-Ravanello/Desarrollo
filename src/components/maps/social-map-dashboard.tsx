@@ -312,7 +312,7 @@ export function SocialMapDashboard({ initialStats, programs, unlocated = 0, canL
       <StatRow className={`transition-opacity ${loading ? "opacity-60" : ""}`} aria-busy={loading}>
         <StatCard
           label="Personas"
-          value={<span className="font-mono">{fmt(stats.total)}</span>}
+          value={<span className="tabular-nums">{fmt(stats.total)}</span>}
           hint="Personas del padrón con estos filtros"
           icon={Users}
           tone="blue"
@@ -320,7 +320,7 @@ export function SocialMapDashboard({ initialStats, programs, unlocated = 0, canL
 
         <StatCard
           label="Ubicadas en el mapa"
-          value={<span className="font-mono">{fmt(stats.located)}</span>}
+          value={<span className="tabular-nums">{fmt(stats.located)}</span>}
           hint={
             stats.total > 0 ? (
               <span className="block">

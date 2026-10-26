@@ -264,7 +264,7 @@ export function DashboardCharts({
                 <span className="text-foreground flex items-center gap-1.5">
                   <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" /> Tasa de resolución
                 </span>
-                <span className="text-emerald-700 dark:text-emerald-400 font-mono text-sm font-bold">{resolutionRatePercent}%</span>
+                <span className="text-emerald-700 dark:text-emerald-400 tabular-nums text-sm font-bold">{resolutionRatePercent}%</span>
               </div>
               <Progress value={resolutionRatePercent} className="h-2.5 rounded-full bg-muted" />
               <p className="text-xs text-muted-foreground font-semibold">
@@ -277,7 +277,7 @@ export function DashboardCharts({
                 <span className="text-foreground flex items-center gap-1.5">
                   <Car className="h-3.5 w-3.5 text-sky-500" /> Disponibilidad de flota
                 </span>
-                <span className="text-sky-700 dark:text-sky-400 font-mono text-sm font-bold">
+                <span className="text-sky-700 dark:text-sky-400 tabular-nums text-sm font-bold">
                   {fleetPercent}%
                 </span>
               </div>
@@ -298,7 +298,7 @@ export function DashboardCharts({
                   <p className="text-xs text-muted-foreground">Pendientes de respuesta</p>
                 </div>
               </div>
-              <Badge className="bg-sky-500/20 text-sky-700 dark:text-sky-300 border-none font-bold text-xs font-mono">
+              <Badge className="bg-sky-500/20 text-sky-700 dark:text-sky-300 border-none font-bold text-xs tabular-nums">
                 {pendingDerivations}
               </Badge>
             </div>
@@ -348,7 +348,7 @@ export function DashboardCharts({
                   <div key={item.name} className="p-3.5 rounded-2xl bg-muted/30 border border-border/40 space-y-2">
                     <div className="flex items-center justify-between gap-3">
                       <div className="flex items-center gap-2.5">
-                        <span className="text-xs font-bold font-mono text-muted-foreground w-4">
+                        <span className="text-xs font-bold tabular-nums text-muted-foreground w-4">
                           #{idx + 1}
                         </span>
                         <div className="p-2 rounded-xl bg-muted text-primary border border-border/60">
@@ -356,12 +356,12 @@ export function DashboardCharts({
                         </div>
                         <div>
                           <p className="text-xs font-bold text-foreground">{item.name}</p>
-                          <p className="text-xs text-muted-foreground font-mono font-semibold">{percentage}% de la demanda global</p>
+                          <p className="text-xs text-muted-foreground tabular-nums font-semibold">{percentage}% de la demanda global</p>
                         </div>
                       </div>
 
                       <div className="text-right">
-                        <span className="text-sm font-bold font-mono text-foreground">{item.value}</span>
+                        <span className="text-sm font-bold tabular-nums text-foreground">{item.value}</span>
                         <span className="text-xs text-muted-foreground ml-1">{item.value === 1 ? "expediente" : "expedientes"}</span>
                       </div>
                     </div>
@@ -459,7 +459,7 @@ export function DashboardCharts({
 
             {/* Central Metric Badge */}
             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center">
-              <span className="text-xl font-bold font-mono text-foreground tracking-tight">
+              <span className="text-xl font-bold tabular-nums text-foreground tracking-tight">
                 ${formattedExecutedAmount}M
               </span>
               <span className="text-xs font-bold text-muted-foreground">
@@ -479,9 +479,9 @@ export function DashboardCharts({
                   <span className="font-bold text-foreground text-xs truncate">{status.name}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="font-mono text-xs font-bold text-foreground">{status.value}</span>
+                  <span className="tabular-nums text-xs font-bold text-foreground">{status.value}</span>
                   {status.amount ? (
-                    <span className="font-mono text-xs text-muted-foreground font-semibold">
+                    <span className="tabular-nums text-xs text-muted-foreground font-semibold">
                       (${ (status.amount / 1000).toFixed(0) }k)
                     </span>
                   ) : null}
