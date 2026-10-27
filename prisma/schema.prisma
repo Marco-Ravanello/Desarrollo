@@ -729,3 +729,26 @@ model StormDelivery {
 
   @@index([recordId])
 }
+
+/// Lugares de referencia de un barrio (escuela, salita, comedor…) con su contacto, para preparar una recorrida.
+model LugarReferencia {
+  id          String   @id @default(cuid())
+  /// Nombre del barrio tal como figura en src/lib/barrios.ts.
+  barrio      String
+  /// ESCUELA, JARDIN, SALITA, COMEDOR, CLUB, IGLESIA, SOCIEDAD_FOMENTO, CENTRO_COMUNITARIO, MUNICIPAL u OTRO.
+  tipo        String
+  nombre      String
+  direccion   String?
+  telefono    String?
+  /// Con quién hablar (nombre y cargo).
+  contacto    String?
+  horario     String?
+  notas       String?  @db.Text
+  createdById String?
+  updatedById String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([barrio])
+  @@map("lugares_referencia")
+}

@@ -41,6 +41,7 @@ import { isSensitiveArea } from "@/lib/sensitive-areas";
 import { canEditSocialRecords, canManageProgramEnrollment, hasPermission, PERMISSIONS } from "@/lib/permissions";
 import { formatFecha, formatFechaHora } from "@/lib/fechas";
 import { barrioLabel } from "@/lib/person-display";
+import { barrioSlug, matchBarrio } from "@/lib/barrios";
 import { personTitle } from "@/lib/page-titles";
 
 export const generateMetadata = personTitle;
@@ -143,7 +144,13 @@ export default async function PersonDetailPage({
           <Badge variant="outline" className="border-border text-foreground font-mono font-bold">DNI {dni}</Badge>
           {person?.barrio && (
             <Badge variant="outline" className="border-primary/40 text-primary bg-primary/5 text-xs font-bold">
-              {barrioLabel(person.barrio)}
+              {matchBarrio(person.barrio) ? (
+                <Link href={`/barrios/${barrioSlug(matchBarrio(person.barrio)!)}`} className="hover:underline" title="Ver la página del barrio">
+                  {barrioLabel(person.barrio)}
+                </Link>
+              ) : (
+                barrioLabel(person.barrio)
+              )}
             </Badge>
           )}
           {totalProgramas > 0 && (

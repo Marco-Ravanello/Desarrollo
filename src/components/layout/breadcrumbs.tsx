@@ -40,6 +40,7 @@ const PATH_DICTIONARY: Record<string, string> = {
   cases: "Expedientes",
   new: "Nuevo",
   maps: "Mapa Social",
+  barrios: "Barrios",
   ubicar: "Ubicar en el mapa",
   "ficha-social": "Ficha Social 360°",
   "cambiar-clave": "Cambiar mi contraseña",
