@@ -5,6 +5,8 @@ import {
   type Barrio3F,
 } from "@/lib/barrios";
 import { PADRON_PROGRAMS, programSlug } from "@/lib/padron-programs";
+import { APPROXIMATE_POINT_SQL, cleanAddressForSearch } from "@/lib/geocoding";
+import { georefLookup, osmLookup } from "@/services/geocoding";
 
 // Página de cada barrio: lo que hay en el padrón, en los expedientes, en la emergencia y los lugares de referencia.
 // El barrio de una persona es el del padrón: la columna "barrio" si es uno de la lista y, si no, la "localidad"
@@ -39,7 +41,7 @@ async function getPadronPairs(): Promise<PadronPair[]> {
 }
 
 /** Condición SQL (sobre padron_unificado p) para las filas del barrio. */
-async function inBarrioSql(barrio: Barrio3F): Promise<Prisma.Sql> {
+export async function inBarrioSql(barrio: Barrio3F): Promise<Prisma.Sql> {
   const keys = (await getPadronPairs()).filter((r) => r.match === barrio).map((r) => pairKey(r.barrio, r.localidad));
   return Prisma.sql`${pairSql} = ANY(${keys}::text[])`;
 }
@@ -312,8 +314,9 @@ export async function createLugar(user: Actor, barrio: string, raw: Record<strin
   if (!official) return { success: false, error: "No se encontró el barrio." };
   const parsed = parseLugarInput(raw);
   if (!parsed.ok) return { success: false, error: parsed.error };
+  const point = await locateLugar(parsed.data.direccion, official);
   const lugar = await prisma.lugarReferencia.create({
-    data: { ...parsed.data, barrio: official, createdById: actor.id, updatedById: actor.id },
+    data: { ...parsed.data, ...point, barrio: official, createdById: actor.id, updatedById: actor.id },
   });
   await prisma.auditLog.create({
     data: {
@@ -337,16 +340,21 @@ export async function updateLugar(user: Actor, id: string, raw: Record<string, u
   const after = parsed.data;
   const fields: (keyof typeof after)[] = ["tipo", "nombre", "direccion", "telefono", "contacto", "horario", "notas"];
   const changed = fields.filter((f) => (before[f] ?? null) !== (after[f] ?? null));
-  if (!changed.length) return { success: true };
+  // Si cambió la dirección (o el lugar todavía no tiene punto), se vuelve a buscar en el mapa.
+  const relocate = changed.includes("direccion") || (before.latitude === null && Boolean(after.direccion));
+  if (!changed.length && !relocate) return { success: true };
+  const point = relocate ? await locateLugar(after.direccion, before.barrio) : {};
   await prisma.$transaction([
-    prisma.lugarReferencia.update({ where: { id }, data: { ...after, updatedById: actor.id } }),
+    prisma.lugarReferencia.update({ where: { id }, data: { ...after, ...point, updatedById: actor.id } }),
     prisma.auditLog.create({
       data: {
         userId: actor.id,
         action: "LUGAR_EDITADO",
         entity: "LugarReferencia",
         entityId: id,
-        details: `“${after.nombre}” en ${before.barrio}: cambió ${changed.map((f) => LUGAR_FIELD_NAMES[f]).join(", ")}.`,
+        details: changed.length
+          ? `“${after.nombre}” en ${before.barrio}: cambió ${changed.map((f) => LUGAR_FIELD_NAMES[f]).join(", ")}.`
+          : `“${after.nombre}” en ${before.barrio}: se volvió a buscar en el mapa.`,
       },
     }),
   ]);
@@ -383,4 +391,79 @@ export async function deleteLugar(user: Actor, id: string): Promise<Result> {
     }),
   ]);
   return { success: true };
+}
+
+/**
+ * Busca la dirección de un lugar en el mapa (Georef y, si no, OpenStreetMap), dentro del partido. Si no la
+ * encuentra o los servicios no responden, el lugar queda sin punto: se guarda igual y se avisa en el mapa del barrio.
+ */
+async function locateLugar(direccion: string | null, barrio: string): Promise<{ latitude: number | null; longitude: number | null }> {
+  const none = { latitude: null, longitude: null };
+  const address = cleanAddressForSearch(direccion);
+  if (!address) return none;
+  try {
+    const [georef] = await georefLookup([address]);
+    const point = georef ?? (await osmLookup(address, null, barrio));
+    return point ? { latitude: point.lat, longitude: point.lon } : none;
+  } catch (err) {
+    console.error("No se pudo ubicar el lugar de referencia:", err);
+    return none;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Mapa del barrio
+// ---------------------------------------------------------------------------
+
+/** Tope de personas en el mapa de un barrio (el más grande tiene unas 8.000). */
+export const BARRIO_MAP_LIMIT = 20000;
+
+export type BarrioMapCase = { id: string; title: string; titular: string | null; area: string; priority: string; lat: number; lng: number };
+export type BarrioMapLugar = { id: string; tipo: string; nombre: string; direccion: string | null; lat: number; lng: number };
+
+export type BarrioMapData = {
+  /** Personas: [lat, lng, 1 si el punto es aproximado (solo barrio) o 0] por persona, en el orden de `dnis`. */
+  points: number[];
+  dnis: string[];
+  cases: BarrioMapCase[];
+  lugares: BarrioMapLugar[];
+  /** Lugares de referencia con dirección que no se encontraron en el mapa. */
+  lugaresSinPunto: number;
+  /** Personas del barrio sin punto en el mapa. */
+  sinPunto: number;
+};
+
+/** Lo que se dibuja en el mapa de un barrio: su gente, sus expedientes abiertos y sus lugares de referencia. */
+export async function getBarrioMapData(barrio: Barrio3F, scope: BarrioScope): Promise<BarrioMapData> {
+  const inBarrio = await inBarrioSql(barrio);
+  const [people, missing, cases, lugares] = await Promise.all([
+    prisma.$queryRaw<{ dni: string; lat: number; lng: number; approx: boolean }[]>`
+      SELECT p.dni, p.latitude AS lat, p.longitude AS lng, ${Prisma.raw(APPROXIMATE_POINT_SQL)} AS approx
+      FROM padron_unificado p
+      WHERE p.latitude IS NOT NULL AND p.longitude IS NOT NULL AND ${inBarrio}
+      LIMIT ${BARRIO_MAP_LIMIT}`,
+    prisma.$queryRaw<{ total: bigint }[]>`
+      SELECT COUNT(*) AS total FROM padron_unificado p WHERE (p.latitude IS NULL OR p.longitude IS NULL) AND ${inBarrio}`,
+    prisma.$queryRaw<{ id: string; title: string; titular: string | null; area: string; priority: string; lat: number; lng: number }[]>`
+      SELECT c.id, c.title, p.nombre_completo AS titular, a.name AS area, c.priority::text AS priority, p.latitude AS lat, p.longitude AS lng
+      FROM "Case" c
+      JOIN "Area" a ON a.id = c."areaId"
+      JOIN "Person" pe ON pe.id = c."personId"
+      JOIN padron_unificado p ON p.dni = pe.dni
+      WHERE ${openCaseFilter(scope)} AND p.latitude IS NOT NULL AND p.longitude IS NOT NULL AND ${inBarrio}
+      ORDER BY c."createdAt" ASC
+      LIMIT 2000`,
+    prisma.lugarReferencia.findMany({ where: { barrio }, select: { id: true, tipo: true, nombre: true, direccion: true, latitude: true, longitude: true } }),
+  ]);
+  const round = (n: number) => Math.round(n * 1e6) / 1e6;
+  return {
+    points: people.flatMap((p) => [round(p.lat), round(p.lng), p.approx ? 1 : 0]),
+    dnis: people.map((p) => p.dni),
+    cases,
+    lugares: lugares
+      .filter((l) => l.latitude !== null && l.longitude !== null)
+      .map((l) => ({ id: l.id, tipo: l.tipo, nombre: l.nombre, direccion: l.direccion, lat: l.latitude!, lng: l.longitude! })),
+    lugaresSinPunto: lugares.filter((l) => l.latitude === null && l.direccion).length,
+    sinPunto: Number(missing[0]?.total ?? 0),
+  };
 }
