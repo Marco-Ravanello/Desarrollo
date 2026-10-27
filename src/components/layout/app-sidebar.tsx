@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { LayoutDashboard, Users, ShieldAlert, ClipboardList, LogOut, Briefcase, Car, UserCog, ChevronLeft, ChevronRight, CheckCircle2, MapPin, Wallet, Building2, FileSpreadsheet, Calendar, Sparkles, CloudRain, Settings, Tv, Network, BarChart3, ChevronDown, Package, ScrollText } from "lucide-react";
+import { LayoutDashboard, Users, ShieldAlert, ClipboardList, LogOut, Briefcase, Car, UserCog, ChevronLeft, ChevronRight, CheckCircle2, MapPin, Wallet, Building2, FileSpreadsheet, Calendar, Sparkles, CloudRain, Settings, Tv, Network, BarChart3, ChevronDown, Package, ScrollText, MapPinned } from "lucide-react";
 import { MunicipalCrest } from "@/components/ui/municipal-crest";
 import { UserNav } from "./user-nav";
 import { useSession, signOut } from "next-auth/react";
@@ -50,6 +50,7 @@ export function AppSidebar({ isMobile = false, onNavigate }: AppSidebarProps) {
     { title: "Ficha Social 360°", url: "/ficha-social", icon: Network },
     { title: "Expedientes", url: "/cases", icon: ClipboardList },
     { title: "Mapa Social", url: "/maps", icon: MapPin },
+    { title: "Barrios", url: "/barrios", icon: MapPinned },
     { title: "Mis tareas", url: "/tasks", icon: CheckCircle2 },
     { title: "Registro Único", url: "/people", icon: Users },
   ].filter((i) => canOpen(i.url));

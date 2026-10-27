@@ -51,6 +51,9 @@ const ACTIONS: Record<string, { label: string; group: AuditGroup }> = {
   PADRON_PROGRAMA_ALTA: { label: "Dio de alta a una persona en un programa", group: "personas" },
   PADRON_PROGRAMA_BAJA: { label: "Dio de baja a una persona de un programa", group: "personas" },
   PROGRAMA_AREA: { label: "Cambió el área a cargo de un programa", group: "personas" },
+  LUGAR_CREADO: { label: "Cargó un lugar de referencia de un barrio", group: "personas" },
+  LUGAR_EDITADO: { label: "Corrigió un lugar de referencia de un barrio", group: "personas" },
+  LUGAR_BORRADO: { label: "Borró un lugar de referencia de un barrio", group: "personas" },
   PADRON_GEO_UPDATE: { label: "Ubicó una dirección en el mapa", group: "personas" },
   PADRON_DUPLICADO_UNIDO: { label: "Unió dos personas repetidas", group: "personas" },
   PADRON_DUPLICADO_DESCARTADO: { label: "Marcó que no son la misma persona", group: "personas" },
@@ -267,6 +270,8 @@ export function auditLink(log: { action: string; entity: string; entityId: strin
       return "/admin/users";
     case "Area":
       return "/admin/budget";
+    case "LugarReferencia":
+      return "/barrios";
     case "Programa":
       return entityId.startsWith("prog_") ? `/people/programas/${entityId.slice(5)}` : null;
     case "SystemSetting":
