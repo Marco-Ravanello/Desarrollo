@@ -2,7 +2,7 @@ export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { ArrowDownRight, ArrowRight, ArrowUpRight, Download, Layers, ListChecks, MapPin, Phone, Search, UserPlus, Users } from "lucide-react";
+import { ArrowDownRight, ArrowRight, ArrowUpRight, Download, GraduationCap, Layers, ListChecks, MapPin, Phone, Search, UserPlus, Users } from "lucide-react";
 import { auth } from "@/auth";
 import prisma from "@/lib/prisma";
 import { hasPermission, PERMISSIONS } from "@/lib/permissions";
@@ -12,6 +12,7 @@ import { programFromSlug, programSlug } from "@/lib/padron-programs";
 import { formatNumber, plural } from "@/lib/formato";
 import { getProgramDetail, getProgramOwners, getProgramPeople } from "@/services/programs";
 import { countProgramCandidates, getProgramRequirements } from "@/services/program-requirements";
+import { getCursosDePrograma } from "@/services/cursos";
 import { PageHeader } from "@/components/layout/page-header";
 import { PageBreadcrumbs } from "@/components/layout/breadcrumbs-context";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -54,12 +55,13 @@ export default async function ProgramPage({
 
   const canAssign = canAssignProgramArea(session.user.role);
   const canViewSensitive = hasPermission(session.user.role, PERMISSIONS.VIEW_SENSITIVE_CASES);
-  const [detail, list, owners, areas, requirements] = await Promise.all([
+  const [detail, list, owners, areas, requirements, cursos] = await Promise.all([
     getProgramDetail(program.column),
     getProgramPeople(program.column, { q: sp.q, page: Number(sp.page) || 1 }),
     getProgramOwners(),
     canAssign ? prisma.area.findMany({ select: { id: true, name: true }, orderBy: { name: "asc" } }) : Promise.resolve([]),
     getProgramRequirements(program.column),
+    getCursosDePrograma(program.column),
   ]);
   const owner = owners.get(program.column) ?? null;
   const canManage = canManageProgram(session.user, owner?.areaId);
@@ -159,6 +161,30 @@ export default async function ProgramPage({
           )}
         </CardContent>
       </Card>
+
+      {cursos.length > 0 && (
+        <Card className="shadow-none">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base"><GraduationCap className="h-4 w-4 text-primary" /> Cursos y talleres</CardTitle>
+            <CardDescription>Las personas que se inscriben en estos cursos quedan de alta en el programa.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ul className="divide-y divide-border/50 rounded-2xl border border-border/60">
+              {cursos.map((c) => (
+                <li key={c.id}>
+                  <Link href={`/cursos/${c.id}`} className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 hover:bg-muted/40">
+                    <span className="min-w-0">
+                      <span className="block text-sm font-semibold text-foreground">{c.nombre}</span>
+                      <span className="block text-xs text-muted-foreground">{c.periodo} · {c.estado === "TERMINADO" ? "terminado" : "en curso"}</span>
+                    </span>
+                    <span className="text-xs font-semibold text-muted-foreground tabular-nums">{plural(c.inscriptos, "inscripto")}</span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid gap-6 lg:grid-cols-5">
         <Card className="shadow-none lg:col-span-3">

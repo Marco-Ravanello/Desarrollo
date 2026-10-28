@@ -5,6 +5,7 @@ import { auth } from "@/auth";
 import { barrioSlug } from "@/lib/barrios";
 import { parseRecorridaCriteria } from "@/lib/recorridas";
 import { createLugar, deleteLugar, updateLugar } from "@/services/barrios";
+import { deleteLimite, saveLimite } from "@/services/barrio-limites";
 import {
   addVisita, createRecorrida, deleteRecorrida, saveVisita, setReferente, terminarRecorrida, updateRecorrida, type RecorridaInput,
 } from "@/services/recorridas";
@@ -109,6 +110,26 @@ export async function setReferenteAction(barrio: string, userId: string | null):
   const session = await auth();
   if (!session?.user?.id) return SESSION_EXPIRED;
   const res = await setReferente(session.user, barrio, userId || null);
+  if (res.success) refresh(barrio);
+  return res;
+}
+
+// ---------------------------------------------------------------------------
+// Límite del barrio en el mapa
+// ---------------------------------------------------------------------------
+
+export async function saveLimiteAction(barrio: string, puntos: unknown): Promise<Result> {
+  const session = await auth();
+  if (!session?.user?.id) return SESSION_EXPIRED;
+  const res = await saveLimite(session.user, barrio, puntos);
+  if (res.success) refresh(barrio);
+  return res;
+}
+
+export async function deleteLimiteAction(barrio: string): Promise<Result> {
+  const session = await auth();
+  if (!session?.user?.id) return SESSION_EXPIRED;
+  const res = await deleteLimite(session.user, barrio);
   if (res.success) refresh(barrio);
   return res;
 }

@@ -60,6 +60,18 @@ const ACTIONS: Record<string, { label: string; group: AuditGroup }> = {
   RECORRIDA_TERMINADA: { label: "Terminó una recorrida por un barrio", group: "personas" },
   RECORRIDA_BORRADA: { label: "Borró una recorrida por un barrio", group: "personas" },
   BARRIO_REFERENTE: { label: "Eligió el referente de un barrio", group: "personas" },
+  BARRIO_LIMITE: { label: "Dibujó el límite de un barrio", group: "personas" },
+  BARRIO_LIMITE_BORRADO: { label: "Borró el límite dibujado de un barrio", group: "personas" },
+  CURSO_CREADO: { label: "Creó un curso o taller", group: "personas" },
+  CURSO_CAMBIADO: { label: "Cambió los datos de un curso o taller", group: "personas" },
+  CURSO_TERMINADO: { label: "Dio por terminado un curso o taller", group: "personas" },
+  CURSO_REABIERTO: { label: "Volvió a abrir un curso o taller", group: "personas" },
+  CURSO_BORRADO: { label: "Borró un curso o taller", group: "personas" },
+  CURSO_INSCRIPCION: { label: "Inscribió a una persona en un curso o taller", group: "personas" },
+  CURSO_DEJO: { label: "Anotó que alguien dejó un curso o taller", group: "personas" },
+  CURSO_REINSCRIPCION: { label: "Volvió a inscribir a alguien en un curso o taller", group: "personas" },
+  CURSO_ASISTENCIA: { label: "Tomó asistencia en un curso o taller", group: "personas" },
+  CURSO_CLASE_BORRADA: { label: "Borró una clase de un curso o taller", group: "personas" },
   PADRON_GEO_UPDATE: { label: "Ubicó una dirección en el mapa", group: "personas" },
   PADRON_DUPLICADO_UNIDO: { label: "Unió dos personas repetidas", group: "personas" },
   PADRON_DUPLICADO_DESCARTADO: { label: "Marcó que no son la misma persona", group: "personas" },
@@ -145,6 +157,7 @@ const ENTITY_LABEL: Record<string, string> = {
   Area: "Área",
   SystemSetting: "Configuración",
   Intervention: "Intervenciones",
+  Curso: "Curso o taller",
 };
 
 export function auditEntityLabel(entity: string): string {
@@ -285,6 +298,8 @@ export function auditLink(log: { action: string; entity: string; entityId: strin
       return action === "RECORRIDA_BORRADA" ? null : `/barrios/recorridas/${entityId}`;
     case "Barrio":
       return `/barrios/${barrioSlug(entityId)}`;
+    case "Curso":
+      return action === "CURSO_BORRADO" ? null : `/cursos/${entityId}`;
     case "Programa":
       return entityId.startsWith("prog_") ? `/people/programas/${entityId.slice(5)}` : null;
     case "SystemSetting":

@@ -22,7 +22,8 @@ export function PrintHeader({
   useEffect(() => setCurrentDate(formatFechaHora(new Date())), []);
 
   return (
-    <div className="hidden print:flex flex-col w-full border-b-2 border-slate-900 pb-4 mb-6 text-slate-900">
+    // print-default-header: una página con su propio membrete (por ejemplo, un certificado) puede ocultarlo.
+    <div className="print-default-header hidden print:flex flex-col w-full border-b-2 border-slate-900 pb-4 mb-6 text-slate-900">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="p-1 border border-slate-900 rounded-xl">
