@@ -7,6 +7,8 @@ import {
 import { PADRON_PROGRAMS, programSlug } from "@/lib/padron-programs";
 import { APPROXIMATE_POINT_SQL, cleanAddressForSearch } from "@/lib/geocoding";
 import { georefLookup, osmLookup } from "@/services/geocoding";
+import { barrioDondeCae, getLimites, marcarFuera, type LimiteOrigen } from "@/services/barrio-limites";
+import type { Limite } from "@/lib/barrio-limites";
 
 // Página de cada barrio: lo que hay en el padrón, en los expedientes, en la emergencia y los lugares de referencia.
 // El barrio de una persona es el del padrón: la columna "barrio" si es uno de la lista y, si no, la "localidad"
@@ -425,12 +427,20 @@ async function locateLugar(direccion: string | null, barrio: string): Promise<{ 
 /** Tope de personas en el mapa de un barrio (el más grande tiene unas 8.000). */
 export const BARRIO_MAP_LIMIT = 20000;
 
-export type BarrioMapCase = { id: string; title: string; titular: string | null; area: string; priority: string; lat: number; lng: number };
+export type BarrioMapCase = { id: string; title: string; titular: string | null; area: string; priority: string; lat: number; lng: number; fuera: boolean };
 export type BarrioMapLugar = { id: string; tipo: string; nombre: string; direccion: string | null; lat: number; lng: number };
 
 export type BarrioMapData = {
-  /** Personas: [lat, lng, 1 si el punto es aproximado (solo barrio) o 0] por persona, en el orden de `dnis`. */
+  /**
+   * Personas: [lat, lng, marcas] por persona, en el orden de `dnis`. Marcas: 1 si el punto es aproximado
+   * (solo barrio), 2 si cae fuera del límite del barrio (se suman: 3 es las dos cosas).
+   */
   points: number[];
+  /** El límite del barrio (dibujado en la app o de OpenStreetMap), o null si todavía no tiene. */
+  limite: Limite | null;
+  limiteOrigen: LimiteOrigen | null;
+  /** Personas con el punto fuera del límite. */
+  fuera: number;
   dnis: string[];
   cases: BarrioMapCase[];
   lugares: BarrioMapLugar[];
@@ -463,14 +473,66 @@ export async function getBarrioMapData(barrio: Barrio3F, scope: BarrioScope): Pr
     prisma.lugarReferencia.findMany({ where: { barrio }, select: { id: true, tipo: true, nombre: true, direccion: true, latitude: true, longitude: true } }),
   ]);
   const round = (n: number) => Math.round(n * 1e6) / 1e6;
+  const limite = (await getLimites()).get(barrio) ?? null;
+  const peopleOut = marcarFuera(limite?.puntos ?? null, people);
+  const casesOut = marcarFuera(limite?.puntos ?? null, cases);
   return {
-    points: people.flatMap((p) => [round(p.lat), round(p.lng), p.approx ? 1 : 0]),
+    points: people.flatMap((p, i) => [round(p.lat), round(p.lng), (p.approx ? 1 : 0) + (peopleOut[i] ? 2 : 0)]),
     dnis: people.map((p) => p.dni),
-    cases,
+    limite: limite?.puntos ?? null,
+    limiteOrigen: limite?.origen ?? null,
+    fuera: peopleOut.filter(Boolean).length,
+    cases: cases.map((c, i) => ({ ...c, fuera: casesOut[i] })),
     lugares: lugares
       .filter((l) => l.latitude !== null && l.longitude !== null)
       .map((l) => ({ id: l.id, tipo: l.tipo, nombre: l.nombre, direccion: l.direccion, lat: l.latitude!, lng: l.longitude! })),
     lugaresSinPunto: lugares.filter((l) => l.latitude === null && l.direccion).length,
     sinPunto: Number(missing[0]?.total ?? 0),
   };
+}
+
+export type PersonaFuera = {
+  dni: string;
+  nombre: string | null;
+  direccion: string | null;
+  /** Lo que dice el padrón en barrio y localidad. */
+  barrioEscrito: string | null;
+  localidad: string | null;
+  aproximado: boolean;
+  /** En qué barrio cae el punto, o null si no cae en ninguno con límite. */
+  caeEn: Barrio3F | null;
+};
+
+/** Tope de la lista para revisar (se ordena por dirección). */
+export const FUERA_LIMIT = 500;
+
+/**
+ * Las personas del barrio cuyo punto en el mapa cae fuera de su límite, con el barrio donde cae.
+ * Suelen ser direcciones mal escritas o mal ubicadas, o un barrio mal cargado en el padrón.
+ */
+export async function getPersonasFuera(barrio: Barrio3F): Promise<{ total: number; personas: PersonaFuera[]; tieneLimite: boolean }> {
+  const limites = await getLimites();
+  const limite = limites.get(barrio);
+  if (!limite) return { total: 0, personas: [], tieneLimite: false };
+  const inBarrio = await inBarrioSql(barrio);
+  const rows = await prisma.$queryRaw<{ dni: string; nombre: string | null; direccion: string | null; barrio: string | null; localidad: string | null; lat: number; lng: number; approx: boolean }[]>`
+    SELECT p.dni, p.nombre_completo AS nombre, p.direccion, p.barrio, p.localidad, p.latitude AS lat, p.longitude AS lng,
+           ${Prisma.raw(APPROXIMATE_POINT_SQL)} AS approx
+    FROM padron_unificado p
+    WHERE p.latitude IS NOT NULL AND p.longitude IS NOT NULL AND ${inBarrio}
+    LIMIT ${BARRIO_MAP_LIMIT}`;
+  const out = rows.filter((r) => marcarFuera(limite.puntos, [r])[0]);
+  const personas = out
+    .sort((a, b) => (a.direccion ?? "").localeCompare(b.direccion ?? "", "es", { numeric: true }) || a.dni.localeCompare(b.dni))
+    .slice(0, FUERA_LIMIT)
+    .map((r) => ({
+      dni: r.dni,
+      nombre: r.nombre,
+      direccion: r.direccion,
+      barrioEscrito: r.barrio,
+      localidad: r.localidad,
+      aproximado: r.approx,
+      caeEn: barrioDondeCae(limites, r.lat, r.lng),
+    }));
+  return { total: out.length, personas, tieneLimite: true };
 }

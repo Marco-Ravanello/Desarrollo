@@ -57,6 +57,7 @@ model Area {
   purchaseOrders  PurchaseOrder[]
   agreements      Agreement[]
   programas       ProgramaArea[]
+  cursos          Curso[]
 }
 
 model Person {
@@ -838,4 +839,108 @@ model BarrioReferente {
 
   @@index([userId])
   @@map("barrio_referentes")
+}
+
+/// Un curso o taller (Centro de Formación, talleres de las áreas…) con sus inscriptos y la asistencia de cada clase.
+model Curso {
+  id               String           @id @default(cuid())
+  nombre           String
+  /// CURSO o TALLER (cambia el texto del certificado).
+  tipo             String           @default("CURSO")
+  descripcion      String?          @db.Text
+  areaId           String?
+  area             Area?            @relation(fields: [areaId], references: [id], onDelete: SetNull)
+  /// Columna prog_ del programa del padrón (opcional): inscribirse es darse de alta en él.
+  programa         String?
+  docente          String?
+  lugar            String?
+  /// Días y horario, como se dice ("Lunes y miércoles de 18 a 20").
+  horario          String?
+  /// Fechas de calendario, guardadas a medianoche UTC.
+  fechaInicio      DateTime
+  fechaFin         DateTime?
+  /// Horas en total, para el certificado.
+  cargaHoraria     Int?
+  /// Porcentaje mínimo de asistencia para el certificado.
+  asistenciaMinima Int              @default(75)
+  /// ABIERTO o TERMINADO.
+  estado           String           @default("ABIERTO")
+  terminadoAt      DateTime?
+  createdById      String?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  inscriptos       CursoInscripto[]
+  clases           CursoClase[]
+
+  @@index([estado])
+  @@index([areaId])
+  @@map("cursos")
+}
+
+/// Cada persona inscripta en un curso.
+model CursoInscripto {
+  id          String            @id @default(cuid())
+  cursoId     String
+  curso       Curso             @relation(fields: [cursoId], references: [id], onDelete: Cascade)
+  dni         String
+  /// Nombre y teléfono al inscribirse (para la lista y el certificado aunque después cambie el padrón).
+  nombre      String?
+  telefono    String?
+  /// Día de la inscripción (fecha de calendario, a medianoche UTC).
+  fecha       DateTime
+  /// INSCRIPTO o DEJO (dejó el curso).
+  estado      String            @default("INSCRIPTO")
+  bajaFecha   DateTime?
+  bajaMotivo  String?
+  createdById String?
+  createdAt   DateTime          @default(now())
+  asistencias CursoAsistencia[]
+
+  @@unique([cursoId, dni])
+  @@index([dni])
+  @@map("curso_inscriptos")
+}
+
+/// Una clase de un curso: el día y, si se anota, el tema.
+model CursoClase {
+  id          String            @id @default(cuid())
+  cursoId     String
+  curso       Curso             @relation(fields: [cursoId], references: [id], onDelete: Cascade)
+  /// Fecha de calendario, a medianoche UTC.
+  fecha       DateTime
+  tema        String?
+  createdById String?
+  createdAt   DateTime          @default(now())
+  asistencias CursoAsistencia[]
+
+  @@unique([cursoId, fecha])
+  @@map("curso_clases")
+}
+
+/// Si cada inscripto vino a cada clase.
+model CursoAsistencia {
+  claseId     String
+  clase       CursoClase     @relation(fields: [claseId], references: [id], onDelete: Cascade)
+  inscriptoId String
+  inscripto   CursoInscripto @relation(fields: [inscriptoId], references: [id], onDelete: Cascade)
+  /// PRESENTE, AUSENTE o AVISO (faltó con aviso: no cuenta en contra).
+  estado      String
+  updatedById String?
+  updatedAt   DateTime       @updatedAt
+
+  @@id([claseId, inscriptoId])
+  @@index([inscriptoId])
+  @@map("curso_asistencias")
+}
+
+/// El límite de un barrio dibujado en la app. Reemplaza al contorno de OpenStreetMap (src/lib/barrios-contornos-osm.ts).
+model BarrioLimite {
+  /// Nombre del barrio tal como figura en src/lib/barrios.ts.
+  barrio      String   @id
+  /// Lista de puntos [lat, lng] que se cierra sola.
+  puntos      Json
+  updatedById String?
+  updatedAt   DateTime @updatedAt
+
+  @@map("barrio_limites")
 }

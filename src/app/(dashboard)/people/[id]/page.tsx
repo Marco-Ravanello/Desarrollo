@@ -4,6 +4,7 @@ import { getPersonById, getRegistroFamilyMembers } from "@/services/people";
 import { getFichaSocialByDniFromDb } from "@/services/ficha-social-db";
 import { getFichaHistorial } from "@/services/ficha-historial";
 import { getPersonVisits } from "@/services/recorridas";
+import { getCursosDePersona } from "@/services/cursos";
 import { getGrupoFamiliar } from "@/services/grupo-familiar";
 import { getAddressOptions, getPersonDataChanges, getPersonEditData } from "@/services/person-data";
 import { cleanDni } from "@/services/ficha-social";
@@ -15,7 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   Calendar, Phone, MapPin, ShieldAlert, Mail, History, Eye, FileIcon, ExternalLink, Users,
-  Contact, Layers, FolderOpen, CheckCircle2, UserPlus, PencilLine, User, Footprints,
+  Contact, Layers, FolderOpen, CheckCircle2, UserPlus, PencilLine, User, Footprints, GraduationCap, Award,
 } from "lucide-react";
 import { notFound } from "next/navigation";
 import { auth } from "@/auth";
@@ -87,7 +88,7 @@ export default async function PersonDetailPage({
   const dni = person?.dni || cleanDni(id);
   if (!dni) notFound();
 
-  const [ficha, historial, grupo, registroFamily, areas, cambiosDatos, editData, addressOptions, enrollment, programHistory, visitas] = await Promise.all([
+  const [ficha, historial, grupo, registroFamily, areas, cambiosDatos, editData, addressOptions, enrollment, programHistory, visitas, cursos] = await Promise.all([
     getFichaSocialByDniFromDb(dni),
     getFichaHistorial(dni, { canViewSensitive }),
     getGrupoFamiliar(dni, { canViewSensitive }),
@@ -99,6 +100,7 @@ export default async function PersonDetailPage({
     getProgramEnrollment(dni, { role: userRole, areaId: session?.user?.areaId }),
     getProgramHistory(dni),
     getPersonVisits(dni),
+    getCursosDePersona(dni),
   ]);
   const canManagePrograms = canManageProgramEnrollment(userRole) && (Boolean(person) || enrollment.inPadron);
 
@@ -238,6 +240,32 @@ export default async function PersonDetailPage({
                 canManage={canManagePrograms}
                 today={todayInArgentina()}
               />
+              {cursos.length > 0 && (
+                <section className="space-y-3">
+                  <h3 className="flex items-center gap-2 text-xs font-bold text-muted-foreground">
+                    <GraduationCap className="h-4 w-4 text-primary" /> Cursos y talleres ({cursos.length})
+                  </h3>
+                  <ul className="divide-y divide-border/50 rounded-2xl border border-border/60">
+                    {cursos.map((c) => (
+                      <li key={c.cursoId} className="flex flex-wrap items-center justify-between gap-2 px-4 py-3">
+                        <div className="min-w-0">
+                          <Link href={`/cursos/${c.cursoId}`} className="text-sm font-semibold text-foreground hover:text-primary hover:underline">{c.nombre}</Link>
+                          <p className="text-xs text-muted-foreground">
+                            {c.periodo}
+                            {c.asistencia !== null ? ` · asistencia ${c.asistencia} %` : ""}
+                            {c.inscriptoEstado === "DEJO" ? " · dejó" : c.estado === "TERMINADO" ? " · terminado" : " · en curso"}
+                          </p>
+                        </div>
+                        {c.certificado && (
+                          <Link href={`/cursos/${c.cursoId}/certificados`} className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline">
+                            <Award className="h-3.5 w-3.5" /> Con certificado
+                          </Link>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              )}
               <ProgramasDetalle detalle={ficha.detalle_programas} nombreTitular={ficha.nombre_detectado} />
             </div>
           </TabsContent>

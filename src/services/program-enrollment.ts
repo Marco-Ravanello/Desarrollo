@@ -58,7 +58,6 @@ export async function enrollInProgram(
   if (!dni) return { success: false, error: "Falta el DNI." };
   if (!isPadronProgramColumn(input.column)) return { success: false, error: "Elegí el programa." };
   const column = input.column;
-  const program = findPadronProgram(column)!;
   const checked = checkDay(input.day);
   if ("error" in checked) return { success: false, error: checked.error };
   const note = (input.note ?? "").trim().slice(0, PROGRAM_NOTE_MAX) || null;
@@ -66,61 +65,82 @@ export async function enrollInProgram(
   const notAllowed = await programManageError(user, column);
   if (notAllowed) return { success: false, error: notAllowed };
 
-  return prisma.$transaction(async (tx) => {
-    let row = await lockPadronRow(tx, dni);
-    if (!row) {
-      const person = await tx.person.findUnique({ where: { dni } });
-      if (!person) return { success: false as const, error: "No se encontró a la persona en el padrón ni en el Registro Único." };
-      await tx.padronUnificado.createMany({
-        data: [{
-          dni,
-          nombre_completo: [person.lastName, person.firstName].filter(Boolean).join(", ") || null,
-          direccion: person.address || null,
-          telefono: person.phone || null,
-          email: person.email || null,
-          cantidad_programas: 0,
-        }],
-        skipDuplicates: true,
-      });
-      row = await lockPadronRow(tx, dni);
-      if (!row) return { success: false as const, error: "No se pudo sumar a la persona al padrón. Probá de nuevo." };
-    }
-    if (isInProgram(row as any, column)) return { success: false as const, error: `Ya está en ${program.label}.` };
+  return prisma.$transaction((tx) =>
+    enrollInProgramTx(tx, {
+      dni,
+      column,
+      fecha,
+      note,
+      userId: user.id!,
+      origen: "APP",
+      detalle: `Alta desde la ficha, desde el ${dayText(fecha)}.${note ? ` ${note}` : ""}`,
+    })
+  );
+}
 
-    await tx.padronUnificado.update({
-      where: { dni },
-      data: {
-        [column]: 1,
-        cantidad_programas: { increment: 1 },
-        programas_activos: addProgramToList(row.programas_activos, column),
-      },
-    });
-    await tx.participacionPrograma.create({
-      data: {
+/**
+ * El alta dentro de una transacción ya abierta (la usan la ficha y la inscripción a un curso). Si la persona
+ * no está en el padrón pero sí en el Registro Único, se la suma con esos datos. No revisa permisos.
+ */
+export async function enrollInProgramTx(
+  tx: Prisma.TransactionClient,
+  input: { dni: string; column: PadronProgramColumn; fecha: Date; note: string | null; userId: string; origen: string; detalle: string }
+): Promise<Result> {
+  const { dni, column, fecha, note, userId } = input;
+  const program = findPadronProgram(column)!;
+  let row = await lockPadronRow(tx, dni);
+  if (!row) {
+    const person = await tx.person.findUnique({ where: { dni } });
+    if (!person) return { success: false, error: "No se encontró a la persona en el padrón ni en el Registro Único." };
+    await tx.padronUnificado.createMany({
+      data: [{
         dni,
-        nombre_completo: row.nombre_completo,
-        programa: program.label,
-        cantidad_registros: 1,
-        detalle_destacado: `Alta desde la ficha, desde el ${dayText(fecha)}.${note ? ` ${note}` : ""}`,
-        telefono: row.telefono,
-        email: row.email,
-        direccion: row.direccion,
-        localidad: row.localidad,
-        barrio: row.barrio,
-      },
+        nombre_completo: [person.lastName, person.firstName].filter(Boolean).join(", ") || null,
+        direccion: person.address || null,
+        telefono: person.phone || null,
+        email: person.email || null,
+        cantidad_programas: 0,
+      }],
+      skipDuplicates: true,
     });
-    await tx.padronMovimiento.create({ data: { dni, programa: column, tipo: "ALTA", fecha, motivo: note, origen: "APP", userId: user.id } });
-    await tx.auditLog.create({
-      data: {
-        userId: user.id!,
-        action: "PADRON_PROGRAMA_ALTA",
-        entity: "PadronUnificado",
-        entityId: dni,
-        details: `Alta en ${program.label} desde el ${dayText(fecha)}.${note ? ` ${note}` : ""}`,
-      },
-    });
-    return { success: true as const };
+    row = await lockPadronRow(tx, dni);
+    if (!row) return { success: false, error: "No se pudo sumar a la persona al padrón. Probá de nuevo." };
+  }
+  if (isInProgram(row as any, column)) return { success: false, error: `Ya está en ${program.label}.` };
+
+  await tx.padronUnificado.update({
+    where: { dni },
+    data: {
+      [column]: 1,
+      cantidad_programas: { increment: 1 },
+      programas_activos: addProgramToList(row.programas_activos, column),
+    },
   });
+  await tx.participacionPrograma.create({
+    data: {
+      dni,
+      nombre_completo: row.nombre_completo,
+      programa: program.label,
+      cantidad_registros: 1,
+      detalle_destacado: input.detalle,
+      telefono: row.telefono,
+      email: row.email,
+      direccion: row.direccion,
+      localidad: row.localidad,
+      barrio: row.barrio,
+    },
+  });
+  await tx.padronMovimiento.create({ data: { dni, programa: column, tipo: "ALTA", fecha, motivo: note, origen: input.origen, userId } });
+  await tx.auditLog.create({
+    data: {
+      userId,
+      action: "PADRON_PROGRAMA_ALTA",
+      entity: "PadronUnificado",
+      entityId: dni,
+      details: `Alta en ${program.label} desde el ${dayText(fecha)}.${note ? ` ${note}` : ""}`,
+    },
+  });
+  return { success: true };
 }
 
 /** Da de baja a la persona del programa, con la fecha y el motivo (obligatorio). */

@@ -17,7 +17,7 @@ import type { ProgramMovement, ProgramOption } from "@/services/program-enrollme
 import { programHref } from "@/lib/padron-programs";
 
 const NOTE_MAX = 300;
-const ORIGEN: Record<string, string> = { IMPORTACION: "por planilla", TORMENTA: "por ficha de tormenta" };
+const ORIGEN: Record<string, string> = { IMPORTACION: "por planilla", TORMENTA: "por ficha de tormenta", CURSO: "por inscripción a un curso" };
 
 const dayText = (iso: string) => iso.slice(0, 10).split("-").reverse().join("/");
 const selectClass =

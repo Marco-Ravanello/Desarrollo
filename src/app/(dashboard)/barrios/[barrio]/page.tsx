@@ -12,6 +12,7 @@ import { getAreaShortName } from "@/lib/area-theme";
 import { formatFecha } from "@/lib/fechas";
 import { formatNumber, plural } from "@/lib/formato";
 import { canAssignReferente, canPlanRecorridas, RECORRIDA_ESTADOS, type RecorridaEstado } from "@/lib/recorridas";
+import { canEditLimites } from "@/lib/barrio-limites";
 import { getBarrioDetail, getBarrioMapData, getBarrioPeople, BARRIO_CASES_SHOWN } from "@/services/barrios";
 import { fechaDeRecorrida, getBarrioRecorridas, getRecorridaUserOptions, getReferente } from "@/services/recorridas";
 import { PageHeader } from "@/components/layout/page-header";
@@ -428,7 +429,13 @@ export default async function BarrioPage({
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
-            <BarrioMapLoader data={mapData} canOpenPeople={canSeeMap} />
+            <BarrioMapLoader
+              data={mapData}
+              canOpenPeople={canSeeMap}
+              barrio={barrio}
+              canEditLimite={canEditLimites(session.user.role)}
+              fueraHref={`/barrios/${slug}/fuera`}
+            />
             {(mapData.sinPunto > 0 || mapData.lugaresSinPunto > 0) && (
               <ul className="space-y-1 text-xs text-muted-foreground">
                 {mapData.sinPunto > 0 && (
