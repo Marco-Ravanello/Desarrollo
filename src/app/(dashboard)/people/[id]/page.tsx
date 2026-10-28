@@ -3,6 +3,7 @@ import { InitialsAvatar } from "@/components/ui/initials-avatar";
 import { getPersonById, getRegistroFamilyMembers } from "@/services/people";
 import { getFichaSocialByDniFromDb } from "@/services/ficha-social-db";
 import { getFichaHistorial } from "@/services/ficha-historial";
+import { getPersonVisits } from "@/services/recorridas";
 import { getGrupoFamiliar } from "@/services/grupo-familiar";
 import { getAddressOptions, getPersonDataChanges, getPersonEditData } from "@/services/person-data";
 import { cleanDni } from "@/services/ficha-social";
@@ -14,7 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   Calendar, Phone, MapPin, ShieldAlert, Mail, History, Eye, FileIcon, ExternalLink, Users,
-  Contact, Layers, FolderOpen, CheckCircle2, UserPlus, PencilLine, User,
+  Contact, Layers, FolderOpen, CheckCircle2, UserPlus, PencilLine, User, Footprints,
 } from "lucide-react";
 import { notFound } from "next/navigation";
 import { auth } from "@/auth";
@@ -86,7 +87,7 @@ export default async function PersonDetailPage({
   const dni = person?.dni || cleanDni(id);
   if (!dni) notFound();
 
-  const [ficha, historial, grupo, registroFamily, areas, cambiosDatos, editData, addressOptions, enrollment, programHistory] = await Promise.all([
+  const [ficha, historial, grupo, registroFamily, areas, cambiosDatos, editData, addressOptions, enrollment, programHistory, visitas] = await Promise.all([
     getFichaSocialByDniFromDb(dni),
     getFichaHistorial(dni, { canViewSensitive }),
     getGrupoFamiliar(dni, { canViewSensitive }),
@@ -97,6 +98,7 @@ export default async function PersonDetailPage({
     person && canEdit ? getAddressOptions() : Promise.resolve(null),
     getProgramEnrollment(dni, { role: userRole, areaId: session?.user?.areaId }),
     getProgramHistory(dni),
+    getPersonVisits(dni),
   ]);
   const canManagePrograms = canManageProgramEnrollment(userRole) && (Boolean(person) || enrollment.inPadron);
 
@@ -117,7 +119,7 @@ export default async function PersonDetailPage({
   const totalProgramas = enrollment.inPadron
     ? enrollment.active.length
     : Object.keys(ficha.detalle_programas || {}).length || programas.length;
-  const historiaCount = historial.intervencionesTotal + historial.fichasTormenta.length + cambiosDatos.length;
+  const historiaCount = historial.intervencionesTotal + historial.fichasTormenta.length + cambiosDatos.length + visitas.length;
   const familiaCount = grupo.declarados.length + grupo.mismoDomicilio.length;
   const activeTab: Tab = TABS.includes(tab as Tab) ? (tab as Tab) : "datos";
 
@@ -303,7 +305,33 @@ export default async function PersonDetailPage({
           </TabsContent>
 
           <TabsContent value="historia" className="p-4 sm:p-6">
-            <FichaHistorialView historial={historial} withCases={false} />
+            {/* Si lo único que hay son visitas de recorridas, no se muestra el "todavía no tiene atención". */}
+            {(visitas.length === 0 || historial.intervencionesTotal + historial.fichasTormenta.length > 0) && (
+              <FichaHistorialView historial={historial} withCases={false} />
+            )}
+            {visitas.length > 0 && (
+              <section className={`space-y-3 ${historial.intervencionesTotal + historial.fichasTormenta.length > 0 ? "mt-8" : ""}`}>
+                <h3 className="flex items-center gap-2 text-xs font-bold text-muted-foreground">
+                  <Footprints className="h-4 w-4 text-primary" /> Visitas en recorridas ({visitas.length})
+                </h3>
+                <ol className="relative space-y-4 border-l border-border/60 pl-5">
+                  {visitas.map((v) => (
+                    <li key={v.id} className="relative">
+                      <span className="absolute -left-[25px] top-1 h-2.5 w-2.5 rounded-full bg-primary ring-4 ring-background" />
+                      <p className="text-xs font-bold text-muted-foreground">
+                        {fechaHora(v.fecha)}{v.visitadaPor ? ` · ${v.visitadaPor}` : ""}
+                      </p>
+                      <p className="text-sm text-foreground">
+                        <span className="font-semibold">{v.resultadoLabel}</span>
+                        {" en la "}
+                        <Link href={`/barrios/recorridas/${v.recorridaId}`} className="text-primary hover:underline">recorrida por {v.barrio}</Link>
+                      </p>
+                      {v.nota && <p className="whitespace-pre-line text-sm text-muted-foreground">{v.nota}</p>}
+                    </li>
+                  ))}
+                </ol>
+              </section>
+            )}
             {cambiosDatos.length > 0 && (
               <section className="space-y-3 mt-8">
                 <h3 className="flex items-center gap-2 text-xs font-bold text-muted-foreground">

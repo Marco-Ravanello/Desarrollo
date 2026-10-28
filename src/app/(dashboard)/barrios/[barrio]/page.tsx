@@ -2,16 +2,18 @@ export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { ArrowLeft, ClipboardList, Clock, CloudRain, Layers, MapPin, MapPinned, Phone, Search, User, Users } from "lucide-react";
+import { ArrowLeft, ClipboardList, Clock, CloudRain, Footprints, Layers, Map as MapIcon, MapPin, MapPinned, Phone, Route, Search, User, UserRound, Users } from "lucide-react";
 import { auth } from "@/auth";
-import { canViewStormDeliveries, hasPermission, PERMISSIONS } from "@/lib/permissions";
+import { canAccessPath, canViewStormDeliveries, hasPermission, PERMISSIONS } from "@/lib/permissions";
 import { barrioFromSlug, barrioSlug, canDeleteLugar, canEditLugares, lugarTipoLabel } from "@/lib/barrios";
 import { caseLabelName } from "@/lib/case-labels";
 import { splitCaseTitle } from "@/lib/case-summary";
 import { getAreaShortName } from "@/lib/area-theme";
 import { formatFecha } from "@/lib/fechas";
 import { formatNumber, plural } from "@/lib/formato";
-import { getBarrioDetail, getBarrioPeople, BARRIO_CASES_SHOWN } from "@/services/barrios";
+import { canAssignReferente, canPlanRecorridas, RECORRIDA_ESTADOS, type RecorridaEstado } from "@/lib/recorridas";
+import { getBarrioDetail, getBarrioMapData, getBarrioPeople, BARRIO_CASES_SHOWN } from "@/services/barrios";
+import { fechaDeRecorrida, getBarrioRecorridas, getRecorridaUserOptions, getReferente } from "@/services/recorridas";
 import { PageHeader } from "@/components/layout/page-header";
 import { PageBreadcrumbs } from "@/components/layout/breadcrumbs-context";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -24,6 +26,8 @@ import { EmptyMessage } from "@/components/ui/empty-message";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { CaseTag } from "@/components/cases/case-tag";
 import { DeleteLugarButton, LugarDialog } from "@/components/barrios/lugar-dialog";
+import { ReferenteDialog } from "@/components/barrios/referente-dialog";
+import { BarrioMapLoader } from "@/components/barrios/barrio-map-loader";
 
 type Params = { params: Promise<{ barrio: string }> };
 
@@ -51,10 +55,44 @@ function PriorityBadge({ priority }: { priority: string }) {
   return null;
 }
 
+const TABS = [
+  { key: "resumen", label: "Resumen", icon: MapPinned },
+  { key: "mapa", label: "Mapa", icon: MapIcon },
+  { key: "recorridas", label: "Recorridas", icon: Footprints },
+  { key: "personas", label: "Personas", icon: Users },
+] as const;
+type Tab = (typeof TABS)[number]["key"];
+
+/** Pestañas del barrio: cada una es una dirección (?ver=), así el mapa se carga solo si se abre. */
+function BarrioTabs({ slug, active, counts, hideMap }: { slug: string; active: Tab; counts: Partial<Record<Tab, number>>; hideMap: boolean }) {
+  return (
+    <nav aria-label="Secciones del barrio" className="-mx-1 overflow-x-auto px-1">
+      <ul className="inline-flex min-w-max gap-1 rounded-2xl border border-border/40 bg-muted/40 p-1">
+        {TABS.filter((t) => !(hideMap && t.key === "mapa")).map((t) => {
+          const on = t.key === active;
+          return (
+            <li key={t.key}>
+              <Link
+                href={t.key === "resumen" ? `/barrios/${slug}` : `/barrios/${slug}?ver=${t.key}`}
+                aria-current={on ? "page" : undefined}
+                className={`inline-flex min-h-9 items-center gap-1.5 rounded-xl px-3 text-xs font-bold transition-colors ${on ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+              >
+                <t.icon className="h-3.5 w-3.5" aria-hidden />
+                {t.label}
+                {counts[t.key] !== undefined && <span className="tabular-nums">({formatNumber(counts[t.key]!)})</span>}
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
+    </nav>
+  );
+}
+
 export default async function BarrioPage({
   params,
   searchParams,
-}: Params & { searchParams: Promise<{ q?: string; page?: string }> }) {
+}: Params & { searchParams: Promise<{ q?: string; page?: string; ver?: string }> }) {
   const session = await auth();
   if (!session?.user?.id) redirect("/login");
   const [{ barrio: slugParam }, sp] = await Promise.all([params, searchParams]);
@@ -64,30 +102,84 @@ export default async function BarrioPage({
   const user = session.user;
 
   const scope = { canViewSensitive: hasPermission(user.role, PERMISSIONS.VIEW_SENSITIVE_CASES) };
-  const [detail, list] = await Promise.all([
+  const canSeeMap = canAccessPath(user.role, "/maps");
+  const requested = TABS.find((t) => t.key === sp.ver)?.key ?? "resumen";
+  const tab: Tab = requested === "mapa" && !canSeeMap ? "resumen" : requested;
+  const canAssign = canAssignReferente(user.role);
+  const canPlan = canPlanRecorridas(user.role);
+
+  const [detail, list, referente, recorridas, mapData, userOptions] = await Promise.all([
     getBarrioDetail(barrio, scope),
-    getBarrioPeople(barrio, { q: sp.q, page: Number(sp.page) || 1 }),
+    tab === "personas" ? getBarrioPeople(barrio, { q: sp.q, page: Number(sp.page) || 1 }) : null,
+    getReferente(barrio),
+    getBarrioRecorridas(barrio),
+    tab === "mapa" ? getBarrioMapData(barrio, scope) : null,
+    canAssign ? getRecorridaUserOptions() : [],
   ]);
   const canEdit = canEditLugares(user.role);
   const maxProgram = Math.max(1, ...detail.programs.map((p) => p.total));
   const pageHref = (page: number) =>
-    `/barrios/${slug}?${new URLSearchParams({ ...(list.q ? { q: list.q } : {}), page: String(page) })}#personas`;
+    `/barrios/${slug}?${new URLSearchParams({ ver: "personas", ...(list?.q ? { q: list.q } : {}), page: String(page) })}`;
   const storm = detail.storm;
+  const planned = recorridas.filter((r) => r.estado !== "HECHA");
+  const lastDone = recorridas.find((r) => r.estado === "HECHA");
 
   return (
     <div className="space-y-6 pb-20 animate-in fade-in duration-500">
       <PageBreadcrumbs items={[{ label: "Barrios", href: "/barrios" }, { label: barrio, active: true }]} />
       <PageHeader
         title={barrio}
-        description="Todo lo del barrio en una pantalla. Las personas se cuentan por el barrio cargado en el padrón (o la localidad, si el barrio no es de la lista)."
+        description="Todo lo del barrio: su gente, su mapa y las recorridas del equipo. Las personas se cuentan por el barrio cargado en el padrón (o la localidad, si el barrio no es de la lista)."
         icon={MapPinned}
         actions={
-          <Button variant="ghost" size="icon" asChild className="hidden md:inline-flex rounded-xl">
-            <Link href="/barrios" aria-label="Volver a Barrios"><ArrowLeft className="h-4 w-4" /></Link>
-          </Button>
+          <div className="flex items-center gap-2">
+            {canPlan && (
+              <Button asChild className="rounded-xl font-bold">
+                <Link href={`/barrios/${slug}/recorrida`}><Route className="mr-2 h-4 w-4" aria-hidden />Preparar recorrida</Link>
+              </Button>
+            )}
+            <Button variant="ghost" size="icon" asChild className="hidden md:inline-flex rounded-xl">
+              <Link href="/barrios" aria-label="Volver a Barrios"><ArrowLeft className="h-4 w-4" /></Link>
+            </Button>
+          </div>
         }
       />
 
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-2xl border border-border/60 bg-card px-4 py-3 text-sm">
+        <span className="flex min-w-0 items-center gap-2">
+          <UserRound className="h-4 w-4 shrink-0 text-primary" aria-hidden />
+          <span className="text-muted-foreground">Referente del barrio:</span>
+          {referente ? (
+            <span className="font-semibold text-foreground">
+              {referente.name}
+              {referente.area && <span className="font-normal text-muted-foreground"> · {referente.area}</span>}
+              {referente.email && (
+                <a href={`mailto:${referente.email}`} className="ml-2 font-normal text-primary hover:underline">{referente.email}</a>
+              )}
+            </span>
+          ) : (
+            <span className="italic text-muted-foreground">sin elegir</span>
+          )}
+        </span>
+        {canAssign && <ReferenteDialog barrio={barrio} current={referente?.userId ?? null} options={userOptions} />}
+        <span className="flex items-center gap-2 sm:ml-auto">
+          <Footprints className="h-4 w-4 shrink-0 text-primary" aria-hidden />
+          {planned[0] ? (
+            <Link href={`/barrios/recorridas/${planned[0].id}`} className="font-semibold text-primary hover:underline">
+              Próxima recorrida: {fechaDeRecorrida(planned[0].fecha)}
+            </Link>
+          ) : lastDone ? (
+            <span className="text-muted-foreground">Última recorrida: {fechaDeRecorrida(lastDone.fecha)}</span>
+          ) : (
+            <span className="text-muted-foreground">Todavía no hay recorridas</span>
+          )}
+        </span>
+      </div>
+
+      <BarrioTabs slug={slug} active={tab} hideMap={!canSeeMap} counts={{ recorridas: recorridas.length, personas: detail.people }} />
+
+      {tab === "resumen" && (
+        <>
       <StatRow>
         <StatCard label="Personas del padrón" value={formatNumber(detail.people)} icon={Users} tone="blue" hint={`${pct(detail.withPhone, detail.people)} con teléfono`} />
         <StatCard label="Con algún programa" value={formatNumber(detail.withPrograms)} icon={Layers} tone="green" hint={pct(detail.withPrograms, detail.people) + " de las personas"} />
@@ -324,6 +416,93 @@ export default async function BarrioPage({
         </CardContent>
       </Card>
 
+        </>
+      )}
+
+      {tab === "mapa" && mapData && (
+        <Card className="shadow-none">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base"><MapIcon className="h-4 w-4 text-primary" /> Mapa de {barrio}</CardTitle>
+            <CardDescription>
+              Las personas del padrón, los expedientes abiertos y los lugares de referencia. Tocá un punto para ver de quién es.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <BarrioMapLoader data={mapData} canOpenPeople={canSeeMap} />
+            {(mapData.sinPunto > 0 || mapData.lugaresSinPunto > 0) && (
+              <ul className="space-y-1 text-xs text-muted-foreground">
+                {mapData.sinPunto > 0 && (
+                  <li>
+                    {plural(mapData.sinPunto, "persona del barrio no está", "personas del barrio no están")} en el mapa porque falta ubicar su dirección.
+                  </li>
+                )}
+                {mapData.lugaresSinPunto > 0 && (
+                  <li>
+                    {plural(mapData.lugaresSinPunto, "lugar de referencia no se encontró", "lugares de referencia no se encontraron")} en el mapa por su dirección: revisá la dirección en la pestaña Resumen.
+                  </li>
+                )}
+              </ul>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {tab === "recorridas" && (
+        <Card className="shadow-none">
+          <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2 text-base"><Footprints className="h-4 w-4 text-primary" /> Recorridas</CardTitle>
+              <CardDescription>
+                Cada recorrida tiene su lista de a quién visitar, ordenada por calle, y lo que pasó en cada casa. Al terminarla queda lo que se encontró.
+              </CardDescription>
+            </div>
+            {canPlan && (
+              <Button asChild variant="outline" className="self-start rounded-xl font-bold">
+                <Link href={`/barrios/${slug}/recorrida`}><Route className="mr-2 h-4 w-4" aria-hidden />Preparar recorrida</Link>
+              </Button>
+            )}
+          </CardHeader>
+          <CardContent>
+            {recorridas.length === 0 ? (
+              <EmptyMessage
+                compact
+                icon={Footprints}
+                title="Todavía no hay recorridas en el barrio"
+                description={canPlan ? "Prepará la primera: elegí a quiénes visitar y la app arma la lista por calle." : "Las arma el equipo de cada área."}
+              />
+            ) : (
+              <ul className="divide-y divide-border/40">
+                {recorridas.map((r) => (
+                  <li key={r.id}>
+                    <Link href={`/barrios/recorridas/${r.id}`} className="flex flex-col gap-1 py-3 hover:bg-muted/30 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:px-2 rounded-xl">
+                      <span className="min-w-0">
+                        <span className="flex flex-wrap items-center gap-2">
+                          <span className="font-semibold text-foreground">{fechaDeRecorrida(r.fecha)}</span>
+                          <Badge
+                            variant="outline"
+                            className={r.estado === "HECHA" ? "border-emerald-500/30 bg-emerald-500/10 text-xs text-emerald-700 dark:text-emerald-300" : "border-primary/30 bg-primary/10 text-xs text-primary"}
+                          >
+                            {RECORRIDA_ESTADOS[r.estado as RecorridaEstado] ?? r.estado}
+                          </Badge>
+                          {r.objetivo && <span className="text-sm text-foreground">{r.objetivo}</span>}
+                        </span>
+                        <span className="block text-xs text-muted-foreground">{r.equipo.join(", ") || "Sin equipo"}</span>
+                      </span>
+                      <span className="shrink-0 text-sm tabular-nums text-muted-foreground">
+                        {r.estado === "HECHA" || r.conResultado > 0
+                          ? `${formatNumber(r.visitadas)} de ${plural(r.total, "visita")} hechas`
+                          : plural(r.total, "persona para visitar", "personas para visitar")}
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {tab === "personas" && list && (
       <Card className="shadow-none" id="personas">
         <CardHeader>
           <CardTitle className="text-base">Personas del barrio</CardTitle>
@@ -334,13 +513,14 @@ export default async function BarrioPage({
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <form method="get" action={`/barrios/${slug}#personas`} className="flex gap-2" role="search">
+          <form method="get" action={`/barrios/${slug}`} className="flex gap-2" role="search">
+            <input type="hidden" name="ver" value="personas" />
             <label htmlFor="barrio-buscar" className="sr-only">Buscar en el barrio</label>
             <Input id="barrio-buscar" name="q" defaultValue={list.q} placeholder="DNI, nombre o calle" className="h-10 rounded-xl" />
             <Button type="submit" variant="outline" className="h-10 rounded-xl gap-1.5"><Search className="h-4 w-4" /> Buscar</Button>
             {list.q && (
               <Button asChild variant="ghost" className="h-10 rounded-xl">
-                <Link href={`/barrios/${slug}#personas`}>Ver todas</Link>
+                <Link href={`/barrios/${slug}?ver=personas`}>Ver todas</Link>
               </Button>
             )}
           </form>
@@ -407,6 +587,7 @@ export default async function BarrioPage({
           )}
         </CardContent>
       </Card>
+      )}
     </div>
   );
 }

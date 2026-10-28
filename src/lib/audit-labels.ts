@@ -4,6 +4,7 @@
 
 import { orderStatusLabel, translateOrderStatuses } from "@/lib/purchase-orders";
 import { reservationStatusLabel } from "@/lib/vehicle-reservations";
+import { barrioSlug } from "@/lib/barrios";
 
 export type AuditGroup =
   | "expedientes"
@@ -54,6 +55,10 @@ const ACTIONS: Record<string, { label: string; group: AuditGroup }> = {
   LUGAR_CREADO: { label: "Cargó un lugar de referencia de un barrio", group: "personas" },
   LUGAR_EDITADO: { label: "Corrigió un lugar de referencia de un barrio", group: "personas" },
   LUGAR_BORRADO: { label: "Borró un lugar de referencia de un barrio", group: "personas" },
+  RECORRIDA_CREADA: { label: "Armó una recorrida por un barrio", group: "personas" },
+  RECORRIDA_TERMINADA: { label: "Terminó una recorrida por un barrio", group: "personas" },
+  RECORRIDA_BORRADA: { label: "Borró una recorrida por un barrio", group: "personas" },
+  BARRIO_REFERENTE: { label: "Eligió el referente de un barrio", group: "personas" },
   PADRON_GEO_UPDATE: { label: "Ubicó una dirección en el mapa", group: "personas" },
   PADRON_DUPLICADO_UNIDO: { label: "Unió dos personas repetidas", group: "personas" },
   PADRON_DUPLICADO_DESCARTADO: { label: "Marcó que no son la misma persona", group: "personas" },
@@ -272,6 +277,10 @@ export function auditLink(log: { action: string; entity: string; entityId: strin
       return "/admin/budget";
     case "LugarReferencia":
       return "/barrios";
+    case "Recorrida":
+      return action === "RECORRIDA_BORRADA" ? null : `/barrios/recorridas/${entityId}`;
+    case "Barrio":
+      return `/barrios/${barrioSlug(entityId)}`;
     case "Programa":
       return entityId.startsWith("prog_") ? `/people/programas/${entityId.slice(5)}` : null;
     case "SystemSetting":
