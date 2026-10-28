@@ -10,6 +10,9 @@ export const TASK_PRIORITIES = [
 
 export type TaskPriority = (typeof TASK_PRIORITIES)[number]["value"];
 
+/** Además de quien la creó, estos roles editan, completan y borran tareas de otras personas. */
+export const TASK_MANAGER_ROLES: string[] = ["SUPERADMIN", "ADMIN_GENERAL", "DIRECCION_GENERAL"];
+
 export const TASK_TITLE_MAX = 200;
 export const TASK_NOTES_MAX = 1000;
 /** Hora que se usa cuando la tarea tiene día pero no hora (la misma que los seguimientos). */

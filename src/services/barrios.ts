@@ -46,6 +46,13 @@ export async function inBarrioSql(barrio: Barrio3F): Promise<Prisma.Sql> {
   return Prisma.sql`${pairSql} = ANY(${keys}::text[])`;
 }
 
+/** Condición SQL (sobre padron_unificado p) para las filas de cualquiera de esos barrios. */
+export async function inBarriosSql(barrios: readonly Barrio3F[]): Promise<Prisma.Sql> {
+  const wanted = new Set<Barrio3F>(barrios);
+  const keys = (await getPadronPairs()).filter((r) => r.match && wanted.has(r.match)).map((r) => pairKey(r.barrio, r.localidad));
+  return Prisma.sql`${pairSql} = ANY(${keys}::text[])`;
+}
+
 /** Expedientes sin cerrar, sin los de Violencia de Género para quien no puede verlos. */
 function openCaseFilter(scope: BarrioScope): Prisma.Sql {
   return scope.canViewSensitive

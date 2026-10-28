@@ -1,12 +1,9 @@
 import prisma from "@/lib/prisma";
 import {
-  isTaskPriority, parseViewerIds, serializeViewerIds, taskDueAt, TASK_NOTES_MAX, TASK_TITLE_MAX,
+  isTaskPriority, parseViewerIds, serializeViewerIds, taskDueAt, TASK_MANAGER_ROLES, TASK_NOTES_MAX, TASK_TITLE_MAX,
 } from "@/lib/tasks";
 
 type Actor = { id?: string | null; role?: string | null };
-
-/** Además de quien la creó, la conducción puede cambiar tareas de otras personas (igual que completarlas o borrarlas). */
-const MANAGER_ROLES = ["SUPERADMIN", "ADMIN_GENERAL", "DIRECCION_GENERAL"];
 
 export type TaskEdit = {
   title: string;
@@ -24,7 +21,7 @@ export async function updateTask(user: Actor, id: string, input: TaskEdit) {
   if (!user.id) return { success: false as const, error: "Tu sesión expiró. Volvé a iniciar sesión." };
   const task = await prisma.task.findUnique({ where: { id }, select: { userId: true, dueDate: true } });
   if (!task) return { success: false as const, error: "La tarea ya no existe. Recargá la página." };
-  if (task.userId !== user.id && !MANAGER_ROLES.includes(user.role ?? "")) {
+  if (task.userId !== user.id && !TASK_MANAGER_ROLES.includes(user.role ?? "")) {
     return { success: false as const, error: "Solo quien creó la tarea puede cambiarla." };
   }
 

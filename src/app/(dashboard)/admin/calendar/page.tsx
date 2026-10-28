@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { UnifiedCalendar } from "@/components/calendar/unified-calendar";
 import { PageHeader } from "@/components/layout/page-header";
 import { getAgendaTasks } from "@/services/agenda";
+import { TASK_MANAGER_ROLES } from "@/lib/tasks";
 import { Calendar as CalendarIcon } from "lucide-react";
 
 export const metadata = { title: "Agenda" };
@@ -68,8 +69,11 @@ export default async function AdminCalendarPage() {
     updatedAt: o.updatedAt ? new Date(o.updatedAt).toISOString() : new Date().toISOString()
   }));
 
+  // Marcar como hecha: quien la creó o la conducción (la misma regla que en Mis tareas).
+  const canEditAnyTask = TASK_MANAGER_ROLES.includes(session.user.role);
   const serializedTasks = (tasks || []).map((t) => ({
     ...t,
+    canEdit: t.userId === session.user.id || canEditAnyTask,
     dueDate: t.dueDate ? new Date(t.dueDate).toISOString() : null,
     createdAt: t.createdAt ? new Date(t.createdAt).toISOString() : new Date().toISOString()
   }));
