@@ -7,6 +7,7 @@ import { actionErrorMessage } from "@/lib/action-error";
 import { FLEET_ADMIN_ROLES, PURCHASING_EDIT_ROLES } from "@/lib/permissions";
 import { formatReservationRange, isFleetAdmin, reservationStatusLabel } from "@/lib/vehicle-reservations";
 import { conflictMessage, findBlockingReservation, lockVehicle } from "@/services/vehicle-reservations";
+import { checkRepeat } from "@/services/tasks";
 
 const parseLocalDate = (dateStr: string | null) => {
   if (!dateStr) return null;
@@ -138,9 +139,11 @@ export async function reschedulePurchaseOrderAction(id: string, deliveryDateStr:
   }
 }
 
-export async function createSharedTaskAction(title: string, description: string, dueDateStr: string, viewerIds: string) {
+export async function createSharedTaskAction(title: string, description: string, dueDateStr: string, viewerIds: string, repeat?: string | null) {
   const session = await auth();
   if (!session?.user?.id) return { success: false, error: "No tenés permiso para hacer esto o tu sesión expiró. Si sigue pasando, volvé a iniciar sesión." };
+  const rep = checkRepeat(repeat, Boolean(dueDateStr));
+  if (!rep.ok) return { success: false, error: rep.error };
 
   try {
     await prisma.task.create({
@@ -150,6 +153,7 @@ export async function createSharedTaskAction(title: string, description: string,
         userId: session.user.id,
         dueDate: parseLocalDate(dueDateStr),
         viewerIds: viewerIds || null,
+        repeat: rep.repeat,
         status: "PENDIENTE"
       }
     });

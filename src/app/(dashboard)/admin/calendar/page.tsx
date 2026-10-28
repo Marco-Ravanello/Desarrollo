@@ -91,7 +91,7 @@ export default async function AdminCalendarPage() {
         description={
           <>
             Reservas de vehículos, entregas de órdenes de compra y tus tareas en un mismo calendario.
-            <span className="hidden lg:inline"> Arrastrá un evento para cambiarle la fecha.</span>
+            <span className="hidden lg:inline"> Tocá un horario libre de la semana o del día para agendar ahí, o arrastrá un evento para cambiarle la fecha.</span>
           </>
         }
         icon={CalendarIcon}

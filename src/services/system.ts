@@ -31,7 +31,8 @@ export async function createTask(
   title: string,
   description?: string,
   dueDate?: Date | null,
-  priority?: any
+  priority?: any,
+  repeat?: string | null
 ) {
   return await prisma.task.create({
     data: {
@@ -39,10 +40,10 @@ export async function createTask(
       title,
       description,
       dueDate,
+      repeat: repeat || null,
       priority: priority || 'MEDIA',
       status: 'PENDIENTE'
     }
   });
 }
-export async function toggleTask(id: string, currentStatus: string) { const newStatus = currentStatus === 'COMPLETADA' ? 'PENDIENTE' : 'COMPLETADA'; return await prisma.task.update({ where: { id }, data: { status: newStatus as any } }); }
 export async function deleteTask(id: string) { return await prisma.task.delete({ where: { id } }); }

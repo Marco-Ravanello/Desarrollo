@@ -473,6 +473,10 @@ model Task {
   caseId      String?
   case        Case?      @relation(fields: [caseId], references: [id], onDelete: SetNull)
   notifiedAt  DateTime?
+  // "SEMANAL", "QUINCENAL" o "MENSUAL": al marcarla como hecha se crea sola la próxima.
+  repeat      String?
+  // La próxima que se creó sola (para no crear otra si se vuelve a abrir y cerrar).
+  nextTaskId  String?
   createdAt   DateTime   @default(now())
 
   @@index([caseId])
