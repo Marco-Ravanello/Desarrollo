@@ -20,3 +20,11 @@ export function canManageProgram(viewer: Viewer, ownerAreaId: string | null | un
   if (!ownerAreaId) return true;
   return Boolean(viewer.areaId) && viewer.areaId === ownerAreaId;
 }
+
+/**
+ * ¿Puede ver la lista de posibles destinatarios? Quien da altas en el programa y la conducción.
+ * La lista sale de cruzar el padrón con los expedientes, así que no la ve cualquiera.
+ */
+export function canViewProgramCandidates(viewer: Viewer, ownerAreaId: string | null | undefined): boolean {
+  return canAssignProgramArea(viewer.role) || canManageProgram(viewer, ownerAreaId);
+}

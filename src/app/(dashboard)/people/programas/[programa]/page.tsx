@@ -2,14 +2,16 @@ export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { ArrowDownRight, ArrowUpRight, Download, Layers, MapPin, Phone, Search, Users } from "lucide-react";
+import { ArrowDownRight, ArrowRight, ArrowUpRight, Download, Layers, ListChecks, MapPin, Phone, Search, UserPlus, Users } from "lucide-react";
 import { auth } from "@/auth";
 import prisma from "@/lib/prisma";
 import { hasPermission, PERMISSIONS } from "@/lib/permissions";
-import { canAssignProgramArea, canManageProgram } from "@/lib/program-ownership";
+import { canAssignProgramArea, canManageProgram, canViewProgramCandidates } from "@/lib/program-ownership";
+import { describeRequirements, hasCheckableRequirements } from "@/lib/program-requirements";
 import { programFromSlug, programSlug } from "@/lib/padron-programs";
 import { formatNumber, plural } from "@/lib/formato";
 import { getProgramDetail, getProgramOwners, getProgramPeople } from "@/services/programs";
+import { countProgramCandidates, getProgramRequirements } from "@/services/program-requirements";
 import { PageHeader } from "@/components/layout/page-header";
 import { PageBreadcrumbs } from "@/components/layout/breadcrumbs-context";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,6 +23,7 @@ import { EmptyMessage } from "@/components/ui/empty-message";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ProgramMonthsChart } from "@/components/programs/program-months-chart";
 import { ProgramAreaDialog } from "@/components/programs/program-area-dialog";
+import { ProgramRequirementsDialog } from "@/components/programs/program-requirements-dialog";
 
 type Params = { params: Promise<{ programa: string }> };
 
@@ -50,14 +53,20 @@ export default async function ProgramPage({
   const slug = programSlug(program.column);
 
   const canAssign = canAssignProgramArea(session.user.role);
-  const [detail, list, owners, areas] = await Promise.all([
+  const canViewSensitive = hasPermission(session.user.role, PERMISSIONS.VIEW_SENSITIVE_CASES);
+  const [detail, list, owners, areas, requirements] = await Promise.all([
     getProgramDetail(program.column),
     getProgramPeople(program.column, { q: sp.q, page: Number(sp.page) || 1 }),
     getProgramOwners(),
     canAssign ? prisma.area.findMany({ select: { id: true, name: true }, orderBy: { name: "asc" } }) : Promise.resolve([]),
+    getProgramRequirements(program.column),
   ]);
   const owner = owners.get(program.column) ?? null;
   const canManage = canManageProgram(session.user, owner?.areaId);
+  const canSeeCandidates = canViewProgramCandidates(session.user, owner?.areaId);
+  const checkable = hasCheckableRequirements(requirements);
+  const candidates = checkable ? await countProgramCandidates(program.column, requirements, { canViewSensitive }) : null;
+  const requirementLines = describeRequirements(requirements);
   const canExport = hasPermission(session.user.role, PERMISSIONS.EXPORT_PERSONAL_DATA);
   const shownBarrios = detail.barrios.slice(0, 10);
   const otherBarrios = detail.people - shownBarrios.reduce((a, b) => a + b.total, 0);
@@ -93,6 +102,63 @@ export default async function ProgramPage({
         <StatCard label="Bajas en el último año" value={formatNumber(detail.bajas12)} icon={ArrowDownRight} tone="orange" hint="Desde la ficha de cada persona" />
         <StatCard label="Con teléfono" value={pct(detail.withPhone, detail.people)} icon={Phone} tone="blue" hint={`${plural(detail.withPhone, "persona")} con teléfono cargado`} />
       </StatRow>
+
+      <Card className="shadow-none">
+        <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <CardTitle className="flex items-center gap-2 text-base"><UserPlus className="h-4 w-4 text-primary" /> Posibles destinatarios</CardTitle>
+            <CardDescription>Personas del padrón que cumplen los requisitos del programa y todavía no están en él.</CardDescription>
+          </div>
+          {canManage && <ProgramRequirementsDialog column={program.column} label={program.label} current={requirements} />}
+        </CardHeader>
+        <CardContent>
+          {!checkable ? (
+            <EmptyMessage
+              compact
+              icon={ListChecks}
+              title="El programa todavía no tiene requisitos cargados"
+              description={
+                canManage
+                  ? "Cargá la edad, el barrio, alguna etiqueta o si tiene que estar en otro programa, y la app arma la lista."
+                  : "Los carga el área a cargo del programa o la conducción."
+              }
+            />
+          ) : (
+            <div className="grid gap-5 md:grid-cols-2">
+              <div className="space-y-2">
+                <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Requisitos</p>
+                <ul className="space-y-1.5 text-sm">
+                  {requirementLines.map((line) => (
+                    <li key={line} className="flex items-start gap-2">
+                      <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" aria-hidden />
+                      <span className="text-foreground">{line}</span>
+                    </li>
+                  ))}
+                </ul>
+                {requirements.nota && <p className="text-sm text-muted-foreground">Además: {requirements.nota}</p>}
+              </div>
+              <div className="space-y-2 rounded-xl border border-border/60 bg-muted/20 p-4">
+                <p className="text-3xl font-bold tabular-nums text-foreground">{formatNumber(candidates?.total ?? 0)}</p>
+                <p className="text-sm text-muted-foreground">
+                  {candidates?.total === 1 ? "persona los cumple y no está en el programa." : "personas los cumplen y no están en el programa."}
+                </p>
+                {(candidates?.withoutAge ?? 0) > 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    {candidates!.withoutAge === 1
+                      ? "1 persona más cumple lo demás, pero no tiene edad cargada y no se la pudo revisar."
+                      : `${formatNumber(candidates!.withoutAge)} personas más cumplen lo demás, pero no tienen edad cargada y no se las pudo revisar.`}
+                  </p>
+                )}
+                {canSeeCandidates && (candidates?.total ?? 0) > 0 && (
+                  <Button asChild size="sm" className="mt-1 rounded-xl font-bold gap-1.5">
+                    <Link href={`/people/programas/${slug}/destinatarios`}>Ver la lista <ArrowRight className="h-4 w-4" /></Link>
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       <div className="grid gap-6 lg:grid-cols-5">
         <Card className="shadow-none lg:col-span-3">

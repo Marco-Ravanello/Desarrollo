@@ -1,5 +1,5 @@
 import prisma from "@/lib/prisma";
-import { currentMonthRange } from "@/lib/hr-labels";
+import { canEditHR, currentMonthRange } from "@/lib/hr-labels";
 import { ContractType, HRStatus } from "@prisma/client";
 import { diaAR, diaDeVencimiento } from "@/lib/fechas";
 
@@ -160,4 +160,34 @@ export async function getStaffAwayToday(now = new Date()): Promise<{ away: Staff
     })),
     expired,
   };
+}
+
+/**
+ * "Ya volvió": la persona deja de figurar de licencia o de vacaciones y pasa a Activo, sin fecha de vuelta.
+ * Queda en Auditoría.
+ */
+export async function markBackFromLeave(user: { id?: string | null; role?: string | null }, id: string) {
+  if (!user.id || !canEditHR(user.role)) {
+    return { success: false as const, error: "Solo Superadmin y Administración General cambian el estado del personal." };
+  }
+  const record = await prisma.hRRecord.findUnique({ where: { id }, select: { firstName: true, lastName: true, status: true } });
+  if (!record) return { success: false as const, error: "No se encontró a esa persona en Recursos Humanos." };
+  if (record.status !== "LICENCIA" && record.status !== "VACACIONES") {
+    return { success: false as const, error: "Esa persona ya no figura de licencia. Recargá la página." };
+  }
+  const { count } = await prisma.hRRecord.updateMany({
+    where: { id, status: record.status },
+    data: { status: "ACTIVO", statusUntil: null },
+  });
+  if (count === 0) return { success: false as const, error: "Otra persona cambió el estado recién. Recargá la página." };
+  await prisma.auditLog.create({
+    data: {
+      userId: user.id,
+      action: "HR_VOLVIO",
+      entity: "HRRecord",
+      entityId: id,
+      details: `${record.lastName}, ${record.firstName} volvió de ${record.status === "VACACIONES" ? "las vacaciones" : "la licencia"}: pasa a Activo.`,
+    },
+  });
+  return { success: true as const };
 }

@@ -614,6 +614,27 @@ model ProgramaArea {
   @@map("programas_areas")
 }
 
+/// Requisitos simples de cada programa del padrón, para mostrar quiénes los cumplen y todavía no están.
+model ProgramaRequisitos {
+  programa     String   @id // columna prog_... de padron_unificado
+  edadMin      Int?
+  edadMax      Int?
+  /// Barrios de la lista oficial (src/lib/barrios.ts). Vacío = cualquiera.
+  barrios      String[] @default([])
+  /// Que tenga un expediente abierto con alguna de estas etiquetas (src/lib/case-labels.ts).
+  etiquetas    String[] @default([])
+  /// Que esté en alguno de estos programas (columnas prog_...).
+  enProgramas  String[] @default([])
+  /// Que no esté en ninguno de estos programas.
+  sinProgramas String[] @default([])
+  /// Otros requisitos que la app no puede revisar sola (ingresos, documentación…).
+  nota         String?
+  updatedById  String?
+  updatedAt    DateTime @updatedAt
+
+  @@map("programas_requisitos")
+}
+
 model PadronMovimiento {
   id        String   @id @default(cuid())
   dni       String

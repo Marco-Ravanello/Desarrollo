@@ -5,7 +5,7 @@ import { useState, useEffect } from "react";
 import {
   ChevronLeft, ChevronRight, Calendar, CalendarDays, User, Briefcase,
   Clock, CheckSquare, ShoppingBag, Plus, X, Eye, Search,
-  Edit2, ArrowRight, Car
+  Edit2, ArrowRight, Car, Check, RotateCcw
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -15,12 +15,14 @@ import { Badge } from "@/components/ui/badge";
 import { EmptyMessage } from "@/components/ui/empty-message";
 import { toast } from "sonner";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   rescheduleTaskAction,
   rescheduleReservationAction,
   reschedulePurchaseOrderAction,
   createSharedTaskAction
 } from "@/app/(dashboard)/admin/actions/calendar-actions";
+import { toggleTaskAction } from "@/app/(dashboard)/tasks/actions";
 import { formatFechaHora, formatFechaCalendario, formatHora } from "@/lib/fechas";
 import {
   WEEKDAY_LETTER, WEEKDAY_SHORT, chipsThatFit, dateOnlyToLocal, isDateOnly, localDayKey, localTimeKey,
@@ -51,6 +53,8 @@ interface AgendaEvent {
   icon: typeof Car;
   raw: any;
   isOwner?: boolean;
+  /** Tarea marcada como hecha: se ve tachada. */
+  done?: boolean;
 }
 
 const MONTH_NAMES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
@@ -96,6 +100,9 @@ const TYPES: Record<AgendaEventType, {
 
 const TYPE_ORDER: AgendaEventType[] = ["reservation", "order", "task"];
 
+/** Una tarea hecha: gris y tachada, para distinguirla de las pendientes. */
+const DONE_COLOR = "bg-muted/60 text-muted-foreground line-through decoration-1 border-l-4 border-l-muted-foreground/40 border-border/40 hover:bg-muted";
+
 const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 const sameDay = (a: Date, b: Date) => a.toDateString() === b.toDateString();
 
@@ -131,6 +138,10 @@ export function UnifiedCalendar({ reservations = [], purchaseOrders = [], tasks 
   const [newTaskDueTime, setNewTaskDueTime] = useState("09:00");
   const [newTaskViewerIds, setNewTaskViewerIds] = useState<string[]>([]);
   const [isSaving, setIsSaving] = useState(false);
+  const [togglingTask, setTogglingTask] = useState(false);
+  // Lo que se marcó como hecho (o se reabrió) recién, hasta que llegue la agenda actualizada.
+  const [doneOverride, setDoneOverride] = useState<Record<string, boolean>>({});
+  const router = useRouter();
 
   const [nowClock, setNowClock] = useState(new Date());
   // Las fechas dependen de la hora de la compu de cada persona: la agenda se arma recién en el navegador
@@ -207,6 +218,7 @@ export function UnifiedCalendar({ reservations = [], purchaseOrders = [], tasks 
     if (!t?.dueDate) return;
     if (!isTaskVisibleTo(t, currentUserId)) return;
     const isOwner = t.userId === currentUserId;
+    const done = doneOverride[t.id] ?? t.status === "COMPLETADA";
     baseEvents.push({
       id: t.id,
       type: "task",
@@ -215,10 +227,11 @@ export function UnifiedCalendar({ reservations = [], purchaseOrders = [], tasks 
       startDate: new Date(t.dueDate),
       endDate: new Date(t.dueDate),
       allDay: false,
-      color: TYPES.task.color,
+      color: done ? DONE_COLOR : TYPES.task.color,
       icon: CheckSquare,
       raw: t,
       isOwner,
+      done,
     });
   });
 
@@ -321,6 +334,28 @@ export function UnifiedCalendar({ reservations = [], purchaseOrders = [], tasks 
       toast.error(e.message || "Ocurrió un error inesperado", { id: toastId });
     } finally {
       setIsRescheduling(false);
+    }
+  };
+
+  /** Marcar la tarea como hecha desde la Agenda, o volver a dejarla pendiente. */
+  const handleToggleDone = async () => {
+    if (!selectedEvent || selectedEvent.type !== "task") return;
+    const wasDone = Boolean(selectedEvent.done);
+    setTogglingTask(true);
+    try {
+      const res = await toggleTaskAction(selectedEvent.id, wasDone ? "COMPLETADA" : "PENDIENTE");
+      if (!res.success) {
+        toast.error(res.error);
+        return;
+      }
+      setDoneOverride((prev) => ({ ...prev, [selectedEvent.id]: !wasDone }));
+      toast.success(wasDone ? "La tarea volvió a quedar pendiente." : "Listo, la tarea quedó hecha.");
+      setSelectedEvent(null);
+      router.refresh();
+    } catch {
+      toast.error("No se pudo actualizar la tarea. Revisá la conexión y probá de nuevo.");
+    } finally {
+      setTogglingTask(false);
     }
   };
 
@@ -981,10 +1016,10 @@ export function UnifiedCalendar({ reservations = [], purchaseOrders = [], tasks 
                           </div>
 
                           <div className="min-w-0 flex-1">
-                            <p className="text-sm font-semibold text-foreground break-words line-clamp-2">{e.title}</p>
+                            <p className={`text-sm font-semibold break-words line-clamp-2 ${e.done ? "text-muted-foreground line-through" : "text-foreground"}`}>{e.title}</p>
                             <p className="mt-0.5 flex flex-wrap items-center gap-x-1.5 text-xs text-muted-foreground">
-                              <span className={`h-2 w-2 shrink-0 rounded-full ${t.dot}`} aria-hidden />
-                              <span>{t.kind}</span>
+                              <span className={`h-2 w-2 shrink-0 rounded-full ${e.done ? "bg-muted-foreground/40" : t.dot}`} aria-hidden />
+                              <span>{e.done ? "Tarea hecha" : t.kind}</span>
                               <span aria-hidden>·</span>
                               <span className="tabular-nums">{whenLabel(e)}</span>
                             </p>
@@ -1069,6 +1104,11 @@ export function UnifiedCalendar({ reservations = [], purchaseOrders = [], tasks 
 
               {selectedEvent.type === "task" && (
                 <>
+                  {selectedEvent.done && (
+                    <div className="flex items-center gap-2 rounded-lg bg-emerald-500/10 px-3 py-2 text-xs font-bold text-emerald-800 dark:text-emerald-300">
+                      <Check className="h-3.5 w-3.5" aria-hidden /> Tarea hecha
+                    </div>
+                  )}
                   <div className="flex items-center gap-2.5 text-sm font-semibold text-foreground">
                     <Clock className="h-4 w-4 text-amber-500" />
                     <span>Vencimiento: <span className="text-muted-foreground font-medium">{formatFechaHora(selectedEvent.startDate)}</span></span>
@@ -1086,6 +1126,19 @@ export function UnifiedCalendar({ reservations = [], purchaseOrders = [], tasks 
                 </>
               )}
             </div>
+
+            {selectedEvent.type === "task" && selectedEvent.raw?.canEdit && (
+              <Button
+                type="button"
+                onClick={handleToggleDone}
+                disabled={togglingTask}
+                variant={selectedEvent.done ? "outline" : "default"}
+                className="w-full rounded-xl gap-2 font-bold"
+              >
+                {selectedEvent.done ? <RotateCcw className="h-4 w-4" aria-hidden /> : <Check className="h-4 w-4" aria-hidden />}
+                {togglingTask ? "Guardando…" : selectedEvent.done ? "Volver a dejarla pendiente" : "Marcar como hecha"}
+              </Button>
+            )}
 
             <div className="space-y-4 pt-4 border-t border-border/20">
               <h4 className="text-xs font-bold text-muted-foreground flex items-center gap-1.5">

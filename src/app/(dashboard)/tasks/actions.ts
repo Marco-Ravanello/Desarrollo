@@ -7,10 +7,9 @@ import prisma from "@/lib/prisma";
 import { actionErrorMessage } from "@/lib/action-error";
 import { followUpDueDate } from "@/lib/follow-up-dates";
 import { updateTask, type TaskEdit } from "@/services/tasks";
+import { TASK_MANAGER_ROLES } from "@/lib/tasks";
 
 type TaskActionResult = { success: true } | { success: false; error: string };
-
-const MANAGER_ROLES = ["SUPERADMIN", "ADMIN_GENERAL", "DIRECCION_GENERAL"];
 
 export async function addTaskAction(
   title: string,
@@ -59,7 +58,7 @@ async function findOwnTask(id: string, verb: string): Promise<{ error: string } 
     return { error: `No se pudo ${verb} la tarea: ya no existe. Recargá la página.` };
   }
 
-  if (task.userId !== session.user.id && !MANAGER_ROLES.includes(session.user.role)) {
+  if (task.userId !== session.user.id && !TASK_MANAGER_ROLES.includes(session.user.role)) {
     return { error: `No se pudo ${verb} la tarea: no tenés permiso sobre tareas de otras personas.` };
   }
 

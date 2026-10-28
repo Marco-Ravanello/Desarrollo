@@ -1,6 +1,6 @@
 "use server";
 
-import { createHRRecord } from "@/services/hr";
+import { createHRRecord, markBackFromLeave } from "@/services/hr";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import prisma from "@/lib/prisma";
@@ -105,5 +105,21 @@ export async function deleteHRRecordAction(id: string): Promise<ActionResult<voi
   } catch (error) {
     console.error(error);
     return { success: false, error: actionErrorMessage(error, "No se pudo dar de baja el agente") };
+  }
+}
+
+/** "Ya volvió", desde la tarjeta "De licencia hoy" del inicio. */
+export async function markBackFromLeaveAction(id: string): Promise<ActionResult<void>> {
+  const session = await auth();
+  if (!session?.user?.id) return { success: false, error: "Tu sesión expiró. Volvé a iniciar sesión." };
+  try {
+    const result = await markBackFromLeave(session.user, id);
+    if (!result.success) return result;
+    revalidatePath("/dashboard");
+    revalidatePath("/admin/hr");
+    return { success: true };
+  } catch (error) {
+    console.error(error);
+    return { success: false, error: actionErrorMessage(error, "No se pudo marcar la vuelta") };
   }
 }

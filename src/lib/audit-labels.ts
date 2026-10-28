@@ -52,6 +52,7 @@ const ACTIONS: Record<string, { label: string; group: AuditGroup }> = {
   PADRON_PROGRAMA_ALTA: { label: "Dio de alta a una persona en un programa", group: "personas" },
   PADRON_PROGRAMA_BAJA: { label: "Dio de baja a una persona de un programa", group: "personas" },
   PROGRAMA_AREA: { label: "Cambió el área a cargo de un programa", group: "personas" },
+  PROGRAMA_REQUISITOS: { label: "Cambió los requisitos de un programa", group: "personas" },
   LUGAR_CREADO: { label: "Cargó un lugar de referencia de un barrio", group: "personas" },
   LUGAR_EDITADO: { label: "Corrigió un lugar de referencia de un barrio", group: "personas" },
   LUGAR_BORRADO: { label: "Borró un lugar de referencia de un barrio", group: "personas" },
@@ -95,6 +96,7 @@ const ACTIONS: Record<string, { label: string; group: AuditGroup }> = {
   UPDATE_SYSTEM_SETTINGS: { label: "Cambió la Configuración", group: "configuracion" },
   RESET_SYSTEM_SETTINGS: { label: "Volvió la Configuración a la de fábrica", group: "configuracion" },
   UPDATE_BUDGET: { label: "Cambió el presupuesto de un área", group: "configuracion" },
+  HR_VOLVIO: { label: "Marcó que alguien volvió de su licencia", group: "configuracion" },
   // Descargas
   EXPORT_CSV: { label: "Descargó datos del padrón", group: "descargas" },
   EXPORT_MAP_PEOPLE: { label: "Descargó personas del Mapa Social", group: "descargas" },
@@ -275,6 +277,8 @@ export function auditLink(log: { action: string; entity: string; entityId: strin
       return "/admin/users";
     case "Area":
       return "/admin/budget";
+    case "HRRecord":
+      return "/admin/hr";
     case "LugarReferencia":
       return "/barrios";
     case "Recorrida":

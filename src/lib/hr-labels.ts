@@ -26,3 +26,8 @@ export function currentMonthRange(now = new Date()): { from: Date; to: Date } {
   const [y, m] = diaAR(now).split("-").map(Number);
   return { from: new Date(Date.UTC(y, m - 1, 1)), to: new Date(Date.UTC(y, m, 1)) };
 }
+
+/** Quién edita los legajos (y marca que alguien volvió de una licencia): Superadmin y Administración General. */
+export function canEditHR(role?: string | null): boolean {
+  return role === "SUPERADMIN" || role === "ADMIN_GENERAL";
+}

@@ -10,6 +10,8 @@ import { countDerivationsToAnswer } from "@/services/derivations";
 import { getMyAssignedCases, type MyAssignedCase } from "@/services/cases";
 import { getRecentAuditActivity } from "@/services/audit";
 import { getStaffAwayToday, type StaffAway } from "@/services/hr";
+import { canEditHR } from "@/lib/hr-labels";
+import { BackFromLeaveButton } from "@/components/dashboard/back-from-leave-button";
 import { getProgramSummaries, type ProgramSummary } from "@/services/programs";
 import { auth } from "@/auth";
 import prisma from "@/lib/prisma";
@@ -418,7 +420,7 @@ export default async function DashboardPage({
             case "activity":
               return <div key={id} className={span}><ActivityCard entries={activity} /></div>;
             case "away":
-              return <div key={id} className={span}><AwayCard away={away.away} expired={away.expired} /></div>;
+              return <div key={id} className={span}><AwayCard away={away.away} expired={away.expired} canMarkBack={canEditHR(realRole)} /></div>;
             case "programs":
               return <div key={id} className={span}><ProgramsCard programs={homePrograms} ownArea={Boolean(areaId)} /></div>;
           }
@@ -912,7 +914,7 @@ function ActivityCard({ entries }: { entries: Awaited<ReturnType<typeof getRecen
   );
 }
 
-function AwayCard({ away, expired }: { away: StaffAway[]; expired: number }) {
+function AwayCard({ away, expired, canMarkBack }: { away: StaffAway[]; expired: number; canMarkBack: boolean }) {
   const dayMonth = (d: string) => `${d.slice(8, 10)}/${d.slice(5, 7)}`;
   return (
     <Card className="rounded-2xl border border-border/60 bg-card p-5 shadow-sm h-full">
@@ -935,9 +937,12 @@ function AwayCard({ away, expired }: { away: StaffAway[]; expired: number }) {
                   {[p.status === "VACACIONES" ? "Vacaciones" : "Licencia", p.area ? getAreaShortName(p.area) : null].filter(Boolean).join(" · ")}
                 </p>
               </div>
-              <span className="shrink-0 text-xs text-muted-foreground whitespace-nowrap">
-                {p.until ? `Hasta el ${dayMonth(p.until)}` : "Sin fecha de vuelta"}
-              </span>
+              <div className="flex shrink-0 items-center gap-2">
+                <span className="text-xs text-muted-foreground whitespace-nowrap">
+                  {p.until ? `Hasta el ${dayMonth(p.until)}` : "Sin fecha de vuelta"}
+                </span>
+                {canMarkBack && <BackFromLeaveButton id={p.id} name={p.name} />}
+              </div>
             </div>
           ))}
           {away.length > 8 && (
