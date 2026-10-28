@@ -5,7 +5,7 @@ import { useState, useEffect } from "react";
 import {
   ChevronLeft, ChevronRight, Calendar, CalendarDays, User, Briefcase,
   Clock, CheckSquare, ShoppingBag, Plus, X, Eye, Search,
-  Edit2, ArrowRight, Car, Check, RotateCcw
+  Edit2, ArrowRight, Car, Check, RotateCcw, Repeat
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -23,7 +23,8 @@ import {
   createSharedTaskAction
 } from "@/app/(dashboard)/admin/actions/calendar-actions";
 import { toggleTaskAction } from "@/app/(dashboard)/tasks/actions";
-import { formatFechaHora, formatFechaCalendario, formatHora } from "@/lib/fechas";
+import { formatFechaHora, formatFechaCalendario, formatHora, formatVencimiento } from "@/lib/fechas";
+import { repeatLabel, TASK_REPEATS } from "@/lib/tasks";
 import {
   WEEKDAY_LETTER, WEEKDAY_SHORT, chipsThatFit, dateOnlyToLocal, isDateOnly, localDayKey, localTimeKey,
   isTaskVisibleTo, monthCells, shortEventLabel, startOfWeekMonday, visibleHourRange, type AgendaEventType
@@ -137,6 +138,7 @@ export function UnifiedCalendar({ reservations = [], purchaseOrders = [], tasks 
   const [newTaskDueDate, setNewTaskDueDate] = useState("");
   const [newTaskDueTime, setNewTaskDueTime] = useState("09:00");
   const [newTaskViewerIds, setNewTaskViewerIds] = useState<string[]>([]);
+  const [newTaskRepeat, setNewTaskRepeat] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [togglingTask, setTogglingTask] = useState(false);
   // Lo que se marcó como hecho (o se reabrió) recién, hasta que llegue la agenda actualizada.
@@ -349,7 +351,13 @@ export function UnifiedCalendar({ reservations = [], purchaseOrders = [], tasks 
         return;
       }
       setDoneOverride((prev) => ({ ...prev, [selectedEvent.id]: !wasDone }));
-      toast.success(wasDone ? "La tarea volvió a quedar pendiente." : "Listo, la tarea quedó hecha.");
+      toast.success(
+        wasDone
+          ? "La tarea volvió a quedar pendiente."
+          : res.next
+          ? `Listo, la tarea quedó hecha. La próxima quedó para el ${formatVencimiento(res.next)}.`
+          : "Listo, la tarea quedó hecha."
+      );
       setSelectedEvent(null);
       router.refresh();
     } catch {
@@ -371,7 +379,7 @@ export function UnifiedCalendar({ reservations = [], purchaseOrders = [], tasks 
     try {
       const viewerIdsStr = newTaskViewerIds.join(",");
       const computedDueDate = new Date(`${newTaskDueDate}T${newTaskDueTime}:00`);
-      const res = await createSharedTaskAction(newTaskTitle, newTaskDesc, computedDueDate.toISOString(), viewerIdsStr);
+      const res = await createSharedTaskAction(newTaskTitle, newTaskDesc, computedDueDate.toISOString(), viewerIdsStr, newTaskRepeat || null);
       if (res.success) {
         toast.success("Tarea registrada y compartida correctamente", { id: toastId });
         setShowAddModal(false);
@@ -379,6 +387,7 @@ export function UnifiedCalendar({ reservations = [], purchaseOrders = [], tasks 
         setNewTaskDescription("");
         setNewTaskDueDate("");
         setNewTaskViewerIds([]);
+        setNewTaskRepeat("");
       } else {
         toast.error(res.error || "Error al registrar la tarea", { id: toastId });
       }
@@ -542,6 +551,13 @@ export function UnifiedCalendar({ reservations = [], purchaseOrders = [], tasks 
       </div>
     </div>
   );
+
+  /** Tocar un horario libre de Semana o Día: la tarea nueva con ese día y esa hora. */
+  const newTaskAt = (date: Date, hour: number, minute: number) => {
+    setNewTaskDueDate(localDayKey(date));
+    setNewTaskDueTime(`${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`);
+    setShowAddModal(true);
+  };
 
   const newTaskButton = (className: string) => (
     <Button onClick={() => setShowAddModal(true)} className={`gap-2 font-bold ${className}`}>
@@ -885,10 +901,17 @@ export function UnifiedCalendar({ reservations = [], purchaseOrders = [], tasks 
                                 key={dayIdx}
                                 onDragOver={handleDragOver}
                                 onDrop={(ev) => handleDropOnSlot(ev, date, hour, minute)}
-                                className={`border-r border-border/40 last:border-r-0 p-1 min-h-[42px] relative group flex flex-col gap-1 transition-all ${
+                                onClick={() => newTaskAt(date, hour, minute)}
+                                title={`Agendar el ${date.getDate()}/${date.getMonth() + 1} a las ${timeStr}`}
+                                className={`border-r border-border/40 last:border-r-0 p-1 min-h-[42px] relative group flex flex-col gap-1 cursor-pointer transition-all hover:bg-primary/5 ${
                                   isToday ? "bg-primary/5" : ""
                                 }`}
                               >
+                                {slotEvents.length === 0 && (
+                                  <span aria-hidden className="pointer-events-none absolute inset-0 hidden items-center justify-center text-primary/70 group-hover:flex">
+                                    <Plus className="h-3.5 w-3.5" />
+                                  </span>
+                                )}
                                 {slotEvents.map((e) =>
                                   continuesFrom(e, currentSlotStart, hour, minute) ? (
                                     eventButton(e, "h-2 rounded-full", null)
@@ -953,7 +976,16 @@ export function UnifiedCalendar({ reservations = [], purchaseOrders = [], tasks 
                           {hourLabel(hour, minute)}
                         </div>
 
-                        <div className="p-2 flex flex-wrap gap-2 items-center min-w-0">
+                        <div
+                          onClick={() => newTaskAt(currentDate, hour, minute)}
+                          title={`Agendar a las ${timeStr}`}
+                          className="group relative p-2 flex flex-wrap gap-2 items-center min-w-0 cursor-pointer hover:bg-primary/5"
+                        >
+                          {slotEvents.length === 0 && (
+                            <span aria-hidden className="pointer-events-none hidden items-center gap-1 text-xs font-semibold text-primary/70 group-hover:flex">
+                              <Plus className="h-3.5 w-3.5" /> Agendar a las {timeStr}
+                            </span>
+                          )}
                           {slotEvents.map((e) => {
                             const IconComp = e.icon;
                             if (continuesFrom(e, currentSlotStart, hour, minute)) return eventButton(e, "h-2 rounded-full", null);
@@ -1113,6 +1145,12 @@ export function UnifiedCalendar({ reservations = [], purchaseOrders = [], tasks 
                     <Clock className="h-4 w-4 text-amber-500" />
                     <span>Vencimiento: <span className="text-muted-foreground font-medium">{formatFechaHora(selectedEvent.startDate)}</span></span>
                   </div>
+                  {repeatLabel(selectedEvent.raw?.repeat) && (
+                    <div className="flex items-center gap-2.5 text-sm font-semibold text-foreground">
+                      <Repeat className="h-4 w-4 text-amber-500" aria-hidden />
+                      <span>{repeatLabel(selectedEvent.raw?.repeat)}</span>
+                    </div>
+                  )}
                   {selectedEvent.raw?.description && (
                     <div className="pt-2 border-t border-border/20 text-xs text-muted-foreground italic font-medium">
                       Detalle: &ldquo;{selectedEvent.raw.description}&rdquo;
@@ -1292,6 +1330,22 @@ export function UnifiedCalendar({ reservations = [], purchaseOrders = [], tasks 
                     className="bg-muted/40 border-border/60 rounded-xl h-11 text-xs"
                   />
                 </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="repeat" className="text-xs font-bold text-muted-foreground">Repetir</Label>
+                <select
+                  id="repeat"
+                  value={newTaskRepeat}
+                  onChange={(e) => setNewTaskRepeat(e.target.value)}
+                  className="h-11 w-full rounded-xl border border-border/60 bg-muted/40 px-3 text-xs font-medium text-foreground"
+                >
+                  <option value="">No se repite</option>
+                  {TASK_REPEATS.map((r) => (
+                    <option key={r.value} value={r.value}>{r.label}</option>
+                  ))}
+                </select>
+                {newTaskRepeat && <p className="text-xs text-muted-foreground">Al marcarla como hecha, se crea sola la próxima.</p>}
               </div>
 
               <div className="space-y-3.5 pt-2">

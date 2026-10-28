@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { InitialsAvatar } from "@/components/ui/initials-avatar";
 import {
-  parseViewerIds, taskDueParts, TASK_NOTES_MAX, TASK_PRIORITIES, TASK_TITLE_MAX, type TaskPriority,
+  parseViewerIds, taskDueParts, TASK_NOTES_MAX, TASK_PRIORITIES, TASK_REPEATS, TASK_TITLE_MAX, type TaskPriority,
 } from "@/lib/tasks";
 import { updateTaskAction } from "./actions";
 
@@ -26,6 +26,7 @@ type EditableTask = {
   dueDate?: string | Date | null;
   priority?: string | null;
   viewerIds?: string | null;
+  repeat?: string | null;
 };
 
 const normal = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
@@ -40,6 +41,7 @@ export function EditTaskDialog({ task, users }: { task: EditableTask; users: Sha
   const [day, setDay] = useState("");
   const [time, setTime] = useState("");
   const [priority, setPriority] = useState<TaskPriority>("MEDIA");
+  const [repeat, setRepeat] = useState("");
   const [shared, setShared] = useState<string[]>([]);
   const [search, setSearch] = useState("");
 
@@ -51,6 +53,7 @@ export function EditTaskDialog({ task, users }: { task: EditableTask; users: Sha
     setTime(due.time);
     setPriority((TASK_PRIORITIES.find((p) => p.value === task.priority)?.value ?? "MEDIA") as TaskPriority);
     setShared(parseViewerIds(task.viewerIds));
+    setRepeat(task.repeat ?? "");
     setSearch("");
   };
 
@@ -74,6 +77,7 @@ export function EditTaskDialog({ task, users }: { task: EditableTask; users: Sha
       time: day ? time : null,
       priority,
       viewerIds: shared,
+      repeat: day ? repeat || null : null,
     }).catch(() => null);
     setSaving(false);
     if (!res?.success) return toast.error(res && !res.success ? res.error : "No se pudo guardar. Probá de nuevo.");
@@ -128,6 +132,23 @@ export function EditTaskDialog({ task, users }: { task: EditableTask; users: Sha
               Dejarla sin fecha
             </button>
           )}
+
+          <div className="space-y-1.5">
+            <Label htmlFor="tarea-repetir">Repetir</Label>
+            <select
+              id="tarea-repetir"
+              value={day ? repeat : ""}
+              disabled={!day}
+              onChange={(e) => setRepeat(e.target.value)}
+              className="h-10 w-full rounded-xl border border-input bg-background px-3 text-sm disabled:opacity-60"
+            >
+              <option value="">{day ? "No se repite" : "No se repite (elegí la fecha)"}</option>
+              {TASK_REPEATS.map((r) => (
+                <option key={r.value} value={r.value}>{r.label}</option>
+              ))}
+            </select>
+            {day && repeat && <p className="text-xs text-muted-foreground">Al marcarla como hecha, se crea sola la próxima.</p>}
+          </div>
 
           <fieldset className="space-y-1.5">
             <legend className="text-sm font-medium">Prioridad</legend>

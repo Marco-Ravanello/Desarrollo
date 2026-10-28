@@ -1,21 +1,24 @@
 "use server";
 
-import { createTask, toggleTask, deleteTask } from "@/services/system";
+import { createTask, deleteTask } from "@/services/system";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import prisma from "@/lib/prisma";
 import { actionErrorMessage } from "@/lib/action-error";
 import { followUpDueDate } from "@/lib/follow-up-dates";
-import { updateTask, type TaskEdit } from "@/services/tasks";
+import { checkRepeat, setTaskDone, updateTask, type TaskEdit } from "@/services/tasks";
 import { TASK_MANAGER_ROLES } from "@/lib/tasks";
 
 type TaskActionResult = { success: true } | { success: false; error: string };
+/** Al marcar como hecha una tarea que se repite: cuándo quedó la próxima (ISO). */
+type ToggleResult = { success: true; next: string | null } | { success: false; error: string };
 
 export async function addTaskAction(
   title: string,
   description?: string,
   dueDate?: string | null,
-  priority?: "BAJA" | "MEDIA" | "ALTA" | "URGENTE"
+  priority?: "BAJA" | "MEDIA" | "ALTA" | "URGENTE",
+  repeat?: string | null
 ): Promise<TaskActionResult> {
   const session = await auth();
   if (!session?.user?.id) {
@@ -25,6 +28,8 @@ export async function addTaskAction(
   if (!title || !title.trim()) {
     return { success: false, error: "No se pudo guardar la tarea: el título es obligatorio." };
   }
+  const rep = checkRepeat(repeat, Boolean(dueDate));
+  if (!rep.ok) return { success: false, error: rep.error };
 
   try {
     // Un día suelto ("AAAA-MM-DD") queda a las 9 de la mañana de Argentina, como los seguimientos.
@@ -35,7 +40,8 @@ export async function addTaskAction(
       title.trim(),
       description?.trim() || undefined,
       parsedDueDate,
-      priority || "MEDIA"
+      priority || "MEDIA",
+      rep.repeat
     );
   } catch (error) {
     console.error("Error en addTaskAction:", error);
@@ -65,11 +71,15 @@ async function findOwnTask(id: string, verb: string): Promise<{ error: string } 
   return null;
 }
 
-export async function toggleTaskAction(id: string, currentStatus: string): Promise<TaskActionResult> {
+/** Marca la tarea como hecha o la vuelve a dejar pendiente (si se repite, crea la próxima). */
+export async function toggleTaskAction(id: string, currentStatus: string): Promise<ToggleResult> {
+  const session = await auth();
+  if (!session?.user?.id) return { success: false, error: "Tu sesión expiró. Volvé a iniciar sesión." };
+  let next: Date | null = null;
   try {
-    const denied = await findOwnTask(id, "actualizar");
-    if (denied) return { success: false, error: denied.error };
-    await toggleTask(id, currentStatus);
+    const res = await setTaskDone(session.user, id, currentStatus !== "COMPLETADA");
+    if (!res.success) return res;
+    next = res.next;
   } catch (error) {
     console.error("Error en toggleTaskAction:", error);
     return { success: false, error: actionErrorMessage(error, "No se pudo actualizar la tarea") };
@@ -77,7 +87,8 @@ export async function toggleTaskAction(id: string, currentStatus: string): Promi
 
   revalidatePath("/tasks");
   revalidatePath("/admin/calendar");
-  return { success: true };
+  revalidatePath("/dashboard");
+  return { success: true, next: next ? next.toISOString() : null };
 }
 
 export async function deleteTaskAction(id: string): Promise<TaskActionResult> {

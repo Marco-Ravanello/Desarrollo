@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import {
   CheckCircle2, Circle, Trash2, Plus, Search, Calendar as CalendarIcon,
-  AlertTriangle, Filter, Sparkles, FileText, Clock, Users
+  AlertTriangle, Sparkles, FileText, Clock, Users, Repeat, Share2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,7 +14,7 @@ import { addTaskAction, toggleTaskAction, deleteTaskAction } from "./actions";
 import { toast } from "sonner";
 import Link from "next/link";
 import { diaAR, diaDeVencimiento, diasEntre, formatVencimiento } from "@/lib/fechas";
-import { parseViewerIds, TASK_PRIORITIES } from "@/lib/tasks";
+import { parseViewerIds, repeatLabel, TASK_PRIORITIES, TASK_REPEATS } from "@/lib/tasks";
 import { EditTaskDialog, type ShareableUser } from "./edit-task-dialog";
 
 type PriorityType = "BAJA" | "MEDIA" | "ALTA" | "URGENTE";
@@ -32,16 +32,39 @@ interface TaskItem {
   case?: { id: string; title: string } | null;
   /** Con quién se comparte ("id1,id2"). */
   viewerIds?: string | null;
+  /** Cada cuánto se repite ("SEMANAL", "QUINCENAL", "MENSUAL"). */
+  repeat?: string | null;
 }
 
-export function TaskList({ initialTasks, userId, users = [] }: { initialTasks: TaskItem[]; userId: string; users?: ShareableUser[] }) {
+/** Una tarea que otra persona compartió: se ve, pero la maneja quien la creó. */
+export interface SharedTaskItem extends Omit<TaskItem, "case"> {
+  ownerName: string;
+  caseId?: string | null;
+}
+
+type Tab = "PENDIENTES" | "REALIZADAS" | "TODAS" | "COMPARTIDAS";
+
+export function TaskList({
+  initialTasks,
+  sharedTasks = [],
+  canManageAll = false,
+  users = [],
+}: {
+  initialTasks: TaskItem[];
+  sharedTasks?: SharedTaskItem[];
+  /** La conducción también marca y edita las tareas de los demás. */
+  canManageAll?: boolean;
+  userId: string;
+  users?: ShareableUser[];
+}) {
   const userName = new Map(users.map((u) => [u.id, u.name]));
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [dueDate, setDueDate] = useState("");
   const [priority, setPriority] = useState<PriorityType>("MEDIA");
+  const [repeat, setRepeat] = useState("");
 
-  const [activeTab, setActiveTab] = useState<"PENDIENTES" | "REALIZADAS" | "TODAS">("PENDIENTES");
+  const [activeTab, setActiveTab] = useState<Tab>("PENDIENTES");
   const [priorityFilter, setPriorityFilter] = useState<string>("TODAS");
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -60,7 +83,8 @@ export function TaskList({ initialTasks, userId, users = [] }: { initialTasks: T
           title.trim(),
           description.trim() || undefined,
           dueDate || null,
-          priority
+          priority,
+          dueDate ? repeat || null : null
         );
         if (!result.success) {
           toast.error(result.error);
@@ -70,6 +94,7 @@ export function TaskList({ initialTasks, userId, users = [] }: { initialTasks: T
         setDescription("");
         setDueDate("");
         setPriority("MEDIA");
+        setRepeat("");
         toast.success("Tarea registrada correctamente");
       } catch {
         toast.error("No se pudo guardar la tarea. Revisá la conexión y probá de nuevo.");
@@ -85,7 +110,13 @@ export function TaskList({ initialTasks, userId, users = [] }: { initialTasks: T
           toast.error(result.error);
           return;
         }
-        toast.success(currentStatus === "COMPLETADA" ? "Tarea reabierta" : "¡Tarea completada!");
+        toast.success(
+          currentStatus === "COMPLETADA"
+            ? "Tarea reabierta"
+            : result.next
+            ? `¡Tarea completada! La próxima quedó para el ${formatVencimiento(result.next)}.`
+            : "¡Tarea completada!"
+        );
       } catch {
         toast.error("No se pudo actualizar la tarea. Revisá la conexión y probá de nuevo.");
       }
@@ -107,7 +138,8 @@ export function TaskList({ initialTasks, userId, users = [] }: { initialTasks: T
     });
   };
 
-  const filteredTasks = initialTasks.filter((t) => {
+  const source: (TaskItem | SharedTaskItem)[] = activeTab === "COMPARTIDAS" ? sharedTasks : initialTasks;
+  const filteredTasks = source.filter((t) => {
     if (activeTab === "PENDIENTES" && t.status === "COMPLETADA") return false;
     if (activeTab === "REALIZADAS" && t.status !== "COMPLETADA") return false;
 
@@ -128,6 +160,7 @@ export function TaskList({ initialTasks, userId, users = [] }: { initialTasks: T
   const countPendientes = initialTasks.filter((t) => t.status !== "COMPLETADA").length;
   const countRealizadas = initialTasks.filter((t) => t.status === "COMPLETADA").length;
   const countTodas = initialTasks.length;
+  const countCompartidas = sharedTasks.filter((t) => t.status !== "COMPLETADA").length;
 
   const renderDueDateBadge = (dueDateStr?: string | Date | null) => {
     if (!dueDateStr) return null;
@@ -218,7 +251,7 @@ export function TaskList({ initialTasks, userId, users = [] }: { initialTasks: T
               </Button>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
               <Input
                 aria-label="Notas"
                 placeholder="Notas (opcional)"
@@ -260,6 +293,23 @@ export function TaskList({ initialTasks, userId, users = [] }: { initialTasks: T
                   className="h-9 rounded-xl bg-muted/20 border-border/60 text-xs text-foreground"
                 />
               </div>
+
+              <div className="flex items-center gap-2">
+                <label htmlFor="nueva-tarea-repetir" className="text-xs font-semibold text-muted-foreground shrink-0">Repetir</label>
+                <select
+                  id="nueva-tarea-repetir"
+                  value={dueDate ? repeat : ""}
+                  disabled={!dueDate}
+                  onChange={(e) => setRepeat(e.target.value)}
+                  title={dueDate ? undefined : "Para que se repita, primero elegí la fecha."}
+                  className="h-9 w-full rounded-xl border border-border/60 bg-muted/20 px-3 text-xs font-semibold text-foreground disabled:opacity-60 focus:outline-none focus:ring-1 focus:ring-primary"
+                >
+                  <option value="">{dueDate ? "No se repite" : "No se repite (elegí la fecha)"}</option>
+                  {TASK_REPEATS.map((r) => (
+                    <option key={r.value} value={r.value}>{r.label}</option>
+                  ))}
+                </select>
+              </div>
             </div>
 
             <Button type="submit" disabled={isPending} className="sm:hidden h-11 w-full rounded-2xl font-bold text-xs gap-2">
@@ -271,7 +321,7 @@ export function TaskList({ initialTasks, userId, users = [] }: { initialTasks: T
       </Card>
 
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex items-center gap-1.5 bg-muted/30 p-1 rounded-2xl border border-border/40 shrink-0">
+        <div className="flex flex-wrap items-center gap-1.5 bg-muted/30 p-1 rounded-2xl border border-border/40 shrink-0">
           <button
             type="button"
             onClick={() => setActiveTab("PENDIENTES")}
@@ -312,6 +362,21 @@ export function TaskList({ initialTasks, userId, users = [] }: { initialTasks: T
             <span>Todas</span>
             <Badge variant="secondary" className="text-xs px-1.5 py-0 rounded-md tabular-nums">
               {countTodas}
+            </Badge>
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("COMPARTIDAS")}
+            className={`text-xs px-3.5 py-2 sm:py-1.5 rounded-xl font-bold transition-all flex items-center gap-1.5 ${
+              activeTab === "COMPARTIDAS"
+                ? "bg-card text-foreground shadow-xs border border-border/40"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <span className="sm:hidden">Compartidas</span>
+            <span className="hidden sm:inline">Compartidas conmigo</span>
+            <Badge variant="secondary" className="text-xs px-1.5 py-0 rounded-md tabular-nums">
+              {countCompartidas}
             </Badge>
           </button>
         </div>
@@ -366,6 +431,12 @@ export function TaskList({ initialTasks, userId, users = [] }: { initialTasks: T
                   </Button>
                 }
               />
+            ) : activeTab === "COMPARTIDAS" ? (
+              <EmptyMessage
+                title="Nadie te compartió tareas"
+                description="Cuando alguien te sume a una tarea desde la Agenda o desde Mis tareas, la ves acá."
+                icon={Share2}
+              />
             ) : activeTab === "PENDIENTES" ? (
               <EmptyMessage kind="done" title="No tenés tareas pendientes" description="Cuando agendes una tarea, aparece acá." icon={Sparkles} />
             ) : (
@@ -375,6 +446,9 @@ export function TaskList({ initialTasks, userId, users = [] }: { initialTasks: T
         ) : (
           filteredTasks.map((t) => {
             const isDone = t.status === "COMPLETADA";
+            const shared = "ownerName" in t ? t : null;
+            // Las compartidas las marca y edita quien las creó (o la conducción).
+            const canEdit = !shared || canManageAll;
             return (
               <Card
                 key={t.id}
@@ -384,18 +458,25 @@ export function TaskList({ initialTasks, userId, users = [] }: { initialTasks: T
               >
                 <CardContent className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div className="flex items-start gap-3 flex-1 min-w-0">
-                    <button
-                      type="button"
-                      onClick={() => handleToggle(t.id, t.status)}
-                      disabled={isPending}
-                      className="mt-0.5 shrink-0 focus:outline-none"
-                    >
-                      {isDone ? (
-                        <CheckCircle2 className="h-5 w-5 text-emerald-500" />
-                      ) : (
-                        <Circle className="h-5 w-5 text-muted-foreground hover:text-primary transition-colors" />
-                      )}
-                    </button>
+                    {canEdit ? (
+                      <button
+                        type="button"
+                        onClick={() => handleToggle(t.id, t.status)}
+                        disabled={isPending}
+                        className="mt-0.5 shrink-0 focus:outline-none"
+                      >
+                        {isDone ? (
+                          <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+                        ) : (
+                          <Circle className="h-5 w-5 text-muted-foreground hover:text-primary transition-colors" />
+                        )}
+                        <span className="sr-only">{isDone ? `Volver a dejar pendiente ${t.title}` : `Marcar como hecha ${t.title}`}</span>
+                      </button>
+                    ) : isDone ? (
+                      <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-emerald-500" aria-label="Hecha" />
+                    ) : (
+                      <Circle className="mt-0.5 h-5 w-5 shrink-0 text-muted-foreground/50" aria-label="Pendiente" />
+                    )}
 
                     <div className="space-y-1 min-w-0 flex-1">
                       <div className="flex items-center gap-2 flex-wrap">
@@ -408,7 +489,20 @@ export function TaskList({ initialTasks, userId, users = [] }: { initialTasks: T
                         </span>
                         {renderPriorityBadge(t.priority)}
                         {renderDueDateBadge(t.dueDate)}
+                        {repeatLabel(t.repeat) && (
+                          <Badge variant="outline" className="border-border/60 text-muted-foreground text-xs font-bold gap-1">
+                            <Repeat className="h-3 w-3" aria-hidden />
+                            {repeatLabel(t.repeat)}
+                          </Badge>
+                        )}
                       </div>
+
+                      {shared && (
+                        <p className="text-xs font-semibold text-muted-foreground">
+                          De {shared.ownerName}
+                          {!canEdit && <span className="font-normal"> · la marca como hecha quien la creó</span>}
+                        </p>
+                      )}
 
                       {t.description && (
                         <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
@@ -416,7 +510,7 @@ export function TaskList({ initialTasks, userId, users = [] }: { initialTasks: T
                         </p>
                       )}
 
-                      {parseViewerIds(t.viewerIds).length > 0 && (
+                      {!shared && parseViewerIds(t.viewerIds).length > 0 && (
                         <p className="flex items-center gap-1 text-xs text-muted-foreground">
                           <Users className="h-3 w-3 shrink-0" />
                           <span className="truncate">
@@ -425,7 +519,17 @@ export function TaskList({ initialTasks, userId, users = [] }: { initialTasks: T
                         </p>
                       )}
 
-                      {t.case && (
+                      {shared?.caseId && (
+                        <Link
+                          href={`/cases/${shared.caseId}`}
+                          className="inline-flex max-w-full items-center gap-1 text-xs font-semibold text-primary hover:underline"
+                        >
+                          <FileText className="h-3 w-3 shrink-0" />
+                          <span className="truncate">Es un seguimiento de un expediente</span>
+                        </Link>
+                      )}
+
+                      {"case" in t && t.case && (
                         <Link
                           href={`/cases/${t.case.id}`}
                           className="inline-flex max-w-full items-center gap-1 text-xs font-semibold text-primary hover:underline"
@@ -437,6 +541,7 @@ export function TaskList({ initialTasks, userId, users = [] }: { initialTasks: T
                     </div>
                   </div>
 
+                  {canEdit && (
                   <div className="flex items-center justify-end gap-2 shrink-0 border-t sm:border-t-0 pt-2 sm:pt-0 border-border/30">
                     <EditTaskDialog task={t} users={users} />
                     <Button
@@ -450,6 +555,7 @@ export function TaskList({ initialTasks, userId, users = [] }: { initialTasks: T
                       <span className="sr-only">Borrar la tarea {t.title}</span>
                     </Button>
                   </div>
+                  )}
                 </CardContent>
               </Card>
             );

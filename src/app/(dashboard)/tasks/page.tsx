@@ -1,7 +1,8 @@
 export const dynamic = "force-dynamic";
 
 import { getTasks } from "@/services/system";
-import { getShareableUsers } from "@/services/tasks";
+import { getShareableUsers, getTasksSharedWith } from "@/services/tasks";
+import { TASK_MANAGER_ROLES } from "@/lib/tasks";
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { TaskList } from "./task-list";
@@ -22,7 +23,11 @@ export default async function TasksPage() {
   const session = await auth();
   if (!session?.user?.id) redirect("/login");
 
-  const [tasks, users] = await Promise.all([getTasks(session.user.id), getShareableUsers(session.user.id)]);
+  const [tasks, shared, users] = await Promise.all([
+    getTasks(session.user.id),
+    getTasksSharedWith(session.user.id),
+    getShareableUsers(session.user.id),
+  ]);
 
   const totalTasks = tasks.length;
   const completedTasks = tasks.filter((t) => t.status === "COMPLETADA").length;
@@ -94,7 +99,13 @@ export default async function TasksPage() {
         />
       </div>
 
-      <TaskList initialTasks={tasks as any} userId={session.user.id} users={users} />
+      <TaskList
+        initialTasks={tasks as any}
+        sharedTasks={shared as any}
+        canManageAll={TASK_MANAGER_ROLES.includes(session.user.role)}
+        userId={session.user.id}
+        users={users}
+      />
     </div>
   );
 }
