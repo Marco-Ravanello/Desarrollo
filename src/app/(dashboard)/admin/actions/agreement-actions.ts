@@ -1,58 +1,39 @@
 "use server";
 
+import prisma from "@/lib/prisma";
 import { createAgreement } from "@/services/admin";
 import { createAuditLog } from "@/services/system";
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
 import { actionErrorMessage } from "@/lib/action-error";
+import { canCreateAgreements, parseAgreementInput } from "@/lib/convenios";
 
-export async function createAgreementAction(formData: FormData) {
+type Result = { success: true; id: string } | { success: false; error: string };
+
+export async function createAgreementAction(formData: FormData): Promise<Result> {
   const session = await auth();
-
   if (!session?.user?.id) {
-    return { success: false, error: "No tenés permiso para hacer esto o tu sesión expiró. Si sigue pasando, volvé a iniciar sesión." };
+    return { success: false, error: "Tu sesión expiró. Volvé a iniciar sesión." };
+  }
+  if (!canCreateAgreements(session.user.role)) {
+    return { success: false, error: "Los convenios los cargan Administración General, Dirección General y Superadmin." };
   }
 
-  const role = session.user.role;
-  if (role !== "SUPERADMIN" && role !== "ADMIN_GENERAL" && role !== "DIRECCION_GENERAL") {
-    return { success: false, error: "No tenés permiso para cargar convenios." };
-  }
-
-  const title = formData.get("title") as string;
-  const number = formData.get("number") as string;
-  const parties = formData.get("parties") as string;
-  const amountStr = formData.get("amount") as string;
-  const amount = amountStr ? parseFloat(amountStr) : 0;
-  const description = formData.get("description") as string;
-  const startDate = formData.get("startDate") as string;
-  const endDate = formData.get("endDate") as string;
-  const areaId = formData.get("areaId") as string;
-  const status = formData.get("status") as any;
-
-  if (!title) {
-    return { success: false, error: "El título es requerido" };
+  const parsed = parseAgreementInput(Object.fromEntries(formData.entries()));
+  if (!parsed.ok) return { success: false, error: parsed.error };
+  const data = parsed.data;
+  if (data.areaId && !(await prisma.area.findUnique({ where: { id: data.areaId }, select: { id: true } }))) {
+    return { success: false, error: "El área elegida ya no existe. Recargá la página." };
   }
 
   try {
-    const agreement = await createAgreement({
-      title,
-      number,
-      parties,
-      amount,
-      description,
-      startDate,
-      endDate,
-      areaId,
-      status
-    });
-
+    const agreement = await createAgreement(data);
     await createAuditLog(session.user.id, "CREATE", "Agreement", agreement.id, { title: agreement.title });
-
     revalidatePath("/admin/agreements");
     return { success: true, id: agreement.id };
   } catch (error: any) {
-    if (error.code === 'P2002') {
-      return { success: false, error: "Ya existe un convenio con ese número" };
+    if (error?.code === "P2002") {
+      return { success: false, error: "Ya hay un convenio cargado con ese número." };
     }
     return { success: false, error: actionErrorMessage(error, "No se pudo guardar el convenio") };
   }
