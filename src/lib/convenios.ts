@@ -94,7 +94,10 @@ const ISO_DAY = /^\d{4}-\d{2}-\d{2}$/;
 const text = (v: unknown) => (typeof v === "string" ? v.trim() : "");
 
 /** Revisa lo que llega del formulario. Devuelve los datos limpios o qué hay que corregir. */
-export function parseAgreementInput(raw: Record<string, unknown>): { ok: true; data: AgreementInput } | { ok: false; error: string } {
+export function parseAgreementInput(
+  raw: Record<string, unknown>,
+  { withStatus = true }: { withStatus?: boolean } = {}
+): { ok: true; data: AgreementInput } | { ok: false; error: string } {
   const title = text(raw.title);
   const number = text(raw.number);
   const parties = text(raw.parties);
@@ -124,7 +127,8 @@ export function parseAgreementInput(raw: Record<string, unknown>): { ok: true; d
   }
   if (startDate && endDate && endDate < startDate) return { ok: false, error: "La fecha de vencimiento no puede ser anterior a la de inicio." };
 
-  const status = text(raw.status) || "VIGENTE";
+  // Al editar, el estado no se toca: se cambia aparte, con motivo.
+  const status = withStatus ? text(raw.status) || "VIGENTE" : "VIGENTE";
   if (!AGREEMENT_INITIAL_STATUSES.includes(status as AgreementInput["status"])) {
     return { ok: false, error: "Elegí si el convenio está vigente o en revisión." };
   }
@@ -143,4 +147,63 @@ export function parseAgreementInput(raw: Record<string, unknown>): { ok: true; d
       status: status as AgreementInput["status"],
     },
   };
+}
+
+/** A qué estado se puede pasar un convenio a mano. "Vencido" no se elige: sale solo de la fecha de fin. */
+export const AGREEMENT_STATUS_CHANGES = ["EN_REVISION", "VIGENTE", "FINALIZADO", "RESCINDIDO"] as const;
+export type AgreementStatusChange = (typeof AGREEMENT_STATUS_CHANGES)[number];
+export const AGREEMENT_REASON_MAX = 500;
+
+/** Cambio de estado: el estado nuevo y el motivo (obligatorio). */
+export function parseStatusChange(
+  raw: Record<string, unknown>,
+  actual: string
+): { ok: true; data: { status: AgreementStatusChange; motivo: string } } | { ok: false; error: string } {
+  const status = text(raw.status) as AgreementStatusChange;
+  if (!AGREEMENT_STATUS_CHANGES.includes(status)) return { ok: false, error: "Elegí el estado nuevo." };
+  if (status === actual) return { ok: false, error: "El convenio ya está en ese estado." };
+  const motivo = text(raw.motivo).replace(/\s+/g, " ");
+  if (motivo.length < 3) return { ok: false, error: "Escribí el motivo del cambio." };
+  if (motivo.length > AGREEMENT_REASON_MAX) return { ok: false, error: `El motivo puede tener hasta ${AGREEMENT_REASON_MAX} letras.` };
+  return { ok: true, data: { status, motivo } };
+}
+
+/** Un convenio finalizado o rescindido ya no admite horas nuevas ni cambios en las cargadas. */
+export const isAgreementClosed = (status?: string | null) => status === "FINALIZADO" || status === "RESCINDIDO";
+
+type Comparable = {
+  title: string;
+  number: string | null;
+  parties: string | null;
+  description: string | null;
+  amount: number | null;
+  startDate: string | null;
+  endDate: string | null;
+  areaName: string | null;
+};
+
+const LABELS: Record<keyof Comparable, string> = {
+  title: "Título",
+  number: "Número",
+  parties: "Partes",
+  description: "Detalles",
+  amount: "Monto",
+  startDate: "Inicio",
+  endDate: "Vencimiento",
+  areaName: "Área",
+};
+
+const show = (k: keyof Comparable, v: string | number | null) => {
+  if (v === null || v === "") return "vacío";
+  if (k === "amount") return `$ ${Number(v).toLocaleString("es-AR")}`;
+  if (k === "startDate" || k === "endDate") return dia(String(v));
+  if (k === "description") return String(v).length > 60 ? `${String(v).slice(0, 60)}…` : String(v);
+  return String(v);
+};
+
+/** Qué cambió al editar, para la historia: "Número: vacío → CONV-12 · Monto: $ 1.000 → $ 2.000". */
+export function describeAgreementChanges(before: Comparable, after: Comparable): string[] {
+  return (Object.keys(LABELS) as (keyof Comparable)[])
+    .filter((k) => (before[k] ?? null) !== (after[k] ?? null))
+    .map((k) => `${LABELS[k]}: ${show(k, before[k])} → ${show(k, after[k])}`);
 }

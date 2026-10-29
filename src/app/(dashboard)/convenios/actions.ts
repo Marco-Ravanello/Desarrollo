@@ -6,6 +6,8 @@ import {
   activarCuidadora, agregarHoras, borrarCuidadora, borrarHoras, borrarValorHora, configurarControl, corregirHoras, guardarCuidadora,
   guardarValorHora, repetirDiaAnterior,
 } from "@/services/convenio-gasto";
+import { cerrarPeriodo, reabrirPeriodo } from "@/services/convenio-cierre";
+import { registrarEgreso, vincularExpediente, volvioAIngresar } from "@/services/convenio-nnya";
 
 const SESSION_EXPIRED = { success: false as const, error: "Tu sesión expiró. Volvé a iniciar sesión." };
 
@@ -88,6 +90,46 @@ export async function repetirDiaAnteriorAction(agreementId: string, dia: string)
   const user = await sessionUser();
   if (!user) return SESSION_EXPIRED;
   const res = await repetirDiaAnterior(user, agreementId, dia);
+  if (res.success) refresh(agreementId);
+  return res;
+}
+
+export async function cerrarPeriodoAction(agreementId: string, desde: string) {
+  const user = await sessionUser();
+  if (!user) return SESSION_EXPIRED;
+  const res = await cerrarPeriodo(user, agreementId, desde);
+  if (res.success) refresh(agreementId);
+  return res;
+}
+
+export async function reabrirPeriodoAction(agreementId: string, desde: string, motivo: string) {
+  const user = await sessionUser();
+  if (!user) return SESSION_EXPIRED;
+  const res = await reabrirPeriodo(user, agreementId, desde, motivo);
+  if (res.success) refresh(agreementId);
+  return res;
+}
+
+export async function registrarEgresoAction(agreementId: string, nnyaId: string, data: Record<string, unknown>) {
+  const user = await sessionUser();
+  if (!user) return SESSION_EXPIRED;
+  const res = await registrarEgreso(user, agreementId, nnyaId, data);
+  if (res.success) refresh(agreementId);
+  return res;
+}
+
+export async function volvioAIngresarAction(agreementId: string, nnyaId: string) {
+  const user = await sessionUser();
+  if (!user) return SESSION_EXPIRED;
+  const res = await volvioAIngresar(user, agreementId, nnyaId);
+  if (res.success) refresh(agreementId);
+  return res;
+}
+
+export async function vincularExpedienteAction(agreementId: string, nnyaId: string, caseId: string | null) {
+  const user = await sessionUser();
+  if (!user) return SESSION_EXPIRED;
+  const res = await vincularExpediente(user, agreementId, nnyaId, caseId);
   if (res.success) refresh(agreementId);
   return res;
 }

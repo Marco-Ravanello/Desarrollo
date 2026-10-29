@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { agreementState, canCreateAgreements, parseAgreementInput } from "@/lib/convenios";
+import {
+  agreementState, canCreateAgreements, describeAgreementChanges, isAgreementClosed, parseAgreementInput, parseStatusChange,
+} from "@/lib/convenios";
 
 const day = (iso: string) => new Date(`${iso}T00:00:00Z`);
 const HOY = "2026-10-29";
@@ -57,5 +59,42 @@ describe("formulario de convenio", () => {
     expect(["SUPERADMIN", "ADMIN_GENERAL", "DIRECCION_GENERAL"].every(canCreateAgreements)).toBe(true);
     expect(canCreateAgreements("DIRECTOR_AREA")).toBe(false);
     expect(canCreateAgreements("AUDITOR")).toBe(false);
+  });
+});
+
+describe("editar y cambiar el estado", () => {
+  it("al editar, el estado no se toma del formulario", () => {
+    const r = parseAgreementInput({ title: "Convenio", parties: "Municipio y Club", status: "FINALIZADO" }, { withStatus: false });
+    expect(r.ok).toBe(true);
+  });
+
+  it("el estado nuevo tiene que ser otro y lleva motivo", () => {
+    expect(parseStatusChange({ status: "FINALIZADO", motivo: "  Terminó   la emergencia " }, "VIGENTE")).toEqual({
+      ok: true,
+      data: { status: "FINALIZADO", motivo: "Terminó la emergencia" },
+    });
+    expect(parseStatusChange({ status: "VIGENTE", motivo: "Igual" }, "VIGENTE").ok).toBe(false);
+    expect(parseStatusChange({ status: "VENCIDO", motivo: "Venció" }, "VIGENTE").ok).toBe(false);
+    expect(parseStatusChange({ status: "RESCINDIDO", motivo: "" }, "VIGENTE").ok).toBe(false);
+  });
+
+  it("finalizado y rescindido cierran la carga", () => {
+    expect(isAgreementClosed("FINALIZADO")).toBe(true);
+    expect(isAgreementClosed("RESCINDIDO")).toBe(true);
+    expect(isAgreementClosed("VIGENTE")).toBe(false);
+    expect(isAgreementClosed("EN_REVISION")).toBe(false);
+  });
+
+  it("la historia dice qué cambió, en castellano", () => {
+    const base = {
+      title: "Cuidadoras", number: null, parties: "Municipio", description: null, amount: 1000,
+      startDate: "2026-01-01", endDate: null, areaName: "Niñez",
+    };
+    expect(describeAgreementChanges(base, { ...base })).toEqual([]);
+    expect(describeAgreementChanges(base, { ...base, number: "CONV-1", amount: 2000, endDate: "2026-12-31" })).toEqual([
+      "Número: vacío → CONV-1",
+      `Monto: $ ${(1000).toLocaleString("es-AR")} → $ ${(2000).toLocaleString("es-AR")}`,
+      "Vencimiento: vacío → 31/12/2026",
+    ]);
   });
 });

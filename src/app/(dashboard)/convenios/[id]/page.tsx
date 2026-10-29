@@ -4,28 +4,34 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import {
   AlertTriangle,
+  Baby,
   CalendarDays,
   ChevronLeft,
   ChevronRight,
   Clock,
+  Download,
   Gauge,
   Landmark,
+  Lock,
   Settings,
   TrendingUp,
   Users,
   Wallet,
 } from "lucide-react";
 import { auth } from "@/auth";
-import { canAccessPath } from "@/lib/permissions";
+import { canAccessPath, hasPermission, PERMISSIONS } from "@/lib/permissions";
+import { AGREEMENT_STATUS_LABELS, isAgreementClosed } from "@/lib/convenios";
 import { todayInArgentina } from "@/lib/follow-up-dates";
-import { formatFechaLarga } from "@/lib/fechas";
+import { formatFechaHora, formatFechaLarga } from "@/lib/fechas";
 import { formatNumber, formatPercent, formatPesos, plural } from "@/lib/formato";
 import {
   DEFAULT_ALERT_PERCENTS,
   LUGARES,
   NIVELES,
+  canClosePeriod,
   canConfigureCost,
   canLoadHours,
+  canReopenPeriod,
   canViewCostDetail,
   diasDelPeriodo,
   horasTexto,
@@ -45,10 +51,13 @@ import {
   getValoresHora,
   periodoPedido,
 } from "@/services/convenio-gasto";
+import { getPeriodosCerrados, type PeriodoCerrado } from "@/services/convenio-cierre";
+import { getNnyaDelConvenio } from "@/services/convenio-nnya";
 import { PageHeader } from "@/components/layout/page-header";
 import { PageBreadcrumbs } from "@/components/layout/breadcrumbs-context";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { StatCard } from "@/components/ui/stat-card";
 import { StatRow } from "@/components/ui/mobile-list";
 import { EmptyMessage } from "@/components/ui/empty-message";
@@ -65,6 +74,13 @@ import {
   RepetirDiaButton,
   ValorHoraForm,
 } from "@/components/convenios/gasto-controls";
+import {
+  CerrarPeriodoButton,
+  EgresoButton,
+  ExpedienteSelect,
+  ReabrirPeriodoButton,
+  ReingresoButton,
+} from "@/components/convenios/cierre-nnya-controls";
 
 type Params = {
   params: Promise<{ id: string }>;
@@ -81,6 +97,7 @@ export async function generateMetadata({ params }: Params) {
 const TABS = [
   { key: "tablero", label: "Tablero", icon: Gauge },
   { key: "carga", label: "Carga diaria", icon: CalendarDays },
+  { key: "nnya", label: "NNyA", icon: Baby },
   { key: "cuidadoras", label: "Cuidadoras", icon: Users },
   { key: "ajustes", label: "Valor hora y tope", icon: Settings },
 ] as const;
@@ -191,7 +208,9 @@ export default async function ControlGastoPage({ params, searchParams }: Params)
 
   const today = todayInArgentina();
   const canConfig = canConfigureCost(user.role);
+  // canLoad: la gente que trabaja el convenio (también maneja los NNyA); canLoadHours: además, que el convenio siga.
   const canLoad = canLoadHours(user, convenio);
+  const convenioTerminado = isAgreementClosed(convenio.status);
 
   if (convenio.costMode !== "POR_HORA") {
     return (
@@ -231,11 +250,29 @@ export default async function ControlGastoPage({ params, searchParams }: Params)
       <PageBreadcrumbs items={crumbs} />
       {header}
       <Tabs id={convenio.id} active={ver} periodo={periodo.desde} />
-      {ver === "tablero" && <Tablero convenio={convenio} periodo={periodo} startDay={startDay} today={today} />}
-      {ver === "carga" && (
-        <Carga convenio={convenio} dia={parseDia(sp.dia) ?? today} today={today} canLoad={canLoad} canConfig={canConfig} />
+      {convenioTerminado && (
+        <p className="flex items-start gap-2 rounded-2xl border border-border/60 bg-muted/40 px-4 py-3 text-sm text-foreground">
+          <Lock className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+          <span>
+            El convenio está {AGREEMENT_STATUS_LABELS[convenio.status].toLowerCase()}: ya no se cargan ni se cambian horas. Se puede ver
+            todo, cerrar los períodos y bajar las rendiciones.
+          </span>
+        </p>
       )}
-      {ver === "cuidadoras" && <Cuidadoras convenio={convenio} periodo={periodo} startDay={startDay} today={today} canLoad={canLoad} />}
+      {ver === "tablero" && <Tablero convenio={convenio} periodo={periodo} startDay={startDay} today={today} user={user} />}
+      {ver === "carga" && (
+        <Carga
+          convenio={convenio}
+          dia={parseDia(sp.dia) ?? today}
+          today={today}
+          canLoad={canLoad && !convenioTerminado}
+          canConfig={canConfig}
+        />
+      )}
+      {ver === "nnya" && <Nnyas convenio={convenio} today={today} canLoad={canLoad} user={user} />}
+      {ver === "cuidadoras" && (
+        <Cuidadoras convenio={convenio} periodo={periodo} startDay={startDay} today={today} canLoad={canLoad && !convenioTerminado} />
+      )}
       {ver === "ajustes" && <Ajustes convenio={convenio} today={today} canConfig={canConfig} />}
     </div>
   );
@@ -247,11 +284,35 @@ type Convenio = NonNullable<Awaited<ReturnType<typeof getConvenioControl>>>;
 // Tablero
 // ---------------------------------------------------------------------------
 
-async function Tablero({ convenio, periodo, startDay, today }: { convenio: Convenio; periodo: Periodo; startDay: number; today: string }) {
-  const r = await getResumenPeriodo(convenio, periodo, today);
+type SessionUser = { id?: string; role?: string | null; areaId?: string | null };
+
+async function Tablero({
+  convenio,
+  periodo,
+  startDay,
+  today,
+  user,
+}: {
+  convenio: Convenio;
+  periodo: Periodo;
+  startDay: number;
+  today: string;
+  user: SessionUser;
+}) {
+  const [r, cerrados, nnyas] = await Promise.all([
+    getResumenPeriodo(convenio, periodo, today),
+    getPeriodosCerrados(convenio.id),
+    getNnyaDelConvenio(user, convenio.id),
+  ]);
+  const cierre = cerrados.find((c) => c.desde === periodo.desde) ?? null;
+  const egresoDe = new Map(nnyas.map((n) => [n.dni, n.egreso]));
   const nivel = r.nivel ? NIVELES[r.nivel] : null;
   const terminado = today > periodo.hasta;
   const sinHoras = r.porDia.length === 0;
+
+  // Las horas por día que se proyectan: sin los NNyA que ya egresaron.
+  const sinEgresados = r.ultimoDia !== null && r.horasBase !== null && r.horasBase < r.ultimoDia.horas;
+  const base = `${horasTexto(r.horasBase ?? 0)} por día${sinEgresados ? ", sin los NNyA que egresaron" : ""}`;
 
   let mensaje: string;
   if (sinHoras) mensaje = "Todavía no hay horas cargadas en este período.";
@@ -261,9 +322,9 @@ async function Tablero({ convenio, periodo, startDay, today }: { convenio: Conve
         ? `El período cerró pasado del tope en ${formatPesos(-r.disponible)}.`
         : `El período cerró con ${formatPercent(r.porcentaje)} del tope gastado.`;
   } else if (r.excedente > 0) {
-    mensaje = `Si sigue como el último día cargado (${horasTexto(r.ultimoDia!.horas)} por día), el período cierra en ${formatPesos(r.proyeccion)}: se pasa del tope en ${formatPesos(r.excedente)}.`;
+    mensaje = `Si sigue como el último día cargado (${base}), el período cierra en ${formatPesos(r.proyeccion)}: se pasa del tope en ${formatPesos(r.excedente)}.`;
   } else if (r.proyeccion !== null) {
-    mensaje = `Si sigue como el último día cargado (${horasTexto(r.ultimoDia!.horas)} por día), el período cierra en ${formatPesos(r.proyeccion)}, dentro del tope.`;
+    mensaje = `Si sigue como el último día cargado (${base}), el período cierra en ${formatPesos(r.proyeccion)}, dentro del tope.`;
   } else {
     mensaje = "Falta el valor hora para calcular la proyección.";
   }
@@ -322,7 +383,7 @@ async function Tablero({ convenio, periodo, startDay, today }: { convenio: Conve
             terminado
               ? "Período terminado"
               : r.ultimoDia
-                ? `Con ${horasTexto(r.ultimoDia.horas)} por día, ${plural(r.diasRestantes, "día")} más`
+                ? `Con ${horasTexto(r.horasBase ?? 0)} por día, ${plural(r.diasRestantes, "día")} más`
                 : "Sin horas cargadas"
           }
         />
@@ -349,6 +410,8 @@ async function Tablero({ convenio, periodo, startDay, today }: { convenio: Conve
           )}
         </div>
       )}
+
+      <CierreDelPeriodo convenio={convenio} periodo={periodo} today={today} cierre={cierre} user={user} hayHoras={!sinHoras} />
 
       <Card className="shadow-none">
         <CardHeader>
@@ -401,7 +464,10 @@ async function Tablero({ convenio, periodo, startDay, today }: { convenio: Conve
                         <Link href={`/people/${n.dni}`} className="font-semibold text-foreground hover:text-primary hover:underline">
                           {n.nombre || "Sin nombre"}
                         </Link>
-                        <p className="text-xs text-muted-foreground">DNI {n.dni}</p>
+                        <p className="text-xs text-muted-foreground">
+                          DNI {n.dni}
+                          {egresoDe.get(n.dni) ? ` · egresó el ${dma(egresoDe.get(n.dni)!).slice(0, 5)}` : ""}
+                        </p>
                       </TableCell>
                       <TableCell className="hidden text-right tabular-nums sm:table-cell">{formatNumber(n.dias)}</TableCell>
                       <TableCell className="whitespace-nowrap text-right tabular-nums">{horasTexto(n.horas)}</TableCell>
@@ -428,6 +494,185 @@ async function Tablero({ convenio, periodo, startDay, today }: { convenio: Conve
         </Card>
       </div>
     </div>
+  );
+}
+
+/** Si el período está cerrado, quién lo cerró; si terminó, el botón para cerrarlo; y la rendición en Excel. */
+function CierreDelPeriodo({
+  convenio,
+  periodo,
+  today,
+  cierre,
+  user,
+  hayHoras,
+}: {
+  convenio: Convenio;
+  periodo: Periodo;
+  today: string;
+  cierre: PeriodoCerrado | null;
+  user: SessionUser;
+  hayHoras: boolean;
+}) {
+  const terminado = today > periodo.hasta;
+  const texto = periodoTexto(periodo);
+  const canExport = hasPermission(user.role as never, PERMISSIONS.EXPORT_PERSONAL_DATA);
+  if (!cierre && !terminado && !hayHoras) return null;
+  const rendicion = canExport && (hayHoras || cierre) && (
+    <Button variant="outline" className="gap-2" asChild>
+      <a href={`/api/convenios/${convenio.id}/rendicion?periodo=${periodo.desde}`}>
+        <Download className="h-4 w-4" /> {cierre || terminado ? "Bajar la rendición (Excel)" : "Bajar la rendición parcial (Excel)"}
+      </a>
+    </Button>
+  );
+  let texto1: React.ReactNode;
+  if (cierre) {
+    texto1 = (
+      <>
+        <span className="font-semibold">Período cerrado</span> el {formatFechaHora(cierre.cerradoAt)}
+        {cierre.cerradoPor ? ` por ${cierre.cerradoPor}` : ""}: {horasTexto(cierre.horas)}, {formatPesos(cierre.gastado)}. Sus horas ya no
+        se cambian.
+      </>
+    );
+  } else if (terminado) {
+    texto1 = canClosePeriod(user, convenio) ? (
+      <>
+        <span className="font-semibold">El período terminó.</span> Cuando estén todas las horas, cerralo: quedan fijos los totales para la
+        rendición.
+      </>
+    ) : (
+      <>
+        <span className="font-semibold">El período terminó y todavía no se cerró.</span> Lo cierran la conducción y la dirección del área.
+      </>
+    );
+  } else {
+    texto1 = <>El período sigue abierto: la rendición sale parcial, con lo cargado hasta hoy.</>;
+  }
+  return (
+    <div className="flex flex-col gap-3 rounded-2xl border border-border/60 bg-card px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+      <p className="flex items-start gap-2 text-sm text-foreground">
+        <Lock className={`mt-0.5 h-4 w-4 shrink-0 ${cierre ? "text-emerald-600" : "text-muted-foreground"}`} aria-hidden />
+        <span>{texto1}</span>
+      </p>
+      <div className="flex flex-wrap gap-2 sm:shrink-0 sm:justify-end">
+        {rendicion}
+        {!cierre && terminado && canClosePeriod(user, convenio) && (
+          <CerrarPeriodoButton agreementId={convenio.id} desde={periodo.desde} texto={texto} />
+        )}
+        {cierre && canReopenPeriod(user.role) && <ReabrirPeriodoButton agreementId={convenio.id} desde={periodo.desde} texto={texto} />}
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// NNyA
+// ---------------------------------------------------------------------------
+
+async function Nnyas({ convenio, today, canLoad, user }: { convenio: Convenio; today: string; canLoad: boolean; user: SessionUser }) {
+  const nnyas = await getNnyaDelConvenio(user, convenio.id);
+  const activos = nnyas.filter((n) => !n.egreso).length;
+  return (
+    <Card className="shadow-none">
+      <CardHeader>
+        <CardTitle className="text-base">NNyA del convenio</CardTitle>
+        <CardDescription>
+          {nnyas.length === 0
+            ? "Aparecen solos al cargar sus primeras horas."
+            : `${plural(activos, "activo")} y ${plural(nnyas.length - activos, "con egreso", "con egreso")}. El ingreso es su primer día con horas. Los que egresaron no cuentan para la proyección.`}
+        </CardDescription>
+      </CardHeader>
+      {nnyas.length > 0 && (
+        <CardContent>
+          <ul className="divide-y divide-border/50 rounded-2xl border border-border/60">
+            {nnyas.map((n) => {
+              const nombre = n.nombre || `DNI ${n.dni}`;
+              return (
+                <li
+                  key={n.id}
+                  className={`grid gap-3 px-4 py-3 md:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1.3fr)_9.5rem] md:items-center ${n.egreso ? "bg-muted/30" : ""}`}
+                >
+                  <div className="min-w-0">
+                    <Link
+                      href={`/people/${n.dni}`}
+                      className="block truncate font-semibold text-foreground hover:text-primary hover:underline"
+                    >
+                      {nombre}
+                    </Link>
+                    <p className="text-xs text-muted-foreground">
+                      DNI {n.dni} · {horasTexto(n.horas)} en total
+                    </p>
+                  </div>
+                  <div className="text-sm">
+                    <p>
+                      <span className="text-muted-foreground">Ingreso:</span> {dma(n.ingreso)}
+                    </p>
+                    {n.egreso ? (
+                      <div>
+                        <Badge variant="outline" className="mr-1 px-1.5 py-0 text-[10px]">
+                          Egresó
+                        </Badge>
+                        el {dma(n.egreso)}
+                        {n.motivoEgreso && <span className="block text-xs text-muted-foreground">{n.motivoEgreso}</span>}
+                      </div>
+                    ) : (
+                      <div>
+                        <Badge variant="outline" className={`px-1.5 py-0 text-[10px] ${NIVEL_CLASS.green}`}>
+                          Activo
+                        </Badge>
+                        {n.ultimoDia && (
+                          <span className="ml-1 text-xs text-muted-foreground">último día con horas: {dma(n.ultimoDia).slice(0, 5)}</span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  <div className="min-w-0 text-sm">
+                    {n.expedienteReservado ? (
+                      <p className="text-xs text-muted-foreground">Tiene un expediente vinculado que tu rol no ve.</p>
+                    ) : canLoad && n.opciones.length > 0 ? (
+                      <div className="space-y-1">
+                        <ExpedienteSelect
+                          agreementId={convenio.id}
+                          nnyaId={n.id}
+                          actual={n.expediente?.id ?? null}
+                          opciones={n.opciones}
+                          nombre={nombre}
+                        />
+                        {n.expediente && (
+                          <Link href={`/cases/${n.expediente.id}`} className="text-xs font-semibold text-primary hover:underline">
+                            Abrir el expediente
+                          </Link>
+                        )}
+                      </div>
+                    ) : n.expediente ? (
+                      <Link href={`/cases/${n.expediente.id}`} className="font-semibold text-primary hover:underline">
+                        {n.expediente.title}
+                      </Link>
+                    ) : (
+                      <p className="text-xs text-muted-foreground">
+                        {n.opciones.length === 0 ? "No tiene expedientes en la app." : "Sin expediente vinculado."}
+                      </p>
+                    )}
+                  </div>
+                  {canLoad && (
+                    <div className="flex justify-start md:justify-end">
+                      {n.egreso ? (
+                        <ReingresoButton agreementId={convenio.id} nnyaId={n.id} nombre={nombre} />
+                      ) : (
+                        <EgresoButton
+                          agreementId={convenio.id}
+                          nnya={{ id: n.id, nombre, ingreso: n.ingreso, ultimoDia: n.ultimoDia }}
+                          today={today}
+                        />
+                      )}
+                    </div>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        </CardContent>
+      )}
+    </Card>
   );
 }
 
@@ -480,11 +725,15 @@ async function Carga({
   canConfig: boolean;
 }) {
   const dayISO = dia > today ? today : dia;
-  const [{ filas, valorHora }, cuidadoras, nnyas] = await Promise.all([
+  const [{ filas, valorHora }, cuidadoras, nnyas, cerrados] = await Promise.all([
     getDia(convenio.id, dayISO),
     getCuidadoras(convenio.id),
     getNnyaRecientes(convenio.id, today),
+    getPeriodosCerrados(convenio.id),
   ]);
+  const cerrado = cerrados.find((c) => c.desde <= dayISO && dayISO <= c.hasta) ?? null;
+  // Un día de un período cerrado se ve, pero no se toca.
+  if (cerrado) canLoad = false;
   const activas = cuidadoras.filter((c) => c.activa).map((c) => ({ id: c.id, nombre: c.nombre }));
   // Al corregir una fila se puede dejar la cuidadora que tenía, aunque ya esté de baja.
   const todas = cuidadoras.map((c) => ({
@@ -513,6 +762,15 @@ async function Carga({
           <DiaPicker agreementId={convenio.id} dia={dayISO} today={today} />
         </CardHeader>
         <CardContent className="space-y-4">
+          {cerrado && (
+            <p className="flex items-start gap-2 rounded-2xl border border-border/60 bg-muted/40 px-4 py-3 text-sm">
+              <Lock className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+              <span>
+                Este día es del período del {periodoTexto(cerrado)}, que ya está cerrado: sus horas no se cambian. Si hace falta, la
+                conducción lo reabre desde el Tablero.
+              </span>
+            </p>
+          )}
           {canLoad && activas.length === 0 && (
             <p className="rounded-2xl border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-900 dark:text-amber-100">
               Para cargar horas, primero sumá a las cuidadoras en la pestaña{" "}

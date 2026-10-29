@@ -89,6 +89,13 @@ const ACTIONS: Record<string, { label: string; group: AuditGroup }> = {
   CONVENIO_HORAS_CAMBIO: { label: "Corrigió horas de un convenio", group: "convenios" },
   CONVENIO_HORAS_BAJA: { label: "Borró horas de un convenio", group: "convenios" },
   CONVENIO_HORAS_REPETIR: { label: "Repitió las horas del día anterior de un convenio", group: "convenios" },
+  AGREEMENT_STATUS: { label: "Cambió el estado de un convenio", group: "convenios" },
+  CONVENIO_PERIODO_CIERRE: { label: "Cerró un período de un convenio", group: "convenios" },
+  CONVENIO_PERIODO_REAPERTURA: { label: "Reabrió un período de un convenio", group: "convenios" },
+  CONVENIO_RENDICION: { label: "Descargó la rendición de un convenio", group: "convenios" },
+  CONVENIO_NNYA_EGRESO: { label: "Registró el egreso de un NNyA de un convenio", group: "convenios" },
+  CONVENIO_NNYA_REINGRESO: { label: "Registró que un NNyA volvió a un convenio", group: "convenios" },
+  CONVENIO_NNYA_EXPEDIENTE: { label: "Vinculó un NNyA de un convenio con un expediente", group: "convenios" },
   // Compras, proveedores y stock
   UPDATE_FULFILLMENT: { label: "Registró una entrega de una orden", group: "compras" },
   CREATE_PROVIDER: { label: "Dio de alta un proveedor", group: "compras" },
@@ -246,6 +253,10 @@ const DETAIL_KEYS: Record<string, string> = {
   valor: "Valor hora",
   desde: "Desde",
   filas: "Filas",
+  estado: "Estado",
+  motivo: "Motivo",
+  cambios: "Cambios",
+  periodo: "Período",
 };
 
 /**

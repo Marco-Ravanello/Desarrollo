@@ -2,6 +2,7 @@ import { Prisma } from "@prisma/client";
 import prisma from "@/lib/prisma";
 import { todayInArgentina, addDays } from "@/lib/follow-up-dates";
 import { diaDeVencimiento } from "@/lib/fechas";
+import { AGREEMENT_STATUS_LABELS, isAgreementClosed } from "@/lib/convenios";
 import {
   DEFAULT_ALERT_PERCENTS, LUGARES, MAX_HORAS_DIA, canConfigureCost, canLoadHours, horasTexto, parseConfig,
   parseCuidadora, parseDia, parseHoras, parseValorHora, periodoDe, resumirPeriodo,
@@ -18,20 +19,20 @@ const SESSION_EXPIRED = "Tu sesión expiró. Volvé a iniciar sesión.";
 const NO_CONFIG = "Configurar el control del gasto le corresponde a la conducción.";
 const NO_LOAD = "Las horas las cargan la conducción y las personas del área del convenio.";
 
-class AvisoError extends Error {}
+export class AvisoError extends Error {}
 
 const toDate = (dia: string) => new Date(`${dia}T00:00:00.000Z`);
 const isoDe = (d: Date) => d.toISOString().slice(0, 10);
 const dma = (iso: string) => iso.split("-").reverse().join("/");
 
 /** El usuario según la base (rol y área al día), si está activo. */
-async function actorFromDb(user: Actor) {
+export async function actorFromDb(user: Actor) {
   if (!user.id) return null;
   const u = await prisma.user.findUnique({ where: { id: user.id }, select: { id: true, role: true, areaId: true, isActive: true } });
   return u?.isActive ? u : null;
 }
 
-async function audit(userId: string, action: string, agreementId: string, details: Record<string, unknown>) {
+export async function audit(userId: string, action: string, agreementId: string, details: Record<string, unknown>) {
   await prisma.auditLog.create({ data: { userId, action, entity: "Agreement", entityId: agreementId, details: JSON.stringify(details) } });
 }
 
@@ -53,6 +54,10 @@ async function convenioPara(user: Actor, agreementId: string, puede: "config" | 
   }
   if (puede === "load" && convenio.costMode !== "POR_HORA") {
     return { error: "Este convenio todavía no tiene el control por horas configurado." } as const;
+  }
+  if (puede === "load" && isAgreementClosed(convenio.status)) {
+    const estado = AGREEMENT_STATUS_LABELS[convenio.status].toLowerCase();
+    return { error: `El convenio está ${estado}: ya no se cargan ni se cambian horas. Si sigue, la conducción le cambia el estado.` } as const;
   }
   return { actor, convenio } as const;
 }
@@ -79,7 +84,7 @@ export async function getCuidadoras(agreementId: string) {
   return rows.map(({ _count, ...c }) => ({ ...c, filas: _count.horas }));
 }
 
-async function filasDelRango(agreementId: string, desde: string, hasta: string): Promise<FilaHoras[]> {
+export async function filasDelRango(agreementId: string, desde: string, hasta: string): Promise<FilaHoras[]> {
   const rows = await prisma.convenioHora.findMany({
     where: { agreementId, fecha: { gte: toDate(desde), lte: toDate(hasta) } },
     select: { fecha: true, cuidadoraId: true, dni: true, nombre: true, horas: true, cuidadora: { select: { nombre: true } } },
@@ -103,8 +108,13 @@ export function periodoPedido(convenio: { periodStartDay: number | null }, raw: 
 
 /** Los totales de un período del convenio (sin datos de NNyA para quien no ve el detalle: los arma la pantalla). */
 export async function getResumenPeriodo(convenio: ConvenioControl, periodo: Periodo, hoy = todayInArgentina()): Promise<ResumenPeriodo> {
-  const [filas, valores] = await Promise.all([filasDelRango(convenio.id, periodo.desde, periodo.hasta), getValoresHora(convenio.id)]);
+  const [filas, valores, egresados] = await Promise.all([
+    filasDelRango(convenio.id, periodo.desde, periodo.hasta),
+    getValoresHora(convenio.id),
+    prisma.convenioNnya.findMany({ where: { agreementId: convenio.id, egreso: { not: null } }, select: { dni: true } }),
+  ]);
   return resumirPeriodo({
+    egresados: egresados.map((e) => e.dni),
     periodo,
     filas,
     valores,
@@ -201,7 +211,7 @@ export async function getConveniosParaCargar(user: { id?: string | null }): Prom
   const actor = await actorFromDb(user);
   if (!actor) return [];
   const convenios = await prisma.agreement.findMany({
-    where: { costMode: "POR_HORA" },
+    where: { costMode: "POR_HORA", status: { notIn: ["FINALIZADO", "RESCINDIDO"] } },
     select: CONVENIO_SELECT,
     orderBy: { title: "asc" },
   });
@@ -257,12 +267,26 @@ export async function configurarControl(user: Actor, agreementId: string, raw: R
     await audit(actor.id, "CONVENIO_CONTROL", agreementId, { ...parsed.data, valorHora: valor.data.valor, desde: valor.data.desde });
     return { success: true };
   }
+  if (parsed.data.periodStartDay !== convenio.periodStartDay && (await prisma.convenioPeriodoCerrado.count({ where: { agreementId } })) > 0) {
+    return { success: false, error: "Ya hay períodos cerrados: el día de corte ya no se puede cambiar." };
+  }
   await prisma.agreement.update({ where: { id: agreementId }, data: parsed.data });
   await audit(actor.id, "CONVENIO_CONTROL", agreementId, {
     antes: { monthlyCap: Number(convenio.monthlyCap ?? 0), periodStartDay: convenio.periodStartDay, alertPercents: convenio.alertPercents },
     despues: parsed.data,
   });
   return { success: true };
+}
+
+/** Si un valor hora desde ese día cambiaría el gasto de un período cerrado, por qué no se puede. */
+async function periodoCerradoDesde(agreementId: string, desde: string): Promise<string | null> {
+  const ultimo = await prisma.convenioPeriodoCerrado.findFirst({
+    where: { agreementId, hasta: { gte: toDate(desde) } },
+    orderBy: { hasta: "desc" },
+    select: { desde: true, hasta: true },
+  });
+  if (!ultimo) return null;
+  return `Cambiaría el gasto del período cerrado del ${dma(isoDe(ultimo.desde))} al ${dma(isoDe(ultimo.hasta))}. Un valor nuevo tiene que regir desde el ${dma(addDays(isoDe(ultimo.hasta), 1))} o después.`;
 }
 
 /** Un valor hora desde un día. Si ya había uno desde ese mismo día, se corrige. */
@@ -273,6 +297,8 @@ export async function guardarValorHora(user: Actor, agreementId: string, raw: Re
   const parsed = parseValorHora(raw);
   if (!parsed.ok) return { success: false, error: parsed.error };
   const { desde, valor } = parsed.data;
+  const tocaCerrado = await periodoCerradoDesde(agreementId, desde);
+  if (tocaCerrado) return { success: false, error: tocaCerrado };
   const prev = await prisma.convenioValorHora.findUnique({ where: { agreementId_desde: { agreementId, desde: toDate(desde) } } });
   await prisma.convenioValorHora.upsert({
     where: { agreementId_desde: { agreementId, desde: toDate(desde) } },
@@ -289,6 +315,8 @@ export async function borrarValorHora(user: Actor, valorId: string): Promise<Res
   if (!valor) return { success: false, error: "Ese valor ya no está." };
   const found = await convenioPara(user, valor.agreementId, "config");
   if ("error" in found) return { success: false, error: found.error! };
+  const tocaCerrado = await periodoCerradoDesde(valor.agreementId, isoDe(valor.desde));
+  if (tocaCerrado) return { success: false, error: tocaCerrado };
   const otros = await prisma.convenioValorHora.findMany({ where: { agreementId: valor.agreementId, id: { not: valorId } }, orderBy: { desde: "asc" }, take: 1 });
   const primero = otros[0]?.desde ?? null;
   const sinValor = await prisma.convenioHora.count({
@@ -397,6 +425,61 @@ async function controlarTope(tx: Prisma.TransactionClient, agreementId: string, 
   }
 }
 
+/**
+ * Que ninguno de esos días esté en un período cerrado. Toma el candado del convenio compartido:
+ * cerrar un período lo toma exclusivo, así no se cuelan horas mientras se cierra.
+ */
+async function asegurarAbierto(tx: Prisma.TransactionClient, agreementId: string, fechas: string[]) {
+  await tx.$executeRaw`SELECT pg_advisory_xact_lock_shared(hashtext(${`convenio-cierre:${agreementId}`}))`;
+  for (const fecha of new Set(fechas)) {
+    const cerrado = await tx.convenioPeriodoCerrado.findFirst({
+      where: { agreementId, desde: { lte: toDate(fecha) }, hasta: { gte: toDate(fecha) } },
+      select: { desde: true, hasta: true },
+    });
+    if (cerrado) {
+      throw new AvisoError(
+        `El período del ${dma(isoDe(cerrado.desde))} al ${dma(isoDe(cerrado.hasta))} está cerrado: sus horas ya no se cambian. Si hace falta, la conducción lo reabre.`
+      );
+    }
+  }
+}
+
+/** Que el NNyA no tenga egreso antes de ese día. */
+async function revisarEgreso(tx: Prisma.TransactionClient, agreementId: string, dni: string, fecha: string) {
+  const n = await tx.convenioNnya.findUnique({ where: { agreementId_dni: { agreementId, dni } }, select: { egreso: true } });
+  if (n?.egreso && fecha > isoDe(n.egreso)) {
+    throw new AvisoError(`Ese NNyA tiene egreso el ${dma(isoDe(n.egreso))}. Si volvió, tocá “Volvió a ingresar” en la pestaña NNyA.`);
+  }
+}
+
+/**
+ * Deja al día la ficha del NNyA en el convenio: ingreso = su primer día con horas. Si ya no le quedan horas
+ * (se cargó por error), se saca. La primera vez, si tiene un solo expediente abierto, queda vinculado.
+ */
+async function sincronizarNnya(tx: Prisma.TransactionClient, agreementId: string, dni: string, nombre: string | null) {
+  const primera = await tx.convenioHora.aggregate({ where: { agreementId, dni }, _min: { fecha: true } });
+  const ingreso = primera._min.fecha;
+  const actual = await tx.convenioNnya.findUnique({ where: { agreementId_dni: { agreementId, dni } } });
+  if (!ingreso) {
+    if (actual) await tx.convenioNnya.delete({ where: { id: actual.id } });
+    return;
+  }
+  if (actual) {
+    if (actual.ingreso.getTime() !== ingreso.getTime() || (nombre && nombre !== actual.nombre)) {
+      await tx.convenioNnya.update({ where: { id: actual.id }, data: { ingreso, ...(nombre ? { nombre } : {}) } });
+    }
+    return;
+  }
+  const abiertos = await tx.case.findMany({
+    where: { person: { dni }, status: { not: "CERRADO" } },
+    select: { id: true },
+    take: 2,
+  });
+  await tx.convenioNnya.create({
+    data: { agreementId, dni, nombre, ingreso, caseId: abiertos.length === 1 ? abiertos[0].id : null },
+  });
+}
+
 export async function agregarHoras(user: Actor, agreementId: string, raw: Record<string, unknown>): Promise<Result> {
   const found = await convenioPara(user, agreementId, "load");
   if ("error" in found) return { success: false, error: found.error! };
@@ -408,10 +491,14 @@ export async function agregarHoras(user: Actor, agreementId: string, raw: Record
   if (!check.cuidadora.activa) return { success: false, error: `${check.cuidadora.nombre} está dada de baja en este convenio.` };
   try {
     const fila = await prisma.$transaction(async (tx) => {
+      await asegurarAbierto(tx, agreementId, [data.fecha]);
+      await revisarEgreso(tx, agreementId, data.dni, data.fecha);
       await controlarTope(tx, agreementId, data.cuidadoraId, check.cuidadora.nombre, data.fecha, data.horas);
-      return tx.convenioHora.create({
+      const creada = await tx.convenioHora.create({
         data: { ...data, agreementId, fecha: toDate(data.fecha), nombre: check.nnya.nombre, createdById: found.actor.id },
       });
+      await sincronizarNnya(tx, agreementId, data.dni, check.nnya.nombre);
+      return creada;
     });
     await audit(found.actor.id, "CONVENIO_HORAS_ALTA", agreementId, { fila: fila.id, fecha: data.fecha, cuidadora: check.cuidadora.nombre, dni: data.dni, horas: data.horas });
     return { success: true };
@@ -436,11 +523,15 @@ export async function corregirHoras(user: Actor, filaId: string, raw: Record<str
   }
   try {
     await prisma.$transaction(async (tx) => {
+      await asegurarAbierto(tx, actual.agreementId, [isoDe(actual.fecha), data.fecha]);
+      await revisarEgreso(tx, actual.agreementId, data.dni, data.fecha);
       await controlarTope(tx, actual.agreementId, data.cuidadoraId, check.cuidadora.nombre, data.fecha, data.horas, filaId);
       await tx.convenioHora.update({
         where: { id: filaId },
         data: { ...data, fecha: toDate(data.fecha), nombre: check.nnya.nombre, updatedById: found.actor.id },
       });
+      await sincronizarNnya(tx, actual.agreementId, data.dni, check.nnya.nombre);
+      if (actual.dni !== data.dni) await sincronizarNnya(tx, actual.agreementId, actual.dni, null);
     });
   } catch (err) {
     if (err instanceof AvisoError) return { success: false, error: err.message };
@@ -459,7 +550,16 @@ export async function borrarHoras(user: Actor, filaId: string): Promise<Result> 
   if (!actual) return { success: false, error: "Esa fila ya no está. Recargá la página." };
   const found = await convenioPara(user, actual.agreementId, "load");
   if ("error" in found) return { success: false, error: found.error! };
-  await prisma.convenioHora.delete({ where: { id: filaId } });
+  try {
+    await prisma.$transaction(async (tx) => {
+      await asegurarAbierto(tx, actual.agreementId, [isoDe(actual.fecha)]);
+      await tx.convenioHora.delete({ where: { id: filaId } });
+      await sincronizarNnya(tx, actual.agreementId, actual.dni, null);
+    });
+  } catch (err) {
+    if (err instanceof AvisoError) return { success: false, error: err.message };
+    throw err;
+  }
   await audit(found.actor.id, "CONVENIO_HORAS_BAJA", actual.agreementId, {
     fila: filaId, fecha: isoDe(actual.fecha), cuidadora: actual.cuidadora.nombre, dni: actual.dni, horas: Number(actual.horas),
   });
@@ -487,7 +587,12 @@ export async function repetirDiaAnterior(
   ]);
   if (previas.length === 0) return { success: false, error: `El ${dma(anterior)} no tiene horas cargadas para repetir.` };
   const ya = new Set(yaCargadas.map((r) => `${r.cuidadoraId}|${r.dni}`));
-  const aCopiar = previas.filter((p) => p.cuidadora.activa && !ya.has(`${p.cuidadoraId}|${p.dni}`));
+  const egresados = await prisma.convenioNnya.findMany({
+    where: { agreementId, dni: { in: previas.map((p) => p.dni) }, egreso: { lt: toDate(dia) } },
+    select: { dni: true },
+  });
+  const fuera = new Set(egresados.map((e) => e.dni));
+  const aCopiar = previas.filter((p) => p.cuidadora.activa && !fuera.has(p.dni) && !ya.has(`${p.cuidadoraId}|${p.dni}`));
   const salteadas = previas.length - aCopiar.length;
   if (aCopiar.length === 0) return { success: false, error: "Todo lo del día anterior ya está cargado en este día." };
   const check = await revisarFila(found.convenio, {
@@ -496,6 +601,7 @@ export async function repetirDiaAnterior(
   if ("error" in check) return { success: false, error: check.error! };
   try {
     await prisma.$transaction(async (tx) => {
+      await asegurarAbierto(tx, agreementId, [dia]);
       for (const p of aCopiar) {
         await controlarTope(tx, agreementId, p.cuidadoraId, p.cuidadora.nombre, dia, Number(p.horas));
         await tx.convenioHora.create({
@@ -505,6 +611,7 @@ export async function repetirDiaAnterior(
           },
         });
       }
+      for (const dni of new Set(aCopiar.map((p) => p.dni))) await sincronizarNnya(tx, agreementId, dni, null);
     });
   } catch (err) {
     if (err instanceof AvisoError) return { success: false, error: err.message };

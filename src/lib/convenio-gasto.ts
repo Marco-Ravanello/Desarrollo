@@ -43,6 +43,13 @@ export function canLoadHours(user: Actor, convenio: ConvenioArea): boolean {
   return sameArea(user, convenio) && user.role !== "AUDITOR" && !isEmergencySurveyor(user.role);
 }
 
+/** Cierran un período terminado: la conducción y la dirección del área del convenio. Reabrir, solo la conducción. */
+export function canClosePeriod(user: Actor, convenio: ConvenioArea): boolean {
+  if (MANAGEMENT_ROLES.includes(user.role as Role)) return true;
+  return user.role === "DIRECTOR_AREA" && sameArea(user, convenio);
+}
+export const canReopenPeriod = canConfigureCost;
+
 // ---------------------------------------------------------------------------
 // Períodos
 // ---------------------------------------------------------------------------
@@ -158,6 +165,8 @@ export type ResumenPeriodo = {
   ultimoDia: { fecha: string; horas: number } | null;
   /** Días del período después del último cargado. */
   diasRestantes: number;
+  /** Horas por día que se proyectan: las del último día cargado de los NNyA que siguen (sin egreso). */
+  horasBase: number | null;
   /** Lo que se gastaría si sigue como el último día cargado (null si el período ya terminó o no hay horas). */
   proyeccion: number | null;
   /** Cuánto pasaría del tope la proyección (0 si no pasa). */
@@ -169,7 +178,8 @@ export type ResumenPeriodo = {
 
 /**
  * Los totales del período: gastado (horas × valor hora de cada día), disponible, semáforo y la proyección
- * al cierre si sigue como el último día cargado, con el valor hora de hoy.
+ * al cierre si sigue como el último día cargado, con el valor hora de hoy. Los NNyA que ya egresaron
+ * (`egresados`, por DNI) no cuentan para la proyección.
  */
 export function resumirPeriodo(input: {
   periodo: Periodo;
@@ -178,6 +188,7 @@ export function resumirPeriodo(input: {
   tope: number | null;
   alertas?: number[];
   hoy: string;
+  egresados?: string[];
 }): ResumenPeriodo {
   const { periodo, valores, tope, hoy } = input;
   const filas = input.filas.filter((f) => f.fecha >= periodo.desde && f.fecha <= periodo.hasta);
@@ -227,12 +238,20 @@ export function resumirPeriodo(input: {
 
   const ultimo = porDia.length ? porDia[porDia.length - 1] : null;
   const ultimoDia = ultimo ? { fecha: ultimo.fecha, horas: ultimo.horas } : null;
+  const egresados = new Set(input.egresados ?? []);
+  const horasBase = ultimo
+    ? round2(filas.filter((f) => f.fecha === ultimo.fecha && !egresados.has(f.dni)).reduce((sum, f) => sum + f.horas, 0))
+    : null;
   const diasRestantes = ultimo ? Math.max(0, diasEntre(ultimo.fecha, periodo.hasta)) : diasDelPeriodo(periodo);
   // Con el valor de hoy (o el del último día del período si ya terminó): un aumento cargado hoy cuenta para lo que falta.
   const valorActual = valorHoraDel(hoy < periodo.hasta ? hoy : periodo.hasta, valores);
   const terminado = hoy > periodo.hasta;
   const proyeccion =
-    ultimoDia && !terminado && valorActual !== null ? round2(gastado + ultimoDia.horas * valorActual * diasRestantes) : terminado ? gastado : null;
+    ultimoDia && horasBase !== null && !terminado && valorActual !== null
+      ? round2(gastado + horasBase * valorActual * diasRestantes)
+      : terminado
+        ? gastado
+        : null;
   const porcentaje = tope && tope > 0 ? (gastado / tope) * 100 : null;
 
   return {
@@ -247,6 +266,7 @@ export function resumirPeriodo(input: {
     diasSinHoras,
     ultimoDia,
     diasRestantes,
+    horasBase,
     proyeccion,
     excedente: tope !== null && proyeccion !== null ? Math.max(0, round2(proyeccion - tope)) : 0,
     porDia,
@@ -375,3 +395,22 @@ export function parseHoras(raw: Record<string, unknown>, hoy: string): { ok: tru
 
 /** Lo que se ve de una fila de horas: "12 h", "7,5 h". */
 export const horasTexto = (h: number) => `${h.toLocaleString("es-AR", { maximumFractionDigits: 2 })} h`;
+
+// ---------------------------------------------------------------------------
+// NNyA: ingreso y egreso
+// ---------------------------------------------------------------------------
+
+export const NNYA_MOTIVO_MAX = 300;
+
+/** El egreso de un NNyA: el día (desde su ingreso hasta hoy) y un motivo opcional. */
+export function parseEgreso(
+  raw: Record<string, unknown>,
+  ingreso: string,
+  hoy: string
+): { ok: true; data: { fecha: string; motivo: string | null } } | { ok: false; error: string } {
+  const fecha = parseDia(raw.fecha);
+  if (!fecha) return { ok: false, error: "Elegí el día del egreso." };
+  if (fecha > hoy) return { ok: false, error: "El egreso no puede ser un día que todavía no pasó." };
+  if (fecha < ingreso) return { ok: false, error: `El egreso no puede ser antes del ingreso (${ingreso.split("-").reverse().join("/")}).` };
+  return { ok: true, data: { fecha, motivo: texto(raw.motivo, NNYA_MOTIVO_MAX) } };
+}
