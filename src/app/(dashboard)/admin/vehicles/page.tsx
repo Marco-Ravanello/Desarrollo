@@ -18,7 +18,8 @@ import { auth } from "@/auth";
 import { RESERVATION_STATUS, formatReservationRange, isFleetAdmin, reservationActionsFor } from "@/lib/vehicle-reservations";
 import { ReservationActions } from "./requests/reservation-actions";
 import { formatFechaCalendario } from "@/lib/fechas";
-import { plural } from "@/lib/formato";
+import { plural, formatPesos, formatNumber } from "@/lib/formato";
+import { StatRow } from "@/components/ui/mobile-list";
 
 export const metadata = { title: "Vehículos" };
 
@@ -96,20 +97,20 @@ export default async function VehiclesPage() {
         icon={Car}
         actions={
           <>
-            <Button variant="outline" asChild className="rounded-xl border-border/60">
+            <Button variant="outline" asChild>
               <Link href="/admin/vehicles/reports">
-                <FileText className="mr-2 h-4 w-4 text-muted-foreground"/> Reportes
+                <FileText className="mr-2 h-4 w-4" /> Reportes
               </Link>
             </Button>
-            <Button variant="outline" asChild className="rounded-xl border-border/60">
+            <Button variant="outline" asChild>
               <Link href="/admin/vehicles/fuel">
-                <Fuel className="mr-2 h-4 w-4 text-amber-500"/> Carga combustible
+                <Fuel className="mr-2 h-4 w-4" /> Cargar combustible
               </Link>
             </Button>
             {fleetAdmin && (
-              <Button asChild className="rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground">
+              <Button asChild>
                 <Link href="/admin/vehicles/new">
-                  <Plus className="mr-2 h-4 w-4"/> Nueva unidad
+                  <Plus className="mr-2 h-4 w-4" /> Nuevo vehículo
                 </Link>
               </Button>
             )}
@@ -117,7 +118,7 @@ export default async function VehiclesPage() {
         }
       />
 
-      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+      <StatRow>
         <StatCard
           label="Disponibles hoy"
           value={availableNow}
@@ -138,21 +139,21 @@ export default async function VehiclesPage() {
         <StatCard
           label="En mantenimiento"
           value={inMaintenance}
-          hint="Unidades fuera de servicio"
+          hint="En el taller"
           icon={Settings}
           tone="red"
         />
         <StatCard
-          label="Alertas críticas"
+          label="Vencimientos cerca"
           value={criticalAlerts}
-          hint="VTV o Seguros próximos a vencer"
+          hint="VTV o seguro en los próximos 30 días"
           icon={AlertTriangle}
           tone="orange"
         />
-      </div>
+      </StatRow>
 
       {myReservations.length > 0 && (
-        <Card className="rounded-2xl shadow-xs border border-border/60 bg-card text-card-foreground overflow-hidden">
+        <Card className="rounded-2xl shadow-sm border border-border/60 bg-card text-card-foreground overflow-hidden">
           <CardHeader className="bg-muted/30">
             <CardTitle className="text-lg">Mis reservas</CardTitle>
             <CardDescription>Si ya no vas a usar el vehículo, cancelá la reserva para que lo pueda usar otra persona.</CardDescription>
@@ -165,7 +166,7 @@ export default async function VehiclesPage() {
                   <li key={r.id} className="flex flex-wrap items-center justify-between gap-3 px-6 py-4">
                     <div className="min-w-0">
                       <p className="text-sm font-bold text-foreground">
-                        <span className="font-mono">{r.vehicle.plate}</span> · {r.vehicle.brand} {r.vehicle.model}
+                        {r.vehicle.plate} · {r.vehicle.brand} {r.vehicle.model}
                       </p>
                       <p className="text-xs text-muted-foreground">{formatReservationRange(r.startDate, r.endDate)}{r.reason ? ` · ${r.reason}` : ""}</p>
                     </div>
@@ -184,15 +185,15 @@ export default async function VehiclesPage() {
         </Card>
       )}
 
-      <Card className="rounded-2xl shadow-xs border border-border/60 bg-card text-card-foreground overflow-hidden">
+      <Card className="rounded-2xl shadow-sm border border-border/60 bg-card text-card-foreground overflow-hidden">
         <CardHeader className="bg-muted/30 flex flex-row items-center justify-between space-y-0">
           <div>
-            <CardTitle className="text-xl">Estado de la flota</CardTitle>
-            <CardDescription>Detalle técnico y disponibilidad de unidades.</CardDescription>
+            <CardTitle className="text-lg">Estado de la flota</CardTitle>
+            <CardDescription>Cuál está libre, cuánto combustible lleva este mes y qué vence.</CardDescription>
           </div>
           <div className="text-right hidden md:block">
             <p className="text-xs text-muted-foreground">Combustible del mes</p>
-            <p className="text-lg font-bold text-emerald-700 dark:text-emerald-400">${totalFuelSpentMonth.toLocaleString("es-AR")}</p>
+            <p className="text-lg font-bold tabular-nums text-foreground">{formatPesos(totalFuelSpentMonth)}</p>
           </div>
         </CardHeader>
         <CardContent className="p-0">
@@ -203,9 +204,11 @@ export default async function VehiclesPage() {
                   <TableHead className="w-[120px]">Dominio</TableHead>
                   <TableHead>Marca y modelo</TableHead>
                   <TableHead>Estado</TableHead>
-                  <TableHead>Combustible (Mes)</TableHead>
+                  <TableHead>Combustible del mes</TableHead>
                   <TableHead>Vencimientos</TableHead>
-                  <TableHead className="text-right">Acciones</TableHead>
+                  <TableHead>
+                    <span className="sr-only">Acciones</span>
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -223,16 +226,16 @@ export default async function VehiclesPage() {
                   const isInsClose = v.insuranceExpiry && v.insuranceExpiry < thirtyDaysFromNow;
 
                   return (
-                    <TableRow key={v.id} className="hover:bg-muted/30 transition-colors group">
+                    <TableRow key={v.id}>
                       <TableCell>
-                        <div className="px-2 py-1 bg-muted/60 rounded-md border-b-2 border-border/60 w-fit">
-                          <span className="font-mono font-bold text-foreground">{v.plate}</span>
-                        </div>
+                        <span className="font-semibold text-foreground">{v.plate}</span>
                       </TableCell>
                       <TableCell>
                         <div className="flex flex-col">
                           <span className="font-medium text-foreground">{v.brand} {v.model}</span>
-                          <span className="text-xs text-muted-foreground">KM Service: {v.lastServiceKm?.toLocaleString("es-AR") || 0} km</span>
+                          <span className="text-xs text-muted-foreground">
+                            {v.lastServiceKm ? `Último service a los ${formatNumber(v.lastServiceKm)} km` : "Sin service cargado"}
+                          </span>
                         </div>
                       </TableCell>
                       <TableCell>
@@ -252,8 +255,8 @@ export default async function VehiclesPage() {
                       <TableCell className="w-[200px]">
                         <div className="space-y-1">
                           <div className="flex justify-between text-xs font-medium">
-                            <span className="text-muted-foreground">${monthlyFuel.toLocaleString("es-AR")}</span>
-                            <span className="text-muted-foreground">lim. ${fuelLimit.toLocaleString("es-AR")}</span>
+                            <span className="tabular-nums text-foreground">{formatPesos(monthlyFuel)}</span>
+                            <span className="tabular-nums text-muted-foreground">{fuelLimit > 0 ? `de ${formatPesos(fuelLimit)}` : "Sin tope"}</span>
                           </div>
                           <Progress value={fuelPercent} className="h-1.5 bg-muted" />
                         </div>
@@ -276,23 +279,17 @@ export default async function VehiclesPage() {
                         </div>
                       </TableCell>
                       <TableCell className="text-right">
-                        <div className="flex justify-end gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
-                          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" asChild>
-                            <Link href={`/admin/vehicles/${v.id}`} title="Ver historial">
-                              <Clock className="h-4 w-4 text-muted-foreground" />
-                            </Link>
+                        <div className="flex justify-end gap-2">
+                          <Button variant="ghost" size="sm" className="h-8 text-xs" asChild>
+                            <Link href={`/admin/vehicles/${v.id}`}>Ver historial</Link>
                           </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 rounded-full"
-                            asChild
-                            disabled={isMaintenance}
-                          >
-                            <Link href={`/admin/vehicles/reserve?id=${v.id}`} title="Reservar">
-                              <Calendar className="h-4 w-4 text-primary" />
-                            </Link>
-                          </Button>
+                          {!isMaintenance && (
+                            <Button variant="outline" size="sm" className="h-8 gap-1.5 text-xs" asChild>
+                              <Link href={`/admin/vehicles/reserve?id=${v.id}`}>
+                                <Calendar className="h-3.5 w-3.5" /> Reservar
+                              </Link>
+                            </Button>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>

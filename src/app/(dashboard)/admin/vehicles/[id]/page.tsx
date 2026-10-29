@@ -15,6 +15,7 @@ import { Separator } from "@/components/ui/separator";
 import { RESERVATION_STATUS, formatFechaHora, formatReservationRange } from "@/lib/vehicle-reservations";
 import { formatFecha, formatFechaCalendario } from "@/lib/fechas";
 import { vehicleTitle } from "@/lib/page-titles";
+import { formatPesos, formatNumber } from "@/lib/formato";
 
 export const generateMetadata = vehicleTitle;
 
@@ -48,7 +49,7 @@ export default async function VehicleDetailPage({ params }: { params: Promise<{ 
         icon={Car}
         description={
           <span className="mt-1 inline-flex flex-wrap items-center gap-2">
-            <span className="px-2 py-0.5 bg-muted text-foreground font-mono font-bold text-xs border-b-2 border-border/80 rounded">
+            <span className="rounded-md bg-muted px-2 py-0.5 text-xs font-semibold text-foreground">
               {vehicle.plate}
             </span>
             <span className={cn(badgeVariants(),
@@ -71,7 +72,7 @@ export default async function VehicleDetailPage({ params }: { params: Promise<{ 
       <div className="grid gap-8 lg:grid-cols-3">
         {/* Left Column: Stats and Info */}
         <div className="lg:col-span-1 space-y-6">
-          <Card className="rounded-2xl border border-border/60 shadow-xs bg-card text-card-foreground overflow-hidden">
+          <Card className="rounded-2xl border border-border/60 shadow-sm bg-card text-card-foreground overflow-hidden">
             <CardHeader className="bg-muted/30 border-b border-border/40">
               <CardTitle className="text-lg flex items-center gap-2">
                 <Settings className="h-5 w-5 text-muted-foreground" /> Ficha técnica
@@ -80,22 +81,22 @@ export default async function VehicleDetailPage({ params }: { params: Promise<{ 
             <CardContent className="space-y-4 pt-6">
               <div className="flex justify-between items-center">
                 <span className="text-sm text-muted-foreground">Último service</span>
-                <span className="font-bold text-foreground">{vehicle.lastServiceKm?.toLocaleString("es-AR") || 0} KM</span>
+                <span className="font-semibold tabular-nums text-foreground">{vehicle.lastServiceKm ? `${formatNumber(vehicle.lastServiceKm)} km` : "Sin cargar"}</span>
               </div>
               <Separator />
               <div className="flex justify-between items-center">
                 <span className="text-sm text-muted-foreground">Tarjeta YPF</span>
-                <span className="font-mono text-sm text-foreground">{vehicle.fuelCardNumber || "Sin tarjeta"}</span>
+                <span className="text-sm text-foreground">{vehicle.fuelCardNumber || "Sin tarjeta"}</span>
               </div>
               <Separator />
               <div className="flex justify-between items-center">
                 <span className="text-sm text-muted-foreground">Cupo mensual</span>
-                <span className="font-bold text-emerald-700 dark:text-emerald-400">${Number(vehicle.fuelMonthlyLimit || 0).toLocaleString("es-AR")}</span>
+                <span className="font-semibold tabular-nums text-foreground">{formatPesos(Number(vehicle.fuelMonthlyLimit || 0))}</span>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="rounded-2xl border border-border/60 shadow-xs bg-card text-card-foreground overflow-hidden">
+          <Card className="rounded-2xl border border-border/60 shadow-sm bg-card text-card-foreground overflow-hidden">
             <CardHeader className="bg-muted/30 border-b border-border/40">
               <CardTitle className="text-lg flex items-center gap-2">
                 <ShieldCheck className="h-5 w-5 text-muted-foreground" /> Documentación
@@ -131,7 +132,7 @@ export default async function VehicleDetailPage({ params }: { params: Promise<{ 
 
         {/* Right Column: Tables */}
         <div className="lg:col-span-2 space-y-6">
-          <Card className="rounded-2xl border border-border/60 shadow-xs bg-card text-card-foreground overflow-hidden">
+          <Card className="rounded-2xl border border-border/60 shadow-sm bg-card text-card-foreground overflow-hidden">
             <CardHeader className="bg-muted/30 border-b border-border/40">
               <CardTitle className="text-lg flex items-center gap-2">
                 <Calendar className="h-5 w-5 text-blue-500" /> Historial de reservas
@@ -180,7 +181,7 @@ export default async function VehicleDetailPage({ params }: { params: Promise<{ 
             </CardContent>
           </Card>
 
-          <Card className="rounded-2xl border border-border/60 shadow-xs bg-card text-card-foreground overflow-hidden">
+          <Card className="rounded-2xl border border-border/60 shadow-sm bg-card text-card-foreground overflow-hidden">
             <CardHeader className="bg-muted/30 border-b border-border/40">
               <CardTitle className="text-lg flex items-center gap-2">
                 <Fuel className="h-5 w-5 text-emerald-500" /> Cargas de combustible
@@ -203,13 +204,13 @@ export default async function VehicleDetailPage({ params }: { params: Promise<{ 
                       <TableCell className="text-sm text-foreground">
                         {formatFecha(fuel.date)}
                       </TableCell>
-                      <TableCell className="font-bold text-emerald-700 dark:text-emerald-400">
-                        ${Number(fuel.amount).toLocaleString("es-AR")}
+                      <TableCell className="font-semibold tabular-nums text-foreground">
+                        {formatPesos(Number(fuel.amount))}
                       </TableCell>
                       <TableCell className="text-sm font-semibold text-foreground">
-                        {Number(fuel.liters).toFixed(2)} L
+                        {formatNumber(Number(fuel.liters), 2)} L
                       </TableCell>
-                      <TableCell className="text-xs font-mono text-muted-foreground">
+                      <TableCell className="text-xs text-muted-foreground">
                         {fuel.ticketNumber}
                       </TableCell>
                     </TableRow>

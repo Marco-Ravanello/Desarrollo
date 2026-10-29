@@ -50,7 +50,7 @@ export function HRFilters({ areas }: { areas: any[] }) {
           onChange={(e) => setQuery(e.target.value)}
         />
         {query && (
-            <button type="button" onClick={() => {setQuery(""); updateFilters({q: ""})}} className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-accent rounded-full">
+            <button type="button" aria-label="Borrar búsqueda" onClick={() => {setQuery(""); updateFilters({q: ""})}} className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-accent rounded-full">
                 <X className="h-3 w-3" />
             </button>
         )}

@@ -11,8 +11,7 @@ import { Building2, Plus, Search, AlertTriangle } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
 import { EmptyMessage } from "@/components/ui/empty-message";
 import { ProviderFormDialog } from "./provider-form-dialog";
-
-const money = (n: number) => `$ ${n.toLocaleString("es-AR", { maximumFractionDigits: 0 })}`;
+import { formatPesos, plural } from "@/lib/formato";
 
 export const metadata = { title: "Proveedores" };
 
@@ -35,11 +34,13 @@ export default async function ProvidersPage({ searchParams }: { searchParams: Pr
       />
 
       {canEdit && unregistered.length > 0 && (
-        <Card className="border-amber-500/30 bg-amber-500/5 shadow-none">
+        <Card className="rounded-2xl border-amber-500/30 bg-amber-500/5 shadow-none">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm flex items-center gap-2">
               <AlertTriangle className="h-4 w-4 text-amber-500" />
-              {unregistered.length} proveedores aparecen en órdenes de compra pero no están dados de alta
+              {unregistered.length === 1
+                ? "1 proveedor aparece en órdenes de compra pero no está dado de alta"
+                : `${plural(unregistered.length, "proveedor")} aparecen en órdenes de compra pero no están dados de alta`}
             </CardTitle>
             <CardDescription>Al registrarlos se completan con los datos de la orden y se suman a su historial.</CardDescription>
           </CardHeader>
@@ -50,7 +51,7 @@ export default async function ProvidersPage({ searchParams }: { searchParams: Pr
                 initial={{ name: u.name, cuit: formatCuit(u.cuit) }}
                 trigger={
                   <Button variant="outline" size="sm" className="gap-1.5">
-                    <Plus className="h-3.5 w-3.5" /> {u.name || formatCuit(u.cuit)} ({u.orderCount} OC)
+                    <Plus className="h-3.5 w-3.5" /> {u.name || formatCuit(u.cuit)} · {plural(u.orderCount, "orden", "órdenes")}
                   </Button>
                 }
               />
@@ -59,15 +60,15 @@ export default async function ProvidersPage({ searchParams }: { searchParams: Pr
         </Card>
       )}
 
-      <Card className="shadow-none">
+      <Card className="rounded-2xl border-border/60 shadow-sm">
         <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <CardTitle className="text-base">Registrados ({total})</CardTitle>
-            <CardDescription>Ejecutado = órdenes aprobadas o cumplidas.</CardDescription>
+            <CardTitle className="text-base">{plural(total, "proveedor registrado", "proveedores registrados")}</CardTitle>
+            <CardDescription>Lo ejecutado suma sus órdenes aprobadas o cumplidas.</CardDescription>
           </div>
           <form className="relative w-full sm:w-72">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input name="q" defaultValue={q || ""} placeholder="Buscar por nombre o CUIT" className="pl-9" />
+            <Input name="q" defaultValue={q || ""} aria-label="Buscar proveedores" placeholder="Buscar por nombre o CUIT" className="h-10 rounded-xl pl-9 text-xs" />
           </form>
         </CardHeader>
         <CardContent>
@@ -101,14 +102,14 @@ export default async function ProvidersPage({ searchParams }: { searchParams: Pr
                   {providers.map((p) => (
                     <TableRow key={p.id}>
                       <TableCell className="font-medium">
-                        <Link href={`/admin/providers/${p.id}`} className="hover:underline text-primary">{p.name}</Link>
+                        <Link href={`/admin/providers/${p.id}`} className="text-foreground hover:text-primary hover:underline">{p.name}</Link>
                       </TableCell>
-                      <TableCell className="font-mono text-xs">{p.cuit}</TableCell>
+                      <TableCell className="text-sm text-muted-foreground">{p.cuit}</TableCell>
                       <TableCell className="hidden md:table-cell text-xs text-muted-foreground">
                         {[p.phone, p.email].filter(Boolean).join(" · ") || "Sin datos"}
                       </TableCell>
-                      <TableCell className="text-right">{p.orderCount}</TableCell>
-                      <TableCell className="text-right">{money(p.executed)}</TableCell>
+                      <TableCell className="text-right tabular-nums">{p.orderCount}</TableCell>
+                      <TableCell className="text-right font-semibold tabular-nums">{formatPesos(p.executed)}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>

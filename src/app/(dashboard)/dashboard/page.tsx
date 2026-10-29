@@ -36,7 +36,7 @@ import { TerritorialActivityWidget } from "@/components/dashboard/territorial-ac
 import { ViewAsSelector, type ViewAsOption } from "@/components/dashboard/view-as-selector";
 import Link from "next/link";
 import { formatFechaHora, formatVencimiento } from "@/lib/fechas";
-import { formatNumber, plural, textoNormal } from "@/lib/formato";
+import { formatNumber, plural, textoNormal, formatPesos } from "@/lib/formato";
 import { getAreaShortName } from "@/lib/area-theme";
 import { roleLabel } from "@/lib/roles";
 import { STALE_DAYS } from "@/lib/case-summary";
@@ -493,7 +493,6 @@ function BudgetCard({ stats, areaName }: { stats: DashboardStats; areaName?: str
   const executedAmount = Number(stats.executedAmount || 0);
   const hasBudget = totalBudget > 0;
   const executionPercentage = hasBudget ? Math.round((executedAmount / totalBudget) * 100) : 0;
-  const money = (n: number) => `$ ${n.toLocaleString("es-AR")}`;
 
   return (
     <Card className="rounded-2xl border border-border/60 bg-card p-5 shadow-sm h-full">
@@ -512,15 +511,15 @@ function BudgetCard({ stats, areaName }: { stats: DashboardStats; areaName?: str
 
       <Link href="/admin/budget" className="grid grid-cols-3 gap-2 py-3.5 text-left border-b border-border/30 rounded-lg hover:bg-muted/20 transition-colors">
         <div>
-          <p className="text-sm font-semibold text-foreground leading-tight">{money(executedAmount)}</p>
+          <p className="text-sm font-semibold text-foreground leading-tight">{formatPesos(executedAmount)}</p>
           <p className="text-xs text-muted-foreground mt-0.5">Ejecutado</p>
         </div>
         <div>
-          <p className="text-sm font-semibold text-foreground leading-tight">{money(Math.max(0, totalBudget - executedAmount))}</p>
+          <p className="text-sm font-semibold text-foreground leading-tight">{formatPesos(Math.max(0, totalBudget - executedAmount))}</p>
           <p className="text-xs text-muted-foreground mt-0.5">Restante</p>
         </div>
         <div>
-          <p className="text-sm font-semibold text-foreground leading-tight">{money(totalBudget)}</p>
+          <p className="text-sm font-semibold text-foreground leading-tight">{formatPesos(totalBudget)}</p>
           <p className="text-xs text-muted-foreground mt-0.5">Total</p>
         </div>
       </Link>

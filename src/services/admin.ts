@@ -95,6 +95,12 @@ export async function getPurchaseOrders(options?: GetPurchaseOrdersOptions | str
   };
 }
 
+/** Cuántas órdenes hay en cada estado (para los indicadores de arriba de la lista). */
+export async function getPurchaseOrderStatusCounts(): Promise<Record<string, number>> {
+  const rows = await prisma.purchaseOrder.groupBy({ by: ['status'], _count: { _all: true } });
+  return Object.fromEntries(rows.map((r) => [r.status, r._count._all]));
+}
+
 export async function getAgreementById(id: string) {
   return await prisma.agreement.findUnique({
     where: { id },

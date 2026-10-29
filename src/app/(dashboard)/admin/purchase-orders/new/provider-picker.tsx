@@ -216,7 +216,7 @@ export function ProviderPicker({
                   onClick={() => pick(p)}
                 >
                   <span className="min-w-0 truncate text-sm font-medium">{p.name}</span>
-                  <span className="shrink-0 font-mono text-xs text-muted-foreground">{p.cuit}</span>
+                  <span className="shrink-0 text-xs text-muted-foreground">{p.cuit}</span>
                 </button>
               </li>
             ))}

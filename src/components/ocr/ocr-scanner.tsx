@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Sparkles, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { formatPesos } from "@/lib/formato";
 
 interface OCRScannerProps {
   onScanComplete: (data: any) => void;
@@ -38,7 +39,7 @@ export function OCRScanner({ onScanComplete, label = "Escanear documento" }: OCR
 
       toast.success("Documento digitalizado con éxito", {
         id: toastId,
-        description: `Se detectaron ${json.data.items?.length || 0} ítems y monto de $${json.data.amount || '0'}`
+        description: `Se detectaron ${json.data.items?.length || 0} ítems y un monto de ${formatPesos(Number(json.data.amount) || 0)}.`
       });
 
       onScanComplete(json.data);
