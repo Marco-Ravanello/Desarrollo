@@ -13,6 +13,8 @@ import { getStaffAwayToday, type StaffAway } from "@/services/hr";
 import { canEditHR } from "@/lib/hr-labels";
 import { BackFromLeaveButton } from "@/components/dashboard/back-from-leave-button";
 import { getProgramSummaries, type ProgramSummary } from "@/services/programs";
+import { getConveniosParaCargar, type ConvenioConHoras } from "@/services/convenio-gasto";
+import { NIVELES } from "@/lib/convenio-gasto";
 import { auth } from "@/auth";
 import prisma from "@/lib/prisma";
 import { hasPermission, PERMISSIONS } from "@/lib/permissions";
@@ -21,7 +23,7 @@ import {
   Users, FileText, CheckCircle2, ShieldCheck,
   Plus, UserPlus, ChevronRight, AlertTriangle,
   Car, Calendar, ArrowUpRight, LayoutDashboard, Wallet, FileSignature, ArrowRightLeft, FolderOpen,
-  Hourglass, Building2, UsersRound, CalendarCheck, ScrollText, Palmtree, Layers,
+  Hourglass, Building2, UsersRound, CalendarCheck, ScrollText, Palmtree, Layers, Clock,
 } from "lucide-react";
 import type { Role } from "@prisma/client";
 import { PageHeader } from "@/components/layout/page-header";
@@ -73,7 +75,7 @@ type KpiId =
   | "staleCases" | "pendingDerivations" | "myCases" | "followUpsToday";
 type SectionId =
   | "myCases" | "attention" | "budget" | "territorial" | "recentCases" | "tasks" | "vehicles"
-  | "areas" | "team" | "quietCases" | "followUps" | "activity" | "away" | "programs";
+  | "areas" | "team" | "quietCases" | "followUps" | "activity" | "away" | "programs" | "convenioHoras";
 
 const LAYOUT: Record<Profile, { kpis: KpiId[]; sections: SectionId[] }> = {
   superadmin: {
@@ -176,7 +178,7 @@ export default async function DashboardPage({
   const wants = (id: KpiId | SectionId) => (layout.kpis as string[]).includes(id) || (layout.sections as string[]).includes(id);
   const userId = session?.user?.id;
 
-  const [stats, myTasks, area, derivationsToAnswer, myCases, staleCount, pendingDerivations, areaRows, team, quiet, followUps, activity, away, programs] =
+  const [stats, myTasks, area, derivationsToAnswer, myCases, staleCount, pendingDerivations, areaRows, team, quiet, followUps, activity, away, programs, convenioHoras] =
     await Promise.all([
       getDashboardStats(scope),
       userId ? getTasks(userId).catch(() => []) : Promise.resolve([]),
@@ -192,6 +194,8 @@ export default async function DashboardPage({
       wants("activity") ? getRecentAuditActivity().catch(() => []) : [],
       wants("away") ? getStaffAwayToday().catch(() => ({ away: [], expired: 0 })) : { away: [], expired: 0 },
       wants("programs") ? getProgramSummaries().catch(() => []) : [],
+      // Personal, como "Mis expedientes a cargo": los convenios por horas donde el usuario carga.
+      session?.user ? getConveniosParaCargar(session.user).catch(() => []) : [],
     ]);
   // Con un área: los programas que tiene a cargo. Sin área (Superadmin): los que tienen más personas.
   const homePrograms = areaId
@@ -294,7 +298,8 @@ export default async function DashboardPage({
   // "Mis expedientes a cargo" aparece primero para quien tiene expedientes asignados.
   // El Superadmin la ve siempre (se usa para probar todo), aunque no tenga expedientes a cargo.
   const showMyCases = !layout.sections.includes("myCases") && (myCases.total > 0 || (isSuperadmin && !viewAs));
-  const sections: SectionId[] = showMyCases ? ["myCases", ...layout.sections] : layout.sections;
+  const personal: SectionId[] = [...(showMyCases ? (["myCases"] as SectionId[]) : []), ...(convenioHoras.length > 0 ? (["convenioHoras"] as SectionId[]) : [])];
+  const sections: SectionId[] = [...personal, ...layout.sections];
   const spans = gridSpans(sections);
   const canLoadData = profile !== "auditor" && profile !== "conduccion";
   const canSeeReports = hasPermission(role, PERMISSIONS.VIEW_REPORTS);
@@ -423,6 +428,8 @@ export default async function DashboardPage({
               return <div key={id} className={span}><AwayCard away={away.away} expired={away.expired} canMarkBack={canEditHR(realRole)} /></div>;
             case "programs":
               return <div key={id} className={span}><ProgramsCard programs={homePrograms} ownArea={Boolean(areaId)} /></div>;
+            case "convenioHoras":
+              return <div key={id} className={span}><ConvenioHorasCard convenios={convenioHoras} /></div>;
           }
         })}
       </div>
@@ -1000,6 +1007,40 @@ function ProgramsCard({ programs, ownArea }: { programs: ProgramSummary[]; ownAr
           ))}
         </div>
       )}
+    </Card>
+  );
+}
+
+const NIVEL_TEXT: Record<string, string> = {
+  green: "text-emerald-700 dark:text-emerald-300",
+  amber: "text-amber-700 dark:text-amber-300",
+  orange: "text-orange-700 dark:text-orange-300",
+  rose: "text-rose-700 dark:text-rose-300",
+};
+
+function ConvenioHorasCard({ convenios }: { convenios: ConvenioConHoras[] }) {
+  return (
+    <Card className="rounded-2xl border border-border/60 bg-card p-5 shadow-sm h-full">
+      <CardHeaderRow icon={Clock} iconClass="text-primary" title="Horas de convenios" href={`/convenios/${convenios[0].id}?ver=carga`} linkLabel="Cargar horas" />
+      <div className="divide-y divide-border/20 mt-1">
+        {convenios.map((c) => {
+          const nivel = c.nivel ? NIVELES[c.nivel] : null;
+          return (
+            <Link key={c.id} href={`/convenios/${c.id}?ver=carga`} className="block py-2.5 px-1 rounded-lg hover:bg-muted/20 transition-colors group">
+              <div className="flex items-center justify-between gap-3">
+                <p className="min-w-0 truncate text-xs font-medium text-foreground group-hover:text-primary transition-colors">{c.title}</p>
+                {c.porcentaje !== null && (
+                  <span className={`shrink-0 text-xs font-bold tabular-nums ${nivel ? NIVEL_TEXT[nivel.tone] : ""}`}>{formatNumber(c.porcentaje, 0)} % del tope</span>
+                )}
+              </div>
+              <p className={`text-xs ${c.horasHoy === 0 ? "font-semibold text-amber-700 dark:text-amber-400" : "text-muted-foreground"}`}>
+                {c.horasHoy > 0 ? `Hoy: ${formatNumber(c.horasHoy, c.horasHoy % 1 ? 1 : 0)} h cargadas` : "Hoy todavía sin horas"}
+                {c.horasAyer === 0 && " · ayer quedó sin horas"}
+              </p>
+            </Link>
+          );
+        })}
+      </div>
     </Card>
   );
 }

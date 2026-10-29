@@ -276,20 +276,91 @@ enum OrderStatus {
 }
 
 model Agreement {
-  id          String          @id @default(cuid())
-  number      String?         @unique
-  title       String
-  description String?
-  parties     String? // Partes intervinientes
-  amount      Decimal?        @default(0)
-  startDate   DateTime?
-  endDate     DateTime?
-  status      AgreementStatus @default(VIGENTE)
-  areaId      String?
-  area        Area?           @relation(fields: [areaId], references: [id])
-  fileUrl     String?
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
+  id             String              @id @default(cuid())
+  number         String?             @unique
+  title          String
+  description    String?
+  parties        String? // Partes intervinientes
+  amount         Decimal?            @default(0)
+  startDate      DateTime?
+  endDate        DateTime?
+  status         AgreementStatus     @default(VIGENTE)
+  areaId         String?
+  area           Area?               @relation(fields: [areaId], references: [id])
+  fileUrl        String?
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+  /// Cómo se controla el gasto: null (no se controla) o POR_HORA (horas cargadas por día × valor hora, contra un tope por período).
+  costMode       String?
+  /// Tope de gasto de cada período, en pesos.
+  monthlyCap     Decimal?            @db.Decimal(14, 2)
+  /// Día del mes en que empieza cada período (1 a 28); termina el día anterior del mes siguiente.
+  periodStartDay Int?
+  /// Porcentajes del tope en que se avisa: precaución, alerta y crítico.
+  alertPercents  Int[]               @default([70, 85, 95])
+  hourlyRates    ConvenioValorHora[]
+  cuidadoras     ConvenioCuidadora[]
+  horas          ConvenioHora[]
+}
+
+/// Valor de la hora de un convenio por horas, desde un día. Cada día usa el último valor que rige.
+model ConvenioValorHora {
+  id          String    @id @default(cuid())
+  agreementId String
+  agreement   Agreement @relation(fields: [agreementId], references: [id], onDelete: Cascade)
+  /// Desde qué día rige (fecha de calendario, a medianoche UTC).
+  desde       DateTime
+  valor       Decimal   @db.Decimal(12, 2)
+  createdById String?
+  createdAt   DateTime  @default(now())
+
+  @@unique([agreementId, desde])
+  @@map("convenio_valores_hora")
+}
+
+/// Las cuidadoras (o quienes hagan las horas) de un convenio por horas.
+model ConvenioCuidadora {
+  id          String         @id @default(cuid())
+  agreementId String
+  agreement   Agreement      @relation(fields: [agreementId], references: [id], onDelete: Cascade)
+  nombre      String
+  dni         String?
+  telefono    String?
+  activa      Boolean        @default(true)
+  createdById String?
+  createdAt   DateTime       @default(now())
+  horas       ConvenioHora[]
+
+  @@index([agreementId])
+  @@map("convenio_cuidadoras")
+}
+
+/// Horas de un día: quién las hizo, a qué NNyA acompañó y dónde. El importe sale del valor hora de ese día.
+model ConvenioHora {
+  id           String            @id @default(cuid())
+  agreementId  String
+  agreement    Agreement         @relation(fields: [agreementId], references: [id], onDelete: Cascade)
+  /// Fecha de calendario, a medianoche UTC.
+  fecha        DateTime
+  cuidadoraId  String
+  cuidadora    ConvenioCuidadora @relation(fields: [cuidadoraId], references: [id], onDelete: Restrict)
+  /// DNI del NNyA acompañado (del padrón o del Registro Único) y su nombre al cargar.
+  dni          String
+  nombre       String?
+  horas        Decimal           @db.Decimal(5, 2)
+  /// HOSPITAL, DISPOSITIVO, DOMICILIO u OTRO.
+  lugar        String
+  lugarDetalle String?
+  observacion  String?
+  createdById  String?
+  updatedById  String?
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+
+  @@index([agreementId, fecha])
+  @@index([cuidadoraId])
+  @@index([dni])
+  @@map("convenio_horas")
 }
 
 enum AgreementStatus {
