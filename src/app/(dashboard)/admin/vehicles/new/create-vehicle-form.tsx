@@ -44,7 +44,7 @@ export function CreateVehicleForm() {
               </h3>
               <div className="space-y-2">
                 <Label htmlFor="plate">Patente / dominio</Label>
-                <Input id="plate" name="plate" placeholder="Ej: AA123BB" required className="font-mono text-lg" />
+                <Input id="plate" name="plate" placeholder="Ej: AA123BB" required className="uppercase" />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="brand">Marca</Label>

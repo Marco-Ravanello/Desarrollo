@@ -15,8 +15,8 @@ import { ProviderFormDialog } from "../provider-form-dialog";
 import { DeleteProviderButton } from "../delete-provider-button";
 import { formatFecha } from "@/lib/fechas";
 import { providerTitle } from "@/lib/page-titles";
+import { formatPesos } from "@/lib/formato";
 
-const money = (n: number) => `$ ${n.toLocaleString("es-AR", { maximumFractionDigits: 0 })}`;
 
 export const generateMetadata = providerTitle;
 
@@ -44,7 +44,7 @@ export default async function ProviderDetailPage({ params }: { params: Promise<{
     <div className="space-y-6 max-w-5xl mx-auto">
       <PageHeader
         title={provider.name}
-        description={<>{orders.length} órdenes de compra · {money(executed)} ejecutado</>}
+        description={<>{orders.length} órdenes de compra · {formatPesos(executed)} ejecutado</>}
         icon={Building2}
         actions={
           <>
@@ -67,7 +67,7 @@ export default async function ProviderDetailPage({ params }: { params: Promise<{
         }
       />
 
-      <Card className="shadow-none">
+      <Card className="rounded-2xl border-border/60 shadow-sm">
         <CardContent className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-6">
           {info.map(([label, value]) => (
             <div key={label}>
@@ -78,7 +78,7 @@ export default async function ProviderDetailPage({ params }: { params: Promise<{
         </CardContent>
       </Card>
 
-      <Card className="shadow-none">
+      <Card className="rounded-2xl border-border/60 shadow-sm">
         <CardHeader>
           <CardTitle className="text-base">Historial de órdenes de compra</CardTitle>
           <CardDescription>Incluye las órdenes cargadas con el CUIT de este proveedor.</CardDescription>
@@ -91,7 +91,7 @@ export default async function ProviderDetailPage({ params }: { params: Promise<{
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>N° OC</TableHead>
+                    <TableHead>Orden</TableHead>
                     <TableHead>Fecha</TableHead>
                     <TableHead className="hidden md:table-cell">Área</TableHead>
                     <TableHead>Estado</TableHead>
@@ -111,7 +111,7 @@ export default async function ProviderDetailPage({ params }: { params: Promise<{
                         <TableCell>
                           <span className={`inline-block px-2 py-0.5 rounded-full text-xs border ${status.badgeClass}`}>{status.label}</span>
                         </TableCell>
-                        <TableCell className="text-right">{money(Number(o.amount || 0))}</TableCell>
+                        <TableCell className="text-right">{formatPesos(Number(o.amount || 0))}</TableCell>
                       </TableRow>
                     );
                   })}

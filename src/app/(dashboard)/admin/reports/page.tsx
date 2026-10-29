@@ -20,8 +20,8 @@ import { PageHeader } from "@/components/layout/page-header";
 import { StatCard, type StatTone } from "@/components/ui/stat-card";
 import { EmptyMessage } from "@/components/ui/empty-message";
 import { BarChart3, Briefcase, FolderOpen, HandHeart, Wallet } from "lucide-react";
+import { formatPesos } from "@/lib/formato";
 
-const money = (n: number) => `$ ${n.toLocaleString("es-AR", { maximumFractionDigits: 0 })}`;
 const pct = (part: number, total: number) => (total > 0 ? `${((part / total) * 100).toLocaleString("es-AR", { maximumFractionDigits: 1 })}%` : "Sin presupuesto");
 const shortDate = (s: string) => s.split("-").reverse().join("/");
 
@@ -66,7 +66,7 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
     { label: "Expedientes nuevos", value: data.totals.cases.toLocaleString("es-AR"), hint: `${data.totals.urgent} urgentes`, icon: FolderOpen, tone: "blue" },
     { label: "Intervenciones", value: data.totals.interventions.toLocaleString("es-AR"), icon: HandHeart, tone: "orange" },
     { label: "Órdenes de compra", value: data.totals.orders.toLocaleString("es-AR"), icon: Briefcase, tone: "purple" },
-    { label: "Ejecutado", value: money(data.totals.executed), hint: "Órdenes aprobadas o cumplidas", icon: Wallet, tone: "green" },
+    { label: "Ejecutado", value: formatPesos(data.totals.executed), hint: "Órdenes aprobadas o cumplidas", icon: Wallet, tone: "green" },
   ];
 
   const areaRows = data.areas.map((a) => ({
@@ -76,16 +76,16 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
     urgent: a.urgent,
     interventions: a.interventions,
     orders: a.orders,
-    executed: money(a.executed),
+    executed: formatPesos(a.executed),
     budgetPct: pct(a.executed, a.annualBudget),
   }));
   const caseRows = data.caseStatus.map((c) => ({ estado: getCaseStatusConfig(c.status).label, cantidad: c.count }));
-  const orderRows = data.orderStatus.map((o) => ({ estado: getOrderStatusConfig(o.status).label, cantidad: o.count, monto: money(o.amount) }));
+  const orderRows = data.orderStatus.map((o) => ({ estado: getOrderStatusConfig(o.status).label, cantidad: o.count, monto: formatPesos(o.amount) }));
   const labelRows = [...labelCounts]
     .sort((a, b) => b.total - a.total)
     .map((l) => ({ key: l.key, etiqueta: l.label, cantidad: l.total, sinCerrar: l.open }));
   const anyLabel = labelRows.some((l) => l.cantidad > 0);
-  const providerRows = data.topProviders.map((p) => ({ name: p.name, cuit: p.cuit || "Sin CUIT", orders: p.orders, executed: money(p.executed) }));
+  const providerRows = data.topProviders.map((p) => ({ name: p.name, cuit: p.cuit || "Sin CUIT", orders: p.orders, executed: formatPesos(p.executed) }));
 
   const empty = <EmptyMessage kind="search" compact title="No hay registros en este período" description="Probá con un período más largo." />;
 
@@ -195,7 +195,7 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
               </Table>
               {data.totals.unassignedExecuted > 0 && (
                 <p className="mt-3 text-xs text-muted-foreground">
-                  Además hay {money(data.totals.unassignedExecuted)} ejecutados en órdenes sin área asignada.
+                  Además hay {formatPesos(data.totals.unassignedExecuted)} ejecutados en órdenes sin área asignada.
                 </p>
               )}
             </div>

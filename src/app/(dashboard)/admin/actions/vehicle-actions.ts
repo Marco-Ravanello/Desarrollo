@@ -8,6 +8,7 @@ import { actionErrorMessage } from "@/lib/action-error";
 import { FLEET_ADMIN_ROLES } from "@/lib/permissions";
 import { RESERVATION_STATUS, canChangeReservation, formatReservationRange, reservationStatusLabel } from "@/lib/vehicle-reservations";
 import { conflictMessage, findBlockingReservation, lockVehicle } from "@/services/vehicle-reservations";
+import { formatPesos } from "@/lib/formato";
 
 const parseLocalDate = (dateStr: string) => {
   if (!dateStr) return new Date();
@@ -233,7 +234,7 @@ export async function createFuelRecordAction(formData: FormData) {
       const totalSpent = Number(monthlySpent._sum.amount || 0);
       if (totalSpent + amount > Number(vehicle.fuelMonthlyLimit)) {
         return {
-          error: `Cupo insuficiente. Saldo disponible: $${(Number(vehicle.fuelMonthlyLimit) - totalSpent).toLocaleString("es-AR")}`
+          error: `Cupo insuficiente. Saldo disponible: ${formatPesos(Number(vehicle.fuelMonthlyLimit) - totalSpent)}`
         };
       }
     }

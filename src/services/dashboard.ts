@@ -3,6 +3,7 @@ import { Prisma } from "@prisma/client";
 import { getPeopleStats, getPeopleForMap } from "@/services/people";
 import { staleCutoff, summarizeCase } from "@/lib/case-summary";
 import { diaAR, diaDeVencimiento, diasEntre, formatFecha, formatFechaCorta } from "@/lib/fechas";
+import { formatPesos } from "@/lib/formato";
 
 /**
  * Qué parte de la gestión ve quien abre el dashboard.
@@ -159,7 +160,7 @@ async function loadDashboardStats(scope: DashboardScope) {
       id: po.id,
       type: "po" as const,
       title: `Orden de compra #${po.number}`,
-      subtitle: `$ ${Number(po.amount).toLocaleString("es-AR")} · Pendiente de firma`,
+      subtitle: `${formatPesos(Number(po.amount))} · Pendiente de aprobación`,
       href: `/admin/purchase-orders/${po.id}`,
     })),
   ];

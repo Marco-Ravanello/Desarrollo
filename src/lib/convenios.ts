@@ -3,6 +3,7 @@
 import type { Role } from "@prisma/client";
 import { MANAGEMENT_ROLES } from "@/lib/permissions";
 import { diaDeVencimiento, diasEntre } from "@/lib/fechas";
+import { formatPesos } from "@/lib/formato";
 
 export const AGREEMENT_STATUS_LABELS: Record<string, string> = {
   EN_REVISION: "En revisión",
@@ -195,7 +196,7 @@ const LABELS: Record<keyof Comparable, string> = {
 
 const show = (k: keyof Comparable, v: string | number | null) => {
   if (v === null || v === "") return "vacío";
-  if (k === "amount") return `$ ${Number(v).toLocaleString("es-AR")}`;
+  if (k === "amount") return formatPesos(Number(v));
   if (k === "startDate" || k === "endDate") return dia(String(v));
   if (k === "description") return String(v).length > 60 ? `${String(v).slice(0, 60)}…` : String(v);
   return String(v);

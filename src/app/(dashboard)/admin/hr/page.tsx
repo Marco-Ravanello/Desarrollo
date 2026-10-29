@@ -27,6 +27,7 @@ import { HRFilters } from "./hr-filters";
 import { UniversalExportMenu } from "@/components/ui/universal-export-menu";
 import { PageHeader } from "@/components/layout/page-header";
 import { StatCard } from "@/components/ui/stat-card";
+import { StatRow } from "@/components/ui/mobile-list";
 import { EmptyMessage } from "@/components/ui/empty-message";
 
 import { auth } from "@/auth";
@@ -127,7 +128,7 @@ export default async function HRPage({
   }));
 
   return (
-    <div className="space-y-10 pb-20">
+    <div className="space-y-6 pb-10">
       <PageHeader
         title="Recursos Humanos"
         description="El personal de cada área, su situación y lo que cuesta por mes."
@@ -145,14 +146,14 @@ export default async function HRPage({
            />
            <Sheet>
               <SheetTrigger asChild>
-                <Button className="rounded-2xl h-10 px-5 gap-2 bg-primary hover:bg-primary/90 text-primary-foreground font-bold shadow-md transition-all">
+                <Button className="gap-2">
                     <Plus className="h-4 w-4" /> Nuevo agente
                 </Button>
               </SheetTrigger>
-              <SheetContent side="right" className="sm:max-w-xl w-full border-l border-border bg-background rounded-l-[2rem] shadow-2xl p-8 overflow-y-auto">
-                <SheetHeader className="mb-8">
-                  <SheetTitle className="text-2xl font-bold">Registrar nuevo agente</SheetTitle>
-                  <SheetDescription className="text-base font-medium">Completá los datos para crear el legajo.</SheetDescription>
+              <SheetContent side="right" className="w-full overflow-y-auto sm:max-w-xl">
+                <SheetHeader className="mb-6">
+                  <SheetTitle>Nuevo agente</SheetTitle>
+                  <SheetDescription>Completá los datos para crear el legajo.</SheetDescription>
                 </SheetHeader>
                 <CreateHRForm areas={sanitizedAreas} />
               </SheetContent>
@@ -161,7 +162,7 @@ export default async function HRPage({
         }
       />
 
-      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+      <StatRow>
         {kpis.map((kpi) => (
           <StatCard
             key={kpi.title}
@@ -172,9 +173,9 @@ export default async function HRPage({
             tone={kpi.tone}
           />
         ))}
-      </div>
+      </StatRow>
 
-      <Card className="rounded-2xl border border-border/60 shadow-xs bg-card text-card-foreground">
+      <Card className="rounded-2xl border border-border/60 shadow-sm bg-card text-card-foreground">
         <CardContent className="p-6">
           <h3 className="text-sm font-semibold text-foreground mb-4 flex items-center gap-2">
             <PieChart className="h-4 w-4 text-muted-foreground" /> Sueldos por área
@@ -197,17 +198,19 @@ export default async function HRPage({
         </CardContent>
       </Card>
 
-      <div className="bg-card text-card-foreground rounded-2xl border border-border/60 shadow-xs overflow-hidden transition-all">
+      <div className="overflow-hidden rounded-2xl border border-border/60 bg-card text-card-foreground shadow-sm">
         <HRFilters areas={sanitizedAreas} />
 
         <Table>
           <TableHeader className="bg-muted/50">
-            <TableRow className="hover:bg-transparent border-none">
-              <TableHead className="font-bold py-5 px-6">Agente</TableHead>
-              <TableHead className="font-bold">Área / cargo</TableHead>
-              <TableHead className="font-bold">Ingreso</TableHead>
-              <TableHead className="font-bold">Estado</TableHead>
-              <TableHead className="font-bold text-right pr-8">Acciones</TableHead>
+            <TableRow className="hover:bg-transparent">
+              <TableHead className="px-4 text-xs font-semibold">Agente</TableHead>
+              <TableHead className="text-xs font-semibold">Área y cargo</TableHead>
+              <TableHead className="text-xs font-semibold">Ingreso</TableHead>
+              <TableHead className="text-xs font-semibold">Estado</TableHead>
+              <TableHead className="pr-4 text-xs font-semibold">
+                <span className="sr-only">Acciones</span>
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -229,17 +232,17 @@ export default async function HRPage({
               </TableRow>
             ) : (
               sanitizedRecords.map((r) => (
-                <TableRow key={r.id} className="group hover:bg-muted/30 transition-all border-none">
-                  <TableCell className="py-4 px-6">
-                    <div className="flex items-center gap-4">
-                      <Avatar className="h-12 w-12 border-2 border-card shadow-xs ring-1 ring-border">
+                <TableRow key={r.id} className="group">
+                  <TableCell className="px-4 py-3">
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-9 w-9">
                         <AvatarImage src={r.imageUrl || ""} alt={r.firstName} className="object-cover" />
                         <AvatarFallback className={`font-bold text-sm ${initialsColor(r.dni || r.id)}`}>
                           {initialsOf(r.firstName, r.lastName)}
                         </AvatarFallback>
                       </Avatar>
                       <div>
-                        <p className="font-bold text-foreground group-hover:text-primary transition-colors">{r.firstName} {r.lastName}</p>
+                        <p className="font-semibold text-foreground">{r.firstName} {r.lastName}</p>
                         <p className="text-xs text-muted-foreground flex items-center gap-2">
                            {r.fileNumber ? `Legajo ${r.fileNumber}` : "Sin legajo"} <span className="text-border">•</span> DNI {r.dni}
                         </p>
@@ -254,7 +257,7 @@ export default async function HRPage({
                   </TableCell>
                   <TableCell>
                      <p className="text-xs text-muted-foreground">
-                        {r.startDate ? formatFechaCalendario(r.startDate) : '-'}
+                        {r.startDate ? formatFechaCalendario(r.startDate) : "Sin fecha"}
                      </p>
                   </TableCell>
                   <TableCell>
@@ -262,7 +265,7 @@ export default async function HRPage({
                       <Badge className={`rounded-full px-3 py-0.5 text-xs font-semibold border-none w-fit ${
                         r.status === 'ACTIVO' ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400' :
                         r.status === 'LICENCIA' ? 'bg-amber-500/10 text-amber-700 dark:text-amber-400' :
-                        r.status === 'VACACIONES' ? 'bg-blue-500/10 text-blue-600' :
+                        r.status === 'VACACIONES' ? 'bg-blue-500/10 text-blue-700 dark:text-blue-300' :
                         'bg-rose-500/10 text-rose-700 dark:text-rose-400'
                       }`}>
                         <div className={`w-1.5 h-1.5 rounded-full mr-1.5 ${
@@ -280,7 +283,7 @@ export default async function HRPage({
                       )}
                     </div>
                   </TableCell>
-                  <TableCell className="text-right pr-8">
+                  <TableCell className="pr-4 text-right">
                     <AgentActionsMenu agent={r} areas={sanitizedAreas} />
                   </TableCell>
                 </TableRow>
@@ -289,7 +292,7 @@ export default async function HRPage({
           </TableBody>
         </Table>
 
-        <div className="p-6 border-t border-border/40 bg-muted/20 flex flex-col md:flex-row items-center justify-between gap-4">
+        <div className="flex items-center border-t border-border/40 bg-muted/20 px-4 py-3">
            <p className="text-xs text-muted-foreground">{sanitizedRecords.length === 1 ? "Se muestra 1 agente" : `Se muestran ${formatNumber(sanitizedRecords.length)} agentes`}</p>
         </div>
       </div>

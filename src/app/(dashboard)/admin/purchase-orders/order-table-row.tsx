@@ -4,51 +4,60 @@ import { TableRow, TableCell } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { OrderStatusActions } from "./order-status-actions";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { Eye } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { getOrderStatusConfig } from "@/lib/status-styles";
+import { getAreaShortName } from "@/lib/area-theme";
+import { formatPesos } from "@/lib/formato";
 
-export function OrderTableRow({ o, allowed }: { o: any; allowed: string[] }) {
+// En la lista solo van los pasos para adelante. Rechazar, cancelar o devolver se hace desde la orden, viendo el detalle.
+const LIST_ACTIONS = new Set(["PENDIENTE_APROBACION", "APROBADA"]);
+
+export type OrderRow = {
+  id: string;
+  number: string;
+  expediente: string | null;
+  status: string;
+  amount: number;
+  provider: string | null;
+  cuit: string | null;
+  area: string | null;
+};
+
+export function OrderTableRow({ o, allowed }: { o: OrderRow; allowed: string[] }) {
   const router = useRouter();
   const statusCfg = getOrderStatusConfig(o.status);
+  const forward = allowed.filter((s) => LIST_ACTIONS.has(s));
 
   return (
     <TableRow
-      key={o.id}
-      className="cursor-pointer hover:bg-muted/50 transition-colors"
+      className="cursor-pointer"
       onClick={(e) => {
         // Los clics en botones, y en la ventana de confirmar (que React hace llegar hasta acá), no abren la orden.
-        if ((e.target as HTMLElement).closest('button') || !e.currentTarget.contains(e.target as Node)) return;
+        if ((e.target as HTMLElement).closest("button") || !e.currentTarget.contains(e.target as Node)) return;
         router.push(`/admin/purchase-orders/${o.id}`);
       }}
     >
-      <TableCell className="font-mono">
-        <div className="flex flex-col">
-          <span className="font-bold text-foreground">{o.number}</span>
-          {o.expediente && <span className="text-xs text-muted-foreground">Exp: {o.expediente}</span>}
-        </div>
+      <TableCell className="px-4 py-3">
+        <p className="font-semibold text-foreground">{o.number}</p>
+        {o.expediente && <p className="text-xs text-muted-foreground">Expediente {o.expediente}</p>}
       </TableCell>
-      <TableCell className="font-medium">
-        <div className="flex flex-col">
-          <span>{o.provider?.name || o.providerName || "No especificado"}</span>
-          {(o.provider?.cuit || o.providerCuit) && (
-            <span className="text-xs text-muted-foreground font-mono">CUIT: {o.provider?.cuit || o.providerCuit}</span>
-          )}
-        </div>
+      <TableCell className="px-4 py-3">
+        <p className="font-medium text-foreground">{o.provider || "Sin proveedor"}</p>
+        {o.cuit && <p className="text-xs text-muted-foreground">CUIT {o.cuit}</p>}
       </TableCell>
-      <TableCell className="font-bold text-foreground">
-        ${Number(o.amount).toLocaleString('es-AR')}
-      </TableCell>
-      <TableCell>
+      <TableCell className="px-4 py-3 text-sm text-muted-foreground">{o.area ? getAreaShortName(o.area) : "Sin área"}</TableCell>
+      <TableCell className="px-4 py-3 font-semibold tabular-nums text-foreground">{formatPesos(o.amount)}</TableCell>
+      <TableCell className="px-4 py-3">
         <Badge variant="outline" className={statusCfg.badgeClass}>
           {statusCfg.label}
         </Badge>
       </TableCell>
-      <TableCell className="text-right flex items-center justify-end gap-2">
-        <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => router.push(`/admin/purchase-orders/${o.id}`)}>
-          <Eye className="h-4 w-4" />
-        </Button>
-        <OrderStatusActions orderId={o.id} currentStatus={o.status} allowed={allowed} />
+      {/* En el celular la fila es una tarjeta: sin pasos para hacer, no se muestra el renglón vacío. */}
+      <TableCell className={forward.length > 0 ? "px-4 py-3" : "hidden px-4 py-3 md:table-cell"}>
+        <div className="flex items-center justify-end gap-2">
+          <OrderStatusActions orderId={o.id} currentStatus={o.status} allowed={forward} />
+          <ChevronRight className="hidden h-4 w-4 text-muted-foreground md:block" aria-hidden />
+        </div>
       </TableCell>
     </TableRow>
   );

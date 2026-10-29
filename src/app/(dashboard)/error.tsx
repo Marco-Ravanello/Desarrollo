@@ -29,7 +29,7 @@ export default function SectionError({
           Puede ser un problema momentáneo de conexión. Probá de nuevo en unos segundos.
         </p>
         {error.digest && (
-          <p className="pt-1 font-mono text-xs text-muted-foreground">Código: {error.digest}</p>
+          <p className="pt-1 text-xs text-muted-foreground">Código del error: {error.digest}</p>
         )}
       </div>
       <HelpdeskLine />

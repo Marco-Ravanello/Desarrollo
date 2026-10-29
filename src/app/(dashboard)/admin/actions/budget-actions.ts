@@ -4,6 +4,7 @@ import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
 import { actionErrorMessage } from "@/lib/action-error";
+import { formatPesos } from "@/lib/formato";
 
 export async function getBudgetSummary() {
   const areas = await prisma.area.findMany({
@@ -62,7 +63,7 @@ export async function updateAreaBudget(areaId: string, amount: number) {
         action: 'UPDATE_BUDGET',
         entity: 'Area',
         entityId: areaId,
-        details: `Presupuesto de secretaría ${updatedArea.name} actualizado a $${amount.toLocaleString('es-AR')}`
+        details: `Presupuesto de secretaría ${updatedArea.name} actualizado a ${formatPesos(amount)}`
       }
     });
 

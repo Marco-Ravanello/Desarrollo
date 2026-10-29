@@ -205,7 +205,7 @@ export default async function AgreementDetailPage({ params }: { params: Promise<
           )}
           <StatCard
             label="Monto del convenio"
-            value={amount > 0 ? `$${amount.toLocaleString("es-AR")}` : "Sin monto"}
+            value={amount > 0 ? formatPesos(amount) : "Sin monto"}
             hint={amount > 0 ? "Monto total firmado" : "No tiene un monto cargado"}
             icon={Wallet}
             tone="green"

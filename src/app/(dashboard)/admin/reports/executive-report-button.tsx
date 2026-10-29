@@ -7,6 +7,7 @@ import { getWeeklyExecutiveData } from "./actions/report-actions";
 import { jsPDF } from "jspdf";
 import "jspdf-autotable";
 import { toast } from "sonner";
+import { formatPesos } from "@/lib/formato";
 
 export function ExecutiveReportButton() {
   const [loading, setLoading] = useState(false);
@@ -39,8 +40,8 @@ export function ExecutiveReportButton() {
         body: [
           ['Expedientes nuevos', data.newCases],
           ['Intervenciones realizadas', data.newInterventions],
-          ['Presupuesto ejecutado (órdenes aprobadas)', `$${data.totalSpent.toLocaleString('es-AR')}`],
-          ['Órdenes de Compra Pendientes ($)', `$${data.pendingAmount.toLocaleString('es-AR')}`],
+          ['Presupuesto ejecutado (órdenes aprobadas)', formatPesos(data.totalSpent)],
+          ['Órdenes de Compra Pendientes ($)', formatPesos(data.pendingAmount)],
           ['Alertas críticas activas', data.criticalCases],
         ],
         theme: 'striped',

@@ -29,6 +29,7 @@ import {
   WEEKDAY_LETTER, WEEKDAY_SHORT, chipsThatFit, dateOnlyToLocal, isDateOnly, localDayKey, localTimeKey,
   isTaskVisibleTo, monthCells, shortEventLabel, startOfWeekMonday, visibleHourRange, type AgendaEventType
 } from "@/lib/agenda";
+import { formatPesos } from "@/lib/formato";
 
 interface UnifiedCalendarProps {
   reservations: any[];
@@ -1129,7 +1130,7 @@ export function UnifiedCalendar({ reservations = [], purchaseOrders = [], tasks 
                   )}
                   <div className="flex items-center gap-2.5 text-sm font-semibold text-foreground">
                     <ShoppingBag className="h-4 w-4 text-emerald-500" />
-                    <span>Importe total: <span className="text-emerald-700 dark:text-emerald-400 font-bold">${Number(selectedEvent.raw?.amount || 0).toLocaleString("es-AR")}</span></span>
+                    <span>Importe total: <span className="text-emerald-700 dark:text-emerald-400 font-bold">{formatPesos(Number(selectedEvent.raw?.amount || 0))}</span></span>
                   </div>
                 </>
               )}

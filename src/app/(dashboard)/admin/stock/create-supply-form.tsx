@@ -1,86 +1,101 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { addSupplyAction } from "@/app/(dashboard)/admin/actions/stock-actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { Plus } from "lucide-react";
 
-export function CreateSupplyForm({ areas }: { areas: any[] }) {
+const selectClass =
+  "w-full h-10 px-3 rounded-xl bg-background border border-input text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary";
+
+/** Botón "Nuevo insumo": abre el formulario en una ventana, así la lista ocupa toda la pantalla. */
+export function CreateSupplyButton({ areas }: { areas: { id: string; name: string }[] }) {
+  const router = useRouter();
+  const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setLoading(true);
     const formData = new FormData(e.currentTarget);
-
-    const form = e.currentTarget;
     try {
       const result = await addSupplyAction(formData);
       if (!result.success) {
         toast.error(result.error);
         return;
       }
-      toast.success("Insumo registrado correctamente");
-      form.reset();
+      toast.success(`${String(formData.get("name") ?? "El insumo").trim()} quedó cargado.`);
+      setOpen(false);
+      router.refresh();
     } catch {
-      toast.error("No se pudo registrar el insumo. Revisá la conexión y probá de nuevo.");
+      toast.error("No se pudo cargar el insumo. Revisá la conexión y probá de nuevo.");
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-lg">Nuevo insumo</CardTitle>
-        <CardDescription>Sumá un insumo al depósito.</CardDescription>
-      </CardHeader>
-      <CardContent>
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button>
+          <Plus className="mr-2 h-4 w-4" /> Nuevo insumo
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-lg">
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="name">Nombre del insumo</Label>
-            <Input id="name" name="name" placeholder="Ej: Resmas A4" required />
+          <DialogHeader>
+            <DialogTitle>Nuevo insumo</DialogTitle>
+            <DialogDescription>Sumalo al depósito con lo que hay hoy y el mínimo para pedir más.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-1.5">
+            <Label htmlFor="supply-name">
+              Nombre del insumo{" "}
+              <span className="text-rose-600" aria-hidden>
+                *
+              </span>
+            </Label>
+            <Input id="supply-name" name="name" placeholder="Ej: Resmas A4" required />
           </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="description">Descripción</Label>
-            <Input id="description" name="description" placeholder="Opcional" />
+          <div className="space-y-1.5">
+            <Label htmlFor="supply-description">Descripción (opcional)</Label>
+            <Input id="supply-description" name="description" placeholder="Ej: Caja de 10 resmas" />
           </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="stock">Stock inicial</Label>
-              <Input id="stock" name="stock" type="number" defaultValue="0" required />
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="supply-stock">Cuántos hay hoy</Label>
+              <Input id="supply-stock" name="stock" type="number" min="0" defaultValue="0" required />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="minStock">Stock mínimo</Label>
-              <Input id="minStock" name="minStock" type="number" defaultValue="5" required />
+            <div className="space-y-1.5">
+              <Label htmlFor="supply-min">Mínimo para reponer</Label>
+              <Input id="supply-min" name="minStock" type="number" min="0" defaultValue="5" required />
             </div>
           </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="areaId">Área responsable</Label>
-            <select
-              id="areaId"
-              name="areaId"
-              className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm"
-            >
+          <div className="space-y-1.5">
+            <Label htmlFor="supply-area">Área responsable</Label>
+            <select id="supply-area" name="areaId" className={selectClass} defaultValue="">
               <option value="">Depósito general</option>
-              {areas.map(a => (
-                <option key={a.id} value={a.id}>{a.name}</option>
+              {areas.map((a) => (
+                <option key={a.id} value={a.id}>
+                  {a.name}
+                </option>
               ))}
             </select>
           </div>
-
-          <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? "Registrando..." : <><Plus className="h-4 w-4 mr-2"/> Registrar insumo</>}
-          </Button>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+              Cancelar
+            </Button>
+            <Button type="submit" disabled={loading}>
+              {loading ? "Guardando…" : "Cargar insumo"}
+            </Button>
+          </DialogFooter>
         </form>
-      </CardContent>
-    </Card>
+      </DialogContent>
+    </Dialog>
   );
 }

@@ -7,6 +7,7 @@ import { Printer, Download, Filter } from "lucide-react";
 import { useState } from "react";
 import { EmptyMessage } from "@/components/ui/empty-message";
 import { formatFecha } from "@/lib/fechas";
+import { formatPesos } from "@/lib/formato";
 
 export function FuelReportView({ vehicles }: { vehicles: any[] }) {
   const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7)); // YYYY-MM
@@ -96,7 +97,7 @@ export function FuelReportView({ vehicles }: { vehicles: any[] }) {
              <Card key={v.id} className="print:shadow-none print:border-slate-300">
                <CardHeader className="bg-slate-50 dark:bg-slate-900 border-b">
                  <div className="flex justify-between items-center">
-                   <CardTitle className="text-lg">{v.brand} {v.model} - <span className="font-mono">{v.plate}</span></CardTitle>
+                   <CardTitle className="text-lg">{v.brand} {v.model} - {v.plate}</CardTitle>
                    <div className="text-right">
                      <p className="text-xs text-muted-foreground">Tarjeta: {v.fuelCardNumber || "sin tarjeta"}</p>
                    </div>
@@ -116,15 +117,15 @@ export function FuelReportView({ vehicles }: { vehicles: any[] }) {
                      {monthlyRecords.map((r: any) => (
                        <TableRow key={r.id}>
                          <TableCell>{formatFecha(r.date)}</TableCell>
-                         <TableCell className="font-mono text-xs">{r.ticketNumber}</TableCell>
+                         <TableCell className="text-xs">{r.ticketNumber}</TableCell>
                          <TableCell>{Number(r.liters).toFixed(2)} L</TableCell>
-                         <TableCell className="text-right font-bold">${Number(r.amount).toLocaleString("es-AR")}</TableCell>
+                         <TableCell className="text-right font-bold">{formatPesos(Number(r.amount))}</TableCell>
                        </TableRow>
                      ))}
                      <TableRow className="bg-slate-50 dark:bg-slate-900 font-bold">
                         <TableCell colSpan={2}>Total del mes</TableCell>
                         <TableCell>{totalLiters.toFixed(2)} L</TableCell>
-                        <TableCell className="text-right">${totalSpent.toLocaleString("es-AR")}</TableCell>
+                        <TableCell className="text-right">{formatPesos(totalSpent)}</TableCell>
                      </TableRow>
                    </TableBody>
                  </Table>

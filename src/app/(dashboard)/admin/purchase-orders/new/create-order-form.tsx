@@ -13,6 +13,7 @@ import { EmptyMessage } from "@/components/ui/empty-message";
 import dynamic from "next/dynamic";
 import type { ProviderOption } from "@/services/providers";
 import { ProviderPicker } from "./provider-picker";
+import { formatPesos } from "@/lib/formato";
 
 const OCRScanner = dynamic(() => import("@/components/ocr/ocr-scanner").then(mod => mod.OCRScanner), {
   ssr: false,
@@ -105,7 +106,7 @@ export function CreatePurchaseOrderForm({ providers, areas = [] }: { providers: 
     const orderTotal = parseFloat(orderData.amount) || 0;
 
     if (items.length > 0 && Math.abs(itemsTotal - orderTotal) > 0.01) {
-      toast.error(`El total de los ítems ($${itemsTotal.toLocaleString("es-AR")}) no coincide con el total de la orden ($${orderTotal.toLocaleString("es-AR")})`);
+      toast.error(`El total de los ítems (${formatPesos(itemsTotal)}) no coincide con el total de la orden (${formatPesos(orderTotal)})`);
       return;
     }
 
@@ -346,7 +347,7 @@ export function CreatePurchaseOrderForm({ providers, areas = [] }: { providers: 
                       <tr>
                         <td colSpan={4} className="p-3 text-right font-bold text-muted-foreground">Total:</td>
                         <td className="p-3 text-right font-bold text-blue-700 dark:text-blue-300">
-                          ${items.reduce((acc, item) => acc + (parseFloat(item.totalPrice) || 0), 0).toLocaleString("es-AR")}
+                          {formatPesos(items.reduce((acc, item) => acc + (parseFloat(item.totalPrice) || 0), 0))}
                         </td>
                         <td></td>
                       </tr>

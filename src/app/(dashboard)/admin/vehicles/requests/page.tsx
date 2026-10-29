@@ -41,7 +41,7 @@ function Solicitante({ r }: { r: Row }) {
 function Vehiculo({ r }: { r: Row }) {
   return (
     <div className="flex flex-col">
-      <span className="font-mono font-bold text-primary">{r.vehicle.plate}</span>
+      <span className="font-semibold text-foreground">{r.vehicle.plate}</span>
       <span className="text-xs text-muted-foreground">{r.vehicle.brand} {r.vehicle.model}</span>
     </div>
   );

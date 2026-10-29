@@ -7,16 +7,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { Eye, Plus, Upload, Users, Calendar, Building2, MapPin, Phone, RotateCcw, UserX, CopyCheck } from "lucide-react";
+import { Plus, Upload, Users, Calendar, Building2, MapPin, Phone, RotateCcw, UserX, CopyCheck, ChevronRight } from "lucide-react";
 import Link from "next/link";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger
-} from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import InterventionsAdminPage from "../../admin/interventions/page";
 import { PadronImport } from "@/components/people/padron-import";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -30,7 +23,7 @@ import { MobileList, MobileListItem, StatRow } from "@/components/ui/mobile-list
 import { EmptyMessage } from "@/components/ui/empty-message";
 import { PeopleHeaderActions } from "@/components/people/people-header-actions";
 import { plural } from "@/lib/formato";
-import { barrioLabel } from "@/lib/person-display";
+import { barrioLabel, programChips } from "@/lib/person-display";
 
 export const metadata = { title: "Registro Único" };
 
@@ -59,11 +52,11 @@ export default async function PeoplePage({
       programa,
       falta,
       page: pageNum,
-      limit: limitNum
+      limit: limitNum,
     }),
     getPeopleFilterOptions(),
     getPeopleStats(),
-    auth()
+    auth(),
   ]);
   // Importar personas e intervenciones es solo para la conducción.
   const canImport = Boolean(session?.user && MANAGEMENT_ROLES.includes(session.user.role));
@@ -83,8 +76,12 @@ export default async function PeoplePage({
               canImport ? (
                 <Tabs defaultValue="padron">
                   <TabsList className="mb-6 w-full">
-                    <TabsTrigger value="padron" className="flex-1">Personas al padrón</TabsTrigger>
-                    <TabsTrigger value="intervenciones" className="flex-1">Intervenciones</TabsTrigger>
+                    <TabsTrigger value="padron" className="flex-1">
+                      Personas al padrón
+                    </TabsTrigger>
+                    <TabsTrigger value="intervenciones" className="flex-1">
+                      Intervenciones
+                    </TabsTrigger>
                   </TabsList>
                   <TabsContent value="padron">
                     <PadronImport />
@@ -138,133 +135,119 @@ export default async function PeoplePage({
       </StatRow>
 
       {/* Componente de Filtros Avanzados */}
-      <PeopleFilters
-        barrios={filterOptions.barrios}
-        programas={filterOptions.programas}
-      />
+      <PeopleFilters barrios={filterOptions.barrios} programas={filterOptions.programas} />
 
       {falta && (
         <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-border/60 bg-muted/30 px-4 py-2.5 text-xs">
           <span className="font-bold text-foreground">Mostrando: {PADRON_GAPS[falta].label.toLowerCase()}</span>
           <span className="text-muted-foreground">({plural(total, "persona")})</span>
-          <Link href="/people/calidad" className="font-semibold text-primary hover:underline">Volver a la calidad de datos</Link>
-          <Link href="/people" className="ml-auto font-semibold text-muted-foreground hover:text-foreground">Quitar este filtro</Link>
+          <Link href="/people/calidad" className="font-semibold text-primary hover:underline">
+            Volver a la calidad de datos
+          </Link>
+          <Link href="/people" className="ml-auto font-semibold text-muted-foreground hover:text-foreground">
+            Quitar este filtro
+          </Link>
         </div>
       )}
 
       {/* Tabla de Ciudadanos */}
       <Card className="border border-border/60 shadow-sm overflow-hidden rounded-2xl bg-card p-0 md:p-4 space-y-4">
-          {people.length > 0 && (
-            <MobileList label="Personas">
-              {people.map((p: any) => (
-                <MobileListItem
-                  key={p.id}
-                  href={`/people/${p.id}`}
-                  title={`${p.lastName}, ${p.firstName}`}
-                  leading={<InitialsAvatar name={p.firstName} lastName={p.lastName} seed={p.dni} />}
-                  subtitle={[`DNI ${p.dni}`, p.barrio ? barrioLabel(p.barrio) : p.address].filter(Boolean).join(" · ")}
-                  meta={
-                    p.programasActivos?.length
-                      ? p.programasActivos.slice(0, 2).join(", ") + (p.programasActivos.length > 2 ? ` y ${p.programasActivos.length - 2} más` : "")
-                      : undefined
-                  }
-                />
-              ))}
-            </MobileList>
-          )}
-          <div className={people.length > 0 ? "hidden md:block" : undefined}>
+        {people.length > 0 && (
+          <MobileList label="Personas">
+            {people.map((p: any) => (
+              <MobileListItem
+                key={p.id}
+                href={`/people/${p.id}`}
+                title={`${p.lastName}, ${p.firstName}`}
+                leading={<InitialsAvatar name={p.firstName} lastName={p.lastName} seed={p.dni} />}
+                subtitle={[`DNI ${p.dni}`, p.barrio ? barrioLabel(p.barrio) : p.address].filter(Boolean).join(" · ")}
+                meta={
+                  p.programasActivos?.length
+                    ? p.programasActivos.slice(0, 2).join(", ") +
+                      (p.programasActivos.length > 2 ? ` y ${p.programasActivos.length - 2} más` : "")
+                    : undefined
+                }
+              />
+            ))}
+          </MobileList>
+        )}
+        <div className={people.length > 0 ? "hidden md:block" : undefined}>
           <Table mobileCards={false}>
             <TableHeader className="bg-muted/40">
-              <TableRow className="border-b border-border/60 hover:bg-transparent">
-                <TableHead className="font-bold text-muted-foreground text-xs py-4 px-6">
-                  Apellido y nombre
-                </TableHead>
-                <TableHead className="font-bold text-muted-foreground text-xs py-4 px-6">
-                  DNI
-                </TableHead>
-                <TableHead className="font-bold text-muted-foreground text-xs py-4 px-6">
-                  Programas sociales activos
-                </TableHead>
-                <TableHead className="font-bold text-muted-foreground text-xs py-4 px-6">
-                  Barrio / domicilio
-                </TableHead>
-                <TableHead className="font-bold text-muted-foreground text-xs py-4 px-6">
-                  Contacto
-                </TableHead>
-                <TableHead className="font-bold text-muted-foreground text-xs py-4 px-6 text-right">
-                  Acciones
+              <TableRow className="hover:bg-transparent">
+                <TableHead className="px-4 text-xs font-semibold">Apellido y nombre</TableHead>
+                <TableHead className="px-4 text-xs font-semibold">DNI</TableHead>
+                <TableHead className="px-4 text-xs font-semibold">Programas activos</TableHead>
+                <TableHead className="px-4 text-xs font-semibold">Barrio</TableHead>
+                <TableHead className="px-4 text-xs font-semibold">Teléfono</TableHead>
+                <TableHead className="px-4 text-xs font-semibold">
+                  <span className="sr-only">Acciones</span>
                 </TableHead>
               </TableRow>
             </TableHeader>
-            <TableBody className="divide-y divide-border/40">
+            <TableBody>
               {people.length > 0 ? (
-                people.map((p: any) => (
-                  <TableRow key={p.id} className="group transition-colors hover:bg-muted/30">
-                    <TableCell className="font-bold text-sm text-foreground py-4 px-6">
-                      <Link href={`/people/${p.id}`} className="hover:text-primary transition-colors flex items-center gap-3">
-                        <InitialsAvatar name={p.firstName} lastName={p.lastName} seed={p.dni} />
-                        <span>{p.lastName}, {p.firstName}</span>
-                      </Link>
-                    </TableCell>
-                    <TableCell className="text-muted-foreground font-mono font-semibold text-xs py-4 px-6 tabular-nums">
-                      {p.dni}
-                    </TableCell>
-                    <TableCell className="py-4 px-6">
-                      <div className="flex flex-wrap gap-1 items-center max-w-[280px]">
-                        {p.programasActivos && p.programasActivos.length > 0 ? (
-                          <>
-                            {p.programasActivos.slice(0, 2).map((prog: string, idx: number) => (
-                              <Badge key={idx} variant="outline" className="text-xs font-bold border-primary/30 text-primary bg-primary/5 py-0 px-2 rounded-lg">
-                                {prog}
+                people.map((p: any) => {
+                  const chips = programChips(p.programasActivos);
+                  return (
+                    <TableRow key={p.id}>
+                      <TableCell className="px-4 py-2 text-sm font-semibold text-foreground">
+                        <Link href={`/people/${p.id}`} className="flex items-center gap-2.5 hover:text-primary">
+                          <InitialsAvatar name={p.firstName} lastName={p.lastName} seed={p.dni} size="sm" />
+                          <span>
+                            {p.lastName}, {p.firstName}
+                          </span>
+                        </Link>
+                      </TableCell>
+                      <TableCell className="px-4 py-2 text-sm tabular-nums text-muted-foreground">{p.dni}</TableCell>
+                      <TableCell className="px-4 py-2">
+                        {chips.shown.length > 0 ? (
+                          <div className="flex max-w-[18rem] items-center gap-1" title={p.programasActivos.join(", ")}>
+                            {chips.shown.map((prog) => (
+                              <Badge
+                                key={prog}
+                                variant="outline"
+                                className="min-w-0 max-w-[12rem] shrink whitespace-nowrap rounded-md border-primary/25 bg-primary/5 px-1.5 py-0 text-xs font-semibold text-primary"
+                              >
+                                <span className="truncate">{prog}</span>
                               </Badge>
                             ))}
-                            {p.programasActivos.length > 2 && (
-                              <Badge variant="secondary" className="text-xs font-bold py-0 px-1.5 rounded-lg bg-muted text-muted-foreground">
-                                +{p.programasActivos.length - 2} más
-                              </Badge>
+                            {chips.rest > 0 && (
+                              <span className="shrink-0 rounded-md bg-muted px-1.5 text-xs font-semibold text-muted-foreground">
+                                +{chips.rest}
+                              </span>
                             )}
-                          </>
+                          </div>
                         ) : (
-                          <Badge variant="secondary" className="rounded-xl font-bold bg-muted text-muted-foreground text-xs px-2 py-0.5">
-                            {plural(p.casesCount || 0, "expediente")}
-                          </Badge>
+                          <span className="text-xs text-muted-foreground">Sin programas</span>
                         )}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-muted-foreground text-xs py-4 px-6 max-w-[220px] truncate">
-                      <span className="flex items-center gap-1.5" title={p.address || "Sin dirección"}>
-                        <MapPin className="h-3 w-3 text-primary/70 shrink-0" />
-                        <span className="truncate">{p.barrio ? barrioLabel(p.barrio) : (p.address || "Sin dirección")}</span>
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-muted-foreground text-xs py-4 px-6">
-                      {p.phone ? (
-                        <span className="flex items-center gap-1.5">
-                          <Phone className="h-3 w-3 text-emerald-500 shrink-0" />
-                          <span className="font-mono">{p.phone}</span>
+                      </TableCell>
+                      <TableCell className="max-w-[14rem] px-4 py-2 text-sm text-muted-foreground">
+                        <span className="block truncate" title={p.address || undefined}>
+                          {p.barrio ? barrioLabel(p.barrio) : p.address || "Sin dirección"}
                         </span>
-                      ) : (
-                        <span className="text-muted-foreground italic">No registra</span>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right py-4 px-6">
-                      <div className="flex items-center justify-end gap-1.5">
-                        <Button variant="ghost" size="sm" asChild className="rounded-xl h-8 px-2.5 text-xs font-bold hover:bg-primary hover:text-white transition-all text-primary gap-1">
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap px-4 py-2 text-sm tabular-nums text-muted-foreground">
+                        {p.phone || <span className="text-xs">Sin teléfono</span>}
+                      </TableCell>
+                      <TableCell className="px-4 py-2 text-right">
+                        <Button variant="ghost" size="sm" asChild className="h-8 gap-1 px-2.5 text-xs font-semibold text-primary">
                           <Link href={`/people/${p.id}`}>
-                            <Eye className="h-3.5 w-3.5"/>
-                            <span>Ver ficha</span>
+                            Ver ficha <ChevronRight className="h-3.5 w-3.5" />
                           </Link>
                         </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
               ) : (
                 <TableRow>
                   <TableCell colSpan={6} className="p-0">
                     <EmptyMessage
                       kind={search || barrio || programa ? "search" : "empty"}
-                      title={search || barrio || programa ? "Nadie del padrón coincide con la búsqueda" : "Todavía no hay personas en el padrón"}
+                      title={
+                        search || barrio || programa ? "Nadie del padrón coincide con la búsqueda" : "Todavía no hay personas en el padrón"
+                      }
                       description={
                         search || barrio || programa
                           ? "Probá con otro nombre o DNI, o quitá los filtros de barrio y programa."
@@ -285,15 +268,10 @@ export default async function PeoplePage({
               )}
             </TableBody>
           </Table>
-          </div>
+        </div>
 
         {/* Componente de Paginación Server-Side */}
-        <PeoplePagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          totalItems={total}
-          pageSize={pageSize}
-        />
+        <PeoplePagination currentPage={currentPage} totalPages={totalPages} totalItems={total} pageSize={pageSize} />
       </Card>
     </div>
   );

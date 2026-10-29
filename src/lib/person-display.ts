@@ -49,3 +49,19 @@ export function fechaIsoATexto(iso: string): string {
 
 /** Opciones de género para elegir al cargar o editar (es opcional). */
 export const GENEROS = ["Femenino", "Masculino", "No binario"] as const;
+
+/**
+ * Qué programas entran como etiqueta en una fila de la lista sin pasar a una segunda línea:
+ * se suman mientras el texto total no supere `maxChars` (siempre al menos uno) y el resto va como "+N".
+ */
+export function programChips(programas: string[] | null | undefined, maxChars = 26): { shown: string[]; rest: number } {
+  const list = (programas ?? []).filter(Boolean);
+  const shown: string[] = [];
+  let used = 0;
+  for (const p of list) {
+    if (shown.length > 0 && used + p.length > maxChars) break;
+    shown.push(p);
+    used += p.length;
+  }
+  return { shown, rest: list.length - shown.length };
+}

@@ -1,20 +1,24 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { adjustStockAction } from "@/app/(dashboard)/admin/actions/stock-actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { AlertTriangle, Save, Package, Download } from "lucide-react";
+import { AlertTriangle, Package, Download } from "lucide-react";
 import { EmptyMessage } from "@/components/ui/empty-message";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
 import { formatFechaHora } from "@/lib/fechas";
 import { getAreaShortName } from "@/lib/area-theme";
 
-export function StockList({ supplies }: { supplies: any[] }) {
+export function StockList({ supplies: all, canEdit }: { supplies: any[]; canEdit: boolean }) {
+  const router = useRouter();
+  // Lo que hay que reponer, arriba; el resto por nombre (como viene).
+  const supplies = [...all].sort((a, b) => Number(b.stock <= b.minStock) - Number(a.stock <= a.minStock));
   const [editingId, setEditingId] = useState<string | null>(null);
   const [tempStock, setTempStock] = useState<number>(0);
 
@@ -25,8 +29,9 @@ export function StockList({ supplies }: { supplies: any[] }) {
         toast.error(result.error);
         return;
       }
-      toast.success("Stock actualizado");
+      toast.success("Stock actualizado.");
       setEditingId(null);
+      router.refresh();
     } catch {
       toast.error("No se pudo actualizar el stock. Revisá la conexión y probá de nuevo.");
     }
@@ -38,16 +43,16 @@ export function StockList({ supplies }: { supplies: any[] }) {
     doc.setFontSize(10);
     doc.text(`Generado el ${formatFechaHora(new Date())} hs`, 14, 22);
 
-    const tableData = supplies.map(s => [
+    const tableData = supplies.map((s) => [
       s.name,
       s.area?.name || "Depósito general",
       s.stock.toString(),
       s.minStock.toString(),
-      s.stock <= s.minStock ? "BAJO" : "OK"
+      s.stock <= s.minStock ? "Reponer" : "Alcanza",
     ]);
 
     doc.autoTable({
-      head: [["Insumo", "Área", "Stock", "Mín.", "Estado"]],
+      head: [["Insumo", "Área", "Hay", "Mínimo", "Estado"]],
       body: tableData,
       startY: 30,
     });
@@ -58,7 +63,7 @@ export function StockList({ supplies }: { supplies: any[] }) {
   return (
     <div className="space-y-4">
       <div className="flex justify-end">
-        <Button variant="outline" size="sm" onClick={exportPDF}>
+        <Button variant="outline" size="sm" onClick={exportPDF} disabled={supplies.length === 0}>
           <Download className="h-4 w-4 mr-2" /> Descargar PDF
         </Button>
       </div>
@@ -68,69 +73,93 @@ export function StockList({ supplies }: { supplies: any[] }) {
           <TableRow>
             <TableHead>Insumo</TableHead>
             <TableHead>Área</TableHead>
-            <TableHead>Stock</TableHead>
+            <TableHead>Hay</TableHead>
             <TableHead>Estado</TableHead>
-            <TableHead className="text-right">Acciones</TableHead>
+            {canEdit && (
+              <TableHead>
+                <span className="sr-only">Acciones</span>
+              </TableHead>
+            )}
           </TableRow>
         </TableHeader>
         <TableBody>
-          {supplies.map((item) => (
-            <TableRow key={item.id}>
-              <TableCell>
-                <div className="font-medium">{item.name}</div>
-                <div className="text-xs text-muted-foreground">{item.description}</div>
-              </TableCell>
-              <TableCell>
-                <Badge variant="outline">{item.area ? getAreaShortName(item.area.name) : "Depósito general"}</Badge>
-              </TableCell>
-              <TableCell>
-                {editingId === item.id ? (
-                  <Input
-                    type="number"
-                    className="w-20 h-8"
-                    value={tempStock}
-                    onChange={(e) => setTempStock(parseInt(e.target.value))}
-                  />
-                ) : (
-                  <span className={`font-mono font-bold ${item.stock <= item.minStock ? "text-rose-600" : ""}`}>
-                    {item.stock}
-                  </span>
+          {supplies.map((item) => {
+            const low = item.stock <= item.minStock;
+            return (
+              <TableRow key={item.id}>
+                <TableCell>
+                  <p className="font-medium text-foreground">{item.name}</p>
+                  {item.description && <p className="text-xs text-muted-foreground">{item.description}</p>}
+                </TableCell>
+                <TableCell className="text-sm text-muted-foreground">
+                  {item.area ? getAreaShortName(item.area.name) : "Depósito general"}
+                </TableCell>
+                <TableCell>
+                  {editingId === item.id ? (
+                    <Input
+                      type="number"
+                      min="0"
+                      aria-label={`Cuántos hay de ${item.name}`}
+                      className="h-8 w-24"
+                      value={Number.isFinite(tempStock) ? tempStock : ""}
+                      onChange={(e) => setTempStock(parseInt(e.target.value))}
+                    />
+                  ) : (
+                    <span className="tabular-nums">
+                      <span className={`font-semibold ${low ? "text-rose-700 dark:text-rose-400" : "text-foreground"}`}>{item.stock}</span>
+                      <span className="text-xs text-muted-foreground"> · mínimo {item.minStock}</span>
+                    </span>
+                  )}
+                </TableCell>
+                <TableCell>
+                  {low ? (
+                    <Badge variant="outline" className="w-fit gap-1 border-rose-500/30 bg-rose-500/10 text-rose-700 dark:text-rose-300">
+                      <AlertTriangle className="h-3 w-3" /> Para reponer
+                    </Badge>
+                  ) : (
+                    <Badge variant="outline" className="border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">
+                      Alcanza
+                    </Badge>
+                  )}
+                </TableCell>
+                {canEdit && (
+                  <TableCell className="text-right">
+                    {editingId === item.id ? (
+                      <div className="flex justify-end gap-1">
+                        <Button size="sm" variant="ghost" onClick={() => setEditingId(null)}>
+                          Cancelar
+                        </Button>
+                        <Button size="sm" onClick={() => handleAdjust(item.id)}>
+                          Guardar
+                        </Button>
+                      </div>
+                    ) : (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          setEditingId(item.id);
+                          setTempStock(item.stock);
+                        }}
+                      >
+                        Ajustar
+                      </Button>
+                    )}
+                  </TableCell>
                 )}
-              </TableCell>
-              <TableCell>
-                {item.stock <= item.minStock ? (
-                  <Badge variant="destructive" className="flex items-center gap-1 w-fit">
-                    <AlertTriangle className="h-3 w-3" /> Bajo
-                  </Badge>
-                ) : (
-                  <Badge variant="outline" className="text-emerald-700 dark:text-emerald-400 border-emerald-600">OK</Badge>
-                )}
-              </TableCell>
-              <TableCell className="text-right">
-                {editingId === item.id ? (
-                  <div className="flex justify-end gap-1">
-                    <Button size="sm" variant="ghost" onClick={() => setEditingId(null)}>X</Button>
-                    <Button size="sm" onClick={() => handleAdjust(item.id)}><Save className="h-4 w-4"/></Button>
-                  </div>
-                ) : (
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => {
-                      setEditingId(item.id);
-                      setTempStock(item.stock);
-                    }}
-                  >
-                    Ajustar
-                  </Button>
-                )}
-              </TableCell>
-            </TableRow>
-          ))}
+              </TableRow>
+            );
+          })}
           {supplies.length === 0 && (
             <TableRow>
-              <TableCell colSpan={5}>
-                <EmptyMessage icon={Package} title="Todavía no hay insumos cargados" description="Los insumos que cargues aparecen acá, con su stock." />
+              <TableCell colSpan={canEdit ? 5 : 4}>
+                <EmptyMessage
+                  icon={Package}
+                  title="Todavía no hay insumos cargados"
+                  description={
+                    canEdit ? "Cargá el primero con el botón Nuevo insumo." : "Los carga Administración General. Cuando haya, aparecen acá."
+                  }
+                />
               </TableCell>
             </TableRow>
           )}
