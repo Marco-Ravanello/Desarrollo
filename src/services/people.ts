@@ -560,42 +560,10 @@ export async function getPeopleStats() {
         }
       } catch (e) {}
     }
-    // 2.3 Si no hay fechas explícitas, deducir demográficamente por numeración de DNI (estándar nacional argentino)
-    if (!avgAge || avgAge <= 0) {
-      try {
-        const dniAvgRes: any[] = await prisma.$queryRawUnsafe(
-          `SELECT ROUND(AVG(
-             GREATEST(16, LEAST(85, EXTRACT(YEAR FROM CURRENT_DATE)::int - (1938 + (NULLIF(regexp_replace(dni, '[^0-9]', '', 'g'), '')::numeric / 1000000.0) * 1.45)))
-           ))::int as avg_age
-           FROM padron_unificado
-           WHERE regexp_replace(dni, '[^0-9]', '', 'g') != ''
-             AND LENGTH(regexp_replace(dni, '[^0-9]', '', 'g')) BETWEEN 7 AND 8;`
-        );
-        if (dniAvgRes[0]?.avg_age && Number(dniAvgRes[0].avg_age) > 0) {
-          avgAge = Number(dniAvgRes[0].avg_age);
-        }
-      } catch (e) {
-        console.error("Error calculando edad por DNI en padron_unificado:", e);
-      }
-    }
-    // 2.4 Si padron_unificado no tenía DNIs, intentar deducir desde DNIs de la tabla Person
-    if (!avgAge || avgAge <= 0) {
-      try {
-        const dniPersonRes: any[] = await prisma.$queryRawUnsafe(
-          `SELECT ROUND(AVG(
-             GREATEST(16, LEAST(85, EXTRACT(YEAR FROM CURRENT_DATE)::int - (1938 + (NULLIF(regexp_replace(dni, '[^0-9]', '', 'g'), '')::numeric / 1000000.0) * 1.45)))
-           ))::int as avg_age
-           FROM "Person"
-           WHERE regexp_replace(dni, '[^0-9]', '', 'g') != ''
-             AND LENGTH(regexp_replace(dni, '[^0-9]', '', 'g')) BETWEEN 7 AND 8;`
-        );
-        if (dniPersonRes[0]?.avg_age && Number(dniPersonRes[0].avg_age) > 0) {
-          avgAge = Number(dniPersonRes[0].avg_age);
-        }
-      } catch (e) {}
-    }
+    // Sin fechas ni edades cargadas no se estima nada: la pantalla dice "Sin datos".
     // 3. Barrio o Localidad con Mayor Asistencia
     let topArea = "";
+    let topAreaCount = 0;
     try {
       const topBarrioRes: any[] = await prisma.$queryRawUnsafe(
         `SELECT barrio, COUNT(*)::int as cant
@@ -616,6 +584,7 @@ export async function getPeopleStats() {
           b = b.split("/")[0].trim();
         }
         topArea = b;
+        topAreaCount = Number(topBarrioRes[0].cant) || 0;
       }
     } catch (e) {}
     // 4. Población censada desglosada por localidad (100% dinámico)
@@ -660,11 +629,13 @@ export async function getPeopleStats() {
         }
       }
       topArea = maxLocName || "Sin datos";
+      topAreaCount = maxLocCount;
     }
     return {
       total,
       avgAge,
       topArea,
+      topAreaCount,
       localityTotals
     };
   } catch (err) {
@@ -673,6 +644,7 @@ export async function getPeopleStats() {
       total: 0,
       avgAge: 0,
       topArea: "Sin datos",
+      topAreaCount: 0,
       localityTotals: {
         "all": 0
       }

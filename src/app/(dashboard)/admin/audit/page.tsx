@@ -11,6 +11,8 @@ import { Input } from "@/components/ui/input";
 import { PageHeader } from "@/components/layout/page-header";
 import { EmptyMessage } from "@/components/ui/empty-message";
 import { MobileFilters } from "@/components/ui/mobile-filters";
+import { FilterForm } from "@/components/ui/filter-form";
+import { ActiveFilters } from "@/components/ui/active-filters";
 import { MobileList, MobileListItem } from "@/components/ui/mobile-list";
 import { ScrollText, Search, ChevronLeft, ChevronRight, ArrowUpRight } from "lucide-react";
 import { hasPermission, PERMISSIONS } from "@/lib/permissions";
@@ -76,7 +78,7 @@ export default async function AuditPage({ searchParams }: { searchParams: Promis
       />
 
       <Card className="rounded-2xl border-border/60 bg-card p-4 shadow-xs">
-        <form method="GET" className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-6 items-end">
+        <FilterForm className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-6 items-end">
           <div className="relative sm:col-span-2 lg:col-span-5">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -122,25 +124,18 @@ export default async function AuditPage({ searchParams }: { searchParams: Promis
               Mostrar también los ingresos a la app
             </label>
           </MobileFilters>
-        </form>
-        {anyFilter && (
-          <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-border/40 pt-3 text-xs">
-            <span className="font-bold text-muted-foreground">Filtros activos:</span>
-            {filters.q && <Badge variant="secondary" className="text-xs">Texto: {filters.q}</Badge>}
-            {filters.userId && (
-              <Badge variant="secondary" className="text-xs">
-                Quién: {personName(people.find((p) => p.id === filters.userId) ?? { name: null, username: null, email: null })}
-              </Badge>
-            )}
-            {filters.group && <Badge variant="secondary" className="text-xs">{AUDIT_GROUPS.find((g) => g.id === filters.group)?.label}</Badge>}
-            {filters.from && <Badge variant="secondary" className="text-xs">Desde: {filters.from.split("-").reverse().join("/")}</Badge>}
-            {filters.to && <Badge variant="secondary" className="text-xs">Hasta: {filters.to.split("-").reverse().join("/")}</Badge>}
-            {filters.includeLogins && <Badge variant="secondary" className="text-xs">Con ingresos</Badge>}
-            <Button variant="ghost" size="sm" asChild className="h-6 text-xs text-muted-foreground hover:text-foreground">
-              <Link href="/admin/audit">Limpiar filtros</Link>
-            </Button>
-          </div>
-        )}
+        </FilterForm>
+        <ActiveFilters
+          clearHref="/admin/audit"
+          items={[
+            filters.q && `Texto: ${filters.q}`,
+            filters.userId && `Quién: ${personName(people.find((p) => p.id === filters.userId) ?? { name: null, username: null, email: null })}`,
+            filters.group && AUDIT_GROUPS.find((g) => g.id === filters.group)?.label,
+            filters.from && `Desde: ${filters.from.split("-").reverse().join("/")}`,
+            filters.to && `Hasta: ${filters.to.split("-").reverse().join("/")}`,
+            filters.includeLogins && "Con ingresos",
+          ]}
+        />
       </Card>
 
       <Card className="overflow-hidden rounded-2xl border-border/60 bg-card shadow-xs">

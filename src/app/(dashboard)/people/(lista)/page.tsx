@@ -22,7 +22,7 @@ import { StatCard } from "@/components/ui/stat-card";
 import { MobileList, MobileListItem, StatRow } from "@/components/ui/mobile-list";
 import { EmptyMessage } from "@/components/ui/empty-message";
 import { PeopleHeaderActions } from "@/components/people/people-header-actions";
-import { plural } from "@/lib/formato";
+import { formatNumber, plural } from "@/lib/formato";
 import { barrioLabel, programChips } from "@/lib/person-display";
 
 export const metadata = { title: "Registro Único" };
@@ -96,39 +96,24 @@ export default async function PeoplePage({
         }
       />
 
-      {/* KPI Cards */}
       <StatRow className="lg:grid-cols-3">
-        <StatCard
-          label="Padrón unificado"
-          value={stats.total.toLocaleString("es-AR")}
-          hint="Personas con datos de los programas sociales"
-          icon={Users}
-          tone="blue"
-        />
+        <StatCard label="Personas en el padrón" value={formatNumber(stats.total)} hint="Todas las cargadas en el Registro Único" icon={Users} tone="blue" />
         <StatCard
           label="Edad promedio"
-          value={
-            stats.avgAge > 0 ? (
-              <>
-                {stats.avgAge} <span className="text-xl font-normal text-muted-foreground">años</span>
-              </>
-            ) : (
-              <span className="text-2xl font-bold text-muted-foreground">S/D</span>
-            )
-          }
-          hint="Promedio etario de titulares y beneficiarios"
+          value={stats.avgAge > 0 ? `${stats.avgAge} años` : "Sin datos"}
+          hint={stats.avgAge > 0 ? "De quienes tienen la edad o la fecha de nacimiento" : "Falta cargar fechas de nacimiento"}
           icon={Calendar}
           tone="purple"
         />
         <StatCard
           className="sm:col-span-2 lg:col-span-1"
-          label="Barrio con mayor asistencia"
+          label="Barrio con más personas"
           value={
             <span className="line-clamp-1 text-xl" title={stats.topArea}>
-              {stats.topArea && stats.topArea !== "Tres de Febrero" && stats.topArea !== "Sin datos" ? stats.topArea : "Sin registros"}
+              {stats.topArea && stats.topArea !== "Tres de Febrero" && stats.topArea !== "Sin datos" ? stats.topArea : "Sin datos"}
             </span>
           }
-          hint="Zona de mayor concentración de prestaciones"
+          hint={stats.topArea && stats.topArea !== "Tres de Febrero" && stats.topArea !== "Sin datos" && stats.topAreaCount > 0 ? plural(stats.topAreaCount, "persona") : "Falta cargar el barrio"}
           icon={Building2}
           tone="orange"
         />

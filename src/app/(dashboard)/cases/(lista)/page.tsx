@@ -14,6 +14,8 @@ import { PageHeader } from "@/components/layout/page-header";
 import { StatCard } from "@/components/ui/stat-card";
 import { MobileList, MobileListItem, StatRow } from "@/components/ui/mobile-list";
 import { MobileFilters } from "@/components/ui/mobile-filters";
+import { FilterForm } from "@/components/ui/filter-form";
+import { ActiveFilters } from "@/components/ui/active-filters";
 import { EmptyMessage } from "@/components/ui/empty-message";
 import { hasPermission, MANAGEMENT_ROLES, PERMISSIONS } from "@/lib/permissions";
 import { getCaseStatusConfig } from "@/lib/status-styles";
@@ -191,7 +193,7 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
 
       {/* Filters Form */}
       <Card className="rounded-2xl border-border/60 bg-card p-4 shadow-xs">
-        <form method="GET" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 items-center">
+        <FilterForm className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 items-center">
           <div className="sm:col-span-2 lg:col-span-3 relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
@@ -283,22 +285,19 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
             Solo los que no tuvieron intervenciones hace {STALE_DAYS} días o más
           </label>
           </MobileFilters>
-        </form>
-        {(q || (area && area !== "all") || (status && status !== "all") || (priority && priority !== "all") || assigned || quiet || label) && (
-          <div className="flex flex-wrap items-center gap-2 mt-3 pt-3 border-t border-border/40 text-xs">
-            <span className="text-xs font-bold text-muted-foreground">Filtros activos:</span>
-            {q && <Badge variant="secondary" className="text-xs">Texto: {q}</Badge>}
-            {area && area !== "all" && <Badge variant="secondary" className="text-xs">Área: {areasList.find((a) => a.id === area)?.name || area}</Badge>}
-            {status && status !== "all" && <Badge variant="secondary" className="text-xs">Estado: {STATUS_LABELS[status] || status}</Badge>}
-            {priority && priority !== "all" && <Badge variant="secondary" className="text-xs">Prioridad: {CASE_PRIORITY_LABEL[priority]?.replace(/^Prioridad /, "") ?? priority}</Badge>}
-            {assignedLabel && <Badge variant="secondary" className="text-xs">{assignedLabel}</Badge>}
-            {quiet && <Badge variant="secondary" className="text-xs">Sin movimiento hace {STALE_DAYS} días o más</Badge>}
-            {label && <Badge variant="secondary" className="text-xs">Etiqueta: {caseLabelName(label)}</Badge>}
-            <Button variant="ghost" size="sm" asChild className="h-6 text-xs text-muted-foreground hover:text-foreground">
-              <Link href="/cases">Limpiar filtros</Link>
-            </Button>
-          </div>
-        )}
+        </FilterForm>
+        <ActiveFilters
+          clearHref="/cases"
+          items={[
+            q && `Texto: ${q}`,
+            area && area !== "all" && `Área: ${areasList.find((a) => a.id === area)?.name || area}`,
+            status && status !== "all" && `Estado: ${STATUS_LABELS[status] || status}`,
+            priority && priority !== "all" && `Prioridad: ${CASE_PRIORITY_LABEL[priority]?.replace(/^Prioridad /, "") ?? priority}`,
+            assignedLabel,
+            quiet && `Sin movimiento hace ${STALE_DAYS} días o más`,
+            label && `Etiqueta: ${caseLabelName(label)}`,
+          ]}
+        />
       </Card>
 
       {/* Cases Table */}

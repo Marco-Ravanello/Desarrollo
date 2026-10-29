@@ -1,190 +1,76 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter, useSearchParams, usePathname } from "next/navigation";
+import { useSearchParams } from "next/navigation";
+import { Search } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { MobileFilters } from "@/components/ui/mobile-filters";
-import { Search, MapPin, HeartHandshake, X, RotateCcw, Filter, ListOrdered } from "lucide-react";
+import { FilterForm } from "@/components/ui/filter-form";
+import { ActiveFilters } from "@/components/ui/active-filters";
 
 interface PeopleFiltersProps {
   barrios: string[];
   programas: string[];
 }
 
+const selectClass =
+  "h-10 w-full rounded-xl border border-border/60 bg-muted/30 px-3 text-xs font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-primary";
+
+/** Filtros del Registro Único: el barrio y el programa se aplican al elegirlos; el texto, con Enter o Buscar. */
 export function PeopleFilters({ barrios, programas }: PeopleFiltersProps) {
-  const router = useRouter();
-  const pathname = usePathname();
   const searchParams = useSearchParams();
-
-  const currentSearch = searchParams.get("search") || "";
-  const currentBarrio = searchParams.get("barrio") || "all";
-  const currentPrograma = searchParams.get("programa") || "all";
-  const currentLimit = searchParams.get("limit") || "20";
-
-  const [searchInput, setSearchInput] = useState(currentSearch);
-
-  useEffect(() => {
-    setSearchInput(currentSearch);
-  }, [currentSearch]);
-
-  const updateFilters = (newParams: Record<string, string | null>) => {
-    const params = new URLSearchParams(searchParams.toString());
-
-    Object.entries(newParams).forEach(([key, value]) => {
-      if (value === null || value === "" || value === "all") {
-        params.delete(key);
-      } else {
-        params.set(key, value);
-      }
-    });
-
-    // Resetear a pagina 1 siempre que cambie un filtro
-    params.set("page", "1");
-
-    router.push(`${pathname}?${params.toString()}`);
-  };
-
-  const handleSearchSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    updateFilters({ search: searchInput.trim() });
-  };
-
-  const clearAllFilters = () => {
-    setSearchInput("");
-    router.push(pathname);
-  };
-
-  const hasActiveFilters =
-    Boolean(currentSearch) ||
-    (currentBarrio && currentBarrio !== "all") ||
-    (currentPrograma && currentPrograma !== "all") ||
-    (currentLimit && currentLimit !== "20");
+  const search = searchParams.get("search") || "";
+  const barrio = searchParams.get("barrio") || "";
+  const programa = searchParams.get("programa") || "";
+  const limit = searchParams.get("limit") || "";
+  const falta = searchParams.get("falta") || "";
 
   return (
-    <Card className="p-4 sm:p-5 bg-card text-card-foreground border border-border/60 rounded-2xl shadow-xs space-y-4">
-      <form onSubmit={handleSearchSubmit} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3">
-        <div className="lg:col-span-5 relative">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+    <Card className="rounded-2xl border-border/60 p-4 shadow-sm">
+      <FilterForm className="grid grid-cols-1 items-center gap-3 sm:grid-cols-2 lg:grid-cols-12">
+        {limit && <input type="hidden" name="limit" value={limit} />}
+        {falta && <input type="hidden" name="falta" value={falta} />}
+        <div className="relative sm:col-span-2 lg:col-span-5">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
-            placeholder="Buscar por DNI, apellido, nombre o dirección..."
-            className="pl-10 h-11 rounded-2xl border-border/60 bg-muted/20 text-xs font-semibold focus-visible:ring-primary"
+            name="search"
+            defaultValue={search}
+            aria-label="Buscar personas"
+            placeholder="Buscar por DNI, apellido, nombre o dirección"
+            className="h-10 rounded-xl border-border/60 bg-muted/30 pl-9 text-xs"
           />
         </div>
-
-        <MobileFilters active={[currentBarrio !== "all", currentPrograma !== "all"].filter(Boolean).length}>
-        <div className="lg:col-span-3">
-          <select
-            aria-label="Filtrar por barrio"
-            value={currentBarrio}
-            onChange={(e) => updateFilters({ barrio: e.target.value })}
-            className="w-full h-11 px-3 rounded-2xl bg-muted/20 border border-border/60 text-xs font-bold text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-          >
-            <option value="all">Todas las localidades / barrios</option>
-            {barrios.map((b, idx) => (
-              <option key={idx} value={b}>
-                {b}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="lg:col-span-3">
-          <select
-            aria-label="Filtrar por programa"
-            value={currentPrograma}
-            onChange={(e) => updateFilters({ programa: e.target.value })}
-            className="w-full h-11 px-3 rounded-2xl bg-muted/20 border border-border/60 text-xs font-bold text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-          >
-            <option value="all">Todos los programas sociales</option>
-            {programas.map((p, idx) => (
-              <option key={idx} value={p}>
-                {p}
-              </option>
-            ))}
-          </select>
-        </div>
-
+        <MobileFilters active={[barrio, programa].filter(Boolean).length}>
+          <div className="lg:col-span-3">
+            <select name="barrio" aria-label="Barrio o localidad" defaultValue={barrio || "all"} className={selectClass}>
+              <option value="all">Todos los barrios y localidades</option>
+              {barrios.map((b) => (
+                <option key={`b-${b}`} value={b}>
+                  {b}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="lg:col-span-3">
+            <select name="programa" aria-label="Programa" defaultValue={programa || "all"} className={selectClass}>
+              <option value="all">Todos los programas</option>
+              {programas.map((p) => (
+                <option key={`p-${p}`} value={p}>
+                  {p}
+                </option>
+              ))}
+            </select>
+          </div>
         </MobileFilters>
-
-        <div className="lg:col-span-1 flex items-center gap-2">
-          <Button type="submit" className="h-11 w-full rounded-2xl px-4 text-xs font-bold bg-primary text-primary-foreground gap-2">
-            <Search className="h-4 w-4" /> Buscar
-          </Button>
-        </div>
-      </form>
-
-      <div className={`flex-wrap items-center justify-between gap-3 pt-2 border-t border-border/40 text-xs ${hasActiveFilters ? "flex" : "hidden md:flex"}`}>
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-xs font-bold text-muted-foreground flex items-center gap-1">
-            <Filter className="h-3.5 w-3.5 text-primary" /> Filtros puestos:
-          </span>
-
-          {currentSearch && (
-            <Badge variant="secondary" className="gap-1 rounded-xl text-xs bg-primary/10 text-primary border border-primary/20 font-bold">
-              Búsqueda: {currentSearch}
-              <button type="button" onClick={() => updateFilters({ search: null })} className="ml-1 hover:text-rose-500">
-                <X className="h-3 w-3" />
-              </button>
-            </Badge>
-          )}
-
-          {currentBarrio && currentBarrio !== "all" && (
-            <Badge variant="secondary" className="gap-1 rounded-xl text-xs bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20 font-bold">
-              Barrio: {currentBarrio}
-              <button type="button" onClick={() => updateFilters({ barrio: null })} className="ml-1 hover:text-rose-500">
-                <X className="h-3 w-3" />
-              </button>
-            </Badge>
-          )}
-
-          {currentPrograma && currentPrograma !== "all" && (
-            <Badge variant="secondary" className="gap-1 rounded-xl text-xs bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20 font-bold">
-              Programa: {currentPrograma}
-              <button type="button" onClick={() => updateFilters({ programa: null })} className="ml-1 hover:text-rose-500">
-                <X className="h-3 w-3" />
-              </button>
-            </Badge>
-          )}
-
-          {!hasActiveFilters && (
-            <span className="text-muted-foreground text-xs italic">Sin filtros aplicados</span>
-          )}
-
-          {hasActiveFilters && (
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={clearAllFilters}
-              className="h-7 text-xs font-bold text-muted-foreground hover:text-destructive rounded-xl"
-            >
-              <RotateCcw className="h-3 w-3 mr-1" /> Limpiar todo
-            </Button>
-          )}
-        </div>
-
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-bold text-muted-foreground flex items-center gap-1">
-            <ListOrdered className="h-3.5 w-3.5" /> Filas:
-          </span>
-          <select
-            aria-label="Personas por página"
-            value={currentLimit}
-            onChange={(e) => updateFilters({ limit: e.target.value })}
-            className="h-8 px-2 rounded-xl bg-muted/20 border border-border/60 text-xs font-bold text-foreground focus:outline-none"
-          >
-            <option value="15">15 por pág.</option>
-            <option value="20">20 por pág.</option>
-            <option value="30">30 por pág.</option>
-            <option value="50">50 por pág.</option>
-          </select>
-        </div>
-      </div>
+        <Button type="submit" size="sm" className="h-10 rounded-xl text-xs font-bold sm:col-span-2 lg:col-span-1">
+          Buscar
+        </Button>
+      </FilterForm>
+      <ActiveFilters
+        clearHref={falta ? `/people?falta=${falta}` : "/people"}
+        items={[search && `Texto: ${search}`, barrio && `Barrio: ${barrio}`, programa && `Programa: ${programa}`]}
+      />
     </Card>
   );
 }
