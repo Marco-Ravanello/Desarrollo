@@ -66,7 +66,7 @@ async function loadDashboardStats(scope: DashboardScope) {
     pendingOrdersDb,
     vehiclesDb,
   ] = await Promise.all([
-    getPeopleStats().catch(() => ({ total: 0, avgAge: 0, topArea: "Sin datos", localityTotals: {} })),
+    getPeopleStats().catch(() => ({ total: 0, avgAge: 0, topArea: "Sin datos", topAreaCount: 0, localityTotals: {} })),
     getPeopleForMap(200).catch(() => []),
     prisma.person.count().catch(() => 0),
     prisma.case.count({ where: activeWhere }).catch(() => 0),

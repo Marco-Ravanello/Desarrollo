@@ -11,6 +11,7 @@ import { Building2, Plus, Search, AlertTriangle } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
 import { EmptyMessage } from "@/components/ui/empty-message";
 import { ProviderFormDialog } from "./provider-form-dialog";
+import { FilterForm } from "@/components/ui/filter-form";
 import { formatPesos, plural } from "@/lib/formato";
 
 export const metadata = { title: "Proveedores" };
@@ -28,7 +29,13 @@ export default async function ProvidersPage({ searchParams }: { searchParams: Pr
         icon={Building2}
         actions={
           canEdit ? (
-            <ProviderFormDialog trigger={<Button className="gap-2"><Plus className="h-4 w-4" /> Nuevo proveedor</Button>} />
+            <ProviderFormDialog
+              trigger={
+                <Button className="gap-2">
+                  <Plus className="h-4 w-4" /> Nuevo proveedor
+                </Button>
+              }
+            />
           ) : undefined
         }
       />
@@ -66,10 +73,21 @@ export default async function ProvidersPage({ searchParams }: { searchParams: Pr
             <CardTitle className="text-base">{plural(total, "proveedor registrado", "proveedores registrados")}</CardTitle>
             <CardDescription>Lo ejecutado suma sus órdenes aprobadas o cumplidas.</CardDescription>
           </div>
-          <form className="relative w-full sm:w-72">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input name="q" defaultValue={q || ""} aria-label="Buscar proveedores" placeholder="Buscar por nombre o CUIT" className="h-10 rounded-xl pl-9 text-xs" />
-          </form>
+          <FilterForm className="flex w-full gap-2 sm:w-96">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                name="q"
+                defaultValue={q || ""}
+                aria-label="Buscar proveedores"
+                placeholder="Buscar por nombre o CUIT"
+                className="h-10 rounded-xl pl-9 text-xs"
+              />
+            </div>
+            <Button type="submit" size="sm" className="h-10 rounded-xl text-xs font-bold">
+              Buscar
+            </Button>
+          </FilterForm>
         </CardHeader>
         <CardContent>
           {providers.length === 0 ? (
@@ -102,7 +120,9 @@ export default async function ProvidersPage({ searchParams }: { searchParams: Pr
                   {providers.map((p) => (
                     <TableRow key={p.id}>
                       <TableCell className="font-medium">
-                        <Link href={`/admin/providers/${p.id}`} className="text-foreground hover:text-primary hover:underline">{p.name}</Link>
+                        <Link href={`/admin/providers/${p.id}`} className="text-foreground hover:text-primary hover:underline">
+                          {p.name}
+                        </Link>
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">{p.cuit}</TableCell>
                       <TableCell className="hidden md:table-cell text-xs text-muted-foreground">

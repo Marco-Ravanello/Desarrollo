@@ -13,6 +13,8 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { StatCard } from "@/components/ui/stat-card";
 import { StatRow } from "@/components/ui/mobile-list";
 import { MobileFilters } from "@/components/ui/mobile-filters";
+import { FilterForm } from "@/components/ui/filter-form";
+import { ActiveFilters } from "@/components/ui/active-filters";
 import { auth } from "@/auth";
 import { allowedOrderTransitions, canEditPurchaseOrders } from "@/lib/purchase-orders";
 import { plural } from "@/lib/formato";
@@ -109,7 +111,7 @@ export default async function PurchaseOrdersPage({
       )}
 
       <Card className="rounded-2xl border-border/60 p-4 shadow-sm">
-        <form method="GET" className="grid grid-cols-1 items-center gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <FilterForm className="grid grid-cols-1 items-center gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <div className="relative sm:col-span-2">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -140,7 +142,11 @@ export default async function PurchaseOrdersPage({
           <Button type="submit" size="sm" className="h-10 w-full rounded-xl text-xs font-bold">
             Buscar
           </Button>
-        </form>
+        </FilterForm>
+        <ActiveFilters
+          clearHref="/admin/purchase-orders"
+          items={[query && `Texto: ${query}`, status && `Estado: ${STATUS_OPTIONS.find((o) => o.value === status)?.label}`]}
+        />
       </Card>
 
       {orders.length > 0 ? (

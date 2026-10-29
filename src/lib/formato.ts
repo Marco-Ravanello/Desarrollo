@@ -15,6 +15,12 @@ export function formatPesos(n: number | null | undefined): string {
   return `$ ${formatNumber(n)}`;
 }
 
+/** Importe con centavos solo cuando los tiene (precios unitarios): 1500 → "$ 1.500"; 12.5 → "$ 12,50". */
+export function formatPesosExactos(n: number | null | undefined): string {
+  const v = Number(n ?? 0);
+  return `$ ${formatNumber(v, Number.isInteger(Math.round(v * 100) / 100) ? 0 : 2)}`;
+}
+
 /** Cantidad con la palabra en singular o plural: (1, "registro") → "1 registro"; (3, "registro") → "3 registros". */
 export function plural(n: number | null | undefined, singular: string, pluralForm?: string): string {
   const count = Number(n ?? 0);

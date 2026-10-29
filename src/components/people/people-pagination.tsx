@@ -11,12 +11,7 @@ interface PeoplePaginationProps {
   pageSize: number;
 }
 
-export function PeoplePagination({
-  currentPage,
-  totalPages,
-  totalItems,
-  pageSize
-}: PeoplePaginationProps) {
+export function PeoplePagination({ currentPage, totalPages, totalItems, pageSize }: PeoplePaginationProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -30,6 +25,14 @@ export function PeoplePagination({
     const targetPage = Math.max(1, Math.min(totalPages, page));
     const params = new URLSearchParams(searchParams.toString());
     params.set("page", targetPage.toString());
+    router.push(`${pathname}?${params.toString()}`);
+  };
+
+  const changeLimit = (limit: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (limit === "20") params.delete("limit");
+    else params.set("limit", limit);
+    params.delete("page");
     router.push(`${pathname}?${params.toString()}`);
   };
 
@@ -51,11 +54,27 @@ export function PeoplePagination({
 
   return (
     <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 px-4 pb-4 md:px-2 md:pb-0 border-t border-border/40 text-xs">
-      <p className="text-muted-foreground font-semibold">
-        Mostrando <b className="text-foreground font-bold">{startItem}</b> a{" "}
-        <b className="text-foreground font-bold">{endItem}</b> de{" "}
-        <b className="text-foreground font-bold">{totalItems.toLocaleString("es-AR")}</b> personas en el padrón
-      </p>
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+        <p className="text-muted-foreground">
+          Mostrando <b className="font-semibold text-foreground">{startItem}</b> a{" "}
+          <b className="font-semibold text-foreground">{endItem}</b> de{" "}
+          <b className="font-semibold text-foreground">{totalItems.toLocaleString("es-AR")}</b> personas
+        </p>
+        <label className="flex items-center gap-1.5 text-muted-foreground">
+          Filas por página
+          <select
+            value={String(pageSize)}
+            onChange={(e) => changeLimit(e.target.value)}
+            className="h-8 rounded-lg border border-border/60 bg-muted/30 px-2 text-xs font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+          >
+            {[15, 20, 30, 50].map((n) => (
+              <option key={n} value={n}>
+                {n}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
 
       <div className="flex items-center gap-1.5">
         <Button
@@ -87,9 +106,7 @@ export function PeoplePagination({
             size="sm"
             onClick={() => goToPage(p)}
             className={`h-8 min-w-[32px] px-2.5 rounded-xl font-bold text-xs ${
-              p === currentPage
-                ? "bg-primary text-primary-foreground shadow-xs"
-                : "border-border/60 hover:bg-accent"
+              p === currentPage ? "bg-primary text-primary-foreground shadow-xs" : "border-border/60 hover:bg-accent"
             }`}
           >
             {p}

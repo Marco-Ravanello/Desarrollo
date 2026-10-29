@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatNumber, formatPercent, formatPesos, plural, textoNormal } from "@/lib/formato";
+import { formatNumber, formatPercent, formatPesos, formatPesosExactos, plural, textoNormal } from "@/lib/formato";
 
 describe("formato de números", () => {
   it("usa punto de miles y coma decimal", () => {
@@ -28,5 +28,14 @@ describe("textoNormal", () => {
     expect(textoNormal("MEDIA")).toBe("Media");
     expect(textoNormal("EN_PROCESO")).toBe("En proceso");
     expect(textoNormal(null)).toBe("");
+  });
+});
+
+describe("formatPesosExactos", () => {
+  it("muestra centavos solo cuando hay", () => {
+    expect(formatPesosExactos(1500)).toBe("$ 1.500");
+    expect(formatPesosExactos(12.5)).toBe("$ 12,50");
+    expect(formatPesosExactos(1234.567)).toBe("$ 1.234,57");
+    expect(formatPesosExactos(null)).toBe("$ 0");
   });
 });

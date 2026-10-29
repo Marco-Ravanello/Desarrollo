@@ -36,14 +36,14 @@ export default function LoginPage() {
           description: "Revisá los dos y probá de nuevo."
         });
       } else {
-        toast.success("¡Hola!", {
+        toast.success("¡Bienvenido!", {
           description: "Entrando a la app…"
         });
         router.push("/dashboard");
       }
     } catch (err) {
-      toast.error("Error de autenticación", {
-        description: "Ocurrió un problema al intentar conectar con el servidor."
+      toast.error("No se pudo entrar", {
+        description: "Revisá la conexión y probá de nuevo."
       });
     } finally {
       setLoading(false);
