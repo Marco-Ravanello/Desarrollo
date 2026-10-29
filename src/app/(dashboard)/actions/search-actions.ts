@@ -144,7 +144,7 @@ export async function searchGlobalAction(query: string) {
     agreements: agreements.map((a: any) => ({
       id: a.id,
       title: a.title,
-      subtitle: `${a.area?.name || 'Global'} • ${a.number || 'No. Registro'}`,
+      subtitle: `${a.area?.name || 'Sin área'} • ${a.number ? `N° ${a.number}` : 'Sin número'}`,
       url: `/admin/agreements`
     }))
   };

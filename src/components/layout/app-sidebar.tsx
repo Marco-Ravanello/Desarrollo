@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { LayoutDashboard, Users, ShieldAlert, ClipboardList, LogOut, Briefcase, Car, UserCog, ChevronLeft, ChevronRight, CheckCircle2, MapPin, Wallet, Building2, FileSpreadsheet, Calendar, Sparkles, CloudRain, Settings, Tv, Network, BarChart3, ChevronDown, Package, ScrollText, MapPinned, GraduationCap } from "lucide-react";
+import { LayoutDashboard, Users, ShieldAlert, ClipboardList, LogOut, Briefcase, Car, UserCog, ChevronLeft, ChevronRight, CheckCircle2, MapPin, Wallet, Building2, FileSpreadsheet, Calendar, Sparkles, CloudRain, Settings, Tv, Network, BarChart3, ChevronDown, Package, ScrollText, MapPinned, GraduationCap, Landmark } from "lucide-react";
 import { MunicipalCrest } from "@/components/ui/municipal-crest";
 import { UserNav } from "./user-nav";
 import { useSession, signOut } from "next-auth/react";
@@ -74,9 +74,14 @@ export function AppSidebar({ isMobile = false, onNavigate }: AppSidebarProps) {
       items: [
         { title: "Órdenes de compra", url: "/admin/purchase-orders", icon: Briefcase },
         { title: "Proveedores", url: "/admin/providers", icon: Building2 },
-        { title: "Presupuesto y convenios", url: "/admin/budget", icon: Wallet },
+        { title: "Presupuesto", url: "/admin/budget", icon: Wallet },
         { title: "Reportes", url: "/admin/reports", icon: BarChart3 },
       ],
+    },
+    {
+      id: "convenios",
+      title: "Convenios",
+      items: [{ title: "Convenios", url: "/admin/agreements", icon: Landmark }],
     },
     {
       id: "recursos",

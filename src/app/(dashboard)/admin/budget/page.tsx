@@ -2,7 +2,7 @@ export const dynamic = "force-dynamic";
 
 import { getBudgetSummary, getUnassignedSpent } from "@/app/(dashboard)/admin/actions/budget-actions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Wallet, TrendingUp, Coins, ExternalLink, Activity, FileCheck, AlertTriangle } from "lucide-react";
+import { Wallet, TrendingUp, Coins, Activity, AlertTriangle, ShoppingCart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { PURCHASING_VIEW_ROLES } from "@/lib/permissions";
@@ -70,12 +70,12 @@ export default async function BudgetPage() {
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
       <PageHeader
         title="Presupuesto"
-        description="Cuánto tiene asignado cada área y cuánto lleva gastado."
+        description="Cuánto tiene asignado cada área y cuánto lleva gastado en órdenes de compra aprobadas o cumplidas."
         icon={Wallet}
         actions={
           <Button asChild variant="outline" className="rounded-xl font-bold gap-2">
-            <Link href="/admin/agreements">
-              <FileCheck className="h-4 w-4 text-primary" /> Ver convenios
+            <Link href="/admin/purchase-orders">
+              <ShoppingCart className="h-4 w-4 text-primary" /> Ver órdenes de compra
             </Link>
           </Button>
         }
@@ -204,18 +204,6 @@ export default async function BudgetPage() {
                 </div>
               )}
 
-              <div className="pt-3 border-t border-border/40 flex justify-end">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  asChild
-                  className="text-xs h-8 gap-1.5 font-bold hover:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 transition-colors"
-                >
-                  <Link href={`/admin/agreements?areaId=${area.id}`}>
-                    <ExternalLink className="h-3.5 w-3.5" /> Ver convenios del área
-                  </Link>
-                </Button>
-              </div>
             </CardContent>
           </Card>
           );

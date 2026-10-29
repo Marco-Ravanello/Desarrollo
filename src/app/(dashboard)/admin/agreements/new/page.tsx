@@ -7,7 +7,7 @@ import { Landmark } from "lucide-react";
 export const metadata = { title: "Nuevo convenio" };
 
 export default async function NewAgreementPage() {
-  const areas = await getAreas();
+  const areas = (await getAreas()).map((a) => ({ id: a.id, name: a.name }));
 
   return (
     <div className="space-y-6">

@@ -1,3 +1,4 @@
+import type { AgreementInput } from "@/lib/convenios";
 import prisma from "@/lib/prisma";
 import { OrderStatus } from "@prisma/client";
 import { z } from "zod";
@@ -45,19 +46,6 @@ export const CreateSupplySchema = z.object({
   stock: z.number().or(z.string().transform(Number)),
   minStock: z.number().or(z.string().transform(Number)),
   areaId: z.string().optional().nullable(),
-});
-
-export const CreateAgreementSchema = z.object({
-  number: z.string().min(1),
-  title: z.string().min(1),
-  description: z.string().optional().nullable(),
-  parties: z.string().min(1),
-  amount: z.number().or(z.string().transform(Number)).optional().nullable(),
-  startDate: z.string().or(z.date()).optional().nullable(),
-  endDate: z.string().or(z.date()).optional().nullable(),
-  status: z.enum(["EN_REVISION", "VIGENTE", "VENCIDO", "RESCINDIDO", "FINALIZADO"]).optional().nullable(),
-  areaId: z.string().optional().nullable(),
-  fileUrl: z.string().optional().nullable(),
 });
 
 export interface GetPurchaseOrdersOptions {
@@ -298,21 +286,20 @@ export async function getAgreements() {
   });
 }
 
-export async function createAgreement(rawData: z.infer<typeof CreateAgreementSchema>) {
-  const data = CreateAgreementSchema.parse(rawData);
-
+/** Guarda un convenio nuevo con los datos ya revisados (ver parseAgreementInput). */
+export async function createAgreement(data: AgreementInput) {
   return await prisma.agreement.create({
     data: {
       number: data.number,
       title: data.title,
       description: data.description,
       parties: data.parties,
-      amount: data.amount || null,
-      startDate: data.startDate ? new Date(data.startDate) : null,
-      endDate: data.endDate ? new Date(data.endDate) : null,
-      status: data.status || 'VIGENTE',
-      areaId: data.areaId || null,
-      fileUrl: data.fileUrl || null
-    }
+      amount: data.amount,
+      // Fechas de calendario: a la medianoche UTC, como el resto de la app.
+      startDate: data.startDate ? new Date(`${data.startDate}T00:00:00Z`) : null,
+      endDate: data.endDate ? new Date(`${data.endDate}T00:00:00Z`) : null,
+      status: data.status,
+      areaId: data.areaId,
+    },
   });
 }

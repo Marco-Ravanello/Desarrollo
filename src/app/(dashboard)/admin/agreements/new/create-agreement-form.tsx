@@ -14,9 +14,10 @@ const OCRScanner = dynamic(() => import("@/components/ocr/ocr-scanner").then(mod
   ssr: false,
 });
 
-export function CreateAgreementForm({ areas }: { areas: any[] }) {
+export function CreateAgreementForm({ areas }: { areas: { id: string; name: string }[] }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     title: "",
     number: "",
@@ -49,15 +50,17 @@ export function CreateAgreementForm({ areas }: { areas: any[] }) {
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setLoading(true);
+    setError(null);
     const fd = new FormData(e.currentTarget);
 
     try {
       const result = await createAgreementAction(fd);
       if (result.success) {
-        toast.success("Convenio registrado exitosamente");
-        router.push("/admin/agreements");
+        toast.success("Convenio guardado.");
+        router.push(`/admin/agreements/${result.id}`);
       } else {
-        toast.error(result.error || "Error al registrar convenio");
+        setError(result.error);
+        toast.error(result.error);
       }
     } catch (error) {
       toast.error("No se pudo guardar el convenio. Revisá la conexión y probá de nuevo.");
@@ -78,9 +81,10 @@ export function CreateAgreementForm({ areas }: { areas: any[] }) {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
+          <p className="text-xs text-muted-foreground">Los campos con <span className="font-bold text-rose-600">*</span> son obligatorios.</p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="md:col-span-2 space-y-2">
-              <Label htmlFor="title">Título / objeto del convenio</Label>
+              <Label htmlFor="title">Título u objeto del convenio <Required /></Label>
               <Input
                 id="title"
                 name="title"
@@ -91,31 +95,35 @@ export function CreateAgreementForm({ areas }: { areas: any[] }) {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="number">Número de convenio / registro</Label>
+              <Label htmlFor="number">Número de convenio o registro (opcional)</Label>
               <Input
                 id="number"
                 name="number"
+                aria-describedby="number-hint"
                 placeholder="Ej: CONV-2026-045"
                 value={formData.number}
                 onChange={(e) => setFormData({...formData, number: e.target.value})}
               />
+              <p id="number-hint" className="text-xs text-muted-foreground">Si todavía no tiene número, dejalo vacío y cargalo después.</p>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="parties">Partes intervinientes</Label>
+              <Label htmlFor="parties">Partes: con quién se firma <Required /></Label>
               <Input
                 id="parties"
                 name="parties"
+                required
                 placeholder="Ej: Municipalidad y Asociación Civil"
                 value={formData.parties}
                 onChange={(e) => setFormData({...formData, parties: e.target.value})}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="amount">Monto (Si aplica)</Label>
+              <Label htmlFor="amount">Monto en pesos (opcional)</Label>
               <Input
                 id="amount"
                 name="amount"
                 type="number"
+                min="0"
                 step="0.01"
                 placeholder="0.00"
                 value={formData.amount}
@@ -123,7 +131,7 @@ export function CreateAgreementForm({ areas }: { areas: any[] }) {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="areaId">Área responsable</Label>
+              <Label htmlFor="areaId">Área responsable (opcional)</Label>
               <select
                 id="areaId"
                 name="areaId"
@@ -131,12 +139,12 @@ export function CreateAgreementForm({ areas }: { areas: any[] }) {
                 value={formData.areaId}
                 onChange={(e) => setFormData({...formData, areaId: e.target.value})}
               >
-                <option value="">Seleccionar área...</option>
+                <option value="">Sin área</option>
                 {areas.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
               </select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="startDate">Fecha de inicio</Label>
+              <Label htmlFor="startDate">Fecha de inicio (opcional)</Label>
               <Input
                 id="startDate"
                 name="startDate"
@@ -146,17 +154,47 @@ export function CreateAgreementForm({ areas }: { areas: any[] }) {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="endDate">Fecha de vencimiento</Label>
+              <Label htmlFor="endDate">Fecha de vencimiento (opcional)</Label>
               <Input
                 id="endDate"
                 name="endDate"
                 type="date"
+                min={formData.startDate || undefined}
                 value={formData.endDate}
                 onChange={(e) => setFormData({...formData, endDate: e.target.value})}
               />
             </div>
+            <fieldset className="md:col-span-2 space-y-2">
+              <legend className="text-sm font-medium">Estado</legend>
+              <div className="grid gap-2 sm:grid-cols-2">
+                {[
+                  { value: "VIGENTE", label: "Vigente", hint: "Ya está firmado." },
+                  { value: "EN_REVISION", label: "En revisión", hint: "Todavía se está armando o falta la firma." },
+                ].map((o) => (
+                  <label
+                    key={o.value}
+                    className={`flex cursor-pointer items-start gap-2.5 rounded-xl border p-3 text-sm ${
+                      formData.status === o.value ? "border-primary bg-primary/5" : "border-border/60"
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="status"
+                      value={o.value}
+                      checked={formData.status === o.value}
+                      onChange={() => setFormData({ ...formData, status: o.value })}
+                      className="mt-0.5 h-4 w-4 accent-primary"
+                    />
+                    <span>
+                      <span className="block font-semibold text-foreground">{o.label}</span>
+                      <span className="block text-xs text-muted-foreground">{o.hint}</span>
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </fieldset>
             <div className="md:col-span-2 space-y-2">
-              <Label htmlFor="description">Detalles adicionales</Label>
+              <Label htmlFor="description">Detalles (opcional)</Label>
               <textarea
                 id="description"
                 name="description"
@@ -169,16 +207,30 @@ export function CreateAgreementForm({ areas }: { areas: any[] }) {
             </div>
           </div>
 
+          {error && (
+            <p role="alert" className="rounded-xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm font-medium text-rose-800 dark:text-rose-200">
+              {error}
+            </p>
+          )}
+
           <div className="flex justify-end gap-3 pt-4 border-t">
             <Button type="button" variant="outline" onClick={() => router.back()}>
               Cancelar
             </Button>
             <Button type="submit" disabled={loading}>
-              {loading ? "Registrando..." : "Guardar convenio"}
+              {loading ? "Guardando…" : "Guardar convenio"}
             </Button>
           </div>
         </form>
       </CardContent>
     </Card>
+  );
+}
+
+function Required() {
+  return (
+    <span className="text-rose-600" aria-hidden>
+      *
+    </span>
   );
 }

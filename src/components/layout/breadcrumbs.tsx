@@ -21,7 +21,7 @@ const PATH_DICTIONARY: Record<string, string> = {
   assistant: "Asistente de IA",
   users: "Usuarios",
   settings: "Configuración",
-  budget: "Presupuesto y convenios",
+  budget: "Presupuesto",
   reports: "Reportes",
   providers: "Proveedores",
   "purchase-orders": "Órdenes de compra",
@@ -72,7 +72,7 @@ const ADMIN_MENU_GROUP: Record<string, string> = {
   "purchase-orders": "Compras y presupuesto",
   providers: "Compras y presupuesto",
   budget: "Compras y presupuesto",
-  agreements: "Compras y presupuesto",
+  agreements: "Convenios",
   reports: "Compras y presupuesto",
   vehicles: "Recursos",
   stock: "Recursos",
@@ -131,6 +131,8 @@ export function DashboardBreadcrumbs() {
         active: isLast
       };
     });
+    // "Convenios › Convenios": el grupo del menú y la página se llaman igual; queda solo la página.
+    resolvedItems = resolvedItems.filter((item, i, all) => all[i + 1]?.label !== item.label);
   }
 
   // En celulares, en vez de las migas (que se cortan), un solo "‹ Volver a …" a la sección de arriba.

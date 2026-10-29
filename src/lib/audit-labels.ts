@@ -10,6 +10,7 @@ export type AuditGroup =
   | "expedientes"
   | "personas"
   | "compras"
+  | "convenios"
   | "vehiculos"
   | "emergencia"
   | "usuarios"
@@ -21,6 +22,7 @@ export const AUDIT_GROUPS: { id: AuditGroup; label: string }[] = [
   { id: "expedientes", label: "Expedientes" },
   { id: "personas", label: "Personas y padrón" },
   { id: "compras", label: "Compras, proveedores y stock" },
+  { id: "convenios", label: "Convenios" },
   { id: "vehiculos", label: "Vehículos" },
   { id: "emergencia", label: "Emergencia climática" },
   { id: "usuarios", label: "Usuarios y contraseñas" },
@@ -127,7 +129,7 @@ const ENTITY_ACTIONS: Record<string, { CREATE?: string; UPDATE?: string; DELETE?
   Case: { CREATE: "Abrió un expediente", UPDATE: "Editó un expediente", DELETE: "Borró un expediente", group: "expedientes" },
   PurchaseOrder: { CREATE: "Cargó una orden de compra", UPDATE: "Editó una orden de compra", group: "compras" },
   SupplyItem: { CREATE: "Cargó un insumo", UPDATE: "Cambió el stock de un insumo", DELETE: "Borró un insumo", group: "compras" },
-  Agreement: { CREATE: "Cargó un convenio", UPDATE: "Editó un convenio", group: "compras" },
+  Agreement: { CREATE: "Cargó un convenio", UPDATE: "Editó un convenio", group: "convenios" },
   Provider: { CREATE: "Dio de alta un proveedor", UPDATE: "Editó un proveedor", DELETE: "Borró un proveedor", group: "compras" },
   Vehicle: { CREATE: "Dio de alta un vehículo", UPDATE: "Editó un vehículo", group: "vehiculos" },
   User: { CREATE: "Creó un usuario", UPDATE: "Editó un usuario", group: "usuarios" },

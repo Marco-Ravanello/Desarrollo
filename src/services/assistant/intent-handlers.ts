@@ -8,6 +8,8 @@ import { AIResponse } from "./types";
 import { callOllama } from "./ollama-client";
 import { readUploadedFile, storedNameFromUrl } from "@/lib/file-storage";
 import { extractTextFromPDFBuffer } from "@/services/pdf-rag";
+import { agreementState } from "@/lib/convenios";
+import { todayInArgentina } from "@/lib/follow-up-dates";
 import { TZ_AR, formatFecha, formatFechaCalendario, formatFechaHora, formatFechaLarga, formatHora } from "@/lib/fechas";
 
 // Pasa a minúsculas y saca los acentos (conserva la ñ) para que "cuántas" o "padrón"
@@ -718,9 +720,12 @@ export async function handleAgreementQuery(query: string): Promise<AIResponse> {
   ]);
 
   const total = agreements.length;
-  const active = agreements.filter(a => a.status === "VIGENTE").length;
-  const review = agreements.filter(a => a.status === "EN_REVISION").length;
-  const expired = agreements.filter(a => a.status === "VENCIDO").length;
+  // Un convenio vigente cuya fecha de fin ya pasó cuenta como vencido.
+  const today = todayInArgentina();
+  const states = agreements.map((a) => agreementState(a, today).status);
+  const active = states.filter((st) => st === "VIGENTE").length;
+  const review = states.filter((st) => st === "EN_REVISION").length;
+  const expired = states.filter((st) => st === "VENCIDO").length;
 
   const totalAmount = agreements.reduce((sum, curr) => sum + Number(curr.amount || 0), 0);
 
