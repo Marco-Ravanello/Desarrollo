@@ -207,3 +207,52 @@ export function describeAgreementChanges(before: Comparable, after: Comparable):
     .filter((k) => (before[k] ?? null) !== (after[k] ?? null))
     .map((k) => `${LABELS[k]}: ${show(k, before[k])} → ${show(k, after[k])}`);
 }
+
+type ConvenioDeLista = { areaId: string | null; status: string; endDate?: Date | string | null; amount?: unknown; title: string };
+
+export type ConveniosDelArea<T> = {
+  /** null: los convenios sin área. */
+  id: string | null;
+  name: string;
+  convenios: (T & { state: AgreementState })[];
+  vigentes: number;
+  porVencer: number;
+  vencidos: number;
+  /** Suma del monto de los vigentes. */
+  montoVigente: number;
+};
+
+// Primero lo que está en curso (y lo que necesita atención), al final lo terminado.
+const ORDEN: Record<string, number> = { VENCIDO: 0, VIGENTE: 1, EN_REVISION: 2, FINALIZADO: 3, RESCINDIDO: 4 };
+
+/** Los convenios separados por área, como el presupuesto: todas las áreas, y "Sin área" al final si hay alguno. */
+export function agreementsByArea<T extends ConvenioDeLista>(
+  areas: { id: string; name: string }[],
+  agreements: T[],
+  today: string
+): ConveniosDelArea<T>[] {
+  const grupos: ConveniosDelArea<T>[] = [...areas.map((a) => ({ id: a.id, name: a.name })), { id: null, name: "Sin área" }].map((a) => ({
+    ...a,
+    convenios: [],
+    vigentes: 0,
+    porVencer: 0,
+    vencidos: 0,
+    montoVigente: 0,
+  }));
+  const porId = new Map(grupos.map((g) => [g.id, g]));
+  for (const a of agreements) {
+    const g = porId.get(a.areaId && porId.has(a.areaId) ? a.areaId : null)!;
+    const state = agreementState(a, today);
+    g.convenios.push({ ...a, state });
+    if (state.status === "VIGENTE") {
+      g.vigentes += 1;
+      g.montoVigente += Number(a.amount ?? 0) || 0;
+      if (state.soon) g.porVencer += 1;
+    }
+    if (state.status === "VENCIDO") g.vencidos += 1;
+  }
+  for (const g of grupos) {
+    g.convenios.sort((x, y) => (ORDEN[x.state.status] ?? 9) - (ORDEN[y.state.status] ?? 9) || x.title.localeCompare(y.title, "es"));
+  }
+  return grupos.filter((g) => g.id !== null || g.convenios.length > 0);
+}

@@ -6,8 +6,11 @@ import { Landmark } from "lucide-react";
 
 export const metadata = { title: "Nuevo convenio" };
 
-export default async function NewAgreementPage() {
+export default async function NewAgreementPage({ searchParams }: { searchParams: Promise<{ areaId?: string }> }) {
   const areas = (await getAreas()).map((a) => ({ id: a.id, name: a.name }));
+  // Desde la tarjeta de un área en Convenios, el área ya viene elegida.
+  const { areaId } = await searchParams;
+  const defaultAreaId = areas.some((a) => a.id === areaId) ? areaId! : "";
 
   return (
     <div className="space-y-6">
@@ -18,7 +21,7 @@ export default async function NewAgreementPage() {
           icon={Landmark}
           className="mb-8"
         />
-        <CreateAgreementForm areas={areas} />
+        <CreateAgreementForm areas={areas} defaultAreaId={defaultAreaId} />
       </div>
     </div>
   );

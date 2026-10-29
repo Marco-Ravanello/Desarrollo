@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  agreementState, canCreateAgreements, describeAgreementChanges, isAgreementClosed, parseAgreementInput, parseStatusChange,
+  agreementState, agreementsByArea, canCreateAgreements, describeAgreementChanges, isAgreementClosed, parseAgreementInput, parseStatusChange,
 } from "@/lib/convenios";
 
 const day = (iso: string) => new Date(`${iso}T00:00:00Z`);
@@ -96,5 +96,39 @@ describe("editar y cambiar el estado", () => {
       `Monto: $ ${(1000).toLocaleString("es-AR")} → $ ${(2000).toLocaleString("es-AR")}`,
       "Vencimiento: vacío → 31/12/2026",
     ]);
+  });
+});
+
+describe("convenios por área", () => {
+  const areas = [
+    { id: "a", name: "Niñez" },
+    { id: "b", name: "Hábitat" },
+  ];
+  const c = (title: string, areaId: string | null, status: string, endDate: string | null = null, amount: number | null = null) => ({
+    title, areaId, status, endDate: endDate ? new Date(`${endDate}T00:00:00Z`) : null, amount,
+  });
+
+  it("cuenta vigentes, por vencer, vencidos y el monto vigente de cada área", () => {
+    const grupos = agreementsByArea(
+      areas,
+      [
+        c("Cuidadoras", "a", "VIGENTE", "2026-11-20", 1000),
+        c("Comedor", "a", "VIGENTE", "2027-06-30", 500),
+        c("Viejo", "a", "VIGENTE", "2026-09-30", 300),
+        c("Terminado", "a", "FINALIZADO", "2026-01-31", 9000),
+      ],
+      "2026-10-29"
+    );
+    expect(grupos.map((g) => g.name)).toEqual(["Niñez", "Hábitat"]);
+    const [ninez, habitat] = grupos;
+    expect(ninez).toMatchObject({ vigentes: 2, porVencer: 1, vencidos: 1, montoVigente: 1500 });
+    expect(ninez.convenios.map((x) => x.title)).toEqual(["Viejo", "Comedor", "Cuidadoras", "Terminado"]);
+    expect(habitat.convenios).toEqual([]);
+  });
+
+  it("los que no tienen área (o tienen una que ya no está) van en Sin área, al final", () => {
+    const grupos = agreementsByArea(areas, [c("Suelto", null, "EN_REVISION"), c("De área borrada", "zz", "VIGENTE")], "2026-10-29");
+    expect(grupos.map((g) => g.name)).toEqual(["Niñez", "Hábitat", "Sin área"]);
+    expect(grupos[2].convenios.map((x) => x.title)).toEqual(["De área borrada", "Suelto"]);
   });
 });
