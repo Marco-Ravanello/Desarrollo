@@ -7,6 +7,7 @@ import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
 import { actionErrorMessage } from "@/lib/action-error";
 import { canCreateAgreements, parseAgreementInput } from "@/lib/convenios";
+import { changeAgreementStatus, updateAgreement } from "@/services/convenio-ficha";
 
 type Result = { success: true; id: string } | { success: false; error: string };
 
@@ -37,4 +38,27 @@ export async function createAgreementAction(formData: FormData): Promise<Result>
     }
     return { success: false, error: actionErrorMessage(error, "No se pudo guardar el convenio") };
   }
+}
+
+function refreshAgreement(id: string) {
+  revalidatePath("/admin/agreements");
+  revalidatePath(`/admin/agreements/${id}`);
+  revalidatePath(`/convenios/${id}`);
+  revalidatePath("/dashboard");
+}
+
+export async function updateAgreementAction(id: string, data: Record<string, unknown>) {
+  const session = await auth();
+  if (!session?.user?.id) return { success: false as const, error: "Tu sesión expiró. Volvé a iniciar sesión." };
+  const res = await updateAgreement(session.user, id, data);
+  if (res.success) refreshAgreement(id);
+  return res;
+}
+
+export async function changeAgreementStatusAction(id: string, data: Record<string, unknown>) {
+  const session = await auth();
+  if (!session?.user?.id) return { success: false as const, error: "Tu sesión expiró. Volvé a iniciar sesión." };
+  const res = await changeAgreementStatus(session.user, id, data);
+  if (res.success) refreshAgreement(id);
+  return res;
 }

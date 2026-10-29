@@ -114,6 +114,7 @@ model Case {
   followUps     Task[]
   documents     Document[]
   stormVictims  StormVictimRecord[]
+  convenioNnya  ConvenioNnya[]
   createdAt     DateTime            @default(now())
   updatedAt     DateTime            @updatedAt
 
@@ -276,31 +277,33 @@ enum OrderStatus {
 }
 
 model Agreement {
-  id             String              @id @default(cuid())
-  number         String?             @unique
-  title          String
-  description    String?
-  parties        String? // Partes intervinientes
-  amount         Decimal?            @default(0)
-  startDate      DateTime?
-  endDate        DateTime?
-  status         AgreementStatus     @default(VIGENTE)
-  areaId         String?
-  area           Area?               @relation(fields: [areaId], references: [id])
-  fileUrl        String?
-  createdAt      DateTime            @default(now())
-  updatedAt      DateTime            @updatedAt
+  id               String                   @id @default(cuid())
+  number           String?                  @unique
+  title            String
+  description      String?
+  parties          String? // Partes intervinientes
+  amount           Decimal?                 @default(0)
+  startDate        DateTime?
+  endDate          DateTime?
+  status           AgreementStatus          @default(VIGENTE)
+  areaId           String?
+  area             Area?                    @relation(fields: [areaId], references: [id])
+  fileUrl          String?
+  createdAt        DateTime                 @default(now())
+  updatedAt        DateTime                 @updatedAt
   /// Cómo se controla el gasto: null (no se controla) o POR_HORA (horas cargadas por día × valor hora, contra un tope por período).
-  costMode       String?
+  costMode         String?
   /// Tope de gasto de cada período, en pesos.
-  monthlyCap     Decimal?            @db.Decimal(14, 2)
+  monthlyCap       Decimal?                 @db.Decimal(14, 2)
   /// Día del mes en que empieza cada período (1 a 28); termina el día anterior del mes siguiente.
-  periodStartDay Int?
+  periodStartDay   Int?
   /// Porcentajes del tope en que se avisa: precaución, alerta y crítico.
-  alertPercents  Int[]               @default([70, 85, 95])
-  hourlyRates    ConvenioValorHora[]
-  cuidadoras     ConvenioCuidadora[]
-  horas          ConvenioHora[]
+  alertPercents    Int[]                    @default([70, 85, 95])
+  hourlyRates      ConvenioValorHora[]
+  cuidadoras       ConvenioCuidadora[]
+  horas            ConvenioHora[]
+  periodosCerrados ConvenioPeriodoCerrado[]
+  nnya             ConvenioNnya[]
 }
 
 /// Valor de la hora de un convenio por horas, desde un día. Cada día usa el último valor que rige.
@@ -361,6 +364,45 @@ model ConvenioHora {
   @@index([cuidadoraId])
   @@index([dni])
   @@map("convenio_horas")
+}
+
+/// Un período de un convenio por horas ya cerrado: sus horas y el valor hora quedan fijos, con los totales al cerrar.
+model ConvenioPeriodoCerrado {
+  id           String    @id @default(cuid())
+  agreementId  String
+  agreement    Agreement @relation(fields: [agreementId], references: [id], onDelete: Cascade)
+  /// Primer y último día del período (fechas de calendario, a medianoche UTC).
+  desde        DateTime
+  hasta        DateTime
+  horas        Decimal   @db.Decimal(10, 2)
+  gastado      Decimal   @db.Decimal(14, 2)
+  tope         Decimal?  @db.Decimal(14, 2)
+  cerradoPorId String?
+  cerradoAt    DateTime  @default(now())
+
+  @@unique([agreementId, desde])
+  @@map("convenio_periodos_cerrados")
+}
+
+/// Cada NNyA acompañado en un convenio por horas: desde cuándo, si egresó y con qué expediente se sigue.
+model ConvenioNnya {
+  id           String    @id @default(cuid())
+  agreementId  String
+  agreement    Agreement @relation(fields: [agreementId], references: [id], onDelete: Cascade)
+  dni          String
+  nombre       String?
+  /// Primer día con horas (fecha de calendario, a medianoche UTC).
+  ingreso      DateTime
+  egreso       DateTime?
+  motivoEgreso String?
+  caseId       String?
+  case         Case?     @relation(fields: [caseId], references: [id], onDelete: SetNull)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@unique([agreementId, dni])
+  @@index([caseId])
+  @@map("convenio_nnya")
 }
 
 enum AgreementStatus {

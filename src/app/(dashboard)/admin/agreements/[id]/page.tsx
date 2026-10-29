@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { ChevronLeft, Calendar, Building2, FileText, Info, Landmark, Wallet, Clock, Gauge } from "lucide-react";
+import { ChevronLeft, Calendar, Building2, FileText, Info, Landmark, Wallet, Clock, Gauge, History } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
 import { StatCard } from "@/components/ui/stat-card";
 import { EmptyMessage } from "@/components/ui/empty-message";
@@ -18,6 +18,9 @@ import { auth } from "@/auth";
 import { NIVELES, canConfigureCost, canViewCostDetail, periodoTexto } from "@/lib/convenio-gasto";
 import { formatPercent, formatPesos } from "@/lib/formato";
 import { getConvenioControl, getResumenPeriodo, periodoPedido } from "@/services/convenio-gasto";
+import { getAgreementHistory } from "@/services/convenio-ficha";
+import { ChangeAgreementStatusButton, EditAgreementButton } from "@/components/agreements/agreement-edit";
+import prisma from "@/lib/prisma";
 
 export const generateMetadata = agreementTitle;
 
@@ -39,6 +42,11 @@ export default async function AgreementDetailPage({ params }: { params: Promise<
   const resumen = control && porHora ? await getResumenPeriodo(control, periodoPedido(control, null, today), today) : null;
   const canOpenControl = control ? canViewCostDetail(user, control) : false;
   const canConfig = canConfigureCost((user as { role?: string }).role);
+  const [historia, areas] = await Promise.all([
+    getAgreementHistory(agreement.id),
+    canConfig ? prisma.area.findMany({ select: { id: true, name: true }, orderBy: { name: "asc" } }) : Promise.resolve([]),
+  ]);
+  const isoDay = (d: Date | null) => (d ? d.toISOString().slice(0, 10) : null);
 
   return (
     <div className="space-y-6">
@@ -49,6 +57,26 @@ export default async function AgreementDetailPage({ params }: { params: Promise<
         actions={
           <>
             <AgreementStatusBadge state={state} className="px-4 py-1 text-sm" />
+            {canConfig && (
+              <>
+                <EditAgreementButton
+                  areas={areas}
+                  agreement={{
+                    id: agreement.id,
+                    title: agreement.title,
+                    number: agreement.number,
+                    parties: agreement.parties,
+                    description: agreement.description,
+                    amount: agreement.amount !== null ? Number(agreement.amount) : null,
+                    startDate: isoDay(agreement.startDate),
+                    endDate: isoDay(agreement.endDate),
+                    areaId: agreement.areaId,
+                    status: agreement.status,
+                  }}
+                />
+                <ChangeAgreementStatusButton id={agreement.id} status={agreement.status} />
+              </>
+            )}
             <Button variant="outline" size="icon" asChild>
               <Link href="/admin/agreements" aria-label="Volver a convenios">
                 <ChevronLeft className="h-4 w-4" />
@@ -59,7 +87,8 @@ export default async function AgreementDetailPage({ params }: { params: Promise<
       />
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="md:col-span-2">
+        <div className="space-y-6 md:col-span-2">
+        <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Info className="h-5 w-5 text-emerald-500" />
@@ -108,6 +137,31 @@ export default async function AgreementDetailPage({ params }: { params: Promise<
             </div>
           </CardContent>
         </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <History className="h-5 w-5 text-primary" />
+              Historia
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {historia.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Todavía no hay cambios anotados.</p>
+            ) : (
+              <ol className="space-y-3">
+                {historia.map((h) => (
+                  <li key={h.id} className="border-l-2 border-border pl-3">
+                    <p className="text-sm font-semibold text-foreground">{h.que}</p>
+                    {h.detalle && <p className="text-sm text-foreground/80 break-words">{h.detalle}</p>}
+                    <p className="text-xs text-muted-foreground">{h.quien} · {formatFechaHora(h.fecha)}</p>
+                  </li>
+                ))}
+              </ol>
+            )}
+          </CardContent>
+        </Card>
+        </div>
 
         <div className="space-y-6">
           {resumen && (

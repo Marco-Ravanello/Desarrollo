@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  canLoadHours, canViewCostDetail, listaDeDias, moverPeriodo, nivelDe, parseConfig, parseHoras, parseImporte, periodoDe, periodoTexto,
+  canClosePeriod, canLoadHours, canReopenPeriod, canViewCostDetail, listaDeDias, parseEgreso, moverPeriodo, nivelDe, parseConfig, parseHoras, parseImporte, periodoDe, periodoTexto,
   resumirPeriodo, valorHoraDel,
 } from "@/lib/convenio-gasto";
 
@@ -140,5 +140,42 @@ describe("quién ve y quién carga", () => {
     expect(canViewCostDetail({ role: "AUDITOR" }, convenio)).toBe(true);
     expect(canViewCostDetail({ role: "DIRECTOR_AREA", areaId: "otra" }, convenio)).toBe(false);
     expect(canViewCostDetail({ role: "RELEVADOR_EMERGENCIA", areaId: "ninez" }, convenio)).toBe(false);
+  });
+});
+
+describe("cierre del período y NNyA", () => {
+  it("cierran la conducción y la dirección del área; reabre solo la conducción", () => {
+    const convenio = { areaId: "ninez" };
+    expect(canClosePeriod({ role: "ADMIN_GENERAL" }, convenio)).toBe(true);
+    expect(canClosePeriod({ role: "DIRECTOR_AREA", areaId: "ninez" }, convenio)).toBe(true);
+    expect(canClosePeriod({ role: "DIRECTOR_AREA", areaId: "otra" }, convenio)).toBe(false);
+    expect(canClosePeriod({ role: "OPERATIVO", areaId: "ninez" }, convenio)).toBe(false);
+    expect(canReopenPeriod("SUPERADMIN")).toBe(true);
+    expect(canReopenPeriod("DIRECTOR_AREA")).toBe(false);
+  });
+
+  it("la proyección no cuenta a los NNyA que egresaron", () => {
+    const filas = [
+      { fecha: "2026-10-21", cuidadoraId: "c1", cuidadora: "Ana", dni: "1", nombre: "A", horas: 10 },
+      { fecha: "2026-10-21", cuidadoraId: "c1", cuidadora: "Ana", dni: "2", nombre: "B", horas: 6 },
+    ];
+    const base = { periodo: { desde: "2026-10-20", hasta: "2026-11-19" }, filas, valores: [{ desde: "2026-01-01", valor: 100 }], tope: 100000, hoy: "2026-10-21" };
+    const todos = resumirPeriodo(base);
+    expect(todos.horasBase).toBe(16);
+    expect(todos.proyeccion).toBe(1600 + 16 * 100 * 29);
+    const sinB = resumirPeriodo({ ...base, egresados: ["2"] });
+    expect(sinB.horasBase).toBe(10);
+    expect(sinB.proyeccion).toBe(1600 + 10 * 100 * 29);
+    expect(sinB.gastado).toBe(1600);
+  });
+
+  it("el egreso va entre el ingreso y hoy", () => {
+    expect(parseEgreso({ fecha: "2026-10-25", motivo: " Alta " }, "2026-10-20", "2026-10-29")).toEqual({
+      ok: true,
+      data: { fecha: "2026-10-25", motivo: "Alta" },
+    });
+    expect(parseEgreso({ fecha: "2026-10-19" }, "2026-10-20", "2026-10-29").ok).toBe(false);
+    expect(parseEgreso({ fecha: "2026-10-30" }, "2026-10-20", "2026-10-29").ok).toBe(false);
+    expect(parseEgreso({ fecha: "" }, "2026-10-20", "2026-10-29").ok).toBe(false);
   });
 });
