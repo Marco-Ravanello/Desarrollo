@@ -79,6 +79,16 @@ const ACTIONS: Record<string, { label: string; group: AuditGroup }> = {
   PADRON_DUPLICADO_DESCARTADO: { label: "Marcó que no son la misma persona", group: "personas" },
   PADRON_ALTA_EMERGENCIA: { label: "Sumó al padrón a una persona de una ficha de tormenta", group: "emergencia" },
   PADRON_PROGRAMA_EMERGENCIA: { label: "Anotó en Emergencia climática a una persona del padrón", group: "emergencia" },
+  // Control del gasto de los convenios por horas
+  CONVENIO_CONTROL: { label: "Configuró el control del gasto de un convenio", group: "convenios" },
+  CONVENIO_VALOR_HORA: { label: "Cargó un valor hora de un convenio", group: "convenios" },
+  CONVENIO_VALOR_HORA_BAJA: { label: "Borró un valor hora de un convenio", group: "convenios" },
+  CONVENIO_CUIDADORA: { label: "Cambió la lista de cuidadoras de un convenio", group: "convenios" },
+  CONVENIO_CUIDADORA_BAJA: { label: "Borró una cuidadora de un convenio", group: "convenios" },
+  CONVENIO_HORAS_ALTA: { label: "Cargó horas de un convenio", group: "convenios" },
+  CONVENIO_HORAS_CAMBIO: { label: "Corrigió horas de un convenio", group: "convenios" },
+  CONVENIO_HORAS_BAJA: { label: "Borró horas de un convenio", group: "convenios" },
+  CONVENIO_HORAS_REPETIR: { label: "Repitió las horas del día anterior de un convenio", group: "convenios" },
   // Compras, proveedores y stock
   UPDATE_FULFILLMENT: { label: "Registró una entrega de una orden", group: "compras" },
   CREATE_PROVIDER: { label: "Dio de alta un proveedor", group: "compras" },
@@ -230,6 +240,12 @@ const DETAIL_KEYS: Record<string, string> = {
   title: "Título",
   newStock: "Stock nuevo",
   relationship: "Vínculo",
+  fecha: "Día",
+  cuidadora: "Cuidadora",
+  horas: "Horas",
+  valor: "Valor hora",
+  desde: "Desde",
+  filas: "Filas",
 };
 
 /**
@@ -272,6 +288,8 @@ function dniFrom(entity: string, entityId: string, details: string | null | unde
 export function auditLink(log: { action: string; entity: string; entityId: string; details?: string | null }): string | null {
   const { action, entity, entityId } = log;
   if (LOGIN_ACTIONS.includes(action) || action === "PASSWORD_CHANGED") return null;
+  // El control del gasto de un convenio (aunque el detalle tenga el DNI de un NNyA).
+  if (action.startsWith("CONVENIO_") && entityId) return `/convenios/${entityId}`;
   const dni = dniFrom(entity, entityId, log.details);
   if (dni) return `/people/${dni}`;
   if (!entityId || entityId === "ALL") return null;

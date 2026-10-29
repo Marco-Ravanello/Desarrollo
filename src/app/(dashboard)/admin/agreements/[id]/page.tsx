@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { ChevronLeft, Calendar, Building2, User, FileText, Info, Landmark, Wallet } from "lucide-react";
+import { ChevronLeft, Calendar, Building2, FileText, Info, Landmark, Wallet, Clock, Gauge } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
 import { StatCard } from "@/components/ui/stat-card";
 import { EmptyMessage } from "@/components/ui/empty-message";
@@ -14,6 +14,10 @@ import { todayInArgentina } from "@/lib/follow-up-dates";
 import { agreementState } from "@/lib/convenios";
 import { AgreementEndLabel, AgreementStatusBadge } from "@/components/agreements/agreement-status";
 import { agreementTitle } from "@/lib/page-titles";
+import { auth } from "@/auth";
+import { NIVELES, canConfigureCost, canViewCostDetail, periodoTexto } from "@/lib/convenio-gasto";
+import { formatPercent, formatPesos } from "@/lib/formato";
+import { getConvenioControl, getResumenPeriodo, periodoPedido } from "@/services/convenio-gasto";
 
 export const generateMetadata = agreementTitle;
 
@@ -24,8 +28,17 @@ export default async function AgreementDetailPage({ params }: { params: Promise<
   if (!agreement) {
     notFound();
   }
-  const state = agreementState(agreement, todayInArgentina());
+  const today = todayInArgentina();
+  const state = agreementState(agreement, today);
   const amount = agreement.amount !== null ? Number(agreement.amount) : 0;
+
+  const session = await auth();
+  const user = session?.user ?? {};
+  const control = await getConvenioControl(agreement.id);
+  const porHora = control?.costMode === "POR_HORA";
+  const resumen = control && porHora ? await getResumenPeriodo(control, periodoPedido(control, null, today), today) : null;
+  const canOpenControl = control ? canViewCostDetail(user, control) : false;
+  const canConfig = canConfigureCost((user as { role?: string }).role);
 
   return (
     <div className="space-y-6">
@@ -97,6 +110,45 @@ export default async function AgreementDetailPage({ params }: { params: Promise<
         </Card>
 
         <div className="space-y-6">
+          {resumen && (
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-sm font-bold">
+                  <Gauge className="h-4 w-4 text-primary" /> Control del gasto
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <p className="text-xs text-muted-foreground">Período del {periodoTexto(resumen.periodo)}</p>
+                <p className="text-2xl font-black tabular-nums text-foreground">{formatPesos(resumen.gastado)}</p>
+                <p className="text-sm text-muted-foreground">
+                  de {formatPesos(resumen.tope)}
+                  {resumen.porcentaje !== null && <> · {formatPercent(resumen.porcentaje)}</>}
+                  {resumen.nivel && <> · <span className="font-semibold">{NIVELES[resumen.nivel].label}</span></>}
+                </p>
+                {resumen.excedente > 0 && (
+                  <p className="text-sm font-semibold text-rose-700 dark:text-rose-300">Si sigue igual, se pasa del tope en {formatPesos(resumen.excedente)}.</p>
+                )}
+                {canOpenControl ? (
+                  <Button className="w-full" asChild>
+                    <Link href={`/convenios/${agreement.id}`}>Abrir el control</Link>
+                  </Button>
+                ) : (
+                  <p className="text-xs text-muted-foreground">El detalle lo ven la conducción, Auditoría y el área del convenio.</p>
+                )}
+              </CardContent>
+            </Card>
+          )}
+          {!porHora && canConfig && (
+            <Card>
+              <CardContent className="space-y-3 pt-6">
+                <p className="flex items-center gap-2 text-sm font-bold"><Clock className="h-4 w-4 text-primary" /> ¿Se paga por hora?</p>
+                <p className="text-xs text-muted-foreground">Cargando las horas de cada día, la app calcula lo gastado, lo que queda del tope y si se va a pasar.</p>
+                <Button variant="outline" className="w-full" asChild>
+                  <Link href={`/convenios/${agreement.id}`}>Configurar el control del gasto</Link>
+                </Button>
+              </CardContent>
+            </Card>
+          )}
           <StatCard
             label="Monto del convenio"
             value={amount > 0 ? `$${amount.toLocaleString("es-AR")}` : "Sin monto"}
