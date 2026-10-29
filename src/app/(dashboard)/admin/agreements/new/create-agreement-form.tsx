@@ -14,7 +14,7 @@ const OCRScanner = dynamic(() => import("@/components/ocr/ocr-scanner").then(mod
   ssr: false,
 });
 
-export function CreateAgreementForm({ areas }: { areas: { id: string; name: string }[] }) {
+export function CreateAgreementForm({ areas, defaultAreaId = "" }: { areas: { id: string; name: string }[]; defaultAreaId?: string }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -26,7 +26,7 @@ export function CreateAgreementForm({ areas }: { areas: { id: string; name: stri
     startDate: "",
     endDate: "",
     description: "",
-    areaId: "",
+    areaId: defaultAreaId,
     status: "VIGENTE"
   });
 
