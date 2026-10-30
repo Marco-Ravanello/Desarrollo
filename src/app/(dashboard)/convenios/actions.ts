@@ -7,7 +7,9 @@ import {
   guardarValorHora, repetirDiaAnterior,
 } from "@/services/convenio-gasto";
 import { cerrarPeriodo, reabrirPeriodo } from "@/services/convenio-cierre";
-import { registrarEgreso, vincularExpediente, volvioAIngresar } from "@/services/convenio-nnya";
+import {
+  buscarEnRegistro, guardarFichaNnya, registrarEgreso, sacarNnya, sumarNnya, vincularExpediente, volvioAIngresar,
+} from "@/services/convenio-nnya";
 
 const SESSION_EXPIRED = { success: false as const, error: "Tu sesión expiró. Volvé a iniciar sesión." };
 
@@ -130,6 +132,39 @@ export async function vincularExpedienteAction(agreementId: string, nnyaId: stri
   const user = await sessionUser();
   if (!user) return SESSION_EXPIRED;
   const res = await vincularExpediente(user, agreementId, nnyaId, caseId);
+  if (res.success) refresh(agreementId);
+  return res;
+}
+
+export async function buscarEnRegistroAction(agreementId: string, q: string) {
+  const user = await sessionUser();
+  if (!user) return [];
+  return buscarEnRegistro(user, agreementId, q);
+}
+
+export async function sumarNnyaAction(agreementId: string, data: Record<string, unknown>) {
+  const user = await sessionUser();
+  if (!user) return SESSION_EXPIRED;
+  const res = await sumarNnya(user, agreementId, data);
+  if (res.success) {
+    refresh(agreementId);
+    revalidatePath("/people");
+  }
+  return res;
+}
+
+export async function guardarFichaNnyaAction(agreementId: string, nnyaId: string, data: Record<string, unknown>) {
+  const user = await sessionUser();
+  if (!user) return SESSION_EXPIRED;
+  const res = await guardarFichaNnya(user, agreementId, nnyaId, data);
+  if (res.success) refresh(agreementId);
+  return res;
+}
+
+export async function sacarNnyaAction(agreementId: string, nnyaId: string) {
+  const user = await sessionUser();
+  if (!user) return SESSION_EXPIRED;
+  const res = await sacarNnya(user, agreementId, nnyaId);
   if (res.success) refresh(agreementId);
   return res;
 }

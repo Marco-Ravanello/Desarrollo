@@ -19,7 +19,7 @@ import {
   Wallet,
 } from "lucide-react";
 import { auth } from "@/auth";
-import { canAccessPath, hasPermission, PERMISSIONS } from "@/lib/permissions";
+import { canAccessPath, canEditSocialRecords, hasPermission, PERMISSIONS } from "@/lib/permissions";
 import { AGREEMENT_STATUS_LABELS, isAgreementClosed } from "@/lib/convenios";
 import { todayInArgentina } from "@/lib/follow-up-dates";
 import { formatFechaHora, formatFechaLarga } from "@/lib/fechas";
@@ -48,13 +48,14 @@ import {
   getConvenioControl,
   getCuidadoras,
   getDia,
-  getNnyaRecientes,
+  getNnyaParaCargar,
   getResumenPeriodo,
   getValoresHora,
   periodoPedido,
 } from "@/services/convenio-gasto";
 import { getPeriodosCerrados, type PeriodoCerrado } from "@/services/convenio-cierre";
 import { getNnyaDelConvenio } from "@/services/convenio-nnya";
+import { getAddressOptions } from "@/services/person-data";
 import { PageHeader } from "@/components/layout/page-header";
 import { PageBreadcrumbs } from "@/components/layout/breadcrumbs-context";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -83,6 +84,7 @@ import {
   ReabrirPeriodoButton,
   ReingresoButton,
 } from "@/components/convenios/cierre-nnya-controls";
+import { FichaNnyaButton, SacarNnyaButton, SumarNnyaDialog } from "@/components/convenios/nnya-ficha-controls";
 
 type Params = {
   params: Promise<{ id: string }>;
@@ -269,9 +271,10 @@ export default async function ControlGastoPage({ params, searchParams }: Params)
           today={today}
           canLoad={canLoad && !convenioTerminado}
           canConfig={canConfig}
+          puedeCargarPersona={canEditSocialRecords(user.role)}
         />
       )}
-      {ver === "nnya" && <Nnyas convenio={convenio} today={today} canLoad={canLoad} user={user} />}
+      {ver === "nnya" && <Nnyas convenio={convenio} today={today} canLoad={canLoad} canSumar={canLoad && !convenioTerminado} user={user} />}
       {ver === "cuidadoras" && (
         <Cuidadoras convenio={convenio} periodo={periodo} startDay={startDay} today={today} canLoad={canLoad && !convenioTerminado} />
       )}
@@ -570,104 +573,172 @@ function CierreDelPeriodo({
 // NNyA
 // ---------------------------------------------------------------------------
 
-async function Nnyas({ convenio, today, canLoad, user }: { convenio: Convenio; today: string; canLoad: boolean; user: SessionUser }) {
-  const nnyas = await getNnyaDelConvenio(user, convenio.id);
+/** Un dato de la ficha; vacío se ve como "Sin cargar". */
+function Dato({ label, children, className }: { label: string; children: React.ReactNode; className?: string }) {
+  const vacio = children === null || children === undefined || children === "";
+  return (
+    <div className={cn("min-w-0", className)}>
+      <dt className="text-xs font-semibold text-muted-foreground">{label}</dt>
+      <dd className={cn("whitespace-pre-line break-words text-sm", vacio && "text-muted-foreground")}>{vacio ? "Sin cargar" : children}</dd>
+    </div>
+  );
+}
+
+async function Nnyas({
+  convenio,
+  today,
+  canLoad,
+  canSumar,
+  user,
+}: {
+  convenio: Convenio;
+  today: string;
+  canLoad: boolean;
+  canSumar: boolean;
+  user: SessionUser;
+}) {
+  const [nnyas, addressOptions] = await Promise.all([getNnyaDelConvenio(user, convenio.id), canSumar ? getAddressOptions() : null]);
   const activos = nnyas.filter((n) => !n.egreso).length;
   return (
     <Card className="shadow-none">
-      <CardHeader>
-        <CardTitle className="text-base">Niños, niñas y adolescentes del convenio</CardTitle>
-        <CardDescription>
-          {nnyas.length === 0
-            ? "Aparecen solos al cargar sus primeras horas."
-            : `${plural(activos, "activo")} y ${plural(nnyas.length - activos, "con egreso", "con egreso")}. El ingreso es su primer día con horas. Los que egresaron no cuentan para la proyección.`}
-        </CardDescription>
+      <CardHeader className="gap-3 sm:flex-row sm:items-start sm:justify-between sm:space-y-0">
+        <div>
+          <CardTitle className="text-base">Niños, niñas y adolescentes del convenio</CardTitle>
+          <CardDescription>
+            {nnyas.length === 0
+              ? "Sumalos desde el Registro Único, o aparecen solos al cargarles horas."
+              : `${plural(activos, "activo")} y ${plural(nnyas.length - activos, "con egreso", "con egreso")}. El ingreso es su primer día con horas. Los que egresaron no cuentan para la proyección.`}
+          </CardDescription>
+        </div>
+        {canSumar && addressOptions && (
+          <SumarNnyaDialog agreementId={convenio.id} addressOptions={addressOptions} puedeCargarPersona={canEditSocialRecords(user.role)} />
+        )}
       </CardHeader>
       {nnyas.length > 0 && (
         <CardContent>
-          <ul className="divide-y divide-border/50 rounded-2xl border border-border/60">
+          <ul className="space-y-3">
             {nnyas.map((n) => {
               const nombre = n.nombre || `DNI ${n.dni}`;
+              const d = n.datos;
               return (
-                <li
-                  key={n.id}
-                  className={`grid gap-3 px-4 py-3 md:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1.3fr)_9.5rem] md:items-center ${n.egreso ? "bg-muted/30" : ""}`}
-                >
-                  <div className="min-w-0">
-                    <Link
-                      href={`/people/${n.dni}`}
-                      className="block truncate font-semibold text-foreground hover:text-primary hover:underline"
-                    >
-                      {nombre}
-                    </Link>
-                    <p className="text-xs text-muted-foreground">
-                      DNI {n.dni} · {horasTexto(n.horas)} en total
-                    </p>
-                  </div>
-                  <div className="text-sm">
-                    <p>
-                      <span className="text-muted-foreground">Ingreso:</span> {dma(n.ingreso)}
-                    </p>
-                    {n.egreso ? (
-                      <div>
-                        <Badge variant="outline" className="mr-1 px-1.5 py-0 text-[10px]">
-                          Egresó
-                        </Badge>
-                        el {dma(n.egreso)}
-                        {n.motivoEgreso && <span className="block text-xs text-muted-foreground">{n.motivoEgreso}</span>}
-                      </div>
-                    ) : (
-                      <div>
-                        <Badge variant="outline" className={`px-1.5 py-0 text-[10px] ${NIVEL_CLASS.green}`}>
-                          Activo
-                        </Badge>
-                        {n.ultimoDia && (
-                          <span className="ml-1 text-xs text-muted-foreground">último día con horas: {dma(n.ultimoDia).slice(0, 5)}</span>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                  <div className="min-w-0 text-sm">
-                    {n.expedienteReservado ? (
-                      <p className="text-xs text-muted-foreground">Tiene un expediente vinculado que tu rol no ve.</p>
-                    ) : canLoad && n.opciones.length > 0 ? (
-                      <div className="space-y-1">
-                        <ExpedienteSelect
-                          agreementId={convenio.id}
-                          nnyaId={n.id}
-                          actual={n.expediente?.id ?? null}
-                          opciones={n.opciones}
-                          nombre={nombre}
-                        />
-                        {n.expediente && (
-                          <Link href={`/cases/${n.expediente.id}`} className="text-xs font-semibold text-primary hover:underline">
-                            Abrir el expediente
-                          </Link>
-                        )}
-                      </div>
-                    ) : n.expediente ? (
-                      <Link href={`/cases/${n.expediente.id}`} className="font-semibold text-primary hover:underline">
-                        {n.expediente.title}
+                <li key={n.id} className={cn("rounded-2xl border border-border/60 p-4", n.egreso && "bg-muted/30")}>
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <Link href={`/people/${n.dni}`} className="font-heading text-base font-semibold text-foreground hover:text-primary hover:underline">
+                        {nombre}
                       </Link>
-                    ) : (
                       <p className="text-xs text-muted-foreground">
-                        {n.opciones.length === 0 ? "No tiene expedientes en la app." : "Sin expediente vinculado."}
+                        DNI {n.dni}
+                        {d.edad !== null && ` · ${d.edad} ${d.edad === 1 ? "año" : "años"}`} · {horasTexto(n.horas)} en total
                       </p>
+                      <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                        {n.egreso ? (
+                          <Badge variant="outline" className="px-1.5 py-0 text-[10px]">
+                            Egresó el {dma(n.egreso)}
+                          </Badge>
+                        ) : n.ingreso ? (
+                          <Badge variant="outline" className={`px-1.5 py-0 text-[10px] ${NIVEL_CLASS.green}`}>
+                            Activo
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className={`px-1.5 py-0 text-[10px] ${NIVEL_CLASS.amber}`}>
+                            Sin horas todavía
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                    {canLoad && (
+                      <div className="flex flex-wrap gap-2">
+                        <FichaNnyaButton
+                          agreementId={convenio.id}
+                          nnya={{ id: n.id, nombre, motivo: n.motivo, interviene: n.interviene, obraSocial: n.obraSocial, observaciones: n.observaciones }}
+                        />
+                        {n.egreso ? (
+                          <ReingresoButton agreementId={convenio.id} nnyaId={n.id} nombre={nombre} />
+                        ) : n.ingreso ? (
+                          <EgresoButton
+                            agreementId={convenio.id}
+                            nnya={{ id: n.id, nombre, ingreso: n.ingreso, ultimoDia: n.ultimoDia }}
+                            today={today}
+                          />
+                        ) : (
+                          <SacarNnyaButton agreementId={convenio.id} nnyaId={n.id} nombre={nombre} />
+                        )}
+                      </div>
                     )}
                   </div>
-                  {canLoad && (
-                    <div className="flex justify-start md:justify-end">
-                      {n.egreso ? (
-                        <ReingresoButton agreementId={convenio.id} nnyaId={n.id} nombre={nombre} />
-                      ) : (
-                        <EgresoButton
-                          agreementId={convenio.id}
-                          nnya={{ id: n.id, nombre, ingreso: n.ingreso, ultimoDia: n.ultimoDia }}
-                          today={today}
-                        />
-                      )}
-                    </div>
-                  )}
+
+                  <div className="mt-4 grid gap-4 lg:grid-cols-3">
+                    <section className="space-y-2" aria-label={`Datos personales de ${nombre}`}>
+                      <h3 className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Datos personales</h3>
+                      <dl className="grid grid-cols-2 gap-x-4 gap-y-2">
+                        <Dato label="Nacimiento">{d.fechaNacimiento ? dma(d.fechaNacimiento) : null}</Dato>
+                        <Dato label="Género">{d.genero}</Dato>
+                        <Dato label="Domicilio" className="col-span-2">
+                          {d.domicilio}
+                        </Dato>
+                        <Dato label="Teléfono" className="col-span-2">
+                          {d.telefono}
+                        </Dato>
+                      </dl>
+                      <Link href={`/people/${n.dni}`} className="inline-block text-xs font-semibold text-primary hover:underline">
+                        Corregir en el Registro Único
+                      </Link>
+                    </section>
+
+                    <section className="space-y-2" aria-label={`${nombre} en el convenio`}>
+                      <h3 className="text-xs font-bold uppercase tracking-wide text-muted-foreground">En el convenio</h3>
+                      <dl className="grid gap-y-2">
+                        <Dato label="Quién interviene">{n.interviene}</Dato>
+                        <Dato label="Motivo del ingreso">{n.motivo}</Dato>
+                        <Dato label="Obra social">{n.obraSocial}</Dato>
+                        {n.observaciones && <Dato label="Observaciones">{n.observaciones}</Dato>}
+                      </dl>
+                    </section>
+
+                    <section className="space-y-2" aria-label={`Ingreso y expediente de ${nombre}`}>
+                      <h3 className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Ingreso y expediente</h3>
+                      <dl className="grid grid-cols-2 gap-x-4 gap-y-2">
+                        <Dato label="Ingreso">{n.ingreso ? dma(n.ingreso) : "Sin horas todavía"}</Dato>
+                        <Dato label={n.egreso ? "Egreso" : "Último día con horas"}>
+                          {n.egreso ? dma(n.egreso) : n.ultimoDia ? dma(n.ultimoDia) : null}
+                        </Dato>
+                        {n.egreso && n.motivoEgreso && (
+                          <Dato label="Motivo del egreso" className="col-span-2">
+                            {n.motivoEgreso}
+                          </Dato>
+                        )}
+                      </dl>
+                      <div className="text-sm">
+                        {n.expedienteReservado ? (
+                          <p className="text-xs text-muted-foreground">Tiene un expediente vinculado que tu rol no ve.</p>
+                        ) : canLoad && n.opciones.length > 0 ? (
+                          <div className="space-y-1">
+                            <ExpedienteSelect
+                              agreementId={convenio.id}
+                              nnyaId={n.id}
+                              actual={n.expediente?.id ?? null}
+                              opciones={n.opciones}
+                              nombre={nombre}
+                            />
+                            {n.expediente && (
+                              <Link href={`/cases/${n.expediente.id}`} className="text-xs font-semibold text-primary hover:underline">
+                                Abrir el expediente
+                              </Link>
+                            )}
+                          </div>
+                        ) : n.expediente ? (
+                          <Link href={`/cases/${n.expediente.id}`} className="font-semibold text-primary hover:underline">
+                            {n.expediente.title}
+                          </Link>
+                        ) : (
+                          <p className="text-xs text-muted-foreground">
+                            {n.opciones.length === 0 ? "No tiene expedientes en la app." : "Sin expediente vinculado."}
+                          </p>
+                        )}
+                      </div>
+                    </section>
+                  </div>
                 </li>
               );
             })}
@@ -719,19 +790,22 @@ async function Carga({
   today,
   canLoad,
   canConfig,
+  puedeCargarPersona,
 }: {
   convenio: Convenio;
   dia: string;
   today: string;
   canLoad: boolean;
   canConfig: boolean;
+  puedeCargarPersona: boolean;
 }) {
   const dayISO = dia > today ? today : dia;
-  const [{ filas, valorHora }, cuidadoras, nnyas, cerrados] = await Promise.all([
+  const [{ filas, valorHora }, cuidadoras, nnyas, cerrados, addressOptions] = await Promise.all([
     getDia(convenio.id, dayISO),
     getCuidadoras(convenio.id),
-    getNnyaRecientes(convenio.id, today),
+    getNnyaParaCargar(convenio.id),
     getPeriodosCerrados(convenio.id),
+    canLoad ? getAddressOptions() : null,
   ]);
   const cerrado = cerrados.find((c) => c.desde <= dayISO && dayISO <= c.hasta) ?? null;
   // Un día de un período cerrado se ve, pero no se toca.
@@ -775,7 +849,13 @@ async function Carga({
           )}
           {canLoad && valorHora !== null && (
             <>
-              <NuevasHorasForm agreementId={convenio.id} dia={dayISO} cuidadoras={activas} nnyas={nnyas} />
+              <NuevasHorasForm
+                agreementId={convenio.id}
+                dia={dayISO}
+                cuidadoras={activas}
+                nnyas={nnyas}
+                sumar={addressOptions ? { addressOptions, puedeCargarPersona } : undefined}
+              />
               <div className="flex flex-wrap items-center gap-2 border-t border-border/50 pt-4">
                 <RepetirDiaButton agreementId={convenio.id} dia={dayISO} />
                 <p className="text-xs text-muted-foreground">
