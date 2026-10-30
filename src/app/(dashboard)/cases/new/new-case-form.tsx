@@ -17,6 +17,7 @@ import Link from "next/link";
 import { searchCitizensAction, createCentralizedCaseAction } from "../actions/case-actions";
 import { barrioLabel } from "@/lib/person-display";
 import { CaseLabelPicker } from "@/components/cases/case-labels-editor";
+import { RequiredMark } from "@/components/ui/form-section";
 
 type PriorityType = "BAJA" | "MEDIA" | "ALTA" | "URGENTE";
 
@@ -175,11 +176,11 @@ export function NewCaseForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="max-w-4xl space-y-6">
       <Card className="bg-card text-card-foreground border border-border/60 shadow-xs rounded-2xl overflow-visible">
         <CardContent className="p-6 space-y-4">
           <div className="flex items-center gap-2 border-b border-border/40 pb-3">
-            <Badge className="bg-primary/20 text-primary border border-primary/30 text-xs font-bold">
+            <Badge className="bg-primary/10 text-primary border border-primary/30 text-xs font-bold">
               Paso 1
             </Badge>
             <h3 className="text-sm font-bold text-foreground">
@@ -286,7 +287,7 @@ export function NewCaseForm({
       <Card className="bg-card text-card-foreground border border-border/60 shadow-xs rounded-2xl overflow-hidden">
         <CardContent className="p-6 space-y-5">
           <div className="flex items-center gap-2 border-b border-border/40 pb-3">
-            <Badge className="bg-primary/20 text-primary border border-primary/30 text-xs font-bold">
+            <Badge className="bg-primary/10 text-primary border border-primary/30 text-xs font-bold">
               Paso 2
             </Badge>
             <h3 className="text-sm font-bold text-foreground">
@@ -368,7 +369,7 @@ export function NewCaseForm({
       <Card className="bg-card text-card-foreground border border-border/60 shadow-xs rounded-2xl overflow-hidden">
         <CardContent className="p-6 space-y-5">
           <div className="flex items-center gap-2 border-b border-border/40 pb-3">
-            <Badge className="bg-primary/20 text-primary border border-primary/30 text-xs font-bold">
+            <Badge className="bg-primary/10 text-primary border border-primary/30 text-xs font-bold">
               Paso 3
             </Badge>
             <h3 className="text-sm font-bold text-foreground">
@@ -378,7 +379,7 @@ export function NewCaseForm({
 
           <div className="space-y-4">
             <div className="space-y-1.5">
-              <Label className="text-xs font-bold text-foreground">Asunto / carátula del expediente *</Label>
+              <Label className="text-xs font-bold text-foreground">Asunto / carátula del expediente <RequiredMark /></Label>
               <Input
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}

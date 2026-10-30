@@ -15,6 +15,7 @@ import {
 import { createDerivationAction, respondDerivationAction } from "@/app/(dashboard)/cases/actions/case-actions";
 import type { DerivationRow } from "@/services/derivations";
 import { formatFecha } from "@/lib/fechas";
+import { RequiredMark } from "@/components/ui/form-section";
 
 const fecha = formatFecha;
 
@@ -78,7 +79,7 @@ export function DeriveCaseButton({
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-1.5">
-            <Label htmlFor="deriv-area" className="text-xs font-bold">Área que lo recibe</Label>
+            <Label htmlFor="deriv-area" className="text-xs font-bold">Área que lo recibe <RequiredMark /></Label>
             <select id="deriv-area" value={toAreaId} onChange={(e) => setToAreaId(e.target.value)} className={selectClass} required>
               <option value="">Elegí un área…</option>
               {areas.filter((a) => a.id !== currentAreaId).map((a) => (
@@ -87,7 +88,7 @@ export function DeriveCaseButton({
             </select>
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="deriv-reason" className="text-xs font-bold">Motivo</Label>
+            <Label htmlFor="deriv-reason" className="text-xs font-bold">Motivo <RequiredMark /></Label>
             <Textarea id="deriv-reason" value={reason} onChange={(e) => setReason(e.target.value)} required rows={3} className="rounded-xl text-sm" placeholder="Por qué lo tiene que tomar esa área" />
           </div>
           <div className="space-y-1.5">

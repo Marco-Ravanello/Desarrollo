@@ -43,7 +43,7 @@ export default async function CertificadosPage({ params, searchParams }: Props) 
   };
 
   return (
-    <div className="space-y-5 pb-20 print:space-y-0 print:pb-0">
+    <div className="space-y-6 print:space-y-0 print:pb-0">
       {/* Cada certificado en su hoja A4 apaisada, sin el membrete ni el pie de las otras impresiones. */}
       <style>{`@media print {
         @page { size: A4 landscape; margin: 10mm; }

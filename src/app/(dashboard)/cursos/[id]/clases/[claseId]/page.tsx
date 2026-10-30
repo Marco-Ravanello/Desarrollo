@@ -36,7 +36,7 @@ export default async function ClasePage({ params }: Params) {
   const esHoy = clase.fecha === todayInArgentina();
 
   return (
-    <div className="mx-auto max-w-3xl space-y-5 pb-24 animate-in fade-in duration-500">
+    <div className="space-y-6">
       <PageBreadcrumbs
         items={[
           { label: "Cursos y talleres", href: "/cursos" },

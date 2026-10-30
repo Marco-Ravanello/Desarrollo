@@ -14,6 +14,7 @@ import { Combobox } from "@/components/ui/combobox";
 import { Info, Calendar, Clock, User, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import { RequiredMark } from "@/components/ui/form-section";
 
 export function ReserveVehicleForm({ vehicleId, vehicles }: { vehicleId: string, vehicles: any[] }) {
   const router = useRouter();
@@ -111,7 +112,7 @@ export function ReserveVehicleForm({ vehicleId, vehicles }: { vehicleId: string,
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <Label htmlFor="startDate" className="text-xs font-bold text-muted-foreground">
-                    Fecha y hora de inicio
+                    Fecha y hora de inicio <RequiredMark />
                   </Label>
                   <Input
                     id="startDate"
@@ -128,7 +129,7 @@ export function ReserveVehicleForm({ vehicleId, vehicles }: { vehicleId: string,
 
                 <div className="space-y-2">
                   <Label htmlFor="endDate" className="text-xs font-bold text-muted-foreground">
-                    Fecha y hora de devolución
+                    Fecha y hora de devolución <RequiredMark />
                   </Label>
                   <Input
                     id="endDate"
@@ -162,7 +163,7 @@ export function ReserveVehicleForm({ vehicleId, vehicles }: { vehicleId: string,
 
               <div className="space-y-2">
                 <Label htmlFor="reason" className="text-xs font-bold text-muted-foreground">
-                  Motivo del uso y destino
+                  Motivo del uso y destino <RequiredMark />
                 </Label>
                 <Input
                   id="reason"

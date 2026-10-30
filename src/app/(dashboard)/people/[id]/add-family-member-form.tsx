@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { UserPlus, Loader2 } from "lucide-react";
+import { RequiredMark } from "@/components/ui/form-section";
 
 export function AddFamilyMemberForm({ personId }: { personId: string }) {
   const [loading, setLoading] = useState(false);
@@ -41,7 +42,7 @@ export function AddFamilyMemberForm({ personId }: { personId: string }) {
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div className="space-y-1">
-          <Label htmlFor="memberDni" className="text-xs font-bold text-muted-foreground">DNI del familiar</Label>
+          <Label htmlFor="memberDni" className="text-xs font-bold text-muted-foreground">DNI del familiar <RequiredMark /></Label>
           <Input
             id="memberDni"
             placeholder="DNI del familiar"

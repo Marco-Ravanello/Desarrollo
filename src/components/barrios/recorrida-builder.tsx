@@ -12,6 +12,7 @@ import { formatFecha } from "@/lib/fechas";
 import { EquipoPicker } from "@/components/barrios/equipo-picker";
 import { createRecorridaAction } from "@/app/(dashboard)/barrios/actions";
 import type { RecorridaCandidate, UserOption } from "@/services/recorridas";
+import { RequiredMark } from "@/components/ui/form-section";
 
 /** La lista armada: se destilda a quien no haga falta visitar, se elige el día y el equipo, y se guarda. */
 export function RecorridaBuilder({
@@ -100,7 +101,7 @@ export function RecorridaBuilder({
         <h3 className="font-heading text-base font-bold text-foreground">Guardar la recorrida</h3>
         <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-1.5">
-            <Label htmlFor="recorrida-fecha">Día</Label>
+            <Label htmlFor="recorrida-fecha">Día <RequiredMark /></Label>
             <Input id="recorrida-fecha" type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} className="h-10 rounded-xl" required />
           </div>
           <div className="space-y-1.5">

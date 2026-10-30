@@ -21,6 +21,7 @@ import { saveFichaOrQueue } from "@/lib/emergency-offline";
 import { MunicipalLetterhead } from "@/components/ui/municipal-letterhead";
 import { STORM_BARRIOS, matchStormBarrio } from "@/lib/storm-barrios";
 import { formatFechaHora } from "@/lib/fechas";
+import { RequiredMark } from "@/components/ui/form-section";
 
 interface StormFichaDialogProps {
   open: boolean;
@@ -312,7 +313,7 @@ export function StormFichaDialog({
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="relative md:col-span-2">
-                <Label className="text-xs font-bold">Nombre y apellido *</Label>
+                <Label className="text-xs font-bold">Nombre y apellido <RequiredMark /></Label>
                 <Input
                   value={nombreApellido}
                   onChange={(e) => handleSearchName(e.target.value)}
@@ -411,7 +412,7 @@ export function StormFichaDialog({
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="md:col-span-2">
-                <Label className="text-xs font-bold">Domicilio exacto *</Label>
+                <Label className="text-xs font-bold">Domicilio exacto <RequiredMark /></Label>
                 <Input
                   value={domicilio}
                   onChange={(e) => setDomicilio(e.target.value)}

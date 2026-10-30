@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { createFuelRecordAction } from "../../actions/vehicle-actions";
 import { Combobox } from "@/components/ui/combobox";
 import dynamic from "next/dynamic";
+import { RequiredMark } from "@/components/ui/form-section";
 
 const OCRScanner = dynamic(() => import("@/components/ocr/ocr-scanner").then(mod => mod.OCRScanner), {
   ssr: false,
@@ -74,7 +75,7 @@ export function FuelForm({ vehicles }: { vehicles: any[] }) {
 
       <form onSubmit={handleSubmit} className="space-y-6">
       <div className="space-y-2">
-        <Label htmlFor="vehicleId" className="font-semibold">Vehículo</Label>
+        <Label htmlFor="vehicleId" className="font-semibold">Vehículo <RequiredMark /></Label>
         <Combobox
           name="vehicleId"
           value={fuelData.vehicleId}
@@ -87,7 +88,7 @@ export function FuelForm({ vehicles }: { vehicles: any[] }) {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-2">
-          <Label htmlFor="date" className="font-semibold">Fecha de carga</Label>
+          <Label htmlFor="date" className="font-semibold">Fecha de carga <RequiredMark /></Label>
           <Input
             id="date"
             name="date"
@@ -99,7 +100,7 @@ export function FuelForm({ vehicles }: { vehicles: any[] }) {
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="ticketNumber" className="font-semibold">N° de ticket / operación</Label>
+          <Label htmlFor="ticketNumber" className="font-semibold">N° de ticket / operación <RequiredMark /></Label>
           <Input
             id="ticketNumber"
             name="ticketNumber"
@@ -114,7 +115,7 @@ export function FuelForm({ vehicles }: { vehicles: any[] }) {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-2">
-          <Label htmlFor="liters" className="font-semibold">Litros cargados</Label>
+          <Label htmlFor="liters" className="font-semibold">Litros cargados <RequiredMark /></Label>
           <div className="relative">
             <Input
                 id="liters"
@@ -131,7 +132,7 @@ export function FuelForm({ vehicles }: { vehicles: any[] }) {
           </div>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="amount" className="font-semibold">Importe total</Label>
+          <Label htmlFor="amount" className="font-semibold">Importe total <RequiredMark /></Label>
           <div className="relative">
              <span className="absolute left-3 top-2.5 text-muted-foreground text-sm font-bold">$</span>
              <Input

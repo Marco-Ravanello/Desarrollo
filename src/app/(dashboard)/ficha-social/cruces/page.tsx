@@ -97,7 +97,7 @@ export default function CrucesSocialesPage() {
   }));
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500">
+    <div className="space-y-6">
       <PageHeader
         title="Cruces de programas"
         description="Quiénes están en más de un programa a la vez y a cuánta gente llega cada uno."

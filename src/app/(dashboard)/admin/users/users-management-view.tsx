@@ -154,7 +154,7 @@ export function UsersManagementView({
   );
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500 pb-20">
+    <div className="space-y-6">
       <PageHeader
         title="Usuarios"
         description={
@@ -324,7 +324,7 @@ export function UsersManagementView({
                       {roleLabel(u.role)} · {u.area?.name || "Sin área"}
                     </span>
                     {u.lastLogin && (
-                      <span className={`block truncate text-xs ${u.isActive && u.lastLogin.unused ? "font-semibold text-amber-700 dark:text-amber-400" : "text-muted-foreground/80"}`}>
+                      <span className={`block truncate text-xs ${u.isActive && u.lastLogin.unused ? "font-semibold text-amber-700 dark:text-amber-400" : "text-muted-foreground"}`}>
                         {u.lastLogin.days === null ? u.lastLogin.label : `Entró: ${u.lastLogin.label.toLowerCase()}`}
                       </span>
                     )}

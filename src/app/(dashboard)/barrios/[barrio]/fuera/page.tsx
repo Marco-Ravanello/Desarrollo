@@ -39,7 +39,7 @@ export default async function PuntosFueraPage({ params }: Params) {
   const caenEnOtro = personas.filter((p) => p.caeEn).length;
 
   return (
-    <div className="space-y-6 pb-20 animate-in fade-in duration-500">
+    <div className="space-y-6">
       <PageBreadcrumbs
         items={[
           { label: "Barrios", href: "/barrios" },
@@ -94,7 +94,7 @@ export default async function PuntosFueraPage({ params }: Params) {
                         <p className="text-xs text-muted-foreground">DNI {p.dni}</p>
                       </TableCell>
                       <TableCell className="text-sm">
-                        {p.direccion || <span className="text-muted-foreground/70">Sin dirección</span>}
+                        {p.direccion || <span className="text-muted-foreground">Sin dirección</span>}
                         {p.aproximado && <p className="text-xs text-amber-700 dark:text-amber-300">Punto aproximado (sin altura)</p>}
                       </TableCell>
                       <TableCell className="text-sm">{escrito(p.barrioEscrito, p.localidad)}</TableCell>

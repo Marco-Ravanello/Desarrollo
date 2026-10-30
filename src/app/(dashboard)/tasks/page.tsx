@@ -43,7 +43,7 @@ export default async function TasksPage() {
   });
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6 animate-in fade-in duration-500">
+    <div className="space-y-6">
       <PageHeader
         title="Mis tareas"
         description="Lo que tenés pendiente, con su fecha y su prioridad."

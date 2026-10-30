@@ -20,7 +20,7 @@ export default async function UbicarEnElMapaPage() {
   const status = await getGeocodingStatus();
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500 pb-20">
+    <div className="space-y-6">
       <PageHeader
         title="Ubicar en el mapa"
         description="Busca las direcciones del padrón en Georef (el servicio oficial de direcciones) y, si no aparecen, en OpenStreetMap. Las que no se encuentran quedan abajo para corregir la dirección o marcar el punto a mano."

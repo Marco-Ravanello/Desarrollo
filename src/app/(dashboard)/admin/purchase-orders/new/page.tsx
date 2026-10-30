@@ -22,7 +22,7 @@ export default async function NewPurchaseOrderPage() {
         icon={Briefcase}
       />
 
-      <CreatePurchaseOrderForm providers={providers} areas={areas} />
+      <CreatePurchaseOrderForm providers={providers} areas={areas.map((a) => ({ id: a.id, name: a.name }))} />
     </div>
   );
 }

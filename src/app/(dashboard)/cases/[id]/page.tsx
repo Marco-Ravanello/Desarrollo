@@ -125,7 +125,7 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
   const tabClass = "rounded-xl text-xs font-bold gap-1.5 px-3";
 
   return (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <div className="space-y-6">
       <PageBreadcrumbs items={breadcrumbs} />
       <RememberVisit kind="case" id={caseData.id} />
 

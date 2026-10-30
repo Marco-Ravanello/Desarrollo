@@ -12,6 +12,7 @@ import { UserPlus, RefreshCw, Copy, Dices } from "lucide-react";
 import { generateTemporaryPassword } from "@/lib/temporary-password";
 import { ROLE_INFO, ROLE_ORDER } from "@/lib/roles";
 import { suggestUsername, USERNAME_MAX } from "@/lib/username";
+import { RequiredMark } from "@/components/ui/form-section";
 
 const fieldClass = "h-10 rounded-xl bg-muted/30 border-border/60 text-sm";
 const selectClass =
@@ -69,7 +70,7 @@ export function CreateUserForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-1.5">
-        <Label htmlFor="name" className="text-xs font-bold text-foreground">Nombre y apellido</Label>
+        <Label htmlFor="name" className="text-xs font-bold text-foreground">Nombre y apellido <RequiredMark /></Label>
         <Input
           id="name"
           name="name"
@@ -83,7 +84,7 @@ export function CreateUserForm({
       </div>
 
       <div className="space-y-1.5">
-        <Label htmlFor="username" className="text-xs font-bold text-foreground">Usuario</Label>
+        <Label htmlFor="username" className="text-xs font-bold text-foreground">Usuario <RequiredMark /></Label>
         <Input
           id="username"
           name="username"
@@ -111,7 +112,7 @@ export function CreateUserForm({
       </div>
 
       <div className="space-y-1.5">
-        <Label htmlFor="password" className="text-xs font-bold text-foreground">Clave temporal</Label>
+        <Label htmlFor="password" className="text-xs font-bold text-foreground">Clave temporal <RequiredMark /></Label>
         <div className="flex gap-1.5">
           <Input
             id="password"
@@ -136,7 +137,7 @@ export function CreateUserForm({
       </div>
 
       <div className="space-y-1.5">
-        <Label htmlFor="role" className="text-xs font-bold text-foreground">Rol</Label>
+        <Label htmlFor="role" className="text-xs font-bold text-foreground">Rol <RequiredMark /></Label>
         <select id="role" name="role" required value={role} onChange={(e) => setRole(e.target.value as Role)} className={selectClass}>
           {ROLE_ORDER.map((r) => (
             <option key={r} value={r}>

@@ -15,6 +15,7 @@ import {
 import { enrollInProgramAction, withdrawFromProgramAction } from "@/app/(dashboard)/people/actions/program-enrollment-actions";
 import type { ProgramMovement, ProgramOption } from "@/services/program-enrollment";
 import { programHref } from "@/lib/padron-programs";
+import { RequiredMark } from "@/components/ui/form-section";
 
 const NOTE_MAX = 300;
 const ORIGEN: Record<string, string> = { IMPORTACION: "por planilla", TORMENTA: "por ficha de tormenta", CURSO: "por inscripción a un curso" };
@@ -63,7 +64,7 @@ function EnrollDialog({ dni, available, today }: { dni: string; available: Progr
             <DialogDescription>Queda en el padrón y en la historia de la persona, con la fecha y tu nombre.</DialogDescription>
           </DialogHeader>
           <div className="space-y-1.5">
-            <Label htmlFor="alta-programa">Programa</Label>
+            <Label htmlFor="alta-programa">Programa <RequiredMark /></Label>
             <select id="alta-programa" value={column} onChange={(e) => setColumn(e.target.value)} className={selectClass} required>
               <option value="" disabled>Elegí el programa…</option>
               {available.map((p) => (
@@ -72,7 +73,7 @@ function EnrollDialog({ dni, available, today }: { dni: string; available: Progr
             </select>
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="alta-fecha">Desde</Label>
+            <Label htmlFor="alta-fecha">Desde <RequiredMark /></Label>
             <Input id="alta-fecha" type="date" value={day} max={today} onChange={(e) => setDay(e.target.value)} required className="rounded-xl" />
           </div>
           <div className="space-y-1.5">
@@ -138,11 +139,11 @@ function WithdrawDialog({ dni, program, today }: { dni: string; program: Program
             <DialogDescription>Deja de figurar en el programa. Su paso por el programa queda en la historia.</DialogDescription>
           </DialogHeader>
           <div className="space-y-1.5">
-            <Label htmlFor="baja-fecha">Desde</Label>
+            <Label htmlFor="baja-fecha">Desde <RequiredMark /></Label>
             <Input id="baja-fecha" type="date" value={day} max={today} onChange={(e) => setDay(e.target.value)} required className="rounded-xl" />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="baja-motivo">Motivo</Label>
+            <Label htmlFor="baja-motivo">Motivo <RequiredMark /></Label>
             <Textarea
               id="baja-motivo"
               value={reason}

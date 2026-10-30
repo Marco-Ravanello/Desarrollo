@@ -22,6 +22,7 @@ import {
 } from "@/lib/padron-import";
 import { importPadronChunkAction, previewPadronImportAction } from "@/app/(dashboard)/people/actions/padron-import-actions";
 import type { PadronImportCounts } from "@/services/padron-import";
+import { RequiredMark } from "@/components/ui/form-section";
 
 const selectClass =
   "flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-xs shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50";
@@ -280,7 +281,7 @@ export function PadronImport() {
                   <div>
                     <Label htmlFor={`padron-col-${field.key}`} className="text-xs font-semibold">
                       {field.label}
-                      {field.key === "dni" && <span className="text-destructive"> *</span>}
+                      {field.key === "dni" && <RequiredMark />}
                     </Label>
                     {example && <p className="text-xs text-muted-foreground truncate">Ej.: {example}</p>}
                   </div>
@@ -344,7 +345,7 @@ export function PadronImport() {
 
       {result && (
         <Alert className="bg-emerald-500/10 border-emerald-500/30 rounded-2xl">
-          <CheckCircle2 className="h-5 w-5 text-emerald-600" />
+          <CheckCircle2 className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
           <AlertTitle className="text-emerald-800 dark:text-emerald-200 font-bold">Importación terminada</AlertTitle>
           <AlertDescription className="text-emerald-700 dark:text-emerald-300">
             {result.counts.created} personas nuevas, {result.counts.completed} con datos completados y {result.counts.joined} sumadas a {programLabel}.

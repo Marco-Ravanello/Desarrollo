@@ -109,7 +109,7 @@ export function OfflineFichasPanel({ userId, pending, online, syncing, onSyncNow
     <div className="rounded-2xl border border-amber-500/40 bg-amber-500/10 p-4 space-y-3 text-sm" role="status">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex items-start gap-2.5">
-          {online ? <CloudOff className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" /> : <WifiOff className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />}
+          {online ? <CloudOff className="h-5 w-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" /> : <WifiOff className="h-5 w-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />}
           <div>
             <p className="font-bold text-foreground">
               {online ? "Hay fichas sin enviar" : "Sin conexión"}
@@ -145,7 +145,7 @@ export function OfflineFichasPanel({ userId, pending, online, syncing, onSyncNow
                   {item.payload.domicilio || "Sin domicilio"} · guardada el{" "}
                   {formatFechaCorta(item.savedAt)} {formatHora(item.savedAt)}
                 </p>
-                {item.lastError && <p className="text-xs font-semibold text-rose-600">No se envió: {item.lastError}</p>}
+                {item.lastError && <p className="text-xs font-semibold text-rose-600 dark:text-rose-400">No se envió: {item.lastError}</p>}
               </div>
               <div className="flex items-center gap-1">
                 <Button

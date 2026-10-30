@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { closeCaseAction, reopenCaseAction } from "@/app/(dashboard)/people/actions/close-case";
 import { CASE_REASON_MAX } from "@/lib/case-closing";
+import { RequiredMark } from "@/components/ui/form-section";
 
 const TEXT = {
   close: {
@@ -88,7 +89,7 @@ export function CloseReopenCaseButton({
             <DialogDescription>{t.description}</DialogDescription>
           </DialogHeader>
           <div className="space-y-1.5">
-            <Label htmlFor={`motivo-${mode}`} className="text-xs font-bold">Motivo</Label>
+            <Label htmlFor={`motivo-${mode}`} className="text-xs font-bold">Motivo <RequiredMark /></Label>
             <Textarea
               id={`motivo-${mode}`}
               value={reason}

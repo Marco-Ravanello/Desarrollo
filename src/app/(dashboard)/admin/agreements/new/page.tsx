@@ -14,15 +14,8 @@ export default async function NewAgreementPage({ searchParams }: { searchParams:
 
   return (
     <div className="space-y-6">
-      <div className="max-w-4xl mx-auto">
-        <PageHeader
-          title="Nuevo convenio"
-          description="Completá los datos del convenio para cargarlo."
-          icon={Landmark}
-          className="mb-8"
-        />
-        <CreateAgreementForm areas={areas} defaultAreaId={defaultAreaId} />
-      </div>
+      <PageHeader title="Nuevo convenio" description="Completá los datos del convenio para cargarlo." icon={Landmark} />
+      <CreateAgreementForm areas={areas} defaultAreaId={defaultAreaId} />
     </div>
   );
 }

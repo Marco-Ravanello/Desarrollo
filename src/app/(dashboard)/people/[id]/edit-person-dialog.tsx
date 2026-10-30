@@ -13,6 +13,7 @@ import { GENEROS } from "@/lib/person-display";
 import type { AddressOptions } from "@/lib/localidades";
 import type { PersonEditData } from "@/services/person-data";
 import { toast } from "sonner";
+import { RequiredMark } from "@/components/ui/form-section";
 
 const UBICACION: Record<string, string> = {
   UBICADA: "La dirección nueva ya está en el mapa.",
@@ -95,11 +96,11 @@ export function EditPersonDialog({ person, options }: { person: PersonEditData; 
         <form onSubmit={handleSubmit} className="space-y-4 py-2">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <Label htmlFor="edit-lastName" className="text-xs font-bold text-muted-foreground">Apellido *</Label>
+              <Label htmlFor="edit-lastName" className="text-xs font-bold text-muted-foreground">Apellido <RequiredMark /></Label>
               <Input id="edit-lastName" required value={form.lastName} onChange={set("lastName")} className={inputClass} />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="edit-firstName" className="text-xs font-bold text-muted-foreground">Nombre *</Label>
+              <Label htmlFor="edit-firstName" className="text-xs font-bold text-muted-foreground">Nombre <RequiredMark /></Label>
               <Input id="edit-firstName" required value={form.firstName} onChange={set("firstName")} className={inputClass} />
             </div>
           </div>

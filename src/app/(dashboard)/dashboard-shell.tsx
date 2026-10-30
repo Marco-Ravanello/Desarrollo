@@ -41,7 +41,7 @@ export function DashboardShell({
             {/* Franja superior institucional Tres de Febrero */}
             <div className="h-1 w-full bg-gradient-to-r from-[#163C68] via-[#163C68] to-[#F69321] shrink-0 print:hidden" />
 
-            <header className="h-16 sticky top-0 z-40 border-b border-border/60 bg-card/85 backdrop-blur-md flex items-center justify-between px-4 sm:px-8 shadow-xs text-foreground print:hidden">
+            <header className="h-16 sticky top-0 z-40 border-b border-border/60 bg-card/85 backdrop-blur-md flex items-center justify-between px-4 sm:px-6 lg:px-8 shadow-xs text-foreground print:hidden">
               <div className="flex items-center gap-2 sm:gap-3 min-w-0">
                 {/* Botón menú responsive mobile */}
                 <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
@@ -81,11 +81,14 @@ export function DashboardShell({
               </div>
             </header>
 
-            <div className="p-4 sm:p-8 bg-background/40 print:bg-white print:p-0 flex-1">
-              <PrintHeader />
-              <DashboardBreadcrumbs />
-              {children}
-              <PrintFooter />
+            {/* Mismo ancho y márgenes en todas las páginas: las páginas no ponen su propio ancho máximo. */}
+            <div className="flex-1 bg-background/40 px-4 pb-12 pt-4 sm:px-6 sm:pt-6 lg:px-8 lg:pt-8 print:bg-white print:p-0">
+              <div className="mx-auto w-full max-w-screen-2xl">
+                <PrintHeader />
+                <DashboardBreadcrumbs />
+                {children}
+                <PrintFooter />
+              </div>
             </div>
 
             <footer className="mt-auto border-t border-border/50 px-6 py-3 print:hidden">

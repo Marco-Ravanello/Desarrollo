@@ -11,14 +11,14 @@ export default async function FuelRecordPage() {
   const vehicles = await getVehicles();
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
+    <div className="space-y-6">
       <PageHeader
         title="Cargar combustible"
         description="Anotá cada carga de combustible de los vehículos."
         icon={Fuel}
       />
 
-      <Card>
+      <Card className="max-w-4xl">
         <CardHeader>
           <CardTitle>Nueva carga</CardTitle>
         </CardHeader>

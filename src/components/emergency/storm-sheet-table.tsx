@@ -496,9 +496,9 @@ export function DeliveryBadge({ record }: { record: StormVictimItem }) {
   if (status === "SIN_PEDIDO") return null;
   const tone =
     status === "ENTREGADO"
-      ? "bg-emerald-500/10 text-emerald-700 border-emerald-500/30"
+      ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30"
       : status === "PARCIAL"
-      ? "bg-sky-500/10 text-sky-700 border-sky-500/30"
+      ? "bg-sky-500/10 text-sky-700 dark:text-sky-400 border-sky-500/30"
       : "bg-muted text-muted-foreground";
   return (
     <Badge variant="outline" className={`mt-1 ml-1 text-xs font-bold ${tone}`}>

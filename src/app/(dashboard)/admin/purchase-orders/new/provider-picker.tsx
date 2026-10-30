@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { ProviderOption } from "@/services/providers";
+import { RequiredMark } from "@/components/ui/form-section";
 
 export interface PickedProvider {
   providerId: string;
@@ -121,7 +122,7 @@ export function ProviderPicker({
         </div>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div className="space-y-1">
-            <Label htmlFor="providerName" className="text-xs text-muted-foreground">Nombre</Label>
+            <Label htmlFor="providerName" className="text-xs text-muted-foreground">Nombre <RequiredMark /></Label>
             <Input
               id="providerName"
               name="providerName"

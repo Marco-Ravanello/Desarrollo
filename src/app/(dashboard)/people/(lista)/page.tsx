@@ -64,7 +64,7 @@ export default async function PeoplePage({
   const { people, total, totalPages, currentPage, pageSize } = paginatedData;
 
   return (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20">
+    <div className="space-y-6">
       <PageHeader
         title="Registro Único"
         description="Las personas del padrón municipal. Buscá por nombre, DNI o dirección y entrá a su ficha."

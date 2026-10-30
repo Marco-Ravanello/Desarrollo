@@ -4,22 +4,41 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Textarea } from "@/components/ui/textarea";
+import { Field, FormSection, RequiredNote, fieldSelectClass } from "@/components/ui/form-section";
 import { toast } from "sonner";
 import { createPurchaseOrderAction } from "../../actions/create-purchase-order";
-import { Plus, Trash2, Info } from "lucide-react";
+import {
+  AlertTriangle,
+  Building2,
+  CheckCircle2,
+  FileText,
+  Info,
+  MessageSquareText,
+  Plus,
+  ScanLine,
+  ShoppingCart,
+  Trash2,
+  Truck,
+} from "lucide-react";
 import { EmptyMessage } from "@/components/ui/empty-message";
 import dynamic from "next/dynamic";
 import type { ProviderOption } from "@/services/providers";
 import { ProviderPicker } from "./provider-picker";
-import { formatPesos } from "@/lib/formato";
+import { formatPesos, formatPesosExactos, plural } from "@/lib/formato";
+import { cn } from "@/lib/utils";
 
-const OCRScanner = dynamic(() => import("@/components/ocr/ocr-scanner").then(mod => mod.OCRScanner), {
+const OCRScanner = dynamic(() => import("@/components/ocr/ocr-scanner").then((mod) => mod.OCRScanner), {
   ssr: false,
 });
 
-export function CreatePurchaseOrderForm({ providers, areas = [] }: { providers: ProviderOption[]; areas?: any[] }) {
+export function CreatePurchaseOrderForm({
+  providers,
+  areas = [],
+}: {
+  providers: ProviderOption[];
+  areas?: { id: string; name: string }[];
+}) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [orderData, setOrderData] = useState({
@@ -34,7 +53,7 @@ export function CreatePurchaseOrderForm({ providers, areas = [] }: { providers: 
     deliveryDate: "",
     deliveryPlace: "",
     paymentTerms: "",
-    description: ""
+    description: "",
   });
 
   const [items, setItems] = useState<any[]>([]);
@@ -44,7 +63,7 @@ export function CreatePurchaseOrderForm({ providers, areas = [] }: { providers: 
     const scannedCuit = String(data.cuit || "").replace(/[^0-9]/g, "");
     const matched = scannedCuit ? providers.find((p) => p.cuit.replace(/[^0-9]/g, "") === scannedCuit) : undefined;
 
-    setOrderData(prev => ({
+    setOrderData((prev) => ({
       ...prev,
       number: data.number || prev.number,
       amount: data.amount || prev.amount,
@@ -53,20 +72,29 @@ export function CreatePurchaseOrderForm({ providers, areas = [] }: { providers: 
       providerCuit: matched?.cuit || data.cuit || prev.providerCuit,
       providerNumber: data.providerNumber || prev.providerNumber,
       expediente: data.expediente || prev.expediente,
-      deliveryDate: data.deliveryDate ? data.deliveryDate.split('/').reverse().join('-') : prev.deliveryDate,
+      deliveryDate: data.deliveryDate ? data.deliveryDate.split("/").reverse().join("-") : prev.deliveryDate,
       deliveryPlace: data.deliveryPlace || prev.deliveryPlace,
       paymentTerms: data.paymentTerms || prev.paymentTerms,
-      description: data.description || prev.description
+      description: data.description || prev.description,
     }));
 
     if (data.items && data.items.length > 0) {
       setItems(data.items);
     }
 
-    if (data.number || data.amount || data.cuit || data.providerName || data.providerNumber || data.expediente || data.description || (data.items && data.items.length > 0)) {
-        toast.success("Datos extraídos correctamente");
+    if (
+      data.number ||
+      data.amount ||
+      data.cuit ||
+      data.providerName ||
+      data.providerNumber ||
+      data.expediente ||
+      data.description ||
+      (data.items && data.items.length > 0)
+    ) {
+      toast.success("Leímos la orden", { description: "Revisá los datos antes de guardar." });
     } else {
-        toast.warning("No se detectaron campos conocidos en el documento");
+      toast.warning("No encontramos datos de una orden en ese archivo");
     }
   };
 
@@ -102,10 +130,7 @@ export function CreatePurchaseOrderForm({ providers, areas = [] }: { providers: 
     }
 
     // Validation
-    const itemsTotal = items.reduce((acc, item) => acc + (parseFloat(item.totalPrice) || 0), 0);
-    const orderTotal = parseFloat(orderData.amount) || 0;
-
-    if (items.length > 0 && Math.abs(itemsTotal - orderTotal) > 0.01) {
+    if (items.length > 0 && !totalsMatch) {
       toast.error(`El total de los ítems (${formatPesos(itemsTotal)}) no coincide con el total de la orden (${formatPesos(orderTotal)})`);
       return;
     }
@@ -118,10 +143,10 @@ export function CreatePurchaseOrderForm({ providers, areas = [] }: { providers: 
     try {
       const result = await createPurchaseOrderAction(formData);
       if (result.success) {
-        toast.success("Orden de compra registrada");
+        toast.success("Orden guardada");
         router.push("/admin/purchase-orders");
       } else {
-        toast.error(result.error || "Error al registrar orden");
+        toast.error(result.error || "No se pudo guardar la orden.");
       }
     } catch (error) {
       toast.error("No se pudo guardar la orden. Revisá la conexión y probá de nuevo.");
@@ -130,243 +155,268 @@ export function CreatePurchaseOrderForm({ providers, areas = [] }: { providers: 
     }
   }
 
-  return (
-    <Card className="bg-white/75 dark:bg-card/75 backdrop-blur-md border border-border/40 shadow-municipal">
-      <CardHeader>
-        <CardTitle>Nueva orden</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-8">
-        <div className="bg-slate-50/50 dark:bg-slate-900/30 p-4 rounded-2xl border border-slate-200/50 dark:border-slate-800/50">
-           <h4 className="text-xs font-bold text-muted-foreground mb-3">Asistente de carga rápida</h4>
-           <OCRScanner onScanComplete={handleScanComplete} label="Escanear la orden" />
-        </div>
+  const itemsTotal = items.reduce((acc, item) => acc + (parseFloat(item.totalPrice) || 0), 0);
+  const orderTotal = parseFloat(orderData.amount) || 0;
+  const totalsMatch = Math.abs(itemsTotal - orderTotal) <= 0.01;
+  const set = (field: keyof typeof orderData) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
+    setOrderData((prev) => ({ ...prev, [field]: e.target.value }));
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="number">Número de orden</Label>
-              <Input
-                id="number"
-                name="number"
-                placeholder="Ej: OC-2026-001"
-                required
-                value={orderData.number}
-                onChange={(e) => setOrderData({...orderData, number: e.target.value})}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="areaId">Secretaría / área solicitante</Label>
-              <select
-                id="areaId"
-                name="areaId"
-                value={orderData.areaId}
-                onChange={(e) => setOrderData({ ...orderData, areaId: e.target.value })}
-                className="w-full flex h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              >
-                <option value="">Elegí un área</option>
-                {areas.map((area: any) => (
-                  <option key={area.id} value={area.id}>{area.name}</option>
-                ))}
-              </select>
-            </div>
-            <div className="md:col-span-2">
-              <ProviderPicker
-                providers={providers}
-                value={{ providerId: orderData.providerId, providerName: orderData.providerName, providerCuit: orderData.providerCuit }}
-                onChange={(p) => setOrderData((prev) => ({ ...prev, ...p }))}
-                onPick={(p) => setOrderData((prev) => ({ ...prev, providerNumber: p.lastNumber || prev.providerNumber }))}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="providerNumber">N° de proveedor</Label>
-              <Input
-                id="providerNumber"
-                name="providerNumber"
-                placeholder="Ej: 20264"
-                value={orderData.providerNumber}
-                onChange={(e) => setOrderData({...orderData, providerNumber: e.target.value})}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="amount">Importe total ($)</Label>
+  return (
+    <form onSubmit={handleSubmit} className="space-y-5">
+      <div className="flex flex-col gap-3 rounded-2xl border border-dashed border-border/70 bg-muted/30 p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-start gap-3">
+          <ScanLine className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
+          <div>
+            <p className="text-sm font-semibold text-foreground">¿Tenés la orden escaneada o en PDF?</p>
+            <p className="text-xs text-muted-foreground">Subila y completamos los datos y los ítems. Después revisalos antes de guardar.</p>
+          </div>
+        </div>
+        <OCRScanner onScanComplete={handleScanComplete} label="Leer la orden" />
+      </div>
+
+      <div className="grid gap-5 lg:grid-cols-2">
+        <FormSection title="Datos de la orden" description="El número y el importe que figuran en la orden." icon={FileText}>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label="Número de orden" htmlFor="number" required>
+              <Input id="number" name="number" placeholder="Ej: OC-2026-001" required value={orderData.number} onChange={set("number")} />
+            </Field>
+            <Field label="Importe total ($)" htmlFor="amount" required>
               <Input
                 id="amount"
                 name="amount"
                 type="number"
                 step="0.01"
-                placeholder="0.00"
+                min="0"
+                inputMode="decimal"
+                placeholder="0,00"
                 required
                 value={orderData.amount}
-                onChange={(e) => setOrderData({...orderData, amount: e.target.value})}
+                onChange={set("amount")}
               />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="expediente">N° expediente</Label>
+            </Field>
+            <Field label="Área que la pide" htmlFor="areaId">
+              <select id="areaId" value={orderData.areaId} onChange={set("areaId")} className={fieldSelectClass}>
+                <option value="">Sin área</option>
+                {areas.map((area) => (
+                  <option key={area.id} value={area.id}>
+                    {area.name}
+                  </option>
+                ))}
+              </select>
+            </Field>
+            <Field label="N° de expediente" htmlFor="expediente">
               <Input
                 id="expediente"
                 name="expediente"
                 placeholder="Ej: 312/2026"
                 value={orderData.expediente}
-                onChange={(e) => setOrderData({...orderData, expediente: e.target.value})}
+                onChange={set("expediente")}
               />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="deliveryDate">Fecha estimada de entrega</Label>
+            </Field>
+          </div>
+        </FormSection>
+
+        <FormSection title="Proveedor" description="Buscalo en la lista o escribilo a mano si todavía no está." icon={Building2}>
+          <ProviderPicker
+            providers={providers}
+            value={{ providerId: orderData.providerId, providerName: orderData.providerName, providerCuit: orderData.providerCuit }}
+            onChange={(p) => setOrderData((prev) => ({ ...prev, ...p }))}
+            onPick={(p) => setOrderData((prev) => ({ ...prev, providerNumber: p.lastNumber || prev.providerNumber }))}
+          />
+          <Field
+            label="N° de proveedor"
+            htmlFor="providerNumber"
+            hint="El número que le da la Municipalidad. Si ya tuvo órdenes, se completa solo."
+          >
+            <Input
+              id="providerNumber"
+              name="providerNumber"
+              placeholder="Ej: 20264"
+              value={orderData.providerNumber}
+              onChange={set("providerNumber")}
+            />
+          </Field>
+        </FormSection>
+
+        <FormSection title="Entrega y pago" description="Cuándo y dónde se entrega, y cómo se paga." icon={Truck}>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label="Fecha estimada de entrega" htmlFor="deliveryDate">
+              <Input id="deliveryDate" name="deliveryDate" type="date" value={orderData.deliveryDate} onChange={set("deliveryDate")} />
+            </Field>
+            <Field label="Condición de pago" htmlFor="paymentTerms">
               <Input
-                id="deliveryDate"
-                name="deliveryDate"
-                type="date"
-                value={orderData.deliveryDate}
-                onChange={(e) => setOrderData({...orderData, deliveryDate: e.target.value})}
+                id="paymentTerms"
+                name="paymentTerms"
+                placeholder="Ej: 30 días"
+                value={orderData.paymentTerms}
+                onChange={set("paymentTerms")}
               />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="deliveryPlace">Lugar de entrega</Label>
+            </Field>
+            <Field label="Lugar de entrega" htmlFor="deliveryPlace" className="sm:col-span-2">
               <Input
                 id="deliveryPlace"
                 name="deliveryPlace"
                 placeholder="Ej: Palacio Municipal"
                 value={orderData.deliveryPlace}
-                onChange={(e) => setOrderData({...orderData, deliveryPlace: e.target.value})}
+                onChange={set("deliveryPlace")}
               />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="paymentTerms">Condición de pago</Label>
-              <Input
-                id="paymentTerms"
-                name="paymentTerms"
-                placeholder="Ej: 1 Mes"
-                value={orderData.paymentTerms}
-                onChange={(e) => setOrderData({...orderData, paymentTerms: e.target.value})}
-              />
-            </div>
-            <div className="md:col-span-2 space-y-2">
-              <Label htmlFor="description">Descripción / motivo</Label>
-              <textarea
-                id="description"
-                name="description"
-                rows={2}
-                className="flex min-h-[60px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                placeholder="Detalle general de la compra..."
-                value={orderData.description}
-                onChange={(e) => setOrderData({...orderData, description: e.target.value})}
-              />
-            </div>
+            </Field>
           </div>
+        </FormSection>
 
-          <div className="space-y-4">
-             <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <h3 className="text-lg font-semibold">Ítems de la orden</h3>
-                  <div className="bg-blue-500/15 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded-full text-xs font-bold">
-                    {items.length} {items.length === 1 ? 'renglón' : 'renglones'}
-                  </div>
-                </div>
-                <Button type="button" variant="outline" size="sm" onClick={addItem} className="text-blue-600 border-blue-500/30">
-                  <Plus className="h-4 w-4 mr-1" /> Agregar ítem
-                </Button>
-             </div>
+        <FormSection
+          title="Para qué es la compra"
+          description="Una o dos líneas para que se entienda sin abrir la orden."
+          icon={MessageSquareText}
+        >
+          <Field label="Motivo" htmlFor="description">
+            <Textarea
+              id="description"
+              name="description"
+              rows={4}
+              placeholder="Ej: Alimentos para los comedores del barrio Fuerte Apache."
+              value={orderData.description}
+              onChange={set("description")}
+            />
+          </Field>
+        </FormSection>
+      </div>
 
-             {items.length === 0 ? (
-               <EmptyMessage
-                 icon={Info}
-                 compact
-                 title="Todavía no hay ítems en la orden"
-                 description="Agregá uno a mano o subí la factura para leerla automáticamente."
-                 className="rounded-xl border-2 border-dashed border-border/60"
-               />
-             ) : (
-               <div className="border rounded-xl overflow-hidden">
-                 <table className="w-full text-sm">
-                   <thead className="bg-muted/50 border-b">
-                     <tr>
-                       <th className="text-left p-3 font-medium text-muted-foreground">Cant.</th>
-                       <th className="text-left p-3 font-medium text-muted-foreground">Unidad</th>
-                       <th className="text-left p-3 font-medium text-muted-foreground w-full">Descripción</th>
-                       <th className="text-left p-3 font-medium text-muted-foreground text-right">Unitario</th>
-                       <th className="text-left p-3 font-medium text-muted-foreground text-right">Total</th>
-                       <th className="p-3"></th>
-                     </tr>
-                   </thead>
-                   <tbody className="divide-y">
-                     {items.map((item, index) => (
-                       <tr key={index} className="hover:bg-muted/30 transition-colors">
-                         <td className="p-2">
-                           <Input
-                            className="w-16 h-8 text-center"
-                            type="number"
-                            value={item.quantity}
-                            onChange={(e) => updateItem(index, "quantity", e.target.value)}
-                           />
-                         </td>
-                         <td className="p-2">
-                           <Input
-                            className="w-24 h-8"
-                            value={item.unitOfMeasure}
-                            onChange={(e) => updateItem(index, "unitOfMeasure", e.target.value)}
-                           />
-                         </td>
-                         <td className="p-2">
-                           <Input
-                            className="h-8"
-                            value={item.description}
-                            onChange={(e) => updateItem(index, "description", e.target.value)}
-                           />
-                         </td>
-                         <td className="p-2">
-                           <Input
-                            className="w-24 h-8 text-right"
-                            type="number"
-                            value={item.unitPrice}
-                            onChange={(e) => updateItem(index, "unitPrice", e.target.value)}
-                           />
-                         </td>
-                         <td className="p-2">
-                           <Input
-                            className="w-24 h-8 text-right font-medium bg-muted/50"
-                            type="number"
-                            readOnly
-                            value={item.totalPrice}
-                           />
-                         </td>
-                         <td className="p-2">
-                           <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-red-700 dark:text-red-400 hover:text-red-600 hover:bg-red-500/10"
-                            onClick={() => removeItem(index)}
-                           >
-                             <Trash2 className="h-4 w-4" />
-                           </Button>
-                         </td>
-                       </tr>
-                     ))}
-                   </tbody>
-                   <tfoot className="bg-muted/30">
-                      <tr>
-                        <td colSpan={4} className="p-3 text-right font-bold text-muted-foreground">Total:</td>
-                        <td className="p-3 text-right font-bold text-blue-700 dark:text-blue-300">
-                          {formatPesos(items.reduce((acc, item) => acc + (parseFloat(item.totalPrice) || 0), 0))}
-                        </td>
-                        <td></td>
-                      </tr>
-                   </tfoot>
-                 </table>
-               </div>
-             )}
+      <FormSection
+        title="Qué se compra"
+        description={
+          items.length === 0
+            ? "Podés guardar la orden sin ítems y cargarlos después."
+            : `${plural(items.length, "renglón", "renglones")}. La suma tiene que dar el importe total de la orden.`
+        }
+        icon={ShoppingCart}
+        actions={
+          <Button type="button" variant="outline" size="sm" onClick={addItem} className="gap-1.5">
+            <Plus className="h-4 w-4" /> Agregar renglón
+          </Button>
+        }
+      >
+        {items.length === 0 ? (
+          <EmptyMessage
+            icon={Info}
+            compact
+            title="Todavía no hay ítems en la orden"
+            description="Agregá uno a mano o leé la orden escaneada para cargarlos solos."
+            className="rounded-xl border-2 border-dashed border-border/60"
+          />
+        ) : (
+          <div className="overflow-x-auto rounded-xl border border-border/60">
+            <table className="w-full min-w-[640px] text-sm">
+              <thead className="border-b border-border/60 bg-muted/50">
+                <tr>
+                  <th className="p-3 text-left font-medium text-muted-foreground">Cantidad</th>
+                  <th className="p-3 text-left font-medium text-muted-foreground">Unidad</th>
+                  <th className="w-full p-3 text-left font-medium text-muted-foreground">Qué se compra</th>
+                  <th className="p-3 text-right font-medium text-muted-foreground">Precio unitario</th>
+                  <th className="p-3 text-right font-medium text-muted-foreground">Subtotal</th>
+                  <th className="p-3">
+                    <span className="sr-only">Quitar</span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border/60">
+                {items.map((item, index) => (
+                  <tr key={index}>
+                    <td className="p-2">
+                      <Input
+                        aria-label={`Cantidad del renglón ${index + 1}`}
+                        className="h-9 w-20 text-center"
+                        type="number"
+                        min="0"
+                        value={item.quantity}
+                        onChange={(e) => updateItem(index, "quantity", e.target.value)}
+                      />
+                    </td>
+                    <td className="p-2">
+                      <Input
+                        aria-label={`Unidad del renglón ${index + 1}`}
+                        className="h-9 w-24"
+                        value={item.unitOfMeasure}
+                        onChange={(e) => updateItem(index, "unitOfMeasure", e.target.value)}
+                      />
+                    </td>
+                    <td className="p-2">
+                      <Input
+                        aria-label={`Descripción del renglón ${index + 1}`}
+                        className="h-9 min-w-[12rem]"
+                        value={item.description}
+                        onChange={(e) => updateItem(index, "description", e.target.value)}
+                      />
+                    </td>
+                    <td className="p-2">
+                      <Input
+                        aria-label={`Precio unitario del renglón ${index + 1}`}
+                        className="h-9 w-28 text-right"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={item.unitPrice}
+                        onChange={(e) => updateItem(index, "unitPrice", e.target.value)}
+                      />
+                    </td>
+                    <td className="whitespace-nowrap p-3 text-right font-medium tabular-nums text-foreground">
+                      {formatPesosExactos(parseFloat(item.totalPrice) || 0)}
+                    </td>
+                    <td className="p-2">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        aria-label={`Quitar el renglón ${index + 1}`}
+                        className="h-8 w-8 text-red-700 hover:bg-red-500/10 hover:text-red-600 dark:text-red-400"
+                        onClick={() => removeItem(index)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot className="border-t border-border/60 bg-muted/30">
+                <tr>
+                  <td colSpan={4} className="p-3 text-right font-semibold text-muted-foreground">
+                    Suma de los ítems
+                  </td>
+                  <td className="whitespace-nowrap p-3 text-right font-bold tabular-nums text-foreground">
+                    {formatPesosExactos(itemsTotal)}
+                  </td>
+                  <td />
+                </tr>
+              </tfoot>
+            </table>
           </div>
+        )}
+        {items.length > 0 && orderTotal > 0 && (
+          <p
+            className={cn(
+              "flex items-center gap-1.5 text-xs font-medium",
+              totalsMatch ? "text-emerald-700 dark:text-emerald-400" : "text-amber-700 dark:text-amber-400",
+            )}
+          >
+            {totalsMatch ? <CheckCircle2 className="h-3.5 w-3.5" /> : <AlertTriangle className="h-3.5 w-3.5" />}
+            {totalsMatch
+              ? "La suma coincide con el importe total."
+              : `La suma da ${formatPesosExactos(itemsTotal)} y el importe total es ${formatPesosExactos(orderTotal)}. Tienen que coincidir para guardar.`}
+          </p>
+        )}
+      </FormSection>
 
-          <div className="flex justify-end gap-3 pt-4 border-t">
-            <Button type="button" variant="outline" onClick={() => router.back()}>
-              Cancelar
-            </Button>
-            <Button type="submit" disabled={loading}>
-              {loading ? "Registrando..." : "Crear orden"}
-            </Button>
-          </div>
-        </form>
-      </CardContent>
-    </Card>
+      <div className="flex flex-col-reverse gap-3 border-t border-border/60 pt-4 sm:flex-row sm:items-center sm:justify-between">
+        <RequiredNote />
+        <div className="flex flex-col-reverse gap-2 sm:flex-row">
+          <Button type="button" variant="outline" onClick={() => router.back()}>
+            Cancelar
+          </Button>
+          <Button type="submit" disabled={loading}>
+            {loading ? "Guardando…" : "Guardar orden"}
+          </Button>
+        </div>
+      </div>
+    </form>
   );
 }

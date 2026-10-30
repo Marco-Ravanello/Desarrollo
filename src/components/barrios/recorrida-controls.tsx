@@ -18,6 +18,7 @@ import {
   addVisitaAction, deleteRecorridaAction, saveVisitaAction, terminarRecorridaAction, updateRecorridaAction,
 } from "@/app/(dashboard)/barrios/actions";
 import type { RecorridaVisitaView, UserOption } from "@/services/recorridas";
+import { RequiredMark } from "@/components/ui/form-section";
 
 const RESULT_STYLE: Record<string, string> = {
   PENDIENTE: "border-border/60 bg-muted/40 text-muted-foreground",
@@ -203,7 +204,7 @@ export function EditRecorridaDialog({
           </DialogHeader>
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1.5">
-              <Label htmlFor="editar-fecha">Día</Label>
+              <Label htmlFor="editar-fecha">Día <RequiredMark /></Label>
               <Input id="editar-fecha" type="date" value={form.fecha} onChange={(e) => setForm((f) => ({ ...f, fecha: e.target.value }))} className="h-10 rounded-xl" required />
             </div>
             <div className="space-y-1.5">
@@ -284,7 +285,7 @@ export function TerminarRecorridaDialog({
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-1.5">
-            <Label htmlFor="recorrida-hallazgos">¿Qué se encontró?</Label>
+            <Label htmlFor="recorrida-hallazgos">¿Qué se encontró? <RequiredMark /></Label>
             <Textarea
               id="recorrida-hallazgos"
               value={form.hallazgos}

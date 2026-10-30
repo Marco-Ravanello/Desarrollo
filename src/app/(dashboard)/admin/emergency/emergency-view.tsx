@@ -95,7 +95,7 @@ export function EmergencyView({ initialData, deniedAccess }: EmergencyViewProps)
   };
 
   return (
-    <div className="space-y-6 pb-20 animate-in fade-in duration-500">
+    <div className="space-y-6">
       {/* Header Institucional de Contingencia con Responsable y Área Automáticos */}
       {deniedAccess && (
         <div className="rounded-2xl border border-sky-500/40 bg-sky-500/10 px-4 py-3 text-sm text-foreground">

@@ -52,7 +52,7 @@ export function QuickInterventionForm({ caseId, caseTitle }: QuickInterventionFo
     return (
       <Button
         onClick={() => setExpanded(true)}
-        className="w-full rounded-2xl bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 font-bold gap-2 h-11"
+        className="w-full rounded-2xl bg-primary/10 hover:bg-primary/10 text-primary border border-primary/20 font-bold gap-2 h-11"
       >
         <PlusCircle className="h-4 w-4" /> Nueva intervención
       </Button>

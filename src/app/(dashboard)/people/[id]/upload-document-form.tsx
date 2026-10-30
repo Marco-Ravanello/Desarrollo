@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Upload, Loader2 } from "lucide-react";
 import { uploadDocumentAction } from "../actions/upload-document";
 import { toast } from "sonner";
+import { RequiredMark } from "@/components/ui/form-section";
 
 export function UploadDocumentForm({ personId, caseId }: { personId?: string, caseId?: string }) {
   const [uploading, setUploading] = useState(false);
@@ -42,7 +43,7 @@ export function UploadDocumentForm({ personId, caseId }: { personId?: string, ca
   return (
     <form onSubmit={handleSubmit} className="mt-6 p-4 border border-border/60 rounded-2xl bg-muted/30 space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="file" className="text-xs font-bold text-muted-foreground">Adjuntar nuevo documento</Label>
+        <Label htmlFor="file" className="text-xs font-bold text-muted-foreground">Adjuntar nuevo documento <RequiredMark /></Label>
         <div className="flex gap-2">
           <Input id="file" name="file" type="file" required disabled={uploading} className="bg-background text-foreground border-border/60 text-xs" />
           <input type="hidden" name="personId" value={personId || ""} />

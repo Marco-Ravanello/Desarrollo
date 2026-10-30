@@ -126,7 +126,7 @@ export default async function BarrioPage({
   const lastDone = recorridas.find((r) => r.estado === "HECHA");
 
   return (
-    <div className="space-y-6 pb-20 animate-in fade-in duration-500">
+    <div className="space-y-6">
       <PageBreadcrumbs items={[{ label: "Barrios", href: "/barrios" }, { label: barrio, active: true }]} />
       <PageHeader
         title={barrio}
