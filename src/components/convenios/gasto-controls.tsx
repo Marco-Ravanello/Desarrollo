@@ -300,7 +300,7 @@ type Opcion = { id: string; nombre: string };
 type Nnya = { dni: string; nombre: string | null };
 export type FilaEditable = {
   id: string;
-  cuidadoraId: string;
+  cuidadoraId: string | null;
   dni: string;
   horas: number;
   lugar: Lugar;
@@ -327,14 +327,7 @@ function HorasFields({
   return (
     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
       <div className="space-y-1.5 lg:col-span-2">
-        <Label htmlFor={`${idPrefix}-cuidadora`}>Cuidadora <RequiredMark /></Label>
-        <select id={`${idPrefix}-cuidadora`} required value={form.cuidadoraId} onChange={(e) => setForm({ ...form, cuidadoraId: e.target.value })} className={selectClass}>
-          <option value="">Elegí…</option>
-          {cuidadoras.map((c) => <option key={c.id} value={c.id}>{c.nombre}</option>)}
-        </select>
-      </div>
-      <div className="space-y-1.5 lg:col-span-2">
-        <Label htmlFor={`${idPrefix}-nnya`}>NNyA acompañado <RequiredMark /></Label>
+        <Label htmlFor={`${idPrefix}-nnya`}>Niño, niña o adolescente <RequiredMark /></Label>
         {nnyas.length > 0 && (
           <select id={`${idPrefix}-nnya`} value={form.nnya} onChange={(e) => setForm({ ...form, nnya: e.target.value, dni: e.target.value === OTRO ? "" : e.target.value })} className={selectClass}>
             <option value="">Elegí…</option>
@@ -345,7 +338,7 @@ function HorasFields({
         {otro && (
           <Input
             id={nnyas.length > 0 ? `${idPrefix}-dni` : `${idPrefix}-nnya`}
-            aria-label={nnyas.length > 0 ? "DNI del NNyA" : undefined}
+            aria-label={nnyas.length > 0 ? "DNI del niño, niña o adolescente" : undefined}
             inputMode="numeric"
             autoComplete="off"
             required
@@ -366,11 +359,18 @@ function HorasFields({
           {Object.entries(LUGARES).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
         </select>
       </div>
-      <div className="space-y-1.5 sm:col-span-1 lg:col-span-2">
+      <div className="space-y-1.5 sm:col-span-2 lg:col-span-2">
         <Label htmlFor={`${idPrefix}-lugar-detalle`}>Cuál (opcional)</Label>
         <Input id={`${idPrefix}-lugar-detalle`} maxLength={GASTO_LIMITS.lugarDetalle} value={form.lugarDetalle} onChange={(e) => setForm({ ...form, lugarDetalle: e.target.value })} placeholder="Ej: Hospital Bocalandro" className="h-10 rounded-xl" />
       </div>
-      <div className="space-y-1.5 sm:col-span-1 lg:col-span-4">
+      <div className="space-y-1.5 lg:col-span-2">
+        <Label htmlFor={`${idPrefix}-cuidadora`}>Cuidadora (opcional)</Label>
+        <select id={`${idPrefix}-cuidadora`} value={form.cuidadoraId} onChange={(e) => setForm({ ...form, cuidadoraId: e.target.value })} className={selectClass}>
+          <option value="">{cuidadoras.length === 0 ? "No hay cuidadoras en la lista" : "Sin cargar"}</option>
+          {cuidadoras.map((c) => <option key={c.id} value={c.id}>{c.nombre}</option>)}
+        </select>
+      </div>
+      <div className="space-y-1.5 lg:col-span-4">
         <Label htmlFor={`${idPrefix}-obs`}>Observación (opcional)</Label>
         <Textarea id={`${idPrefix}-obs`} rows={1} maxLength={GASTO_LIMITS.observacion} value={form.observacion} onChange={(e) => setForm({ ...form, observacion: e.target.value })} className="min-h-10 rounded-xl" />
       </div>
@@ -388,7 +388,7 @@ const formDe = (fila: FilaEditable | null, nnyas: Nnya[]) => ({
   observacion: fila?.observacion ?? "",
 });
 
-/** Cargar las horas de una cuidadora con un NNyA en el día elegido. */
+/** Cargar las horas de un niño, niña o adolescente en el día elegido (la cuidadora es opcional). */
 export function NuevasHorasForm({ agreementId, dia, cuidadoras, nnyas }: { agreementId: string; dia: string; cuidadoras: Opcion[]; nnyas: Nnya[] }) {
   const router = useRouter();
   const [form, setForm] = useState(formDe(null, nnyas));
@@ -400,7 +400,7 @@ export function NuevasHorasForm({ agreementId, dia, cuidadoras, nnyas }: { agree
     setSaving(false);
     if (!res?.success) return failed(res);
     toast.success("Horas cargadas.");
-    // Se queda el lugar y la cuidadora: suele cargarse a la misma con otro NNyA.
+    // Se quedan el lugar y la cuidadora: suele cargarse otro chico o chica en el mismo lugar.
     setForm({ ...form, nnya: "", dni: "", horas: "", observacion: "" });
     router.refresh();
   };

@@ -88,7 +88,7 @@ async function nnyaPara(user: Actor, agreementId: string, nnyaId: string) {
   if (!convenio) return { error: "No se encontró el convenio." } as const;
   if (!canLoadHours(actor, convenio)) return { error: "Lo cambian la conducción y las personas del área del convenio." } as const;
   const nnya = await prisma.convenioNnya.findFirst({ where: { id: nnyaId, agreementId } });
-  if (!nnya) return { error: "No se encontró el NNyA en este convenio. Recargá la página." } as const;
+  if (!nnya) return { error: "No se encontró a ese niño, niña o adolescente en este convenio. Recargá la página." } as const;
   return { actor, convenio, nnya } as const;
 }
 
@@ -118,7 +118,7 @@ export async function volvioAIngresar(user: Actor, agreementId: string, nnyaId: 
   const found = await nnyaPara(user, agreementId, nnyaId);
   if ("error" in found) return { success: false, error: found.error! };
   const { actor, nnya } = found;
-  if (!nnya.egreso) return { success: false, error: "Ese NNyA no tiene egreso." };
+  if (!nnya.egreso) return { success: false, error: "No tiene egreso cargado." };
   await prisma.convenioNnya.update({ where: { id: nnyaId }, data: { egreso: null, motivoEgreso: null } });
   await audit(actor.id, "CONVENIO_NNYA_REINGRESO", agreementId, { dni: nnya.dni, desde: dma(isoDe(nnya.egreso)) });
   return { success: true };
@@ -139,7 +139,7 @@ export async function vincularExpediente(user: Actor & { role?: string | null },
       where: { id: caseId, person: { dni: nnya.dni } },
       select: { id: true, area: { select: { name: true } } },
     });
-    if (!c || (!canSensitive && isSensitiveArea(c.area.name))) return { success: false, error: "Elegí uno de los expedientes de ese NNyA." };
+    if (!c || (!canSensitive && isSensitiveArea(c.area.name))) return { success: false, error: "Elegí uno de sus expedientes." };
   }
   await prisma.convenioNnya.update({ where: { id: nnyaId }, data: { caseId } });
   await audit(actor.id, "CONVENIO_NNYA_EXPEDIENTE", agreementId, { dni: nnya.dni, estado: caseId ? "Vinculado a un expediente" : "Sin expediente" });

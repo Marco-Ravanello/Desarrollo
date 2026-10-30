@@ -193,7 +193,7 @@ export async function getRendicion(
         const lugar = LUGARES[f.lugar as Lugar] ?? f.lugar;
         return {
           fecha,
-          cuidadora: f.cuidadora.nombre,
+          cuidadora: f.cuidadora?.nombre ?? "Sin cargar",
           dni: f.dni,
           nombre: f.nombre,
           horas: Number(f.horas),

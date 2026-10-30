@@ -338,27 +338,28 @@ model ConvenioCuidadora {
   @@map("convenio_cuidadoras")
 }
 
-/// Horas de un día: quién las hizo, a qué NNyA acompañó y dónde. El importe sale del valor hora de ese día.
+/// Horas de un día: a qué niño, niña o adolescente se acompañó, dónde y (si se sabe) qué cuidadora. El importe sale del valor hora de ese día.
 model ConvenioHora {
-  id           String            @id @default(cuid())
+  id           String             @id @default(cuid())
   agreementId  String
-  agreement    Agreement         @relation(fields: [agreementId], references: [id], onDelete: Cascade)
+  agreement    Agreement          @relation(fields: [agreementId], references: [id], onDelete: Cascade)
   /// Fecha de calendario, a medianoche UTC.
   fecha        DateTime
-  cuidadoraId  String
-  cuidadora    ConvenioCuidadora @relation(fields: [cuidadoraId], references: [id], onDelete: Restrict)
-  /// DNI del NNyA acompañado (del padrón o del Registro Único) y su nombre al cargar.
+  /// Opcional: las cuidadoras las contrata la asociación del convenio, no la Municipalidad.
+  cuidadoraId  String?
+  cuidadora    ConvenioCuidadora? @relation(fields: [cuidadoraId], references: [id], onDelete: Restrict)
+  /// DNI del niño, niña o adolescente acompañado (del padrón o del Registro Único) y su nombre al cargar.
   dni          String
   nombre       String?
-  horas        Decimal           @db.Decimal(5, 2)
+  horas        Decimal            @db.Decimal(5, 2)
   /// HOSPITAL, DISPOSITIVO, DOMICILIO u OTRO.
   lugar        String
   lugarDetalle String?
   observacion  String?
   createdById  String?
   updatedById  String?
-  createdAt    DateTime          @default(now())
-  updatedAt    DateTime          @updatedAt
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
 
   @@index([agreementId, fecha])
   @@index([cuidadoraId])

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   canClosePeriod, canLoadHours, canReopenPeriod, canViewCostDetail, listaDeDias, parseEgreso, moverPeriodo, nivelDe, parseConfig, parseHoras, parseImporte, periodoDe, periodoTexto,
-  resumirPeriodo, valorHoraDel,
+  resumirPeriodo, SIN_CUIDADORA, valorHoraDel,
 } from "@/lib/convenio-gasto";
 
 describe("períodos del control por horas", () => {
@@ -63,6 +63,18 @@ describe("resumen del período", () => {
     expect(r.diasSinHoras).toEqual(["2026-09-23", "2026-09-24"]);
   });
 
+  it("las horas sin cuidadora suman igual y van al final de la lista por cuidadora", () => {
+    const sin = { fecha: "2026-09-23", cuidadoraId: null, cuidadora: null, dni: "3", nombre: "NNyA 3", horas: 100 };
+    const r = resumirPeriodo({ periodo, filas: [...filas, sin], valores, tope: null, hoy: "2026-09-24" });
+    expect(r.horas).toBe(172);
+    expect(r.porCuidadora.map((c) => [c.id, c.nombre, c.horas])).toEqual([
+      ["c1", "Ana", 60],
+      ["c2", "Bea", 12],
+      [SIN_CUIDADORA, "Sin cuidadora cargada", 100],
+    ]);
+    expect(r.porNnya.find((n) => n.dni === "3")).toMatchObject({ horas: 100, dias: 1 });
+  });
+
   it("proyecta con las horas del último día cargado y avisa si se pasa", () => {
     const r = resumirPeriodo({ periodo, filas, valores, tope: 1_000_000, hoy: "2026-09-24" });
     // Del 23/09 al 19/10 son 27 días, con 24 h por día a $ 12.000.
@@ -105,8 +117,9 @@ describe("lo que se carga", () => {
     expect(parseHoras({ ...ok, horas: "25" }, "2026-10-29")).toMatchObject({ ok: false, error: expect.stringMatching(/24 horas/) });
     expect(parseHoras({ ...ok, horas: "7,5" }, "2026-10-29")).toMatchObject({ ok: true, data: { horas: 7.5 } });
     expect(parseHoras({ ...ok, horas: "7,3" }, "2026-10-29").ok).toBe(false);
-    expect(parseHoras({ ...ok, cuidadoraId: "" }, "2026-10-29")).toMatchObject({ ok: false, error: "Elegí la cuidadora." });
-    expect(parseHoras({ ...ok, dni: "" }, "2026-10-29")).toMatchObject({ ok: false, error: expect.stringMatching(/NNyA/) });
+    // La cuidadora es opcional (las contrata la asociación); el niño, niña o adolescente no.
+    expect(parseHoras({ ...ok, cuidadoraId: "" }, "2026-10-29")).toMatchObject({ ok: true, data: { cuidadoraId: null } });
+    expect(parseHoras({ ...ok, dni: "" }, "2026-10-29")).toMatchObject({ ok: false, error: expect.stringMatching(/niño, niña o adolescente/) });
     expect(parseHoras({ ...ok, lugar: "PLAZA" }, "2026-10-29").ok).toBe(false);
   });
 

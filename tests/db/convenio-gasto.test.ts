@@ -120,4 +120,23 @@ describe("control del gasto de un convenio por horas", () => {
     expect((await getConveniosParaCargar(operativo)).map((c) => c.id)).toEqual([convenioId]);
     expect(await getConveniosParaCargar(deOtraArea)).toEqual([]);
   });
+
+  it("carga horas sin cuidadora, y el chico o chica tampoco pasa de 24 h en el día", async () => {
+    loginAs(operativo);
+    const otro = "96000002";
+    await prisma.person.create({ data: { dni: otro, firstName: "Nena", lastName: "Prueba" } });
+    const sinCuidadora = horas({ fecha: hoy, dni: otro, cuidadoraId: "", horas: "20" });
+    expect(await guardarHorasAction(convenioId, null, sinCuidadora)).toEqual({ success: true });
+    const fila = await prisma.convenioHora.findFirstOrThrow({ where: { agreementId: convenioId, dni: otro } });
+    expect(fila.cuidadoraId).toBeNull();
+    // 20 h sin cuidadora + 5 h con cuidadora para el mismo chico o chica pasan de 24.
+    expect(await guardarHorasAction(convenioId, null, horas({ fecha: hoy, dni: otro, horas: "5" }))).toMatchObject({
+      success: false,
+      error: expect.stringMatching(/Prueba, Nena ya tiene 20 h.*pasaría de 24/),
+    });
+    expect(await guardarHorasAction(convenioId, null, horas({ fecha: hoy, dni: otro, horas: "4" }))).toEqual({ success: true });
+    const convenio = (await getConvenioControl(convenioId))!;
+    const r = await getResumenPeriodo(convenio, periodoDe(hoy, 20), hoy);
+    expect(r.porCuidadora.at(-1)).toMatchObject({ nombre: "Sin cuidadora cargada", horas: 20 });
+  });
 });

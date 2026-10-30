@@ -92,7 +92,7 @@ export async function filasDelRango(agreementId: string, desde: string, hasta: s
   return rows.map((r) => ({
     fecha: isoDe(r.fecha),
     cuidadoraId: r.cuidadoraId,
-    cuidadora: r.cuidadora.nombre,
+    cuidadora: r.cuidadora?.nombre ?? null,
     dni: r.dni,
     nombre: r.nombre,
     horas: Number(r.horas),
@@ -126,8 +126,8 @@ export async function getResumenPeriodo(convenio: ConvenioControl, periodo: Peri
 
 export type FilaDelDia = {
   id: string;
-  cuidadoraId: string;
-  cuidadora: string;
+  cuidadoraId: string | null;
+  cuidadora: string | null;
   dni: string;
   nombre: string | null;
   horas: number;
@@ -160,7 +160,7 @@ export async function getDia(agreementId: string, dia: string): Promise<{ filas:
     filas: rows.map((r) => ({
       id: r.id,
       cuidadoraId: r.cuidadoraId,
-      cuidadora: r.cuidadora.nombre,
+      cuidadora: r.cuidadora?.nombre ?? null,
       dni: r.dni,
       nombre: r.nombre,
       horas: Number(r.horas),
@@ -383,7 +383,7 @@ export async function borrarCuidadora(user: Actor, agreementId: string, id: stri
 // Horas de cada día (conducción y el área)
 // ---------------------------------------------------------------------------
 
-/** El nombre del NNyA si está en el padrón o en el Registro Único. */
+/** El nombre del niño, niña o adolescente si está en el padrón o en el Registro Único. */
 async function nnyaPorDni(dni: string): Promise<{ dni: string; nombre: string | null } | null> {
   const limpio = /^\d+$/.test(dni) ? dni : null;
   const [padron, persona] = await Promise.all([
@@ -395,14 +395,16 @@ async function nnyaPorDni(dni: string): Promise<{ dni: string; nombre: string | 
   return { dni, nombre };
 }
 
-/** Revisa lo que no depende de la transacción: vigencia, cuidadora, valor hora y NNyA. */
+/** Revisa lo que no depende de la transacción: vigencia, cuidadora (si se eligió), valor hora y el niño, niña o adolescente. */
 async function revisarFila(convenio: ConvenioControl, data: HorasInput) {
   const inicio = convenio.startDate ? diaDeVencimiento(convenio.startDate) : null;
   const fin = convenio.endDate ? diaDeVencimiento(convenio.endDate) : null;
   if (inicio && data.fecha < inicio) return { error: `El convenio empieza el ${dma(inicio)}.` } as const;
   if (fin && data.fecha > fin) return { error: `El convenio terminó el ${dma(fin)}.` } as const;
-  const cuidadora = await prisma.convenioCuidadora.findFirst({ where: { id: data.cuidadoraId, agreementId: convenio.id } });
-  if (!cuidadora) return { error: "Elegí una cuidadora de la lista del convenio." } as const;
+  const cuidadora = data.cuidadoraId
+    ? await prisma.convenioCuidadora.findFirst({ where: { id: data.cuidadoraId, agreementId: convenio.id } })
+    : null;
+  if (data.cuidadoraId && !cuidadora) return { error: "Elegí una cuidadora de la lista del convenio, o dejala sin cargar." } as const;
   const valores = await getValoresHora(convenio.id);
   if (valorDelDia(data.fecha, valores) === null) {
     return { error: `Todavía no hay valor hora para el ${dma(data.fecha)}. Lo carga la conducción, en Ajustes del control.` } as const;
@@ -412,16 +414,33 @@ async function revisarFila(convenio: ConvenioControl, data: HorasInput) {
   return { cuidadora, nnya } as const;
 }
 
-/** Que la cuidadora no pase de 24 h ese día (contando lo que ya tiene, menos la fila que se corrige). */
-async function controlarTope(tx: Prisma.TransactionClient, agreementId: string, cuidadoraId: string, nombre: string, fecha: string, horas: number, sinFila?: string) {
-  await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`convenio-horas:${cuidadoraId}:${fecha}`}))`;
-  const suma = await tx.convenioHora.aggregate({
-    where: { agreementId, cuidadoraId, fecha: toDate(fecha), ...(sinFila ? { id: { not: sinFila } } : {}) },
-    _sum: { horas: true },
-  });
-  const ya = Number(suma._sum.horas ?? 0);
+/**
+ * Que ni el niño, niña o adolescente ni la cuidadora (si hay) pasen de 24 h ese día,
+ * contando lo que ya tienen, menos la fila que se corrige.
+ */
+async function controlarTope(
+  tx: Prisma.TransactionClient,
+  agreementId: string,
+  fila: { dni: string; nombre: string | null; cuidadoraId: string | null; cuidadora: string | null },
+  fecha: string,
+  horas: number,
+  sinFila?: string
+) {
+  const otras = { agreementId, fecha: toDate(fecha), ...(sinFila ? { id: { not: sinFila } } : {}) };
+  await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`convenio-horas-nnya:${agreementId}:${fila.dni}:${fecha}`}))`;
+  const delChico = await tx.convenioHora.aggregate({ where: { ...otras, dni: fila.dni }, _sum: { horas: true } });
+  const yaChico = Number(delChico._sum.horas ?? 0);
+  if (yaChico + horas > MAX_HORAS_DIA) {
+    throw new AvisoError(
+      `${fila.nombre || `DNI ${fila.dni}`} ya tiene ${horasTexto(yaChico)} el ${dma(fecha)}: con estas pasaría de ${MAX_HORAS_DIA} horas en el día.`
+    );
+  }
+  if (!fila.cuidadoraId) return;
+  await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`convenio-horas:${fila.cuidadoraId}:${fecha}`}))`;
+  const deLaCuidadora = await tx.convenioHora.aggregate({ where: { ...otras, cuidadoraId: fila.cuidadoraId }, _sum: { horas: true } });
+  const ya = Number(deLaCuidadora._sum.horas ?? 0);
   if (ya + horas > MAX_HORAS_DIA) {
-    throw new AvisoError(`${nombre} ya tiene ${horasTexto(ya)} el ${dma(fecha)}: con estas pasaría de ${MAX_HORAS_DIA} horas en el día.`);
+    throw new AvisoError(`${fila.cuidadora} ya tiene ${horasTexto(ya)} el ${dma(fecha)}: con estas pasaría de ${MAX_HORAS_DIA} horas en el día.`);
   }
 }
 
@@ -444,16 +463,18 @@ async function asegurarAbierto(tx: Prisma.TransactionClient, agreementId: string
   }
 }
 
-/** Que el NNyA no tenga egreso antes de ese día. */
+/** Que el niño, niña o adolescente no tenga egreso antes de ese día. */
 async function revisarEgreso(tx: Prisma.TransactionClient, agreementId: string, dni: string, fecha: string) {
-  const n = await tx.convenioNnya.findUnique({ where: { agreementId_dni: { agreementId, dni } }, select: { egreso: true } });
+  const n = await tx.convenioNnya.findUnique({ where: { agreementId_dni: { agreementId, dni } }, select: { egreso: true, nombre: true } });
   if (n?.egreso && fecha > isoDe(n.egreso)) {
-    throw new AvisoError(`Ese NNyA tiene egreso el ${dma(isoDe(n.egreso))}. Si volvió, tocá “Volvió a ingresar” en la pestaña NNyA.`);
+    throw new AvisoError(
+      `${n.nombre || `DNI ${dni}`} tiene egreso el ${dma(isoDe(n.egreso))}. Si volvió, tocá “Volvió a ingresar” en la pestaña Niños y adolescentes.`
+    );
   }
 }
 
 /**
- * Deja al día la ficha del NNyA en el convenio: ingreso = su primer día con horas. Si ya no le quedan horas
+ * Deja al día la ficha del niño, niña o adolescente en el convenio: ingreso = su primer día con horas. Si ya no le quedan horas
  * (se cargó por error), se saca. La primera vez, si tiene un solo expediente abierto, queda vinculado.
  */
 async function sincronizarNnya(tx: Prisma.TransactionClient, agreementId: string, dni: string, nombre: string | null) {
@@ -488,19 +509,20 @@ export async function agregarHoras(user: Actor, agreementId: string, raw: Record
   const data = parsed.data;
   const check = await revisarFila(found.convenio, data);
   if ("error" in check) return { success: false, error: check.error! };
-  if (!check.cuidadora.activa) return { success: false, error: `${check.cuidadora.nombre} está dada de baja en este convenio.` };
+  if (check.cuidadora && !check.cuidadora.activa) return { success: false, error: `${check.cuidadora.nombre} está dada de baja en este convenio.` };
+  const cuidadora = check.cuidadora?.nombre ?? null;
   try {
     const fila = await prisma.$transaction(async (tx) => {
       await asegurarAbierto(tx, agreementId, [data.fecha]);
       await revisarEgreso(tx, agreementId, data.dni, data.fecha);
-      await controlarTope(tx, agreementId, data.cuidadoraId, check.cuidadora.nombre, data.fecha, data.horas);
+      await controlarTope(tx, agreementId, { dni: data.dni, nombre: check.nnya.nombre, cuidadoraId: data.cuidadoraId, cuidadora }, data.fecha, data.horas);
       const creada = await tx.convenioHora.create({
         data: { ...data, agreementId, fecha: toDate(data.fecha), nombre: check.nnya.nombre, createdById: found.actor.id },
       });
       await sincronizarNnya(tx, agreementId, data.dni, check.nnya.nombre);
       return creada;
     });
-    await audit(found.actor.id, "CONVENIO_HORAS_ALTA", agreementId, { fila: fila.id, fecha: data.fecha, cuidadora: check.cuidadora.nombre, dni: data.dni, horas: data.horas });
+    await audit(found.actor.id, "CONVENIO_HORAS_ALTA", agreementId, { fila: fila.id, fecha: data.fecha, cuidadora, dni: data.dni, horas: data.horas });
     return { success: true };
   } catch (err) {
     if (err instanceof AvisoError) return { success: false, error: err.message };
@@ -518,14 +540,22 @@ export async function corregirHoras(user: Actor, filaId: string, raw: Record<str
   const data = parsed.data;
   const check = await revisarFila(found.convenio, data);
   if ("error" in check) return { success: false, error: check.error! };
-  if (!check.cuidadora.activa && check.cuidadora.id !== actual.cuidadoraId) {
+  if (check.cuidadora && !check.cuidadora.activa && check.cuidadora.id !== actual.cuidadoraId) {
     return { success: false, error: `${check.cuidadora.nombre} está dada de baja en este convenio.` };
   }
+  const cuidadora = check.cuidadora?.nombre ?? null;
   try {
     await prisma.$transaction(async (tx) => {
       await asegurarAbierto(tx, actual.agreementId, [isoDe(actual.fecha), data.fecha]);
       await revisarEgreso(tx, actual.agreementId, data.dni, data.fecha);
-      await controlarTope(tx, actual.agreementId, data.cuidadoraId, check.cuidadora.nombre, data.fecha, data.horas, filaId);
+      await controlarTope(
+        tx,
+        actual.agreementId,
+        { dni: data.dni, nombre: check.nnya.nombre, cuidadoraId: data.cuidadoraId, cuidadora },
+        data.fecha,
+        data.horas,
+        filaId
+      );
       await tx.convenioHora.update({
         where: { id: filaId },
         data: { ...data, fecha: toDate(data.fecha), nombre: check.nnya.nombre, updatedById: found.actor.id },
@@ -539,8 +569,8 @@ export async function corregirHoras(user: Actor, filaId: string, raw: Record<str
   }
   await audit(found.actor.id, "CONVENIO_HORAS_CAMBIO", actual.agreementId, {
     fila: filaId,
-    antes: { fecha: isoDe(actual.fecha), cuidadora: actual.cuidadora.nombre, dni: actual.dni, horas: Number(actual.horas), lugar: actual.lugar },
-    despues: { fecha: data.fecha, cuidadora: check.cuidadora.nombre, dni: data.dni, horas: data.horas, lugar: data.lugar },
+    antes: { fecha: isoDe(actual.fecha), cuidadora: actual.cuidadora?.nombre ?? null, dni: actual.dni, horas: Number(actual.horas), lugar: actual.lugar },
+    despues: { fecha: data.fecha, cuidadora, dni: data.dni, horas: data.horas, lugar: data.lugar },
   });
   return { success: true };
 }
@@ -561,14 +591,14 @@ export async function borrarHoras(user: Actor, filaId: string): Promise<Result> 
     throw err;
   }
   await audit(found.actor.id, "CONVENIO_HORAS_BAJA", actual.agreementId, {
-    fila: filaId, fecha: isoDe(actual.fecha), cuidadora: actual.cuidadora.nombre, dni: actual.dni, horas: Number(actual.horas),
+    fila: filaId, fecha: isoDe(actual.fecha), cuidadora: actual.cuidadora?.nombre ?? null, dni: actual.dni, horas: Number(actual.horas),
   });
   return { success: true };
 }
 
 /**
  * Copia al día elegido las horas del día anterior (para quien sigue con acompañamiento).
- * Saltea lo que ya está cargado ese día (misma cuidadora y NNyA) y las cuidadoras dadas de baja.
+ * Saltea lo que ya está cargado ese día (mismo niño, niña o adolescente y misma cuidadora) y las cuidadoras dadas de baja.
  */
 export async function repetirDiaAnterior(
   user: Actor,
@@ -586,13 +616,13 @@ export async function repetirDiaAnterior(
     prisma.convenioHora.findMany({ where: { agreementId, fecha: toDate(dia) }, select: { cuidadoraId: true, dni: true } }),
   ]);
   if (previas.length === 0) return { success: false, error: `El ${dma(anterior)} no tiene horas cargadas para repetir.` };
-  const ya = new Set(yaCargadas.map((r) => `${r.cuidadoraId}|${r.dni}`));
+  const ya = new Set(yaCargadas.map((r) => `${r.cuidadoraId ?? ""}|${r.dni}`));
   const egresados = await prisma.convenioNnya.findMany({
     where: { agreementId, dni: { in: previas.map((p) => p.dni) }, egreso: { lt: toDate(dia) } },
     select: { dni: true },
   });
   const fuera = new Set(egresados.map((e) => e.dni));
-  const aCopiar = previas.filter((p) => p.cuidadora.activa && !fuera.has(p.dni) && !ya.has(`${p.cuidadoraId}|${p.dni}`));
+  const aCopiar = previas.filter((p) => (p.cuidadora?.activa ?? true) && !fuera.has(p.dni) && !ya.has(`${p.cuidadoraId ?? ""}|${p.dni}`));
   const salteadas = previas.length - aCopiar.length;
   if (aCopiar.length === 0) return { success: false, error: "Todo lo del día anterior ya está cargado en este día." };
   const check = await revisarFila(found.convenio, {
@@ -603,7 +633,13 @@ export async function repetirDiaAnterior(
     await prisma.$transaction(async (tx) => {
       await asegurarAbierto(tx, agreementId, [dia]);
       for (const p of aCopiar) {
-        await controlarTope(tx, agreementId, p.cuidadoraId, p.cuidadora.nombre, dia, Number(p.horas));
+        await controlarTope(
+          tx,
+          agreementId,
+          { dni: p.dni, nombre: p.nombre, cuidadoraId: p.cuidadoraId, cuidadora: p.cuidadora?.nombre ?? null },
+          dia,
+          Number(p.horas)
+        );
         await tx.convenioHora.create({
           data: {
             agreementId, fecha: toDate(dia), cuidadoraId: p.cuidadoraId, dni: p.dni, nombre: p.nombre, horas: p.horas,

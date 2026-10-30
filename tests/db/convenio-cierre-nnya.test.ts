@@ -216,13 +216,13 @@ describe("convenios: editar, estado, cierre del período y NNyA", () => {
     expect(res.status).toBe(200);
     expect(res.headers.get("Content-Type")).toContain("spreadsheetml");
     const wb = XLSX.read(Buffer.from(await res.arrayBuffer()), { type: "buffer" });
-    expect(wb.SheetNames).toEqual(["Resumen", "Por día", "Detalle", "Por cuidadora", "Por NNyA"]);
+    expect(wb.SheetNames).toEqual(["Resumen", "Por día", "Detalle", "Por cuidadora", "Por niño o niña"]);
     const resumen = XLSX.utils.sheet_to_json<string[]>(wb.Sheets.Resumen, { header: 1 });
     expect(resumen.find((r) => r[0] === "Estado del período")?.[1]).toContain("Cerrado el");
     expect(resumen.find((r) => r[0] === "Gastado ($)")?.[1]).toBe(120000);
     const detalle = XLSX.utils.sheet_to_json<Record<string, unknown>>(wb.Sheets.Detalle);
     expect(detalle).toHaveLength(1);
-    expect(detalle[0]).toMatchObject({ "DNI NNyA": nnyaA, Horas: 12, "Importe ($)": 120000, Lugar: "Hospital" });
+    expect(detalle[0]).toMatchObject({ "DNI del niño/a": nnyaA, Horas: 12, "Importe ($)": 120000, Lugar: "Hospital" });
     expect(await prisma.auditLog.count({ where: { action: "CONVENIO_RENDICION", entityId: convenioId } })).toBe(1);
 
     const parcial = await rendicion(req(actual.desde), params);
