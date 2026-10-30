@@ -24,10 +24,12 @@ import { AGREEMENT_STATUS_LABELS, isAgreementClosed } from "@/lib/convenios";
 import { todayInArgentina } from "@/lib/follow-up-dates";
 import { formatFechaHora, formatFechaLarga } from "@/lib/fechas";
 import { formatNumber, formatPercent, formatPesos, plural } from "@/lib/formato";
+import { cn } from "@/lib/utils";
 import {
   DEFAULT_ALERT_PERCENTS,
   LUGARES,
   NIVELES,
+  SIN_CUIDADORA,
   canClosePeriod,
   canConfigureCost,
   canLoadHours,
@@ -97,7 +99,7 @@ export async function generateMetadata({ params }: Params) {
 const TABS = [
   { key: "tablero", label: "Tablero", icon: Gauge },
   { key: "carga", label: "Carga diaria", icon: CalendarDays },
-  { key: "nnya", label: "NNyA", icon: Baby },
+  { key: "nnya", label: "Niños y adolescentes", icon: Baby },
   { key: "cuidadoras", label: "Cuidadoras", icon: Users },
   { key: "ajustes", label: "Valor hora y tope", icon: Settings },
 ] as const;
@@ -312,7 +314,8 @@ async function Tablero({
 
   // Las horas por día que se proyectan: sin los NNyA que ya egresaron.
   const sinEgresados = r.ultimoDia !== null && r.horasBase !== null && r.horasBase < r.ultimoDia.horas;
-  const base = `${horasTexto(r.horasBase ?? 0)} por día${sinEgresados ? ", sin los NNyA que egresaron" : ""}`;
+  const hayCuidadoras = r.porCuidadora.some((c) => c.id !== SIN_CUIDADORA);
+  const base = `${horasTexto(r.horasBase ?? 0)} por día${sinEgresados ? ", sin los que egresaron" : ""}`;
 
   let mensaje: string;
   if (sinHoras) mensaje = "Todavía no hay horas cargadas en este período.";
@@ -438,11 +441,11 @@ async function Tablero({
         </CardContent>
       </Card>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className={cn("grid gap-6", hayCuidadoras && "lg:grid-cols-2")}>
         <Card className="shadow-none">
           <CardHeader>
-            <CardTitle className="text-base">Por NNyA</CardTitle>
-            <CardDescription>Horas y gasto de cada NNyA acompañado en el período.</CardDescription>
+            <CardTitle className="text-base">Por niño o niña</CardTitle>
+            <CardDescription>Horas y gasto de cada niño, niña o adolescente acompañado en el período.</CardDescription>
           </CardHeader>
           <CardContent>
             {r.porNnya.length === 0 ? (
@@ -451,7 +454,7 @@ async function Tablero({
               <Table mobileCards={false}>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>NNyA</TableHead>
+                    <TableHead>Niño/a o adolescente</TableHead>
                     <TableHead className="hidden text-right sm:table-cell">Días</TableHead>
                     <TableHead className="text-right">Horas</TableHead>
                     <TableHead className="text-right">Gasto</TableHead>
@@ -479,19 +482,18 @@ async function Tablero({
             )}
           </CardContent>
         </Card>
-        <Card className="shadow-none">
-          <CardHeader>
-            <CardTitle className="text-base">Por cuidadora</CardTitle>
-            <CardDescription>Para controlar lo que factura cada una en el período.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {r.porCuidadora.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Sin horas en este período.</p>
-            ) : (
+        {/* Solo si alguna fila tiene cuidadora: es un dato opcional. */}
+        {hayCuidadoras && (
+          <Card className="shadow-none">
+            <CardHeader>
+              <CardTitle className="text-base">Por cuidadora</CardTitle>
+              <CardDescription>Para controlar lo que factura cada una en el período.</CardDescription>
+            </CardHeader>
+            <CardContent>
               <CuidadorasTotales filas={r.porCuidadora} />
-            )}
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );
@@ -574,7 +576,7 @@ async function Nnyas({ convenio, today, canLoad, user }: { convenio: Convenio; t
   return (
     <Card className="shadow-none">
       <CardHeader>
-        <CardTitle className="text-base">NNyA del convenio</CardTitle>
+        <CardTitle className="text-base">Niños, niñas y adolescentes del convenio</CardTitle>
         <CardDescription>
           {nnyas.length === 0
             ? "Aparecen solos al cargar sus primeras horas."
@@ -690,7 +692,7 @@ function CuidadorasTotales({ filas }: { filas: { id: string; nombre: string; hor
       <TableBody>
         {filas.map((c) => (
           <TableRow key={c.id}>
-            <TableCell className="font-semibold">{c.nombre}</TableCell>
+            <TableCell className={c.id === SIN_CUIDADORA ? "text-muted-foreground" : "font-semibold"}>{c.nombre}</TableCell>
             <TableCell className="whitespace-nowrap text-right tabular-nums">{horasTexto(c.horas)}</TableCell>
             <TableCell className="whitespace-nowrap text-right font-semibold tabular-nums">{formatPesos(c.importe)}</TableCell>
           </TableRow>
@@ -771,16 +773,7 @@ async function Carga({
               </span>
             </p>
           )}
-          {canLoad && activas.length === 0 && (
-            <p className="rounded-2xl border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-900 dark:text-amber-100">
-              Para cargar horas, primero sumá a las cuidadoras en la pestaña{" "}
-              <Link href={`/convenios/${convenio.id}?ver=cuidadoras`} className="font-semibold underline">
-                Cuidadoras
-              </Link>
-              .
-            </p>
-          )}
-          {canLoad && activas.length > 0 && valorHora !== null && (
+          {canLoad && valorHora !== null && (
             <>
               <NuevasHorasForm agreementId={convenio.id} dia={dayISO} cuidadoras={activas} nnyas={nnyas} />
               <div className="flex flex-wrap items-center gap-2 border-t border-border/50 pt-4">
@@ -813,8 +806,8 @@ async function Carga({
                       {f.nombre || `DNI ${f.dni}`}
                     </Link>
                     <p className="text-xs text-muted-foreground">
-                      {f.cuidadora} · {LUGARES[f.lugar]}
-                      {f.lugarDetalle ? ` (${f.lugarDetalle})` : ""}
+                      {LUGARES[f.lugar]}
+                      {f.lugarDetalle ? ` (${f.lugarDetalle})` : ""} · {f.cuidadora ?? "Sin cuidadora cargada"}
                     </p>
                     <p className="text-sm font-semibold tabular-nums">
                       {horasTexto(f.horas)} · {f.importe === null ? "sin valor hora" : formatPesos(f.importe)}
@@ -834,7 +827,7 @@ async function Carga({
                       cuidadoras={todas}
                       nnyas={nnyas}
                       dia={dayISO}
-                      descripcion={`las horas de ${f.cuidadora} con ${f.nombre || `DNI ${f.dni}`}`}
+                      descripcion={`las horas de ${f.nombre || `DNI ${f.dni}`} del ${dma(dayISO).slice(0, 5)}`}
                     />
                   )}
                 </li>
@@ -844,10 +837,10 @@ async function Carga({
               <Table mobileCards={false}>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Cuidadora</TableHead>
-                    <TableHead>NNyA</TableHead>
+                    <TableHead>Niño/a o adolescente</TableHead>
                     <TableHead className="text-right">Horas</TableHead>
                     <TableHead>Dónde</TableHead>
+                    <TableHead>Cuidadora</TableHead>
                     <TableHead className="text-right">Importe</TableHead>
                     {canLoad && (
                       <TableHead className="w-24">
@@ -860,23 +853,25 @@ async function Carga({
                   {filas.map((f) => (
                     <TableRow key={f.id}>
                       <TableCell>
-                        <p className="font-semibold">{f.cuidadora}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {f.cargo ? `Cargó ${f.cargo}` : ""}
-                          {f.cambio ? ` · corrigió ${f.cambio}` : ""}
-                        </p>
-                      </TableCell>
-                      <TableCell>
                         <Link href={`/people/${f.dni}`} className="font-semibold text-foreground hover:text-primary hover:underline">
                           {f.nombre || "Sin nombre"}
                         </Link>
                         <p className="text-xs text-muted-foreground">DNI {f.dni}</p>
                         {f.observacion && <p className="mt-1 whitespace-pre-line text-xs text-muted-foreground">{f.observacion}</p>}
+                        {(f.cargo || f.cambio) && (
+                          <p className="mt-1 text-[11px] text-muted-foreground">
+                            {f.cargo ? `Cargó ${f.cargo}` : ""}
+                            {f.cambio ? ` · corrigió ${f.cambio}` : ""}
+                          </p>
+                        )}
                       </TableCell>
                       <TableCell className="whitespace-nowrap text-right tabular-nums">{horasTexto(f.horas)}</TableCell>
                       <TableCell className="text-sm">
                         {LUGARES[f.lugar]}
                         {f.lugarDetalle && <p className="text-xs text-muted-foreground">{f.lugarDetalle}</p>}
+                      </TableCell>
+                      <TableCell className="text-sm">
+                        {f.cuidadora ?? <span className="text-muted-foreground">Sin cargar</span>}
                       </TableCell>
                       <TableCell className="text-right font-semibold tabular-nums">
                         {f.importe === null ? "—" : formatPesos(f.importe)}
@@ -889,7 +884,7 @@ async function Carga({
                             cuidadoras={todas}
                             nnyas={nnyas}
                             dia={dayISO}
-                            descripcion={`las horas de ${f.cuidadora} con ${f.nombre || `DNI ${f.dni}`}`}
+                            descripcion={`las horas de ${f.nombre || `DNI ${f.dni}`} del ${dma(dayISO).slice(0, 5)}`}
                           />
                         </TableCell>
                       )}
@@ -935,13 +930,16 @@ async function Cuidadoras({
       <Card className="shadow-none">
         <CardHeader>
           <CardTitle className="text-base">Cuidadoras del convenio</CardTitle>
-          <CardDescription>Las que se eligen al cargar horas, con lo que hizo cada una en el período.</CardDescription>
+          <CardDescription>
+            Es opcional: las cuidadoras las contrata la asociación del convenio. Si las cargás acá, se pueden elegir al cargar horas y ves lo
+            que hizo cada una en el período.
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {canLoad && <NuevaCuidadoraForm agreementId={convenio.id} />}
           {cuidadoras.length === 0 ? (
             <p className="rounded-2xl border border-dashed border-border/70 p-6 text-center text-sm text-muted-foreground">
-              Todavía no hay cuidadoras en la lista.
+              Todavía no hay cuidadoras en la lista. Las horas se cargan igual, sin cuidadora.
             </p>
           ) : (
             <Table>

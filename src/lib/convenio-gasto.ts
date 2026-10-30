@@ -18,8 +18,12 @@ export const LUGARES = {
 export type Lugar = keyof typeof LUGARES;
 export const isLugar = (v: unknown): v is Lugar => typeof v === "string" && v in LUGARES;
 
+/** Clave y texto de las horas cargadas sin cuidadora en los totales. */
+export const SIN_CUIDADORA = "sin-cuidadora";
+export const SIN_CUIDADORA_TEXTO = "Sin cuidadora cargada";
+
 export const DEFAULT_ALERT_PERCENTS = [70, 85, 95];
-/** Horas de un mismo día: no más de 24 por cuidadora. */
+/** Horas de un mismo día: no más de 24 por cuidadora ni por niño, niña o adolescente. */
 export const MAX_HORAS_DIA = 24;
 export const GASTO_LIMITS = { nombre: 120, dni: 15, telefono: 40, lugarDetalle: 120, observacion: 1000 };
 
@@ -122,8 +126,9 @@ export function valorHoraDel(dia: string, valores: ValorHora[]): number | null {
 
 export type FilaHoras = {
   fecha: string;
-  cuidadoraId: string;
-  cuidadora: string;
+  /** Sin cuidadora: la cuidadora es opcional (las contrata la asociación del convenio). */
+  cuidadoraId: string | null;
+  cuidadora: string | null;
   dni: string;
   nombre: string | null;
   horas: number;
@@ -209,10 +214,11 @@ export function resumirPeriodo(input: {
     d.horas += f.horas;
     d.importe += importe;
     dias.set(f.fecha, d);
-    const c = cuidadoras.get(f.cuidadoraId) ?? { id: f.cuidadoraId, nombre: f.cuidadora, horas: 0, importe: 0 };
+    const clave = f.cuidadoraId ?? SIN_CUIDADORA;
+    const c = cuidadoras.get(clave) ?? { id: clave, nombre: f.cuidadora ?? SIN_CUIDADORA_TEXTO, horas: 0, importe: 0 };
     c.horas += f.horas;
     c.importe += importe;
-    cuidadoras.set(f.cuidadoraId, c);
+    cuidadoras.set(clave, c);
     const n = nnya.get(f.dni) ?? { dni: f.dni, nombre: f.nombre, dias: new Set<string>(), horas: 0, importe: 0 };
     n.horas += f.horas;
     n.importe += importe;
@@ -270,7 +276,11 @@ export function resumirPeriodo(input: {
     proyeccion,
     excedente: tope !== null && proyeccion !== null ? Math.max(0, round2(proyeccion - tope)) : 0,
     porDia,
-    porCuidadora: [...cuidadoras.values()].sort((a, b) => b.importe - a.importe || a.nombre.localeCompare(b.nombre, "es")),
+    // Las horas sin cuidadora van al final.
+    porCuidadora: [...cuidadoras.values()].sort(
+      (a, b) =>
+        Number(a.id === SIN_CUIDADORA) - Number(b.id === SIN_CUIDADORA) || b.importe - a.importe || a.nombre.localeCompare(b.nombre, "es")
+    ),
     porNnya: [...nnya.values()]
       .map(({ dias, ...n }) => ({ ...n, dias: dias.size }))
       .sort((a, b) => b.importe - a.importe || (a.nombre ?? "").localeCompare(b.nombre ?? "", "es")),
@@ -356,7 +366,7 @@ export function parseCuidadora(raw: Record<string, unknown>): { ok: true; data: 
 
 export type HorasInput = {
   fecha: string;
-  cuidadoraId: string;
+  cuidadoraId: string | null;
   dni: string;
   horas: number;
   lugar: Lugar;
@@ -364,15 +374,14 @@ export type HorasInput = {
   observacion: string | null;
 };
 
-/** Una fila de horas. El DNI del NNyA se revisa después contra el padrón y el Registro Único. */
+/** Una fila de horas. La cuidadora es opcional. El DNI del niño, niña o adolescente se revisa después contra el padrón y el Registro Único. */
 export function parseHoras(raw: Record<string, unknown>, hoy: string): { ok: true; data: HorasInput } | { ok: false; error: string } {
   const fecha = parseDia(raw.fecha);
   if (!fecha) return { ok: false, error: "Elegí el día." };
   if (fecha > hoy) return { ok: false, error: "No se pueden cargar horas de días que todavía no pasaron." };
-  const cuidadoraId = String(raw.cuidadoraId ?? "").trim();
-  if (!cuidadoraId) return { ok: false, error: "Elegí la cuidadora." };
+  const cuidadoraId = String(raw.cuidadoraId ?? "").trim() || null;
   const dni = String(raw.dni ?? "").trim().toUpperCase();
-  if (!dni) return { ok: false, error: "Elegí a qué NNyA acompañó (por DNI)." };
+  if (!dni) return { ok: false, error: "Elegí a qué niño, niña o adolescente se acompañó (por DNI)." };
   if (dni.length > GASTO_LIMITS.dni) return { ok: false, error: "Ese DNI no es válido." };
   const horas = parseImporte(raw.horas);
   if (horas === null || horas <= 0) return { ok: false, error: "Escribí cuántas horas fueron." };
@@ -397,12 +406,12 @@ export function parseHoras(raw: Record<string, unknown>, hoy: string): { ok: tru
 export const horasTexto = (h: number) => `${h.toLocaleString("es-AR", { maximumFractionDigits: 2 })} h`;
 
 // ---------------------------------------------------------------------------
-// NNyA: ingreso y egreso
+// Niños, niñas y adolescentes acompañados: ingreso y egreso
 // ---------------------------------------------------------------------------
 
 export const NNYA_MOTIVO_MAX = 300;
 
-/** El egreso de un NNyA: el día (desde su ingreso hasta hoy) y un motivo opcional. */
+/** El egreso de un niño, niña o adolescente: el día (desde su ingreso hasta hoy) y un motivo opcional. */
 export function parseEgreso(
   raw: Record<string, unknown>,
   ingreso: string,

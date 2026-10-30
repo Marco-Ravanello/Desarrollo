@@ -3,7 +3,7 @@ import * as XLSX from "xlsx";
 import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
 import { hasPermission, PERMISSIONS } from "@/lib/permissions";
-import { periodoTexto } from "@/lib/convenio-gasto";
+import { SIN_CUIDADORA, periodoTexto } from "@/lib/convenio-gasto";
 import { formatFechaHora } from "@/lib/fechas";
 import { getRendicion } from "@/services/convenio-cierre";
 
@@ -19,7 +19,7 @@ function hoja(rows: Record<string, string | number | null>[], anchos: number[]) 
 
 /**
  * La rendición de un período de un convenio por horas, en Excel: resumen, por día, el detalle de cada fila,
- * por cuidadora y por NNyA. Tiene datos de NNyA: pide el permiso de bajar datos personales y queda en Auditoría.
+ * por niño o niña y por cuidadora. Tiene datos personales de niños, niñas y adolescentes: pide el permiso de bajar datos personales y queda en Auditoría.
  */
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
@@ -53,15 +53,15 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     ["Disponible ($)", resumen.disponible],
     ["Usado (%)", resumen.porcentaje === null ? null : Math.round(resumen.porcentaje * 10) / 10],
     ["Días con horas", resumen.porDia.length],
-    ["Cuidadoras", resumen.porCuidadora.length],
-    ["NNyA acompañados", resumen.porNnya.length],
+    ["Cuidadoras", resumen.porCuidadora.filter((c) => c.id !== SIN_CUIDADORA).length],
+    ["Niños, niñas y adolescentes acompañados", resumen.porNnya.length],
     [],
     ["Valor hora", "Desde"],
     ...valores.map((v) => [v.valor, dma(v.desde)]),
   ];
   if (resumen.horasSinValor > 0) resumenRows.push([], ["Atención", `${resumen.horasSinValor} horas sin valor hora: no están en el gastado.`]);
   const wsResumen = XLSX.utils.aoa_to_sheet(resumenRows);
-  wsResumen["!cols"] = [{ wch: 22 }, { wch: 60 }];
+  wsResumen["!cols"] = [{ wch: 40 }, { wch: 60 }];
 
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, wsResumen, "Resumen");
@@ -78,16 +78,16 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     hoja(
       detalle.map((f) => ({
         Día: dma(f.fecha),
-        Cuidadora: f.cuidadora,
-        "DNI NNyA": f.dni,
-        NNyA: f.nombre ?? "",
+        "DNI del niño/a": f.dni,
+        "Niño/a o adolescente": f.nombre ?? "",
         Horas: f.horas,
         "Valor hora ($)": f.valorHora,
         "Importe ($)": f.importe,
         Lugar: f.lugar,
+        Cuidadora: f.cuidadora,
         Observación: f.observacion ?? "",
       })),
-      [12, 24, 12, 30, 8, 14, 14, 26, 40]
+      [12, 12, 30, 8, 14, 14, 26, 24, 40]
     ),
     "Detalle"
   );
@@ -103,7 +103,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
         const ficha = nnya.get(n.dni);
         return {
           DNI: n.dni,
-          NNyA: n.nombre ?? "",
+          "Niño/a o adolescente": n.nombre ?? "",
           Ingreso: dma(ficha?.ingreso ?? null),
           Egreso: dma(ficha?.egreso ?? null),
           Días: n.dias,
@@ -113,7 +113,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       }),
       [12, 30, 12, 12, 8, 10, 16]
     ),
-    "Por NNyA"
+    "Por niño o niña"
   );
 
   await prisma.auditLog.create({
