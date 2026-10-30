@@ -151,7 +151,7 @@ export type Rendicion = {
     lugar: string;
     observacion: string | null;
   }[];
-  nnya: Map<string, { ingreso: string; egreso: string | null }>;
+  nnya: Map<string, { ingreso: string | null; egreso: string | null }>;
 };
 
 /** Todo lo del período para la planilla de rendición (quien ve el detalle del convenio). */
@@ -203,7 +203,7 @@ export async function getRendicion(
           observacion: f.observacion,
         };
       }),
-      nnya: new Map(nnya.map((n) => [n.dni, { ingreso: isoDe(n.ingreso), egreso: n.egreso ? isoDe(n.egreso) : null }])),
+      nnya: new Map(nnya.map((n) => [n.dni, { ingreso: n.ingreso ? isoDe(n.ingreso) : null, egreso: n.egreso ? isoDe(n.egreso) : null }])),
     },
   };
 }

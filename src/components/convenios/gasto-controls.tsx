@@ -15,6 +15,8 @@ import {
   guardarHorasAction, guardarValorHoraAction, repetirDiaAnteriorAction,
 } from "@/app/(dashboard)/convenios/actions";
 import { RequiredMark } from "@/components/ui/form-section";
+import { SumarNnyaDialog } from "@/components/convenios/nnya-ficha-controls";
+import type { AddressOptions } from "@/lib/localidades";
 
 const selectClass =
   "w-full h-10 px-3 rounded-xl bg-background border border-input text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary";
@@ -297,55 +299,72 @@ export function CuidadoraActions({ agreementId, cuidadora }: { agreementId: stri
 // ---------------------------------------------------------------------------
 
 type Opcion = { id: string; nombre: string };
-type Nnya = { dni: string; nombre: string | null };
+type Nnya = { dni: string; nombre: string | null; egresado?: boolean };
+type Sumar = { addressOptions: AddressOptions; puedeCargarPersona: boolean };
 export type FilaEditable = {
   id: string;
   cuidadoraId: string | null;
   dni: string;
+  nombre: string | null;
   horas: number;
   lugar: Lugar;
   lugarDetalle: string | null;
   observacion: string | null;
 };
 
-const OTRO = "__otro__";
+const SUMAR = "__sumar__";
 
 function HorasFields({
+  agreementId,
   form,
   setForm,
   cuidadoras,
   nnyas,
+  sumar,
   idPrefix,
 }: {
-  form: { cuidadoraId: string; nnya: string; dni: string; horas: string; lugar: string; lugarDetalle: string; observacion: string };
+  agreementId: string;
+  form: { cuidadoraId: string; dni: string; horas: string; lugar: string; lugarDetalle: string; observacion: string };
   setForm: (f: any) => void;
   cuidadoras: Opcion[];
   nnyas: Nnya[];
+  /** Si viene, se puede sumar al convenio a alguien que no está en la lista (buscándolo en el Registro Único). */
+  sumar?: Sumar;
   idPrefix: string;
 }) {
-  const otro = form.nnya === OTRO || nnyas.length === 0;
+  // Los que se suman desde acá aparecen enseguida, antes de que se recargue la lista.
+  const [sumados, setSumados] = useState<Nnya[]>([]);
+  const [sumando, setSumando] = useState(false);
+  const opciones = [...nnyas, ...sumados.filter((s) => !nnyas.some((n) => n.dni === s.dni))].sort((a, b) =>
+    (a.nombre ?? a.dni).localeCompare(b.nombre ?? b.dni, "es")
+  );
   return (
     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
       <div className="space-y-1.5 lg:col-span-2">
         <Label htmlFor={`${idPrefix}-nnya`}>Niño, niña o adolescente <RequiredMark /></Label>
-        {nnyas.length > 0 && (
-          <select id={`${idPrefix}-nnya`} value={form.nnya} onChange={(e) => setForm({ ...form, nnya: e.target.value, dni: e.target.value === OTRO ? "" : e.target.value })} className={selectClass}>
-            <option value="">Elegí…</option>
-            {nnyas.map((n) => <option key={n.dni} value={n.dni}>{n.nombre ? `${n.nombre} (DNI ${n.dni})` : `DNI ${n.dni}`}</option>)}
-            <option value={OTRO}>Otro: escribir el DNI</option>
-          </select>
-        )}
-        {otro && (
-          <Input
-            id={nnyas.length > 0 ? `${idPrefix}-dni` : `${idPrefix}-nnya`}
-            aria-label={nnyas.length > 0 ? "DNI del niño, niña o adolescente" : undefined}
-            inputMode="numeric"
-            autoComplete="off"
-            required
-            value={form.dni}
-            onChange={(e) => setForm({ ...form, dni: e.target.value })}
-            placeholder="DNI sin puntos"
-            className="h-10 rounded-xl"
+        <select
+          id={`${idPrefix}-nnya`}
+          required
+          value={form.dni}
+          onChange={(e) => (e.target.value === SUMAR ? setSumando(true) : setForm({ ...form, dni: e.target.value }))}
+          className={selectClass}
+        >
+          <option value="">{opciones.length === 0 ? "Todavía no hay nadie en la lista" : "Elegí…"}</option>
+          {opciones.map((n) => <option key={n.dni} value={n.dni}>{n.nombre ? `${n.nombre} (DNI ${n.dni})` : `DNI ${n.dni}`}{n.egresado ? " · con egreso" : ""}</option>)}
+          {sumar && <option value={SUMAR}>+ Sumar otro niño o niña…</option>}
+        </select>
+        {sumar && (
+          <SumarNnyaDialog
+            agreementId={agreementId}
+            addressOptions={sumar.addressOptions}
+            puedeCargarPersona={sumar.puedeCargarPersona}
+            trigger={false}
+            open={sumando}
+            onOpenChange={setSumando}
+            onSumado={(n) => {
+              setSumados((prev) => [...prev, { dni: n.dni, nombre: n.nombre }]);
+              setForm({ ...form, dni: n.dni });
+            }}
           />
         )}
       </div>
@@ -378,9 +397,8 @@ function HorasFields({
   );
 }
 
-const formDe = (fila: FilaEditable | null, nnyas: Nnya[]) => ({
+const formDe = (fila: FilaEditable | null) => ({
   cuidadoraId: fila?.cuidadoraId ?? "",
-  nnya: fila ? (nnyas.some((n) => n.dni === fila.dni) ? fila.dni : OTRO) : "",
   dni: fila?.dni ?? "",
   horas: fila ? String(fila.horas).replace(".", ",") : "",
   lugar: fila?.lugar ?? "HOSPITAL",
@@ -388,10 +406,25 @@ const formDe = (fila: FilaEditable | null, nnyas: Nnya[]) => ({
   observacion: fila?.observacion ?? "",
 });
 
-/** Cargar las horas de un niño, niña o adolescente en el día elegido (la cuidadora es opcional). */
-export function NuevasHorasForm({ agreementId, dia, cuidadoras, nnyas }: { agreementId: string; dia: string; cuidadoras: Opcion[]; nnyas: Nnya[] }) {
+/**
+ * Cargar las horas de un niño, niña o adolescente en el día elegido (la cuidadora es opcional).
+ * Se elige de la lista del convenio (sin los que egresaron); si no está, se suma desde el Registro Único.
+ */
+export function NuevasHorasForm({
+  agreementId,
+  dia,
+  cuidadoras,
+  nnyas,
+  sumar,
+}: {
+  agreementId: string;
+  dia: string;
+  cuidadoras: Opcion[];
+  nnyas: Nnya[];
+  sumar?: Sumar;
+}) {
   const router = useRouter();
-  const [form, setForm] = useState(formDe(null, nnyas));
+  const [form, setForm] = useState(formDe(null));
   const [saving, setSaving] = useState(false);
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -401,12 +434,12 @@ export function NuevasHorasForm({ agreementId, dia, cuidadoras, nnyas }: { agree
     if (!res?.success) return failed(res);
     toast.success("Horas cargadas.");
     // Se quedan el lugar y la cuidadora: suele cargarse otro chico o chica en el mismo lugar.
-    setForm({ ...form, nnya: "", dni: "", horas: "", observacion: "" });
+    setForm({ ...form, dni: "", horas: "", observacion: "" });
     router.refresh();
   };
   return (
     <form onSubmit={submit} className="space-y-3">
-      <HorasFields form={form} setForm={setForm} cuidadoras={cuidadoras} nnyas={nnyas} idPrefix="nuevas-horas" />
+      <HorasFields agreementId={agreementId} form={form} setForm={setForm} cuidadoras={cuidadoras} nnyas={nnyas.filter((n) => !n.egresado)} sumar={sumar} idPrefix="nuevas-horas" />
       <Button type="submit" disabled={saving} className="h-10 rounded-xl gap-1.5 font-bold">
         {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />} Cargar horas
       </Button>
@@ -431,9 +464,11 @@ export function FilaActions({
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState(formDe(fila, nnyas));
+  const [form, setForm] = useState(formDe(fila));
   const [fecha, setFecha] = useState(dia);
   const [saving, setSaving] = useState(false);
+  // Al corregir se puede dejar a quien ya tenía la fila, aunque haya egresado.
+  const opciones = nnyas.some((n) => n.dni === fila.dni) ? nnyas : [...nnyas, { dni: fila.dni, nombre: fila.nombre }];
   const save = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
@@ -471,7 +506,7 @@ export function FilaActions({
               <Label htmlFor={`fila-${fila.id}-fecha`}>Día <RequiredMark /></Label>
               <Input id={`fila-${fila.id}-fecha`} type="date" required value={fecha} onChange={(e) => setFecha(e.target.value)} className="h-10 rounded-xl" />
             </div>
-            <HorasFields form={form} setForm={setForm} cuidadoras={cuidadoras} nnyas={nnyas} idPrefix={`fila-${fila.id}`} />
+            <HorasFields agreementId={agreementId} form={form} setForm={setForm} cuidadoras={cuidadoras} nnyas={opciones} idPrefix={`fila-${fila.id}`} />
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
               <Button type="submit" disabled={saving}>{saving ? "Guardando…" : "Guardar"}</Button>

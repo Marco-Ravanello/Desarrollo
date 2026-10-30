@@ -96,6 +96,9 @@ const ACTIONS: Record<string, { label: string; group: AuditGroup }> = {
   CONVENIO_NNYA_EGRESO: { label: "Registró el egreso de un niño, niña o adolescente de un convenio", group: "convenios" },
   CONVENIO_NNYA_REINGRESO: { label: "Registró que un niño, niña o adolescente volvió a un convenio", group: "convenios" },
   CONVENIO_NNYA_EXPEDIENTE: { label: "Vinculó a un niño, niña o adolescente de un convenio con un expediente", group: "convenios" },
+  CONVENIO_NNYA_ALTA: { label: "Sumó a un niño, niña o adolescente a un convenio", group: "convenios" },
+  CONVENIO_NNYA_DATOS: { label: "Cambió los datos de un niño, niña o adolescente en un convenio", group: "convenios" },
+  CONVENIO_NNYA_BAJA: { label: "Sacó a un niño, niña o adolescente de la lista de un convenio", group: "convenios" },
   // Compras, proveedores y stock
   UPDATE_FULFILLMENT: { label: "Registró una entrega de una orden", group: "compras" },
   CREATE_PROVIDER: { label: "Dio de alta un proveedor", group: "compras" },
@@ -257,6 +260,8 @@ const DETAIL_KEYS: Record<string, string> = {
   motivo: "Motivo",
   cambios: "Cambios",
   periodo: "Período",
+  campos: "Datos cambiados",
+  registro: "Registro Único",
 };
 
 /**

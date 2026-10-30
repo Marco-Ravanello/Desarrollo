@@ -106,12 +106,12 @@ describe("convenios: editar, estado, cierre del período y NNyA", () => {
     loginAs(operativo);
     expect(await guardarHorasAction(convenioId, null, fila({ fecha: ayer, dni: nnyaA, horas: "10" }))).toEqual({ success: true });
     let a = await nnyaRow(nnyaA);
-    expect(a.ingreso.toISOString().slice(0, 10)).toBe(ayer);
+    expect(a.ingreso?.toISOString().slice(0, 10)).toBe(ayer);
     expect(a.caseId).toBe(casoA);
     // Una carga de un día anterior adelanta el ingreso.
     expect(await guardarHorasAction(convenioId, null, fila({ fecha: anteayer, dni: nnyaA, horas: "10" }))).toEqual({ success: true });
     a = await nnyaRow(nnyaA);
-    expect(a.ingreso.toISOString().slice(0, 10)).toBe(anteayer);
+    expect(a.ingreso?.toISOString().slice(0, 10)).toBe(anteayer);
 
     expect(await guardarHorasAction(convenioId, null, fila({ fecha: ayer, dni: nnyaB, horas: "6" }))).toEqual({ success: true });
     expect((await nnyaRow(nnyaB)).caseId).toBeNull();

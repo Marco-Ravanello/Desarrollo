@@ -387,19 +387,27 @@ model ConvenioPeriodoCerrado {
 
 /// Cada NNyA acompañado en un convenio por horas: desde cuándo, si egresó y con qué expediente se sigue.
 model ConvenioNnya {
-  id           String    @id @default(cuid())
-  agreementId  String
-  agreement    Agreement @relation(fields: [agreementId], references: [id], onDelete: Cascade)
-  dni          String
-  nombre       String?
-  /// Primer día con horas (fecha de calendario, a medianoche UTC).
-  ingreso      DateTime
-  egreso       DateTime?
-  motivoEgreso String?
-  caseId       String?
-  case         Case?     @relation(fields: [caseId], references: [id], onDelete: SetNull)
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  id            String    @id @default(cuid())
+  agreementId   String
+  agreement     Agreement @relation(fields: [agreementId], references: [id], onDelete: Cascade)
+  dni           String
+  nombre        String?
+  /// Primer día con horas (fecha de calendario, a medianoche UTC). Vacío si se sumó y todavía no tiene horas.
+  ingreso       DateTime?
+  egreso        DateTime?
+  motivoEgreso  String?
+  /// Datos del acompañamiento (los personales están en el Registro Único y el padrón).
+  /// Juzgado o Servicio Local que interviene.
+  interviene    String?
+  motivo        String?
+  obraSocial    String?
+  observaciones String?
+  /// Quién lo sumó a mano. Los que aparecieron solos al cargar horas no tienen.
+  createdById   String?
+  caseId        String?
+  case          Case?     @relation(fields: [caseId], references: [id], onDelete: SetNull)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
   @@unique([agreementId, dni])
   @@index([caseId])

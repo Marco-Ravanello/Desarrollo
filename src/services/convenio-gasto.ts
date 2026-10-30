@@ -182,14 +182,12 @@ function valorDelDia(dia: string, valores: ValorHora[]) {
 }
 
 /** NNyA acompañados en los últimos 90 días, para elegirlos rápido al cargar. */
-export async function getNnyaRecientes(agreementId: string, hoy = todayInArgentina()) {
-  const rows = await prisma.convenioHora.findMany({
-    where: { agreementId, fecha: { gte: toDate(addDays(hoy, -90)) } },
-    distinct: ["dni"],
-    orderBy: { fecha: "desc" },
-    select: { dni: true, nombre: true },
-  });
-  return rows.sort((a, b) => (a.nombre ?? a.dni).localeCompare(b.nombre ?? b.dni, "es"));
+/** La lista del convenio para elegir al cargar horas, por nombre. `egresado`: tiene egreso cargado. */
+export async function getNnyaParaCargar(agreementId: string) {
+  const rows = await prisma.convenioNnya.findMany({ where: { agreementId }, select: { dni: true, nombre: true, egreso: true } });
+  return rows
+    .map((r) => ({ dni: r.dni, nombre: r.nombre, egresado: r.egreso !== null }))
+    .sort((a, b) => (a.nombre ?? a.dni).localeCompare(b.nombre ?? b.dni, "es"));
 }
 
 export type ConvenioConHoras = {
@@ -475,18 +473,23 @@ async function revisarEgreso(tx: Prisma.TransactionClient, agreementId: string, 
 
 /**
  * Deja al día la ficha del niño, niña o adolescente en el convenio: ingreso = su primer día con horas. Si ya no le quedan horas
- * (se cargó por error), se saca. La primera vez, si tiene un solo expediente abierto, queda vinculado.
+ * (se cargó por error), se saca, salvo que alguien lo haya sumado a mano: ese queda, sin ingreso.
+ * La primera vez, si tiene un solo expediente abierto, queda vinculado.
  */
 async function sincronizarNnya(tx: Prisma.TransactionClient, agreementId: string, dni: string, nombre: string | null) {
   const primera = await tx.convenioHora.aggregate({ where: { agreementId, dni }, _min: { fecha: true } });
   const ingreso = primera._min.fecha;
   const actual = await tx.convenioNnya.findUnique({ where: { agreementId_dni: { agreementId, dni } } });
   if (!ingreso) {
-    if (actual) await tx.convenioNnya.delete({ where: { id: actual.id } });
+    if (actual?.createdById) {
+      if (actual.ingreso) await tx.convenioNnya.update({ where: { id: actual.id }, data: { ingreso: null } });
+    } else if (actual) {
+      await tx.convenioNnya.delete({ where: { id: actual.id } });
+    }
     return;
   }
   if (actual) {
-    if (actual.ingreso.getTime() !== ingreso.getTime() || (nombre && nombre !== actual.nombre)) {
+    if (actual.ingreso?.getTime() !== ingreso.getTime() || (nombre && nombre !== actual.nombre)) {
       await tx.convenioNnya.update({ where: { id: actual.id }, data: { ingreso, ...(nombre ? { nombre } : {}) } });
     }
     return;
