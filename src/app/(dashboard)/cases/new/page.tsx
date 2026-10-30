@@ -57,7 +57,7 @@ export default async function NewCasePage({
   ];
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in duration-500 pb-20">
+    <div className="space-y-6">
       <PageBreadcrumbs items={breadcrumbs} />
 
       <PageHeader
@@ -74,7 +74,7 @@ export default async function NewCasePage({
       />
 
       <NewCaseForm
-        areas={areas as any}
+        areas={areas.map((a) => ({ id: a.id, name: a.name, color: a.color }))}
         preselectedAreaId={defaultAreaId}
         preselectedPerson={formattedPerson}
       />

@@ -86,7 +86,7 @@ export default function LoginPage() {
             <MunicipalCrest className="h-20 w-20 shadow-lg" forceDefault />
             <div>
               <h1 className="font-heading text-2xl font-bold tracking-tight text-[#163C68] dark:text-blue-200">
-                MuniGestión <span className="text-[#F69321]">3F</span>
+                MuniGestión <span className="text-[#C2410C] dark:text-[#F69321]">3F</span>
               </h1>
               <p className="text-sm text-muted-foreground">Desarrollo Humano y Hábitat · Tres de Febrero</p>
             </div>

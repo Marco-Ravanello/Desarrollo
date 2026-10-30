@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { RequiredMark } from "@/components/ui/form-section";
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
@@ -69,7 +70,7 @@ export function ProviderFormDialog({ trigger, initial }: Props) {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {FIELDS.map((f) => (
               <div key={f.name} className={f.name === "name" || f.name === "address" ? "space-y-1.5 sm:col-span-2" : "space-y-1.5"}>
-                <Label htmlFor={`provider-${f.name}`}>{f.label}{f.required && " *"}</Label>
+                <Label htmlFor={`provider-${f.name}`}>{f.label}{f.required && <RequiredMark />}</Label>
                 <Input
                   id={`provider-${f.name}`}
                   name={f.name}

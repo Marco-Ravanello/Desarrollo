@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { createAgreementAction } from "../../actions/agreement-actions";
 import dynamic from "next/dynamic";
+import { RequiredMark } from "@/components/ui/form-section";
 
 const OCRScanner = dynamic(() => import("@/components/ocr/ocr-scanner").then(mod => mod.OCRScanner), {
   ssr: false,
@@ -70,7 +71,7 @@ export function CreateAgreementForm({ areas, defaultAreaId = "" }: { areas: { id
   }
 
   return (
-    <Card className="max-w-4xl mx-auto">
+    <Card className="max-w-4xl">
       <CardHeader>
         <CardTitle>Nuevo convenio</CardTitle>
       </CardHeader>
@@ -81,10 +82,10 @@ export function CreateAgreementForm({ areas, defaultAreaId = "" }: { areas: { id
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          <p className="text-xs text-muted-foreground">Los campos con <span className="font-bold text-rose-600">*</span> son obligatorios.</p>
+          <p className="text-xs text-muted-foreground">Los campos con <RequiredMark /> son obligatorios.</p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="md:col-span-2 space-y-2">
-              <Label htmlFor="title">Título u objeto del convenio <Required /></Label>
+              <Label htmlFor="title">Título u objeto del convenio <RequiredMark /></Label>
               <Input
                 id="title"
                 name="title"
@@ -107,7 +108,7 @@ export function CreateAgreementForm({ areas, defaultAreaId = "" }: { areas: { id
               <p id="number-hint" className="text-xs text-muted-foreground">Si todavía no tiene número, dejalo vacío y cargalo después.</p>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="parties">Partes: con quién se firma <Required /></Label>
+              <Label htmlFor="parties">Partes: con quién se firma <RequiredMark /></Label>
               <Input
                 id="parties"
                 name="parties"
@@ -227,10 +228,3 @@ export function CreateAgreementForm({ areas, defaultAreaId = "" }: { areas: { id
   );
 }
 
-function Required() {
-  return (
-    <span className="text-rose-600" aria-hidden>
-      *
-    </span>
-  );
-}

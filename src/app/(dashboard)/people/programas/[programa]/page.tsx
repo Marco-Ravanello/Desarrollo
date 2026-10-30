@@ -75,7 +75,7 @@ export default async function ProgramPage({
   const pageHref = (page: number) => `/people/programas/${slug}?${new URLSearchParams({ ...(list.q ? { q: list.q } : {}), page: String(page) })}`;
 
   return (
-    <div className="space-y-6 pb-20 animate-in fade-in duration-500">
+    <div className="space-y-6">
       <PageBreadcrumbs
         items={[
           { label: "Registro Único", href: "/people" },

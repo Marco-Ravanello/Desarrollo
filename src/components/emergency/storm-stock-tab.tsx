@@ -18,6 +18,7 @@ import {
 } from "@/app/(dashboard)/admin/actions/emergency-actions";
 import { EMERGENCY_CATEGORIES } from "@/lib/emergency-categories";
 import Link from "next/link";
+import { RequiredMark } from "@/components/ui/form-section";
 
 const FICHA_CATEGORIES: EmergencyStockItem["category"][] = EMERGENCY_CATEGORIES.map((c) => c.key);
 const categoryTitle = (key: EmergencyStockItem["category"]) => EMERGENCY_CATEGORIES.find((c) => c.key === key)?.title || key;
@@ -386,7 +387,7 @@ export function StormStockTab({ stock, onRefresh }: StormStockTabProps) {
         <DialogContent className="sm:max-w-md rounded-2xl p-6">
           <DialogHeader>
             <DialogTitle className="text-lg font-bold flex items-center gap-2">
-              <Warehouse className="h-5 w-5 text-emerald-600" />
+              <Warehouse className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
               Configuración de stock real en depósito
             </DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground">
@@ -465,7 +466,7 @@ export function StormStockTab({ stock, onRefresh }: StormStockTabProps) {
 
           <div className="space-y-3 py-2">
             <div className="space-y-1.5">
-              <Label className="text-xs font-bold">Nombre del insumo *</Label>
+              <Label className="text-xs font-bold">Nombre del insumo <RequiredMark /></Label>
               <Input
                 placeholder="Ej: Chapas de zinc 3.66m / Tirantes de pino"
                 value={newSupplyName}

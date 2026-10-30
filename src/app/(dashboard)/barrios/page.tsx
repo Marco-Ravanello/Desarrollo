@@ -16,7 +16,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 
 export const metadata = { title: "Barrios" };
 
-const zero = (n: number) => (n ? formatNumber(n) : <span className="text-muted-foreground/70">0</span>);
+const zero = (n: number) => (n ? formatNumber(n) : <span className="text-muted-foreground">0</span>);
 
 export default async function BarriosPage() {
   const session = await auth();
@@ -40,7 +40,7 @@ export default async function BarriosPage() {
   const max = Math.max(1, ...data.barrios.map((b) => b.people));
 
   return (
-    <div className="space-y-6 pb-20 animate-in fade-in duration-500">
+    <div className="space-y-6">
       <PageBreadcrumbs items={[{ label: "Barrios", active: true }]} />
       <PageHeader
         title="Barrios"
@@ -101,8 +101,8 @@ export default async function BarriosPage() {
                   <TableCell className="text-right tabular-nums">{zero(b.openCases)}</TableCell>
                   <TableCell className="text-right tabular-nums">{zero(b.stormRecords)}</TableCell>
                   <TableCell className="text-right tabular-nums">{zero(b.lugares)}</TableCell>
-                  <TableCell className="text-sm whitespace-nowrap">{referentes.get(b.barrio)?.name ?? <span className="text-muted-foreground/70">Sin elegir</span>}</TableCell>
-                  <TableCell className="text-sm whitespace-nowrap">{recorridaText(b.barrio) ?? <span className="text-muted-foreground/70">Ninguna</span>}</TableCell>
+                  <TableCell className="text-sm whitespace-nowrap">{referentes.get(b.barrio)?.name ?? <span className="text-muted-foreground">Sin elegir</span>}</TableCell>
+                  <TableCell className="text-sm whitespace-nowrap">{recorridaText(b.barrio) ?? <span className="text-muted-foreground">Ninguna</span>}</TableCell>
                 </TableRow>
               ))}
             </TableBody>

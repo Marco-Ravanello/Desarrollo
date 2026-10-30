@@ -12,6 +12,7 @@ import { AddressFields, type AddressValue } from "@/components/people/address-fi
 import { GENEROS } from "@/lib/person-display";
 import type { AddressOptions } from "@/lib/localidades";
 import { MapPin, UserRound } from "lucide-react";
+import { RequiredMark } from "@/components/ui/form-section";
 
 const UBICACION: Record<string, string> = {
   UBICADA: "Ya está en el mapa.",
@@ -65,16 +66,16 @@ export function CreatePersonForm({ options }: { options: AddressOptions }) {
         </CardHeader>
         <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="dni">DNI o documento *</Label>
+            <Label htmlFor="dni">DNI o documento <RequiredMark /></Label>
             <Input id="dni" name="dni" inputMode="numeric" placeholder="Ej.: 12345678" required className="bg-background" />
           </div>
           <div className="hidden md:block" />
           <div className="space-y-2">
-            <Label htmlFor="lastName">Apellido *</Label>
+            <Label htmlFor="lastName">Apellido <RequiredMark /></Label>
             <Input id="lastName" name="lastName" placeholder="Ej.: Pérez" required className="bg-background" />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="firstName">Nombre *</Label>
+            <Label htmlFor="firstName">Nombre <RequiredMark /></Label>
             <Input id="firstName" name="firstName" placeholder="Ej.: Juan Carlos" required className="bg-background" />
           </div>
           <div className="space-y-2">

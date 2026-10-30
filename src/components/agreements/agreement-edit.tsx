@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AGREEMENT_REASON_MAX, AGREEMENT_STATUS_CHANGES, AGREEMENT_STATUS_LABELS } from "@/lib/convenios";
 import { changeAgreementStatusAction, updateAgreementAction } from "@/app/(dashboard)/admin/actions/agreement-actions";
+import { RequiredMark } from "@/components/ui/form-section";
 
 const selectClass =
   "w-full h-10 px-3 rounded-xl bg-background border border-input text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary";
@@ -92,9 +93,7 @@ export function EditAgreementButton({ agreement, areas }: { agreement: Agreement
             <div className="space-y-1.5 sm:col-span-2">
               <Label htmlFor="edit-title">
                 Título u objeto del convenio{" "}
-                <span className="text-rose-600" aria-hidden>
-                  *
-                </span>
+                <RequiredMark />
               </Label>
               <Input id="edit-title" required value={form.title} onChange={set("title")} />
             </div>
@@ -105,9 +104,7 @@ export function EditAgreementButton({ agreement, areas }: { agreement: Agreement
             <div className="space-y-1.5">
               <Label htmlFor="edit-parties">
                 Partes: con quién se firma{" "}
-                <span className="text-rose-600" aria-hidden>
-                  *
-                </span>
+                <RequiredMark />
               </Label>
               <Input id="edit-parties" required value={form.parties} onChange={set("parties")} />
             </div>
@@ -236,9 +233,7 @@ export function ChangeAgreementStatusButton({ id, status }: { id: string; status
           <div className="space-y-1.5">
             <Label htmlFor="status-motivo">
               Motivo{" "}
-              <span className="text-rose-600" aria-hidden>
-                *
-              </span>
+              <RequiredMark />
             </Label>
             <Textarea
               id="status-motivo"

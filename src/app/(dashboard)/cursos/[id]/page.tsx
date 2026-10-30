@@ -37,7 +37,7 @@ function Dato({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="min-w-0">
       <dt className="text-xs font-semibold text-muted-foreground">{label}</dt>
-      <dd className="text-sm text-foreground">{value || <span className="text-muted-foreground/70">Sin cargar</span>}</dd>
+      <dd className="text-sm text-foreground">{value || <span className="text-muted-foreground">Sin cargar</span>}</dd>
     </div>
   );
 }
@@ -67,7 +67,7 @@ export default async function CursoPage({ params }: Params) {
   const tipo = cursoTipoLabel(curso.tipo).toLowerCase();
 
   return (
-    <div className="space-y-6 pb-20 animate-in fade-in duration-500">
+    <div className="space-y-6">
       <PageBreadcrumbs items={[{ label: "Cursos y talleres", href: "/cursos" }, { label: curso.nombre, active: true }]} />
 
       {/* Para imprimir: la planilla de asistencia en papel. El membrete lo pone el marco de la app. */}
@@ -247,7 +247,7 @@ export default async function CursoPage({ params }: Params) {
                                 {i.estado === "DEJO" && ` · Dejó${i.bajaFecha ? ` el ${dia(i.bajaFecha)}` : ""}${i.bajaMotivo ? `: ${i.bajaMotivo}` : ""}`}
                               </p>
                             </TableCell>
-                            <TableCell className="text-sm">{i.telefono || <span className="text-muted-foreground/70">Sin teléfono</span>}</TableCell>
+                            <TableCell className="text-sm">{i.telefono || <span className="text-muted-foreground">Sin teléfono</span>}</TableCell>
                             <TableCell className="text-sm whitespace-nowrap">{dia(i.fecha)}</TableCell>
                             <TableCell className="text-right">
                               <span className="font-semibold tabular-nums">{i.asistencia.porcentaje === null ? "—" : `${i.asistencia.porcentaje} %`}</span>

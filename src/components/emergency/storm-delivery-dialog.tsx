@@ -108,7 +108,7 @@ export function StormDeliveryDialog({ record, stock, onOpenChange, onDelivered }
         <DialogContent className="w-[calc(100vw-1.5rem)] max-w-md rounded-2xl p-4 sm:p-6">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-lg">
-              <CheckCircle2 className="h-5 w-5 text-emerald-600" /> Entrega registrada
+              <CheckCircle2 className="h-5 w-5 text-emerald-600 dark:text-emerald-400" /> Entrega registrada
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-2 text-sm">
@@ -140,7 +140,7 @@ export function StormDeliveryDialog({ record, stock, onOpenChange, onDelivered }
       <DialogContent className="w-[calc(100vw-1.5rem)] max-w-lg rounded-2xl p-4 sm:p-6">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-lg">
-            <PackageCheck className="h-5 w-5 text-emerald-600" /> Registrar entrega
+            <PackageCheck className="h-5 w-5 text-emerald-600 dark:text-emerald-400" /> Registrar entrega
           </DialogTitle>
           <p className="text-xs text-muted-foreground">
             {record.nombreApellido} · {record.domicilio}
@@ -164,7 +164,7 @@ export function StormDeliveryDialog({ record, stock, onOpenChange, onDelivered }
               </span>
               <span className="text-center">{c.requested}</span>
               <span className="text-center font-bold">{c.pending}</span>
-              <span className={`text-center ${c.stock < c.pending ? "text-rose-600 font-bold" : ""}`}>{c.stock}</span>
+              <span className={`text-center ${c.stock < c.pending ? "text-rose-600 dark:text-rose-400 font-bold" : ""}`}>{c.stock}</span>
               <Input
                 type="number"
                 min={0}

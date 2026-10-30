@@ -85,7 +85,7 @@ export default async function AdminCalendarPage() {
   }));
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500 pb-20">
+    <div className="space-y-6">
       <PageHeader
         title="Agenda"
         description={

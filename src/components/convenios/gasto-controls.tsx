@@ -14,6 +14,7 @@ import {
   activarCuidadoraAction, borrarCuidadoraAction, borrarHorasAction, borrarValorHoraAction, configurarControlAction, guardarCuidadoraAction,
   guardarHorasAction, guardarValorHoraAction, repetirDiaAnteriorAction,
 } from "@/app/(dashboard)/convenios/actions";
+import { RequiredMark } from "@/components/ui/form-section";
 
 const selectClass =
   "w-full h-10 px-3 rounded-xl bg-background border border-input text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary";
@@ -70,11 +71,11 @@ export function ConfigurarControlForm({
     <form onSubmit={submit} className="space-y-5">
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-1.5">
-          <Label htmlFor="monthlyCap">Tope por período ($) <span className="text-rose-600" aria-hidden>*</span></Label>
+          <Label htmlFor="monthlyCap">Tope por período ($) <RequiredMark /></Label>
           <Input id="monthlyCap" inputMode="decimal" required value={form.monthlyCap} onChange={set("monthlyCap")} placeholder="Ej: 33000000" className="h-10 rounded-xl" />
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="periodStartDay">Cada período empieza el día <span className="text-rose-600" aria-hidden>*</span></Label>
+          <Label htmlFor="periodStartDay">Cada período empieza el día <RequiredMark /></Label>
           <Input id="periodStartDay" type="number" min={1} max={28} required value={form.periodStartDay} onChange={set("periodStartDay")} aria-describedby="periodStartDay-hint" className="h-10 rounded-xl" />
           <p id="periodStartDay-hint" className="text-xs text-muted-foreground">
             Termina el día anterior del mes siguiente. Por ejemplo, con 20: del 20/09 al 19/10.
@@ -85,11 +86,11 @@ export function ConfigurarControlForm({
       {primeraVez && (
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-1.5">
-            <Label htmlFor="valorHora">Valor hora ($) <span className="text-rose-600" aria-hidden>*</span></Label>
+            <Label htmlFor="valorHora">Valor hora ($) <RequiredMark /></Label>
             <Input id="valorHora" inputMode="decimal" required value={form.valorHora} onChange={set("valorHora")} placeholder="Ej: 12926" className="h-10 rounded-xl" />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="valorDesde">Rige desde <span className="text-rose-600" aria-hidden>*</span></Label>
+            <Label htmlFor="valorDesde">Rige desde <RequiredMark /></Label>
             <Input id="valorDesde" type="date" required value={form.valorDesde} onChange={set("valorDesde")} className="h-10 rounded-xl" />
           </div>
         </div>
@@ -138,11 +139,11 @@ export function ValorHoraForm({ agreementId, today }: { agreementId: string; tod
   return (
     <form onSubmit={submit} className="flex flex-col gap-2 sm:flex-row sm:items-end">
       <div className="space-y-1.5 sm:w-44">
-        <Label htmlFor="nuevo-valor-desde">Desde el</Label>
+        <Label htmlFor="nuevo-valor-desde">Desde el <RequiredMark /></Label>
         <Input id="nuevo-valor-desde" type="date" required value={desde} onChange={(e) => setDesde(e.target.value)} className="h-10 rounded-xl" />
       </div>
       <div className="min-w-0 flex-1 space-y-1.5">
-        <Label htmlFor="nuevo-valor">Valor hora ($)</Label>
+        <Label htmlFor="nuevo-valor">Valor hora ($) <RequiredMark /></Label>
         <Input id="nuevo-valor" inputMode="decimal" required value={valor} onChange={(e) => setValor(e.target.value)} placeholder="Ej: 13500" className="h-10 rounded-xl" />
       </div>
       <Button type="submit" disabled={saving} className="h-10 rounded-xl gap-1.5 font-bold">
@@ -181,7 +182,7 @@ function CuidadoraFields({ form, setForm, idPrefix }: { form: { nombre: string; 
   return (
     <>
       <div className="min-w-0 flex-1 space-y-1.5">
-        <Label htmlFor={`${idPrefix}-nombre`}>Nombre y apellido <span className="text-rose-600" aria-hidden>*</span></Label>
+        <Label htmlFor={`${idPrefix}-nombre`}>Nombre y apellido <RequiredMark /></Label>
         <Input id={`${idPrefix}-nombre`} required maxLength={GASTO_LIMITS.nombre} value={form.nombre} onChange={(e) => setForm({ ...form, nombre: e.target.value })} className="h-10 rounded-xl" />
       </div>
       <div className="space-y-1.5 sm:w-36">
@@ -326,14 +327,14 @@ function HorasFields({
   return (
     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
       <div className="space-y-1.5 lg:col-span-2">
-        <Label htmlFor={`${idPrefix}-cuidadora`}>Cuidadora <span className="text-rose-600" aria-hidden>*</span></Label>
+        <Label htmlFor={`${idPrefix}-cuidadora`}>Cuidadora <RequiredMark /></Label>
         <select id={`${idPrefix}-cuidadora`} required value={form.cuidadoraId} onChange={(e) => setForm({ ...form, cuidadoraId: e.target.value })} className={selectClass}>
           <option value="">Elegí…</option>
           {cuidadoras.map((c) => <option key={c.id} value={c.id}>{c.nombre}</option>)}
         </select>
       </div>
       <div className="space-y-1.5 lg:col-span-2">
-        <Label htmlFor={`${idPrefix}-nnya`}>NNyA acompañado <span className="text-rose-600" aria-hidden>*</span></Label>
+        <Label htmlFor={`${idPrefix}-nnya`}>NNyA acompañado <RequiredMark /></Label>
         {nnyas.length > 0 && (
           <select id={`${idPrefix}-nnya`} value={form.nnya} onChange={(e) => setForm({ ...form, nnya: e.target.value, dni: e.target.value === OTRO ? "" : e.target.value })} className={selectClass}>
             <option value="">Elegí…</option>
@@ -356,11 +357,11 @@ function HorasFields({
         )}
       </div>
       <div className="space-y-1.5 lg:col-span-1">
-        <Label htmlFor={`${idPrefix}-horas`}>Horas <span className="text-rose-600" aria-hidden>*</span></Label>
+        <Label htmlFor={`${idPrefix}-horas`}>Horas <RequiredMark /></Label>
         <Input id={`${idPrefix}-horas`} inputMode="decimal" required value={form.horas} onChange={(e) => setForm({ ...form, horas: e.target.value })} placeholder="Ej: 24" className="h-10 rounded-xl" />
       </div>
       <div className="space-y-1.5 lg:col-span-1">
-        <Label htmlFor={`${idPrefix}-lugar`}>Dónde <span className="text-rose-600" aria-hidden>*</span></Label>
+        <Label htmlFor={`${idPrefix}-lugar`}>Dónde <RequiredMark /></Label>
         <select id={`${idPrefix}-lugar`} required value={form.lugar} onChange={(e) => setForm({ ...form, lugar: e.target.value })} className={selectClass}>
           {Object.entries(LUGARES).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
         </select>
@@ -467,7 +468,7 @@ export function FilaActions({
               <DialogDescription>Queda registrado quién la corrigió.</DialogDescription>
             </DialogHeader>
             <div className="space-y-1.5 sm:w-48">
-              <Label htmlFor={`fila-${fila.id}-fecha`}>Día</Label>
+              <Label htmlFor={`fila-${fila.id}-fecha`}>Día <RequiredMark /></Label>
               <Input id={`fila-${fila.id}-fecha`} type="date" required value={fecha} onChange={(e) => setFecha(e.target.value)} className="h-10 rounded-xl" />
             </div>
             <HorasFields form={form} setForm={setForm} cuidadoras={cuidadoras} nnyas={nnyas} idPrefix={`fila-${fila.id}`} />

@@ -168,7 +168,7 @@ export function BudgetProgressWidget({
             </span>
             <div className="flex items-center gap-1.5 mt-0.5">
               <span className="text-base font-bold text-foreground">{burnRateStatus}</span>
-              <Badge className="text-xs font-bold bg-primary/20 text-primary border-none px-1.5 py-0">
+              <Badge className="text-xs font-bold bg-primary/10 text-primary border-none px-1.5 py-0">
                 {expectedPercentage}% esp.
               </Badge>
             </div>

@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { createCaseAction } from "../actions/create-case";
 import { Plus } from "lucide-react";
 import { CaseLabelPicker } from "@/components/cases/case-labels-editor";
+import { RequiredMark } from "@/components/ui/form-section";
 
 export function CreateCaseForm({ personId, areas }: { personId: string, areas: any[] }) {
   const [open, setOpen] = useState(false);
@@ -43,12 +44,12 @@ export function CreateCaseForm({ personId, areas }: { personId: string, areas: a
       <input type="hidden" name="personId" value={personId} />
 
       <div className="space-y-2">
-        <Label htmlFor="title">Carátula</Label>
+        <Label htmlFor="title">Carátula <RequiredMark /></Label>
         <Input id="title" name="title" placeholder="Ej: Solicitud de materiales" required />
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="areaId">Área responsable</Label>
+        <Label htmlFor="areaId">Área responsable <RequiredMark /></Label>
         <select
           id="areaId"
           name="areaId"

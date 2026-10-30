@@ -86,7 +86,7 @@ export default async function PadronQualityPage() {
   const q = await getPadronQuality();
 
   return (
-    <div className="space-y-6 pb-20 animate-in fade-in duration-500">
+    <div className="space-y-6">
       <PageBreadcrumbs
         items={[
           { label: "Registro Único", href: "/people" },

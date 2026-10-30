@@ -22,7 +22,7 @@ export default async function ProvidersPage({ searchParams }: { searchParams: Pr
   const canEdit = ["SUPERADMIN", "ADMIN_GENERAL", "DIRECCION_GENERAL"].includes(session?.user?.role as string);
 
   return (
-    <div className="space-y-6 max-w-6xl mx-auto">
+    <div className="space-y-6">
       <PageHeader
         title="Proveedores"
         description="Los proveedores de la Muni y las órdenes de compra de cada uno."

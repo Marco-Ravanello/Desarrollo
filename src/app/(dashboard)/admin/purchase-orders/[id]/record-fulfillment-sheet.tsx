@@ -97,7 +97,7 @@ export function RecordFulfillmentSheet({
             </div>
             <div className="text-center border-x">
               <p className="text-xs font-bold text-muted-foreground">Recibido</p>
-              <p className="text-lg font-bold text-blue-600">{item.fulfilledQuantity}</p>
+              <p className="text-lg font-bold text-blue-600 dark:text-blue-400">{item.fulfilledQuantity}</p>
             </div>
             <div className="text-center">
               <p className="text-xs font-bold text-muted-foreground">Pendiente</p>
@@ -126,14 +126,14 @@ export function RecordFulfillmentSheet({
             </div>
 
             {parseFloat(newFulfillment) === remaining && (
-              <div className="flex items-center gap-2 text-blue-600 bg-blue-500/10 p-3 rounded-xl border border-blue-500/30 text-xs font-medium">
+              <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400 bg-blue-500/10 p-3 rounded-xl border border-blue-500/30 text-xs font-medium">
                 <CheckCircle className="h-4 w-4 shrink-0" />
                 <span>Esta acción marcará el renglón como COMPLETADO.</span>
               </div>
             )}
 
             {parseFloat(newFulfillment) > remaining && (
-              <div className="flex items-center gap-2 text-red-600 bg-red-500/10 p-3 rounded-xl border border-red-500/30 text-xs font-medium">
+              <div className="flex items-center gap-2 text-red-600 dark:text-red-400 bg-red-500/10 p-3 rounded-xl border border-red-500/30 text-xs font-medium">
                 <AlertTriangle className="h-4 w-4 shrink-0" />
                 <span>La cantidad no puede ser mayor al pendiente ({remaining}).</span>
               </div>

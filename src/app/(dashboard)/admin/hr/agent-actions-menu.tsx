@@ -100,7 +100,7 @@ export function AgentActionsMenu({ agent, areas }: AgentActionsMenuProps) {
           <SheetDescription className="text-base">
             {mode === 'view'
               ? 'Información completa y situación de revista.'
-              : 'Actualice los datos del agente municipal.'}
+              : 'Actualizá los datos del agente.'}
           </SheetDescription>
         </SheetHeader>
 

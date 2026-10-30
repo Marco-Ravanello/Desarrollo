@@ -42,7 +42,7 @@ function EstadoBadge({ estado }: { estado: string }) {
   );
 }
 
-const pct = (n: number | null) => (n === null ? <span className="text-muted-foreground/70">Sin clases</span> : `${n} %`);
+const pct = (n: number | null) => (n === null ? <span className="text-muted-foreground">Sin clases</span> : `${n} %`);
 
 /** Cursos y talleres: la lista, con cuántos inscriptos tiene cada uno y cómo viene la asistencia. */
 export default async function CursosPage({ searchParams }: { searchParams: SearchParams }) {
@@ -69,7 +69,7 @@ export default async function CursosPage({ searchParams }: { searchParams: Searc
   const filtered = Boolean(areaId || q);
 
   return (
-    <div className="space-y-6 pb-20 animate-in fade-in duration-500">
+    <div className="space-y-6">
       <PageBreadcrumbs items={[{ label: "Cursos y talleres", active: true }]} />
       <PageHeader
         title="Cursos y talleres"
@@ -177,7 +177,7 @@ export default async function CursosPage({ searchParams }: { searchParams: Searc
                       {c.horario && <p className="text-xs text-muted-foreground">{c.horario}</p>}
                     </TableCell>
                     <TableCell className="text-sm">
-                      {c.area ?? <span className="text-muted-foreground/70">Sin área</span>}
+                      {c.area ?? <span className="text-muted-foreground">Sin área</span>}
                       {c.programa && <p className="text-xs text-muted-foreground">{c.programa}</p>}
                     </TableCell>
                     <TableCell className="text-right tabular-nums">{formatNumber(c.inscriptos)}</TableCell>

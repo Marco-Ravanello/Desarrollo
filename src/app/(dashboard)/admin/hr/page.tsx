@@ -128,7 +128,7 @@ export default async function HRPage({
   }));
 
   return (
-    <div className="space-y-6 pb-10">
+    <div className="space-y-6">
       <PageHeader
         title="Recursos Humanos"
         description="El personal de cada área, su situación y lo que cuesta por mes."

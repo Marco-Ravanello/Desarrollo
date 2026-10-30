@@ -46,8 +46,10 @@
     --popover: 211 68% 14%;
     --popover-foreground: 212 58% 95%;
 
-    --primary: 212 70% 55%;
-    --primary-foreground: 0 0% 100%;
+    /* Más claro que en modo claro, con texto oscuro encima: así llega al contraste mínimo (4,5 a 1)
+       como texto sobre las tarjetas y como fondo de los botones. */
+    --primary: 212 80% 66%;
+    --primary-foreground: 211 68% 10%;
 
     --secondary: 211 60% 20%;
     --secondary-foreground: 212 58% 95%;
@@ -58,7 +60,7 @@
     --accent: 32 93% 55%;             /* #F69321 */
     --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 62% 40%;
+    --destructive: 0 72% 50%;
     --destructive-foreground: 0 0% 100%;
 
     --border: 211 50% 20%;
@@ -77,6 +79,10 @@
 }
 
 @layer utilities {
+  /* En modo oscuro, el rojo de los avisos como texto va más claro para que se lea sobre el azul. */
+  .dark .text-destructive {
+    color: hsl(0 85% 72%);
+  }
   .custom-scrollbar::-webkit-scrollbar {
     width: 4px;
   }

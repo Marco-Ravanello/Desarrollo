@@ -115,7 +115,7 @@ export function MunicipalSettingsClient({
   };
 
   return (
-    <div className="space-y-6 pb-20 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="space-y-6">
       <PageHeader
         title="Configuración"
         description="El nombre, el escudo, las autoridades y los contactos de la Municipalidad que aparecen en la app y en los documentos."

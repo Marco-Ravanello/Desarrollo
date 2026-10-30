@@ -30,6 +30,7 @@ import {
   isTaskVisibleTo, monthCells, shortEventLabel, startOfWeekMonday, visibleHourRange, type AgendaEventType
 } from "@/lib/agenda";
 import { formatPesos } from "@/lib/formato";
+import { RequiredMark } from "@/components/ui/form-section";
 
 interface UnifiedCalendarProps {
   reservations: any[];
@@ -1284,7 +1285,7 @@ export function UnifiedCalendar({ reservations = [], purchaseOrders = [], tasks 
 
             <form onSubmit={handleAddTask} className="space-y-5">
               <div className="space-y-2">
-                <Label htmlFor="title" className="text-xs font-bold text-muted-foreground">Título de la tarea</Label>
+                <Label htmlFor="title" className="text-xs font-bold text-muted-foreground">Título de la tarea <RequiredMark /></Label>
                 <Input
                   id="title"
                   placeholder="Ej: Entrega de documentación de resmas"
@@ -1309,7 +1310,7 @@ export function UnifiedCalendar({ reservations = [], purchaseOrders = [], tasks 
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="dueDate" className="text-xs font-bold text-muted-foreground">Fecha de vencimiento</Label>
+                  <Label htmlFor="dueDate" className="text-xs font-bold text-muted-foreground">Fecha de vencimiento <RequiredMark /></Label>
                   <Input
                     id="dueDate"
                     type="date"
@@ -1321,7 +1322,7 @@ export function UnifiedCalendar({ reservations = [], purchaseOrders = [], tasks 
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="dueTime" className="text-xs font-bold text-muted-foreground">Hora de vencimiento</Label>
+                  <Label htmlFor="dueTime" className="text-xs font-bold text-muted-foreground">Hora de vencimiento <RequiredMark /></Label>
                   <Input
                     id="dueTime"
                     type="time"

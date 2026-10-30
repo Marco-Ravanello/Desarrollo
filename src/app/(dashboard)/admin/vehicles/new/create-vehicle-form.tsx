@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { createVehicleAction } from "../../actions/create-vehicle";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { RequiredMark } from "@/components/ui/form-section";
 
 export function CreateVehicleForm() {
   const router = useRouter();
@@ -30,7 +31,7 @@ export function CreateVehicleForm() {
   }
 
   return (
-    <Card className="max-w-2xl mx-auto shadow-xl border-t-4 border-t-primary rounded-2xl bg-card text-card-foreground">
+    <Card className="max-w-4xl">
       <CardHeader>
         <CardTitle className="text-2xl text-foreground font-heading">Registrar nueva unidad</CardTitle>
       </CardHeader>
@@ -39,26 +40,26 @@ export function CreateVehicleForm() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-4">
               <h3 className="font-semibold text-foreground flex items-center gap-2">
-                <div className="w-1 h-4 bg-[#f5a623] rounded-full" />
+                <div className="h-4 w-1 rounded-full bg-primary" />
                 Información básica
               </h3>
               <div className="space-y-2">
-                <Label htmlFor="plate">Patente / dominio</Label>
+                <Label htmlFor="plate">Patente / dominio <RequiredMark /></Label>
                 <Input id="plate" name="plate" placeholder="Ej: AA123BB" required className="uppercase" />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="brand">Marca</Label>
+                <Label htmlFor="brand">Marca <RequiredMark /></Label>
                 <Input id="brand" name="brand" placeholder="Ej: Toyota" required />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="model">Modelo</Label>
+                <Label htmlFor="model">Modelo <RequiredMark /></Label>
                 <Input id="model" name="model" placeholder="Ej: Hilux" required />
               </div>
             </div>
 
             <div className="space-y-4">
               <h3 className="font-semibold text-foreground flex items-center gap-2">
-                <div className="w-1 h-4 bg-[#f5a623] rounded-full" />
+                <div className="h-4 w-1 rounded-full bg-primary" />
                 Control y combustible
               </h3>
               <div className="space-y-2">
@@ -80,7 +81,7 @@ export function CreateVehicleForm() {
 
           <div className="space-y-4">
             <h3 className="font-semibold text-foreground flex items-center gap-2">
-              <div className="w-1 h-4 bg-[#f5a623] rounded-full" />
+              <div className="h-4 w-1 rounded-full bg-primary" />
               Vencimientos de documentación
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

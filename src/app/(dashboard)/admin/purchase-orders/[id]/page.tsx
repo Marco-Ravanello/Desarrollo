@@ -66,7 +66,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
   ];
 
   return (
-    <div className="space-y-6 pb-10">
+    <div className="space-y-6">
       <PageHeader
         title={<>Orden {order.number}</>}
         badge={

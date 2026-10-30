@@ -304,7 +304,7 @@ export default async function PersonDetailPage({
                 })}
               </div>
             )}
-            {person && canEdit && <CreateCaseForm personId={person.id} areas={areas} />}
+            {person && canEdit && <CreateCaseForm personId={person.id} areas={areas.map((a) => ({ id: a.id, name: a.name }))} />}
           </TabsContent>
 
           <TabsContent value="familia" className="p-4 sm:p-6 space-y-6">

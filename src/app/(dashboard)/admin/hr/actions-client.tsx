@@ -28,7 +28,7 @@ export function DeleteHRAction({ agentId }: { agentId: string }) {
 
   return (
     <DropdownMenuItem
-      className="rounded-xl px-3 py-2.5 gap-3 font-bold text-rose-600 focus:bg-rose-500 focus:text-white transition-all cursor-pointer"
+      className="rounded-xl px-3 py-2.5 gap-3 font-bold text-rose-600 dark:text-rose-400 focus:bg-rose-500 focus:text-white transition-all cursor-pointer"
       onSelect={handleAction}
       disabled={loading}
     >

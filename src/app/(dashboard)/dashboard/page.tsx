@@ -314,7 +314,7 @@ export default async function DashboardPage({
   const viewAsOptions: ViewAsOption[] = VIEW_AS.map((v) => ({ value: v.role, label: roleLabel(v.role), needsArea: v.needsArea }));
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-300 max-w-7xl mx-auto">
+    <div className="space-y-6">
       <PageHeader
         icon={LayoutDashboard}
         title={firstName ? `${greeting}, ${firstName}` : greeting}

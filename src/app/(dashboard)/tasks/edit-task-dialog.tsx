@@ -16,6 +16,7 @@ import {
   parseViewerIds, taskDueParts, TASK_NOTES_MAX, TASK_PRIORITIES, TASK_REPEATS, TASK_TITLE_MAX, type TaskPriority,
 } from "@/lib/tasks";
 import { updateTaskAction } from "./actions";
+import { RequiredMark } from "@/components/ui/form-section";
 
 export type ShareableUser = { id: string; name: string; areaName: string | null };
 
@@ -108,7 +109,7 @@ export function EditTaskDialog({ task, users }: { task: EditableTask; users: Sha
           </DialogHeader>
 
           <div className="space-y-1.5">
-            <Label htmlFor="tarea-titulo">Título</Label>
+            <Label htmlFor="tarea-titulo">Título <RequiredMark /></Label>
             <Input id="tarea-titulo" value={title} maxLength={TASK_TITLE_MAX} onChange={(e) => setTitle(e.target.value)} required className="rounded-xl" />
           </div>
 

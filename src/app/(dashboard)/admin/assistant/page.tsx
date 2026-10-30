@@ -475,7 +475,7 @@ export default function AssistantPage() {
   };
 
   return (
-    <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500 h-[calc(100vh-8rem)] max-h-[calc(100vh-8rem)] flex flex-col overflow-hidden">
+    <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500 h-[calc(100vh-9rem)] max-h-[calc(100vh-9rem)] flex flex-col overflow-hidden">
       <PageHeader
         className="shrink-0"
         title="Asistente de IA"
@@ -597,7 +597,7 @@ export default function AssistantPage() {
                                 size="sm"
                                 variant="outline"
                                 onClick={() => handleActionButton(act)}
-                                className="h-8 rounded-xl text-xs font-bold border-blue-500/20 bg-blue-500/5 hover:bg-blue-500/10 text-blue-600 hover:text-blue-700 flex items-center gap-1.5"
+                                className="h-8 rounded-xl text-xs font-bold border-blue-500/20 bg-blue-500/5 hover:bg-blue-500/10 text-blue-600 dark:text-blue-400 hover:text-blue-700 flex items-center gap-1.5"
                               >
                                 {act.label === "Ver en Mapa Social" && <MapPin className="h-3.5 w-3.5" />}
                                 {act.label === "Asignar tarea" && <CheckCircle2 className="h-3.5 w-3.5" />}

@@ -37,7 +37,7 @@ export function MobileListItem({ href, title, subtitle, meta, aside, leading, cl
       <div className="min-w-0 flex-1">
         <div className="truncate text-sm font-semibold text-foreground">{title}</div>
         {subtitle && <div className="truncate text-xs text-muted-foreground">{subtitle}</div>}
-        {meta && <div className="mt-0.5 truncate text-xs text-muted-foreground/80">{meta}</div>}
+        {meta && <div className="mt-0.5 truncate text-xs text-muted-foreground">{meta}</div>}
       </div>
       {aside && <div className="flex shrink-0 flex-col items-end gap-1 text-right">{aside}</div>}
       {href && <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/60" aria-hidden />}

@@ -156,7 +156,7 @@ export function AppSidebar({ isMobile = false, onNavigate }: AppSidebarProps) {
                 Tres de Febrero
               </span>
               <span className="tracking-tight truncate font-bold text-[#163C68] dark:text-blue-300 text-lg font-heading">
-                MuniGestión <span className="text-[#F69321]">3F</span>
+                MuniGestión <span className="text-[#C2410C] dark:text-[#F69321]">3F</span>
               </span>
             </div>
           )}

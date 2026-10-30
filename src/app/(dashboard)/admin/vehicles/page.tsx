@@ -90,7 +90,7 @@ export default async function VehiclesPage() {
   ).length;
 
   return (
-    <div className="space-y-8 pb-10">
+    <div className="space-y-6">
       <PageHeader
         title="Vehículos"
         description="Los vehículos de la Muni: estado, reservas, combustible y vencimientos."

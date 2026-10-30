@@ -61,7 +61,7 @@ export default async function VehicleDetailPage({ params }: { params: Promise<{ 
           : "bg-muted text-muted-foreground";
 
   return (
-    <div className="space-y-6 pb-10">
+    <div className="space-y-6">
       <PageHeader
         title={`${vehicle.brand} ${vehicle.model}`}
         icon={Car}

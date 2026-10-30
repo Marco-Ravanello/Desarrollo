@@ -18,6 +18,7 @@ import {
   vincularExpedienteAction,
   volvioAIngresarAction,
 } from "@/app/(dashboard)/convenios/actions";
+import { RequiredMark } from "@/components/ui/form-section";
 
 const selectClass =
   "w-full h-9 px-2 rounded-xl bg-background border border-input text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary";
@@ -102,9 +103,7 @@ export function ReabrirPeriodoButton({ agreementId, desde, texto }: { agreementI
           <div className="space-y-1.5">
             <Label htmlFor="reabrir-motivo">
               Motivo{" "}
-              <span className="text-rose-600" aria-hidden>
-                *
-              </span>
+              <RequiredMark />
             </Label>
             <Textarea
               id="reabrir-motivo"
@@ -186,9 +185,7 @@ export function EgresoButton({
           <div className="space-y-1.5">
             <Label htmlFor={`egreso-fecha-${nnya.id}`}>
               Último día de acompañamiento{" "}
-              <span className="text-rose-600" aria-hidden>
-                *
-              </span>
+              <RequiredMark />
             </Label>
             <Input
               id={`egreso-fecha-${nnya.id}`}

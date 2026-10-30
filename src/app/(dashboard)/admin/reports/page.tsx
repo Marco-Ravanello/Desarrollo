@@ -90,7 +90,7 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
   const empty = <EmptyMessage kind="search" compact title="No hay registros en este período" description="Probá con un período más largo." />;
 
   return (
-    <div className="space-y-6 max-w-6xl mx-auto">
+    <div className="space-y-6">
       <PageHeader
         title="Reportes"
         description={<>Indicadores de gestión del {periodLabel}.</>}

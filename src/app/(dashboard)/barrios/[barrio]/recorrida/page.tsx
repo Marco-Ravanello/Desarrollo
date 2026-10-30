@@ -55,7 +55,7 @@ export default async function PrepararRecorridaPage({
   const defaultEquipo = Array.from(new Set([session.user.id, referente?.userId].filter(Boolean) as string[]));
 
   return (
-    <div className="space-y-6 pb-20 animate-in fade-in duration-500">
+    <div className="space-y-6">
       <PageBreadcrumbs
         items={[
           { label: "Barrios", href: "/barrios" },

@@ -12,6 +12,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { PASSWORD_MIN_LENGTH } from "@/lib/password-rules";
 import { homePathFor } from "@/lib/permissions";
 import { changeOwnPasswordAction, type ChangePasswordResult } from "./actions";
+import { RequiredMark } from "@/components/ui/form-section";
 
 type Field = "current" | "next" | "confirm";
 
@@ -51,7 +52,7 @@ export default function ChangePasswordPage() {
   };
 
   return (
-    <div className="mx-auto max-w-lg space-y-6 pb-20 animate-in fade-in duration-500">
+    <div className="space-y-6">
       <PageHeader
         title="Cambiar mi contraseña"
         description="Elegí una contraseña que solo sepas vos."
@@ -59,7 +60,7 @@ export default function ChangePasswordPage() {
       />
 
       {forced && (
-        <div className="flex items-start gap-3 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4">
+        <div className="flex max-w-xl items-start gap-3 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4">
           <ShieldAlert className="mt-0.5 h-5 w-5 shrink-0 text-amber-600 dark:text-amber-400" />
           <p className="text-sm text-foreground">
             <span className="font-bold">Antes de seguir, cambiá tu contraseña.</span> La que tenés la cargó un administrador.
@@ -67,13 +68,13 @@ export default function ChangePasswordPage() {
         </div>
       )}
 
-      <Card className="rounded-2xl border border-border/60">
+      <Card className="max-w-xl">
         <CardContent className="p-5 sm:p-6">
           <form onSubmit={handleSubmit} className="space-y-4">
             {(Object.keys(LABELS) as Field[]).map((field) => (
               <div key={field} className="space-y-1.5">
                 <Label htmlFor={`clave-${field}`} className="text-xs font-bold">
-                  {LABELS[field]}
+                  {LABELS[field]} <RequiredMark />
                 </Label>
                 <Input
                   id={`clave-${field}`}

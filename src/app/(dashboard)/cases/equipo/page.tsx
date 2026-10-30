@@ -77,7 +77,7 @@ export default async function TeamWorkloadPage({ searchParams }: { searchParams:
     );
 
   return (
-    <div className="space-y-6 pb-20 animate-in fade-in duration-500">
+    <div className="space-y-6">
       <PageBreadcrumbs
         items={[
           { label: "Expedientes", href: "/cases" },

@@ -246,7 +246,7 @@ export default async function ControlGastoPage({ params, searchParams }: Params)
   const periodo = periodoPedido(convenio, sp.periodo, today);
 
   return (
-    <div className="space-y-6 pb-20">
+    <div className="space-y-6">
       <PageBreadcrumbs items={crumbs} />
       {header}
       <Tabs id={convenio.id} active={ver} periodo={periodo.desde} />
@@ -550,7 +550,7 @@ function CierreDelPeriodo({
   return (
     <div className="flex flex-col gap-3 rounded-2xl border border-border/60 bg-card px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
       <p className="flex items-start gap-2 text-sm text-foreground">
-        <Lock className={`mt-0.5 h-4 w-4 shrink-0 ${cierre ? "text-emerald-600" : "text-muted-foreground"}`} aria-hidden />
+        <Lock className={`mt-0.5 h-4 w-4 shrink-0 ${cierre ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground"}`} aria-hidden />
         <span>{texto1}</span>
       </p>
       <div className="flex flex-wrap gap-2 sm:shrink-0 sm:justify-end">
@@ -821,7 +821,7 @@ async function Carga({
                     </p>
                     {f.observacion && <p className="whitespace-pre-line text-xs text-muted-foreground">{f.observacion}</p>}
                     {(f.cargo || f.cambio) && (
-                      <p className="text-[11px] text-muted-foreground/80">
+                      <p className="text-[11px] text-muted-foreground">
                         {f.cargo ? `Cargó ${f.cargo}` : ""}
                         {f.cambio ? ` · corrigió ${f.cambio}` : ""}
                       </p>

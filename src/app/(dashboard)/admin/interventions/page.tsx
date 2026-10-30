@@ -103,7 +103,7 @@ export default function InterventionsAdminPage() {
   };
 
   return (
-    <div className="space-y-8 max-w-5xl mx-auto">
+    <div className="space-y-6">
       <PageHeader
         title="Importar datos"
         description="Subí intervenciones desde una planilla de Excel o bajá las que ya están cargadas."
@@ -166,7 +166,7 @@ export default function InterventionsAdminPage() {
       {results && (
         <div className="space-y-4 animate-in fade-in slide-in-from-top-4 duration-500">
            <Alert className="bg-emerald-500/10 border-emerald-500/30 rounded-2xl">
-             <CheckCircle2 className="h-5 w-5 text-emerald-600" />
+             <CheckCircle2 className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
              <AlertTitle className="text-emerald-800 dark:text-emerald-200 font-bold">Importación terminada</AlertTitle>
              <AlertDescription className="text-emerald-700 dark:text-emerald-300">
                Se cargaron {results.createdCount} intervenciones.

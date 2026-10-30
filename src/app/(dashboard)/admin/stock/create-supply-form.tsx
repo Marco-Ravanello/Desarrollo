@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { Plus } from "lucide-react";
+import { RequiredMark } from "@/components/ui/form-section";
 
 const selectClass =
   "w-full h-10 px-3 rounded-xl bg-background border border-input text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary";
@@ -55,9 +56,7 @@ export function CreateSupplyButton({ areas }: { areas: { id: string; name: strin
           <div className="space-y-1.5">
             <Label htmlFor="supply-name">
               Nombre del insumo{" "}
-              <span className="text-rose-600" aria-hidden>
-                *
-              </span>
+              <RequiredMark />
             </Label>
             <Input id="supply-name" name="name" placeholder="Ej: Resmas A4" required />
           </div>
@@ -67,11 +66,11 @@ export function CreateSupplyButton({ areas }: { areas: { id: string; name: strin
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label htmlFor="supply-stock">Cuántos hay hoy</Label>
+              <Label htmlFor="supply-stock">Cuántos hay hoy <RequiredMark /></Label>
               <Input id="supply-stock" name="stock" type="number" min="0" defaultValue="0" required />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="supply-min">Mínimo para reponer</Label>
+              <Label htmlFor="supply-min">Mínimo para reponer <RequiredMark /></Label>
               <Input id="supply-min" name="minStock" type="number" min="0" defaultValue="5" required />
             </div>
           </div>
