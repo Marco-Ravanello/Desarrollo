@@ -14,6 +14,7 @@ import { PersonTabs, TabShortcut } from "@/components/people/person-tabs";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/ui/status-badge";
 import {
   Calendar, Phone, MapPin, ShieldAlert, Mail, History, Eye, FileIcon, ExternalLink, Users,
   Contact, Layers, FolderOpen, CheckCircle2, UserPlus, PencilLine, User, Footprints, GraduationCap, Award,
@@ -158,14 +159,10 @@ export default async function PersonDetailPage({
             </Badge>
           )}
           {totalProgramas > 0 && (
-            <Badge className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 font-bold text-xs">
-              {plural(totalProgramas, "programa activo")}
-            </Badge>
+            <StatusBadge tone="green">{plural(totalProgramas, "programa activo")}</StatusBadge>
           )}
           {activeCases.length > 0 && (
-            <Badge className="bg-blue-500/15 text-blue-700 dark:text-blue-400 border border-blue-500/30 font-bold text-xs">
-              {plural(activeCases.length, "expediente abierto")}
-            </Badge>
+            <StatusBadge tone="blue">{plural(activeCases.length, "expediente abierto")}</StatusBadge>
           )}
         </div>
       </div>
@@ -293,7 +290,7 @@ export default async function PersonDetailPage({
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        <Badge variant="outline" className={`text-xs ${estado.badgeClass}`}>{estado.label}</Badge>
+                        <StatusBadge tone={estado.tone}>{estado.label}</StatusBadge>
                         <Button variant="ghost" size="icon" asChild>
                           <Link href={`/cases/${c.id}`} aria-label="Ver expediente"><Eye className="h-4 w-4 text-muted-foreground" /></Link>
                         </Button>

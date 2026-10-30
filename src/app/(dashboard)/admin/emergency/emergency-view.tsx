@@ -6,6 +6,8 @@ import { Card } from "@/components/ui/card";
 import { textoNormal } from "@/lib/formato";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { STORM_PRIORITY_TONE, toneOf } from "@/lib/status-tones";
+import { StatusBadge } from "@/components/ui/status-badge";
 import {
   FileSpreadsheet, FileText, Package, Plus,
   Download, RefreshCw, UserCheck, ShieldAlert, Users, Baby, CloudRain, BarChart3, PackageCheck
@@ -305,11 +307,9 @@ export function EmergencyView({ initialData, deniedAccess }: EmergencyViewProps)
             {records.map((r, idx) => (
               <Card key={r.id || idx} className="rounded-2xl border-border/60 shadow-sm bg-card p-5 space-y-3">
                 <div className="flex justify-between items-start">
-                  <Badge variant="outline" className={`text-xs font-bold ${
-                    r.prioridad === 'ALTA' ? 'bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/30' : 'bg-amber-500/10 text-amber-700 dark:text-amber-400'
-                  }`}>
+                  <StatusBadge tone={toneOf(STORM_PRIORITY_TONE, r.prioridad)}>
                     Prioridad {textoNormal(r.prioridad).toLowerCase()}
-                  </Badge>
+                  </StatusBadge>
                   <span className="text-xs font-mono text-muted-foreground">Ficha #{idx + 1}</span>
                 </div>
 

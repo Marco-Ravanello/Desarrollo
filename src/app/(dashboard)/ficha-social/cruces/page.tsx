@@ -276,23 +276,23 @@ export default function CrucesSocialesPage() {
         </div>
         <TableCards>
           <table className="w-full text-xs text-left">
-            <thead className="bg-muted/40 text-muted-foreground font-bold border-b border-border/40">
+            <thead className="bg-muted/40 border-b border-border/60">
               <tr>
-                <th className="px-5 py-3">Persona</th>
-                <th className="px-4 py-3">DNI</th>
-                <th className="px-4 py-3">Programas activos</th>
-                <th className="px-4 py-3">Barrio / localidad</th>
-                <th className="px-4 py-3">Contacto</th>
-                <th className="px-4 py-3 text-right">Acción</th>
+                <th className="h-11 px-4 text-left align-middle text-xs font-semibold text-muted-foreground whitespace-nowrap">Persona</th>
+                <th className="h-11 px-4 text-left align-middle text-xs font-semibold text-muted-foreground whitespace-nowrap">DNI</th>
+                <th className="h-11 px-4 text-left align-middle text-xs font-semibold text-muted-foreground whitespace-nowrap">Programas activos</th>
+                <th className="h-11 px-4 text-left align-middle text-xs font-semibold text-muted-foreground whitespace-nowrap">Barrio / localidad</th>
+                <th className="h-11 px-4 text-left align-middle text-xs font-semibold text-muted-foreground whitespace-nowrap">Contacto</th>
+                <th className="h-11 px-4 align-middle text-xs font-semibold text-muted-foreground whitespace-nowrap text-right">Acción</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border/30">
               {cruceData && cruceData.resultados.length > 0 ? (
                 cruceData.resultados.map((row, idx) => (
-                  <tr key={idx} className="hover:bg-muted/30 transition-colors">
-                    <td className="px-5 py-3.5 font-bold text-foreground">{row.nombre}</td>
-                    <td className="px-4 py-3.5 font-mono text-muted-foreground">{row.dni}</td>
-                    <td className="px-4 py-3.5">
+                  <tr key={idx} className="border-b border-border/50 transition-colors hover:bg-muted/60">
+                    <td className="px-4 py-3 align-middle font-bold text-foreground">{row.nombre}</td>
+                    <td className="px-4 py-3 align-middle font-mono text-muted-foreground">{row.dni}</td>
+                    <td className="px-4 py-3 align-middle">
                       <div className="flex flex-wrap gap-1">
                         {row.programas.map((p, pIdx) => (
                           <Badge key={pIdx} variant="outline" className="text-xs border-primary/30 text-primary font-bold">
@@ -301,13 +301,13 @@ export default function CrucesSocialesPage() {
                         ))}
                       </div>
                     </td>
-                    <td className="px-4 py-3.5 text-muted-foreground">
+                    <td className="px-4 py-3 align-middle text-muted-foreground">
                       {row.contacto?.barrio || row.contacto?.localidad || "No especificado"}
                     </td>
-                    <td className="px-4 py-3.5 text-muted-foreground font-mono">
+                    <td className="px-4 py-3 align-middle text-muted-foreground font-mono">
                       {row.contacto?.telefono || "N/R"}
                     </td>
-                    <td className="px-4 py-3.5 text-right">
+                    <td className="px-4 py-3 align-middle text-right">
                       <Button variant="ghost" size="sm" asChild className="h-7 text-xs font-bold text-primary hover:bg-primary/10 rounded-lg">
                         <Link href={`/people/${row.dni}`}>
                           Ver ficha

@@ -5,11 +5,12 @@ import prisma from "@/lib/prisma";
 import { getHRRecords, getHRStats } from "@/services/hr";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
+import { HR_STATUS_TONE, toneOf } from "@/lib/status-tones";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { Button } from "@/components/ui/button";
 import {
   Users, UserPlus, BarChart2,
-  Plus, Calendar, Wallet, PieChart, Briefcase
+  Plus, Calendar, Wallet, PieChart, UserCog
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { initialsColor, initialsOf } from "@/lib/initials";
@@ -132,7 +133,7 @@ export default async function HRPage({
       <PageHeader
         title="Recursos Humanos"
         description="El personal de cada área, su situación y lo que cuesta por mes."
-        icon={Briefcase}
+        icon={UserCog}
         actions={
           <>
            <UniversalExportMenu
@@ -202,13 +203,13 @@ export default async function HRPage({
         <HRFilters areas={sanitizedAreas} />
 
         <Table>
-          <TableHeader className="bg-muted/50">
+          <TableHeader>
             <TableRow className="hover:bg-transparent">
-              <TableHead className="px-4 text-xs font-semibold">Agente</TableHead>
-              <TableHead className="text-xs font-semibold">Área y cargo</TableHead>
-              <TableHead className="text-xs font-semibold">Ingreso</TableHead>
-              <TableHead className="text-xs font-semibold">Estado</TableHead>
-              <TableHead className="pr-4 text-xs font-semibold">
+              <TableHead>Agente</TableHead>
+              <TableHead>Área y cargo</TableHead>
+              <TableHead>Ingreso</TableHead>
+              <TableHead>Estado</TableHead>
+              <TableHead>
                 <span className="sr-only">Acciones</span>
               </TableHead>
             </TableRow>
@@ -233,7 +234,7 @@ export default async function HRPage({
             ) : (
               sanitizedRecords.map((r) => (
                 <TableRow key={r.id} className="group">
-                  <TableCell className="px-4 py-3">
+                  <TableCell>
                     <div className="flex items-center gap-3">
                       <Avatar className="h-9 w-9">
                         <AvatarImage src={r.imageUrl || ""} alt={r.firstName} className="object-cover" />
@@ -262,20 +263,7 @@ export default async function HRPage({
                   </TableCell>
                   <TableCell>
                     <div className="flex flex-col gap-1">
-                      <Badge className={`rounded-full px-3 py-0.5 text-xs font-semibold border-none w-fit ${
-                        r.status === 'ACTIVO' ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400' :
-                        r.status === 'LICENCIA' ? 'bg-amber-500/10 text-amber-700 dark:text-amber-400' :
-                        r.status === 'VACACIONES' ? 'bg-blue-500/10 text-blue-700 dark:text-blue-300' :
-                        'bg-rose-500/10 text-rose-700 dark:text-rose-400'
-                      }`}>
-                        <div className={`w-1.5 h-1.5 rounded-full mr-1.5 ${
-                          r.status === 'ACTIVO' ? 'bg-emerald-600' :
-                          r.status === 'LICENCIA' ? 'bg-amber-600' :
-                          r.status === 'VACACIONES' ? 'bg-blue-600' :
-                          'bg-rose-600'
-                        }`} />
-                        {hrStatusLabel(r.status)}
-                      </Badge>
+                      <StatusBadge tone={toneOf(HR_STATUS_TONE, r.status || "ACTIVO")}>{hrStatusLabel(r.status)}</StatusBadge>
                       {r.statusUntil && (
                         <span className="text-xs text-muted-foreground flex items-center gap-1">
                            <Calendar className="h-2.5 w-2.5" /> Hasta {formatFechaCalendario(r.statusUntil)}
@@ -283,7 +271,7 @@ export default async function HRPage({
                       )}
                     </div>
                   </TableCell>
-                  <TableCell className="pr-4 text-right">
+                  <TableCell className="pr-4 text-right tabular-nums">
                     <AgentActionsMenu agent={r} areas={sanitizedAreas} />
                   </TableCell>
                 </TableRow>

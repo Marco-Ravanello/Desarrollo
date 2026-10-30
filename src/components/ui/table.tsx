@@ -63,7 +63,7 @@ function TableCards({ className, children }: { className?: string; children: Rea
 }
 
 const TableHeader = React.forwardRef<HTMLTableSectionElement, React.HTMLAttributes<HTMLTableSectionElement>>(({ className, ...props }, ref) => (
-  <thead ref={ref} className={cn("[&_tr]:border-b [&_tr]:border-border/60", className)} {...props} />
+  <thead ref={ref} className={cn("bg-muted/40 [&_tr]:border-b [&_tr]:border-border/60 [&_tr:hover]:bg-transparent", className)} {...props} />
 ))
 TableHeader.displayName = "TableHeader"
 
@@ -72,18 +72,30 @@ const TableBody = React.forwardRef<HTMLTableSectionElement, React.HTMLAttributes
 ))
 TableBody.displayName = "TableBody"
 
+// Filas aireadas, la fila se resalta al pasar el mouse y los números van a la derecha (numeric).
+// Las tablas escritas a mano usan las mismas clases (TABLE_HEAD_CLASS, TABLE_CELL_CLASS, TABLE_ROW_CLASS).
+export const TABLE_ROW_CLASS = "border-b border-border/50 transition-colors hover:bg-muted/60 data-[state=selected]:bg-muted"
+export const TABLE_HEAD_CLASS = "h-11 px-4 text-left align-middle text-xs font-semibold text-muted-foreground whitespace-nowrap"
+export const TABLE_CELL_CLASS = "px-4 py-3 align-middle"
+export const NUMERIC_CLASS = "text-right tabular-nums"
+
 const TableRow = React.forwardRef<HTMLTableRowElement, React.HTMLAttributes<HTMLTableRowElement>>(({ className, ...props }, ref) => (
-  <tr ref={ref} className={cn("border-b border-border/50 transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted", className)} {...props} />
+  <tr ref={ref} className={cn(TABLE_ROW_CLASS, className)} {...props} />
 ))
 TableRow.displayName = "TableRow"
 
-const TableHead = React.forwardRef<HTMLTableCellElement, React.ThHTMLAttributes<HTMLTableCellElement>>(({ className, ...props }, ref) => (
-  <th ref={ref} className={cn("h-10 px-2 text-left align-middle text-xs font-semibold text-muted-foreground [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]", className)} {...props} />
+interface CellProps {
+  /** Columna de números o montos: alineada a la derecha y con cifras del mismo ancho. */
+  numeric?: boolean
+}
+
+const TableHead = React.forwardRef<HTMLTableCellElement, React.ThHTMLAttributes<HTMLTableCellElement> & CellProps>(({ className, numeric, ...props }, ref) => (
+  <th ref={ref} className={cn(TABLE_HEAD_CLASS, "[&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]", numeric && "text-right", className)} {...props} />
 ))
 TableHead.displayName = "TableHead"
 
-const TableCell = React.forwardRef<HTMLTableCellElement, React.TdHTMLAttributes<HTMLTableCellElement>>(({ className, ...props }, ref) => (
-  <td ref={ref} className={cn("p-2 align-middle [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]", className)} {...props} />
+const TableCell = React.forwardRef<HTMLTableCellElement, React.TdHTMLAttributes<HTMLTableCellElement> & CellProps>(({ className, numeric, ...props }, ref) => (
+  <td ref={ref} className={cn(TABLE_CELL_CLASS, "[&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]", numeric && NUMERIC_CLASS, className)} {...props} />
 ))
 TableCell.displayName = "TableCell"
 

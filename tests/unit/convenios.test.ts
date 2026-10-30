@@ -14,7 +14,7 @@ describe("estado de un convenio", () => {
     expect(agreementState({ status: "VIGENTE", endDate: day("2026-03-03") }, HOY)).toMatchObject({
       status: "VENCIDO", label: "Vencido", tone: "rose", endLabel: "Venció el 03/03/2026", endTone: "rose",
     });
-    expect(agreementState({ status: "EN_REVISION", endDate: null }, HOY)).toMatchObject({ label: "En revisión", tone: "blue", endLabel: null });
+    expect(agreementState({ status: "EN_REVISION", endDate: null }, HOY)).toMatchObject({ label: "En revisión", tone: "amber", endLabel: null });
   });
 
   it("avisa cuando faltan 60 días o menos", () => {

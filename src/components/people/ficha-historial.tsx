@@ -2,7 +2,9 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Badge } from "@/components/ui/badge";
+import { CASE_STATUS_LABEL } from "@/lib/case-summary";
+import { CASE_STATUS_TONE, STORM_PRIORITY_TONE, toneOf } from "@/lib/status-tones";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { Button } from "@/components/ui/button";
 import { EmptyMessage } from "@/components/ui/empty-message";
 import { CloudRain, FolderOpen, MessageSquareText, PackageCheck, ArrowRight, MapPin } from "lucide-react";
@@ -10,14 +12,6 @@ import type { FichaHistorial } from "@/services/ficha-social";
 import { formatFecha } from "@/lib/fechas";
 
 const fecha = formatFecha;
-
-const ESTADO: Record<string, { label: string; className: string }> = {
-  ABIERTO: { label: "Abierto", className: "bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/30" },
-  EN_PROCESO: { label: "En proceso", className: "bg-amber-500/15 text-amber-800 dark:text-amber-400 border-amber-500/30" },
-  DERIVADO: { label: "Derivado", className: "bg-purple-500/15 text-purple-600 dark:text-purple-400 border-purple-500/30" },
-  PENDIENTE: { label: "Pendiente", className: "bg-orange-500/15 text-orange-700 dark:text-orange-400 border-orange-500/30" },
-  CERRADO: { label: "Cerrado", className: "bg-muted text-muted-foreground border-border/60" },
-};
 
 function SectionTitle({ icon: Icon, children }: { icon: React.ElementType; children: React.ReactNode }) {
   return (
@@ -60,7 +54,6 @@ export function FichaHistorialView({ historial, withCases = true }: { historial:
           ) : (
             <ul className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {expedientes.map((c) => {
-                const estado = ESTADO[c.estado] || { label: c.estado, className: "" };
                 return (
                   <li key={c.id}>
                     <Link
@@ -69,7 +62,7 @@ export function FichaHistorialView({ historial, withCases = true }: { historial:
                     >
                       <div className="flex items-start justify-between gap-2">
                         <p className="text-sm font-bold text-foreground leading-snug">{c.titulo}</p>
-                        <Badge variant="outline" className={`shrink-0 text-xs font-bold ${estado.className}`}>{estado.label}</Badge>
+                        <StatusBadge tone={toneOf(CASE_STATUS_TONE, c.estado)}>{CASE_STATUS_LABEL[c.estado] ?? c.estado}</StatusBadge>
                       </div>
                       <p className="mt-1.5 text-xs text-muted-foreground">
                         {c.area} · Prioridad {c.prioridad.toLowerCase()} · abierto el {fecha(c.abierto)}
@@ -139,7 +132,7 @@ export function FichaHistorialView({ historial, withCases = true }: { historial:
                       {f.relevadoPor ? ` · relevó ${f.relevadoPor}` : ""}
                     </p>
                   </div>
-                  <Badge variant="outline" className="text-xs font-bold">Prioridad {f.prioridad.toLowerCase()}</Badge>
+                  <StatusBadge tone={toneOf(STORM_PRIORITY_TONE, f.prioridad)}>Prioridad {f.prioridad.toLowerCase()}</StatusBadge>
                 </div>
                 <p className="text-xs text-foreground">
                   <span className="font-semibold text-muted-foreground">Pidió:</span> {f.pedido}

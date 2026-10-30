@@ -1,11 +1,12 @@
 "use client";
 
 import * as React from "react";
-import { LayoutDashboard, Users, ShieldAlert, ClipboardList, LogOut, Briefcase, Car, UserCog, ChevronLeft, ChevronRight, CheckCircle2, MapPin, Wallet, Building2, FileSpreadsheet, Calendar, Sparkles, CloudRain, Settings, Tv, Network, BarChart3, ChevronDown, Package, ScrollText, MapPinned, GraduationCap, Landmark } from "lucide-react";
+import { LogOut, ChevronLeft, ChevronRight, ChevronDown } from "lucide-react";
 import { MunicipalCrest } from "@/components/ui/municipal-crest";
 import { UserNav } from "./user-nav";
 import { useSession, signOut } from "next-auth/react";
-import { getAreaNavColor, getAreaBgColor } from "@/lib/area-theme";
+import { getAreaBgColor } from "@/lib/area-theme";
+import { NAV_GROUPS, SECTION_TONE_CLASSES, isNavItemActive } from "@/lib/secciones";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -45,68 +46,11 @@ export function AppSidebar({ isMobile = false, onNavigate }: AppSidebarProps) {
   const role = user?.role;
   const canOpen = (url: string) => canAccessPath(role, url);
 
-  const navigation = [
-    { title: "Inicio", url: "/dashboard", icon: LayoutDashboard },
-    { title: "Ficha Social 360°", url: "/ficha-social", icon: Network },
-    { title: "Expedientes", url: "/cases", icon: ClipboardList },
-    { title: "Mapa Social", url: "/maps", icon: MapPin },
-    { title: "Barrios", url: "/barrios", icon: MapPinned },
-    { title: "Mis tareas", url: "/tasks", icon: CheckCircle2 },
-    { title: "Registro Único", url: "/people", icon: Users },
-    { title: "Cursos y talleres", url: "/cursos", icon: GraduationCap },
-  ].filter((i) => canOpen(i.url));
-
-  // Administración agrupada por tema; cada grupo se puede plegar. Cada rol ve solo lo que puede abrir.
-  const adminGroups: { id: string; title: string; items: { title: string; url: string; icon: any }[] }[] = [
-    {
-      id: "operacion",
-      title: "Operación diaria",
-      items: [
-        { title: "Sala de Situación", url: "/admin/war-room", icon: Tv },
-        { title: "Agenda", url: "/admin/calendar", icon: Calendar },
-        { title: "Asistente de IA", url: "/admin/assistant", icon: Sparkles },
-        { title: "Emergencia climática", url: "/admin/emergency", icon: CloudRain },
-      ],
-    },
-    {
-      id: "compras",
-      title: "Compras y presupuesto",
-      items: [
-        { title: "Órdenes de compra", url: "/admin/purchase-orders", icon: Briefcase },
-        { title: "Proveedores", url: "/admin/providers", icon: Building2 },
-        { title: "Presupuesto", url: "/admin/budget", icon: Wallet },
-        { title: "Reportes", url: "/admin/reports", icon: BarChart3 },
-      ],
-    },
-    {
-      id: "convenios",
-      title: "Convenios",
-      items: [{ title: "Convenios", url: "/admin/agreements", icon: Landmark }],
-    },
-    {
-      id: "recursos",
-      title: "Recursos",
-      items: [
-        { title: "Vehículos", url: "/admin/vehicles", icon: Car },
-        { title: "Stock de insumos", url: "/admin/stock", icon: Package },
-        { title: "Recursos Humanos", url: "/admin/hr", icon: UserCog },
-      ],
-    },
-    {
-      id: "sistema",
-      title: "Sistema",
-      items: [
-        { title: "Configuración", url: "/admin/settings", icon: Settings },
-        { title: "Importar datos", url: "/admin/interventions", icon: FileSpreadsheet },
-        { title: "Usuarios", url: "/admin/users", icon: Users },
-        { title: "Auditoría", url: "/admin/audit", icon: ScrollText },
-      ],
-    },
-  ]
+  const groups = NAV_GROUPS
     .map((g) => ({ ...g, items: g.items.filter((i) => canOpen(i.url)) }))
     .filter((g) => g.items.length > 0);
 
-  const activeGroup = adminGroups.find((g) => g.items.some((i) => pathname.startsWith(i.url)))?.id;
+  const activeGroup = groups.find((g) => g.items.some((i) => isNavItemActive(pathname, i.url)))?.id;
   const [closedGroups, setClosedGroups] = React.useState<string[]>([]);
 
   React.useEffect(() => {
@@ -123,13 +67,6 @@ export function AppSidebar({ isMobile = false, onNavigate }: AppSidebarProps) {
       return next;
     });
   };
-
-  const socialAreas = [
-    { title: "Protección Social", url: "/areas/social", icon: ClipboardList, color: "emerald" },
-    { title: "Niñez y Familia", url: "/areas/ninez", icon: ClipboardList, color: "amber" },
-    { title: "Hábitat y Vivienda", url: "/areas/habitat", icon: Building2, color: "blue" },
-    { title: "Violencia de Género", url: "/areas/violence", icon: ShieldAlert, color: "rose" },
-  ].filter((i) => canOpen(i.url));
 
   const sidebarColor = getAreaBgColor(user?.role === 'SUPERADMIN' ? 'slate' : (user as any)?.area?.color);
 
@@ -164,61 +101,58 @@ export function AppSidebar({ isMobile = false, onNavigate }: AppSidebarProps) {
         {!isCollapsed && !isEmergencySurveyor(role) && <GlobalSearch />}
       </div>
 
-      <nav className="flex-1 min-h-0 px-3 space-y-1 overflow-y-auto custom-scrollbar">
-        <div className="pb-2">
-          {!isCollapsed && navigation.length > 0 && <p className="px-3 text-xs font-bold text-muted-foreground mb-2 font-heading">Principal</p>}
-          {navigation.map((item) => {
-            const isActive = pathname === item.url || (item.url !== "/dashboard" && pathname.startsWith(item.url));
-            return (
-              <Link
-                key={item.title}
-                href={item.url}
-                onClick={() => onNavigate?.()}
-                title={isCollapsed ? item.title : ""}
-                className={`flex items-center gap-3 px-3.5 py-2 rounded-xl transition-all group mb-0.5 ${
-                  isCollapsed ? "justify-center" : ""
-                } ${
-                  isActive ? "bg-primary/10 text-primary font-semibold dark:bg-primary/20 dark:text-blue-200 border-l-4 border-[#F69321]" : "text-muted-foreground hover:text-foreground hover:bg-muted/60 font-medium"
-                }`}
-              >
-                <item.icon className={`h-[18px] w-[18px] shrink-0 ${isActive ? "text-primary dark:text-blue-200" : "text-muted-foreground"} group-hover:text-primary transition-colors`} />
-                {!isCollapsed && <span className="text-sm truncate">{item.title}</span>}
-              </Link>
-            );
-          })}
-        </div>
-
-        {adminGroups.map((group) => {
+      <nav className="flex-1 min-h-0 px-3 pb-3 overflow-y-auto custom-scrollbar">
+        {groups.map((group, index) => {
           // El grupo de la pantalla actual siempre queda abierto.
-          const isOpen = isCollapsed || group.id === activeGroup || !closedGroups.includes(group.id);
+          const isOpen = !group.collapsible || isCollapsed || group.id === activeGroup || !closedGroups.includes(group.id);
+          const groupTone = SECTION_TONE_CLASSES[group.tone];
           return (
-            <div key={group.id} className={isCollapsed ? "pt-2 mt-2 border-t border-border/40" : "pt-2"}>
+            <div
+              key={group.id}
+              className={isCollapsed ? (index > 0 ? "pt-2 mt-2 border-t border-border/40" : "") : index > 0 ? "pt-3" : ""}
+            >
               {!isCollapsed && (
-                <button
-                  type="button"
-                  onClick={() => toggleGroup(group.id)}
-                  aria-expanded={isOpen}
-                  className="w-full flex items-center justify-between px-3 py-1.5 mb-1 rounded-lg text-xs font-bold text-muted-foreground font-heading hover:text-foreground hover:bg-muted/40 transition-colors"
-                >
-                  {group.title}
-                  <ChevronDown className={`h-3.5 w-3.5 transition-transform ${isOpen ? "" : "-rotate-90"}`} />
-                </button>
+                group.collapsible ? (
+                  <button
+                    type="button"
+                    onClick={() => toggleGroup(group.id)}
+                    aria-expanded={isOpen}
+                    className="w-full flex items-center gap-2 px-3 py-1.5 mb-1 rounded-lg text-xs font-bold text-muted-foreground font-heading hover:text-foreground hover:bg-muted/40 transition-colors"
+                  >
+                    <span aria-hidden className={`h-1.5 w-1.5 rounded-full ${groupTone.dot}`} />
+                    <span className="flex-1 text-left">{group.title}</span>
+                    <ChevronDown className={`h-3.5 w-3.5 transition-transform ${isOpen ? "" : "-rotate-90"}`} />
+                  </button>
+                ) : (
+                  <p className="flex items-center gap-2 px-3 py-1.5 mb-1 text-xs font-bold text-muted-foreground font-heading">
+                    {group.id !== "areas" && <span aria-hidden className={`h-1.5 w-1.5 rounded-full ${groupTone.dot}`} />}
+                    {group.title}
+                  </p>
+                )
               )}
               {isOpen && group.items.map((item) => {
-                const isActive = pathname.startsWith(item.url);
+                const isActive = isNavItemActive(pathname, item.url);
+                const tone = SECTION_TONE_CLASSES[item.tone ?? group.tone];
                 return (
                   <Link
-                    key={item.title}
+                    key={item.url}
                     href={item.url}
                     onClick={() => onNavigate?.()}
                     title={isCollapsed ? item.title : ""}
-                    className={`flex items-center gap-3 px-3.5 py-2 rounded-xl transition-all group mb-0.5 ${
+                    aria-current={isActive ? "page" : undefined}
+                    className={`flex items-center gap-3 px-2 py-1.5 rounded-xl transition-colors group mb-0.5 ${
                       isCollapsed ? "justify-center" : ""
                     } ${
-                      isActive ? "bg-primary/10 text-primary font-semibold dark:bg-primary/20 dark:text-blue-200 border-l-4 border-[#F69321]" : "text-muted-foreground hover:text-foreground hover:bg-muted/60 font-medium"
+                      isActive ? "bg-muted text-foreground font-semibold" : "text-muted-foreground hover:text-foreground hover:bg-muted/60 font-medium"
                     }`}
                   >
-                    <item.icon className={`h-[18px] w-[18px] shrink-0 ${isActive ? "text-primary dark:text-blue-200" : "text-muted-foreground"} group-hover:text-primary transition-colors`} />
+                    <span
+                      className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-colors ${
+                        isActive ? `${tone.chipActive} shadow-sm` : tone.chip
+                      }`}
+                    >
+                      <item.icon className="h-[17px] w-[17px]" />
+                    </span>
                     {!isCollapsed && <span className="text-sm truncate">{item.title}</span>}
                   </Link>
                 );
@@ -226,24 +160,6 @@ export function AppSidebar({ isMobile = false, onNavigate }: AppSidebarProps) {
             </div>
           );
         })}
-
-        <div className="pt-3 pb-2">
-          {!isCollapsed && socialAreas.length > 0 && <p className="px-3 text-xs font-bold text-muted-foreground mb-2 font-heading">Áreas sociales</p>}
-          {socialAreas.map((item) => (
-            <Link
-              key={item.title}
-              href={item.url}
-              onClick={() => onNavigate?.()}
-              title={isCollapsed ? item.title : ""}
-              className={`flex items-center gap-3 px-3.5 py-2 text-muted-foreground hover:text-foreground hover:bg-muted/60 rounded-xl transition-all group mb-0.5 font-medium ${
-                isCollapsed ? "justify-center" : ""
-              }`}
-            >
-              <item.icon className={`h-[18px] w-[18px] shrink-0 ${getAreaNavColor(item.color)} opacity-80 group-hover:opacity-100 transition-opacity`} />
-              {!isCollapsed && <span className="text-sm truncate">{item.title}</span>}
-            </Link>
-          ))}
-        </div>
       </nav>
 
       <div className="p-3 border-t border-border/60 bg-muted/20 shrink-0">

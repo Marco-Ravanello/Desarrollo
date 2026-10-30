@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { PRIORITY_TONE, toneOf } from "@/lib/status-tones";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { EmptyMessage } from "@/components/ui/empty-message";
 import { addTaskAction, toggleTaskAction, deleteTaskAction } from "./actions";
 import { toast } from "sonner";
@@ -16,6 +18,8 @@ import Link from "next/link";
 import { diaAR, diaDeVencimiento, diasEntre, formatVencimiento } from "@/lib/fechas";
 import { parseViewerIds, repeatLabel, TASK_PRIORITIES, TASK_REPEATS } from "@/lib/tasks";
 import { EditTaskDialog, type ShareableUser } from "./edit-task-dialog";
+
+const TASK_PRIORITY_BADGE: Record<string, string> = { URGENTE: "Urgente", ALTA: "Alta", MEDIA: "Normal", BAJA: "Baja" };
 
 type PriorityType = "BAJA" | "MEDIA" | "ALTA" | "URGENTE";
 
@@ -167,65 +171,15 @@ export function TaskList({
     const diffDays = diasEntre(diaAR(new Date()), diaDeVencimiento(dueDateStr));
     const formatted = formatVencimiento(dueDateStr);
 
-    if (diffDays < 0) {
-      return (
-        <Badge variant="outline" className="bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/30 text-xs font-bold gap-1">
-          <AlertTriangle className="h-3 w-3" />
-          Venció el {formatted}
-        </Badge>
-      );
-    } else if (diffDays === 0) {
-      return (
-        <Badge variant="outline" className="bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30 text-xs font-bold gap-1">
-          <Clock className="h-3 w-3" />
-          Vence hoy
-        </Badge>
-      );
-    } else if (diffDays === 1) {
-      return (
-        <Badge variant="outline" className="bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/30 text-xs font-bold gap-1">
-          <CalendarIcon className="h-3 w-3" />
-          Vence mañana
-        </Badge>
-      );
-    } else {
-      return (
-        <Badge variant="outline" className="border-border/60 text-muted-foreground text-xs font-bold gap-1">
-          <CalendarIcon className="h-3 w-3" />
-          Vence el {formatted}
-        </Badge>
-      );
-    }
+    if (diffDays < 0) return <StatusBadge tone="red" icon={AlertTriangle}>Venció el {formatted}</StatusBadge>;
+    if (diffDays === 0) return <StatusBadge tone="orange" icon={Clock}>Vence hoy</StatusBadge>;
+    if (diffDays === 1) return <StatusBadge tone="amber" icon={CalendarIcon}>Vence mañana</StatusBadge>;
+    return <StatusBadge tone="slate" icon={CalendarIcon}>Vence el {formatted}</StatusBadge>;
   };
 
   const renderPriorityBadge = (p?: PriorityType) => {
     const val = p || "MEDIA";
-    switch (val) {
-      case "URGENTE":
-        return (
-          <Badge className="bg-rose-500/15 text-rose-700 dark:text-rose-400 border border-rose-500/30 text-xs font-bold gap-1.5">
-            <PriorityDot priority="URGENTE" /> Urgente
-          </Badge>
-        );
-      case "ALTA":
-        return (
-          <Badge className="bg-amber-500/15 text-amber-800 dark:text-amber-400 border border-amber-500/30 text-xs font-bold gap-1.5">
-            <PriorityDot priority="ALTA" /> Alta
-          </Badge>
-        );
-      case "MEDIA":
-        return (
-          <Badge className="bg-blue-500/15 text-blue-700 dark:text-blue-400 border border-blue-500/30 text-xs font-bold gap-1.5">
-            <PriorityDot priority="MEDIA" /> Normal
-          </Badge>
-        );
-      case "BAJA":
-        return (
-          <Badge className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 text-xs font-bold gap-1.5">
-            <PriorityDot priority="BAJA" /> Baja
-          </Badge>
-        );
-    }
+    return <StatusBadge tone={toneOf(PRIORITY_TONE, val)}>{TASK_PRIORITY_BADGE[val] ?? val}</StatusBadge>;
   };
 
   return (
@@ -490,10 +444,7 @@ export function TaskList({
                         {renderPriorityBadge(t.priority)}
                         {renderDueDateBadge(t.dueDate)}
                         {repeatLabel(t.repeat) && (
-                          <Badge variant="outline" className="border-border/60 text-muted-foreground text-xs font-bold gap-1">
-                            <Repeat className="h-3 w-3" aria-hidden />
-                            {repeatLabel(t.repeat)}
-                          </Badge>
+                          <StatusBadge tone="slate" icon={Repeat}>{repeatLabel(t.repeat)}</StatusBadge>
                         )}
                       </div>
 
@@ -568,9 +519,9 @@ export function TaskList({
 
 const DOT_CLASS: Record<string, string> = {
   URGENTE: "bg-rose-500",
-  ALTA: "bg-amber-500",
-  MEDIA: "bg-blue-500",
-  BAJA: "bg-emerald-500",
+  ALTA: "bg-orange-500",
+  MEDIA: "bg-slate-400",
+  BAJA: "bg-slate-400",
 };
 
 /** Punto de color de la prioridad (siempre va con el nombre al lado). */

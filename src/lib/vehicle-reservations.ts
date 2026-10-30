@@ -1,16 +1,17 @@
+import { RESERVATION_STATUS_TONE, type StatusTone } from "@/lib/status-tones";
 import type { ReservationStatus, Role } from "@prisma/client";
 import { FLEET_ADMIN_ROLES } from "@/lib/permissions";
 import { formatFecha, formatFechaHora, formatHora } from "@/lib/fechas";
 
 // Reservas de vehículos: nombres de los estados, fechas en hora argentina y quién puede hacer qué.
 
-export const RESERVATION_STATUS: Record<ReservationStatus, { label: string; className: string }> = {
-  PENDIENTE: { label: "Pendiente", className: "bg-amber-500/10 text-amber-800 dark:text-amber-300 border-amber-500/30" },
-  APROBADA: { label: "Aprobada", className: "bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-500/30" },
-  RECHAZADA: { label: "Rechazada", className: "bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/30" },
-  EN_CURSO: { label: "En uso", className: "bg-violet-500/10 text-violet-700 dark:text-violet-300 border-violet-500/30" },
-  FINALIZADA: { label: "Finalizada", className: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30" },
-  CANCELADA: { label: "Cancelada", className: "bg-muted text-muted-foreground border-border/60" },
+export const RESERVATION_STATUS: Record<ReservationStatus, { label: string; tone: StatusTone }> = {
+  PENDIENTE: { label: "Pendiente", tone: RESERVATION_STATUS_TONE.PENDIENTE },
+  APROBADA: { label: "Aprobada", tone: RESERVATION_STATUS_TONE.APROBADA },
+  RECHAZADA: { label: "Rechazada", tone: RESERVATION_STATUS_TONE.RECHAZADA },
+  EN_CURSO: { label: "En uso", tone: RESERVATION_STATUS_TONE.EN_CURSO },
+  FINALIZADA: { label: "Finalizada", tone: RESERVATION_STATUS_TONE.FINALIZADA },
+  CANCELADA: { label: "Cancelada", tone: RESERVATION_STATUS_TONE.CANCELADA },
 };
 
 export function reservationStatusLabel(status: string): string {

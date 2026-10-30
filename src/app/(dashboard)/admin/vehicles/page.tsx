@@ -4,7 +4,8 @@ import prisma from "@/lib/prisma";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { RESERVATION_STATUS_TONE, VEHICLE_STATUS_TONE } from "@/lib/status-tones";
+import { StatusBadge } from "@/components/ui/status-badge";
 import {
   Car, Fuel, Calendar, Plus,
   AlertTriangle, CheckCircle2, Clock,
@@ -171,7 +172,7 @@ export default async function VehiclesPage() {
                       <p className="text-xs text-muted-foreground">{formatReservationRange(r.startDate, r.endDate)}{r.reason ? ` · ${r.reason}` : ""}</p>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Badge variant="outline" className={`text-xs font-bold ${st.className}`}>{st.label}</Badge>
+                      <StatusBadge tone={st.tone}>{st.label}</StatusBadge>
                       <ReservationActions
                         reservationId={r.id}
                         actions={reservationActionsFor(me, r).filter((a) => a === "CANCELADA")}
@@ -199,7 +200,7 @@ export default async function VehiclesPage() {
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             <Table>
-              <TableHeader className="bg-muted/50">
+              <TableHeader>
                 <TableRow>
                   <TableHead className="w-[120px]">Dominio</TableHead>
                   <TableHead>Marca y modelo</TableHead>
@@ -240,16 +241,16 @@ export default async function VehiclesPage() {
                       </TableCell>
                       <TableCell>
                         {isMaintenance ? (
-                          <Badge className="bg-rose-500/10 text-rose-700 dark:text-rose-400 hover:bg-rose-500/20 border-none rounded-full px-3">En taller</Badge>
+                          <StatusBadge tone={VEHICLE_STATUS_TONE.EN_TALLER}>En taller</StatusBadge>
                         ) : isOccupied ? (
                           <div className="flex flex-col gap-1">
-                            <Badge className="bg-amber-500/10 text-amber-700 dark:text-amber-400 hover:bg-amber-500/20 border-none rounded-full px-3 w-fit">
+                            <StatusBadge tone={inUse ? RESERVATION_STATUS_TONE.EN_CURSO : RESERVATION_STATUS_TONE.APROBADA}>
                               {inUse ? "En uso" : "Reservado ahora"}
-                            </Badge>
+                            </StatusBadge>
                             <span className="text-xs text-muted-foreground">{current.user?.name || "Sin nombre"}</span>
                           </div>
                         ) : (
-                          <Badge className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/20 border-none rounded-full px-3">Disponible</Badge>
+                          <StatusBadge tone={VEHICLE_STATUS_TONE.DISPONIBLE}>Disponible</StatusBadge>
                         )}
                       </TableCell>
                       <TableCell className="w-[200px]">
@@ -278,7 +279,7 @@ export default async function VehiclesPage() {
                           ) : <span className="text-xs text-muted-foreground italic">Sin seguro</span>}
                         </div>
                       </TableCell>
-                      <TableCell className="text-right">
+                      <TableCell className="text-right tabular-nums">
                         <div className="flex justify-end gap-2">
                           <Button variant="ghost" size="sm" className="h-8 text-xs" asChild>
                             <Link href={`/admin/vehicles/${v.id}`}>Ver historial</Link>

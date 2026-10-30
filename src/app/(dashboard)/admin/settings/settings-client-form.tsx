@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { toast } from "sonner";
 import {
   Building2, Shield, Phone, Globe, MapPin, Save,
@@ -607,9 +608,7 @@ function StatusRow({ icon: Icon, title, detail, ok, label }: { icon: React.Eleme
           <p className="text-xs text-muted-foreground">{detail}</p>
         </div>
       </div>
-      <Badge className={`shrink-0 font-bold border-none ${ok ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400" : "bg-amber-500/15 text-amber-800 dark:text-amber-300"}`}>
-        {label}
-      </Badge>
+      <StatusBadge tone={ok ? "green" : "amber"}>{label}</StatusBadge>
     </div>
   );
 }

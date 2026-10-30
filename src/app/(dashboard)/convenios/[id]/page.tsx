@@ -59,7 +59,7 @@ import { getAddressOptions } from "@/services/person-data";
 import { PageHeader } from "@/components/layout/page-header";
 import { PageBreadcrumbs } from "@/components/layout/breadcrumbs-context";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { Button } from "@/components/ui/button";
 import { StatCard } from "@/components/ui/stat-card";
 import { StatRow } from "@/components/ui/mobile-list";
@@ -366,9 +366,7 @@ async function Tablero({
             <span className="inline-flex items-center gap-1.5">
               {r.porcentaje !== null && `${formatPercent(r.porcentaje)} del tope`}
               {nivel && (
-                <Badge variant="outline" className={`px-1.5 py-0 text-[10px] ${NIVEL_CLASS[nivel.tone]}`}>
-                  {nivel.label}
-                </Badge>
+                <StatusBadge tone={nivel.tone === "rose" ? "red" : nivel.tone}>{nivel.label}</StatusBadge>
               )}
             </span>
           }
@@ -633,17 +631,11 @@ async function Nnyas({
                       </p>
                       <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
                         {n.egreso ? (
-                          <Badge variant="outline" className="px-1.5 py-0 text-[10px]">
-                            Egresó el {dma(n.egreso)}
-                          </Badge>
+                          <StatusBadge tone="slate">Egresó el {dma(n.egreso)}</StatusBadge>
                         ) : n.ingreso ? (
-                          <Badge variant="outline" className={`px-1.5 py-0 text-[10px] ${NIVEL_CLASS.green}`}>
-                            Activo
-                          </Badge>
+                          <StatusBadge tone="green">Activo</StatusBadge>
                         ) : (
-                          <Badge variant="outline" className={`px-1.5 py-0 text-[10px] ${NIVEL_CLASS.amber}`}>
-                            Sin horas todavía
-                          </Badge>
+                          <StatusBadge tone="amber">Sin horas todavía</StatusBadge>
                         )}
                       </div>
                     </div>

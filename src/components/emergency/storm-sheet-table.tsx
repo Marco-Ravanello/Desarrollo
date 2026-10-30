@@ -7,6 +7,8 @@ import { textoNormal } from "@/lib/formato";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/ui/status-badge";
+import { DELIVERY_STATUS_TONE, STORM_PRIORITY_TONE, toneOf } from "@/lib/status-tones";
 import { Checkbox } from "@/components/ui/checkbox";
 import { FileText, Trash2, Plus, Search, Filter, Sparkles, UserCheck, PackageCheck } from "lucide-react";
 import { DELIVERY_STATUS_LABEL, deliveryStatus, extraQuantityText } from "@/lib/emergency-categories";
@@ -243,39 +245,39 @@ export function StormSheetTable({
       {/* Tabla Oficial Relevamiento Territorial (Exacta a Excel) */}
       <div className="rounded-2xl border border-border/60 overflow-x-auto bg-card shadow-sm">
         <Table mobileCards={false} className="min-w-[1200px] text-xs">
-          <TableHeader className="bg-muted/50 border-b border-border/60">
+          <TableHeader className="border-b border-border/60">
             <TableRow className="hover:bg-transparent">
-              <TableHead className="w-10 font-bold text-center border-r border-border/40" rowSpan={2}>#</TableHead>
-              <TableHead className="font-bold border-r border-border/40" rowSpan={2}>Nombre y apellido</TableHead>
-              <TableHead className="font-bold border-r border-border/40 w-28" rowSpan={2}>DNI</TableHead>
-              <TableHead className="font-bold border-r border-border/40 text-center w-20" rowSpan={2}>G. fam.</TableHead>
-              <TableHead className="font-bold border-r border-border/40 text-center w-16" rowSpan={2}>Niños</TableHead>
-              <TableHead className="font-bold border-r border-border/40" rowSpan={2}>Domicilio / referencia</TableHead>
+              <TableHead className="w-10 text-center border-r border-border/40" rowSpan={2}>#</TableHead>
+              <TableHead className="border-r border-border/40" rowSpan={2}>Nombre y apellido</TableHead>
+              <TableHead className="border-r border-border/40 w-28" rowSpan={2}>DNI</TableHead>
+              <TableHead className="border-r border-border/40 text-center w-20" rowSpan={2}>G. fam.</TableHead>
+              <TableHead className="border-r border-border/40 text-center w-16" rowSpan={2}>Niños</TableHead>
+              <TableHead className="border-r border-border/40" rowSpan={2}>Domicilio / referencia</TableHead>
 
               {/* Subencabezados Elementos */}
-              <TableHead className="font-bold text-center border-r border-border/40 bg-amber-500/10" colSpan={8}>
+              <TableHead className="text-center border-r border-border/40 bg-amber-500/10" colSpan={8}>
                 Elementos (a criterio profesional)
               </TableHead>
 
-              <TableHead className="font-bold border-r border-border/40" rowSpan={2}>Observaciones / contacto</TableHead>
-              <TableHead className="font-bold text-center w-28" rowSpan={2}>Acciones</TableHead>
+              <TableHead className="border-r border-border/40" rowSpan={2}>Observaciones / contacto</TableHead>
+              <TableHead className="text-center w-28" rowSpan={2}>Acciones</TableHead>
             </TableRow>
 
             <TableRow className="hover:bg-transparent bg-amber-500/5">
-              <TableHead className="text-center font-bold text-xs border-r border-border/30 w-12">Colchón</TableHead>
-              <TableHead className="text-center font-bold text-xs border-r border-border/40 w-12">Cant.</TableHead>
-              <TableHead className="text-center font-bold text-xs border-r border-border/30 w-12">Cama</TableHead>
-              <TableHead className="text-center font-bold text-xs border-r border-border/40 w-12">Cant.</TableHead>
-              <TableHead className="text-center font-bold text-xs border-r border-border/30 w-12">Cucheta</TableHead>
-              <TableHead className="text-center font-bold text-xs border-r border-border/40 w-12">Cant.</TableHead>
-              <TableHead className="text-center font-bold text-xs border-r border-border/30 w-12">Frazada</TableHead>
-              <TableHead className="text-center font-bold text-xs border-r border-border/40 w-12">Cant.</TableHead>
+              <TableHead className="text-center border-r border-border/30 w-12">Colchón</TableHead>
+              <TableHead className="text-center border-r border-border/40 w-12">Cant.</TableHead>
+              <TableHead className="text-center border-r border-border/30 w-12">Cama</TableHead>
+              <TableHead className="text-center border-r border-border/40 w-12">Cant.</TableHead>
+              <TableHead className="text-center border-r border-border/30 w-12">Cucheta</TableHead>
+              <TableHead className="text-center border-r border-border/40 w-12">Cant.</TableHead>
+              <TableHead className="text-center border-r border-border/30 w-12">Frazada</TableHead>
+              <TableHead className="text-center border-r border-border/40 w-12">Cant.</TableHead>
             </TableRow>
           </TableHeader>
 
           <TableBody>
             {filteredRecords.map((r, idx) => (
-              <TableRow key={r.id || idx} className="hover:bg-muted/30 transition-colors">
+              <TableRow key={r.id || idx}>
                 <TableCell className="text-center font-bold border-r border-border/40">{idx + 1}</TableCell>
                 <TableCell className="font-bold uppercase border-r border-border/40">{r.nombreApellido}</TableCell>
                 <TableCell className="font-mono border-r border-border/40">{r.dni || "-"}</TableCell>
@@ -320,11 +322,9 @@ export function StormSheetTable({
                   )}
                   {r.observaciones && <div>{r.observaciones}</div>}
                   {r.contacto && <div className="text-muted-foreground font-semibold">Tel: {r.contacto}</div>}
-                  <Badge variant="outline" className={`mt-1 text-xs font-bold ${
-                    r.prioridad === 'ALTA' ? 'bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/30' : 'bg-amber-500/10 text-amber-700 dark:text-amber-400'
-                  }`}>
+                  <StatusBadge tone={toneOf(STORM_PRIORITY_TONE, r.prioridad)} className="mt-1">
                     {textoNormal(r.prioridad)}
-                  </Badge>
+                  </StatusBadge>
                   <DeliveryBadge record={r} />
                 </TableCell>
 
@@ -494,15 +494,9 @@ export function StormSheetTable({
 export function DeliveryBadge({ record }: { record: StormVictimItem }) {
   const status = deliveryStatus(record);
   if (status === "SIN_PEDIDO") return null;
-  const tone =
-    status === "ENTREGADO"
-      ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30"
-      : status === "PARCIAL"
-      ? "bg-sky-500/10 text-sky-700 dark:text-sky-400 border-sky-500/30"
-      : "bg-muted text-muted-foreground";
   return (
-    <Badge variant="outline" className={`mt-1 ml-1 text-xs font-bold ${tone}`}>
+    <StatusBadge tone={toneOf(DELIVERY_STATUS_TONE, status)} className="mt-1 ml-1">
       {DELIVERY_STATUS_LABEL[status]}
-    </Badge>
+    </StatusBadge>
   );
 }

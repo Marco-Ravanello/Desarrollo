@@ -1,7 +1,7 @@
 "use client";
 
 import { TableRow, TableCell } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { OrderStatusActions } from "./order-status-actions";
 import { useRouter } from "next/navigation";
 import { ChevronRight } from "lucide-react";
@@ -37,23 +37,21 @@ export function OrderTableRow({ o, allowed }: { o: OrderRow; allowed: string[] }
         router.push(`/admin/purchase-orders/${o.id}`);
       }}
     >
-      <TableCell className="px-4 py-3">
+      <TableCell>
         <p className="font-semibold text-foreground">{o.number}</p>
         {o.expediente && <p className="text-xs text-muted-foreground">Expediente {o.expediente}</p>}
       </TableCell>
-      <TableCell className="px-4 py-3">
+      <TableCell>
         <p className="font-medium text-foreground">{o.provider || "Sin proveedor"}</p>
         {o.cuit && <p className="text-xs text-muted-foreground">CUIT {o.cuit}</p>}
       </TableCell>
-      <TableCell className="px-4 py-3 text-sm text-muted-foreground">{o.area ? getAreaShortName(o.area) : "Sin área"}</TableCell>
-      <TableCell className="px-4 py-3 font-semibold tabular-nums text-foreground">{formatPesos(o.amount)}</TableCell>
-      <TableCell className="px-4 py-3">
-        <Badge variant="outline" className={statusCfg.badgeClass}>
-          {statusCfg.label}
-        </Badge>
+      <TableCell className="text-sm text-muted-foreground">{o.area ? getAreaShortName(o.area) : "Sin área"}</TableCell>
+      <TableCell numeric className="font-semibold text-foreground">{formatPesos(o.amount)}</TableCell>
+      <TableCell>
+        <StatusBadge tone={statusCfg.tone}>{statusCfg.label}</StatusBadge>
       </TableCell>
       {/* En el celular la fila es una tarjeta: sin pasos para hacer, no se muestra el renglón vacío. */}
-      <TableCell className={forward.length > 0 ? "px-4 py-3" : "hidden px-4 py-3 md:table-cell"}>
+      <TableCell className={forward.length > 0 ? undefined : "hidden md:table-cell"}>
         <div className="flex items-center justify-end gap-2">
           <OrderStatusActions orderId={o.id} currentStatus={o.status} allowed={forward} />
           <ChevronRight className="hidden h-4 w-4 text-muted-foreground md:block" aria-hidden />

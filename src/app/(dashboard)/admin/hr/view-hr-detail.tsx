@@ -4,7 +4,8 @@ import { useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { initialsColor, initialsOf } from "@/lib/initials";
 import { contractTypeLabel, hrStatusLabel } from "@/lib/hr-labels";
-import { Badge } from "@/components/ui/badge";
+import { HR_STATUS_TONE, toneOf } from "@/lib/status-tones";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { Button } from "@/components/ui/button";
 import {
   Briefcase, Calendar, CreditCard, FileText, Info, Clock, Hash,
@@ -56,14 +57,7 @@ export function ViewHRDetail({ agent }: { agent: any }) {
         </div>
 
         <div className="flex items-center gap-2">
-          <Badge className={`rounded-full px-3.5 py-1 text-xs font-semibold border-none ${
-            agent.status === 'ACTIVO' ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30' :
-            agent.status === 'LICENCIA' ? 'bg-amber-500/15 text-amber-800 dark:text-amber-400 border border-amber-500/30' :
-            agent.status === 'VACACIONES' ? 'bg-blue-500/15 text-blue-700 dark:text-blue-400 border border-blue-500/30' :
-            'bg-rose-500/15 text-rose-700 dark:text-rose-400 border border-rose-500/30'
-          }`}>
-            {hrStatusLabel(agent.status)}
-          </Badge>
+          <StatusBadge tone={toneOf(HR_STATUS_TONE, agent.status || "ACTIVO")}>{hrStatusLabel(agent.status)}</StatusBadge>
           {agent.statusUntil && (
             <span className="text-xs font-semibold text-muted-foreground flex items-center gap-1">
               <Info className="h-3 w-3 text-amber-400" /> Hasta el {formatDate(agent.statusUntil)}
@@ -199,9 +193,9 @@ export function ViewHRDetail({ agent }: { agent: any }) {
                 <p className="text-xs text-muted-foreground">Examen pre-ocupacional / periódico municipal</p>
               </div>
             </div>
-            <Badge className="bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 text-xs font-bold">
+            <StatusBadge tone={agent.status === "LICENCIA" ? "amber" : "green"}>
               {agent.status === 'LICENCIA' ? 'De licencia' : 'Apto'}
-            </Badge>
+            </StatusBadge>
           </div>
 
           <div className="p-4 rounded-2xl bg-card/40 border border-border/40 space-y-2">
@@ -225,9 +219,9 @@ export function ViewHRDetail({ agent }: { agent: any }) {
                 <p className="text-xs text-muted-foreground">Documentación y certificaciones registradas</p>
               </div>
             </div>
-            <Badge className="bg-purple-500/20 text-purple-700 dark:text-purple-400 border border-purple-500/30 text-xs font-bold">
+            <StatusBadge tone={legajoData.education ? "green" : "slate"}>
               {legajoData.education ? "Acreditado" : "Regular"}
-            </Badge>
+            </StatusBadge>
           </div>
 
           <div className="p-4 rounded-2xl bg-card/40 border border-border/40 space-y-2">
@@ -249,9 +243,9 @@ export function ViewHRDetail({ agent }: { agent: any }) {
                 <p className="text-xs text-muted-foreground">Permiso para uso de unidades de la flota logística</p>
               </div>
             </div>
-            <Badge className="bg-teal-500/20 text-teal-700 dark:text-teal-400 border border-teal-500/30 text-xs font-bold">
+            <StatusBadge tone={legajoData.drivingLicense ? "green" : "slate"}>
               {legajoData.drivingLicense ? "Habilitado" : "No asignado"}
-            </Badge>
+            </StatusBadge>
           </div>
 
           <div className="p-4 rounded-2xl bg-card/40 border border-border/40 space-y-2">

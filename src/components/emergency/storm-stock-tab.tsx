@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { EmergencyStockItem } from "@/types/emergency";
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/ui/status-badge";
+import { STORM_STOCK_STATUS } from "@/lib/status-tones";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Input } from "@/components/ui/input";
@@ -178,16 +179,7 @@ export function StormStockTab({ stock, onRefresh }: StormStockTabProps) {
             return (
               <Card key={item.id} className="rounded-2xl border-border/60 shadow-sm bg-card p-5 space-y-3 flex flex-col">
                 <div className="flex justify-between items-center">
-                  <Badge
-                    variant="outline"
-                    className={`text-xs font-bold ${
-                      item.status === "CRITICO"
-                        ? "bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/30"
-                        : "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30"
-                    }`}
-                  >
-                    {item.status}
-                  </Badge>
+                  <StatusBadge tone={STORM_STOCK_STATUS[item.status]?.tone ?? "slate"}>{STORM_STOCK_STATUS[item.status]?.label ?? item.status}</StatusBadge>
                   <span className="text-xs font-bold text-muted-foreground">{item.unit}</span>
                 </div>
 
@@ -312,16 +304,7 @@ export function StormStockTab({ stock, onRefresh }: StormStockTabProps) {
                           <p className="text-xs text-muted-foreground mt-0.5">{item.description}</p>
                         </div>
                       )}
-                      <Badge
-                        variant="outline"
-                        className={`text-xs font-bold shrink-0 ${
-                          item.status === "CRITICO"
-                            ? "bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/30"
-                            : "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30"
-                        }`}
-                      >
-                        {item.status}
-                      </Badge>
+                      <StatusBadge tone={STORM_STOCK_STATUS[item.status]?.tone ?? "slate"}>{STORM_STOCK_STATUS[item.status]?.label ?? item.status}</StatusBadge>
                     </div>
 
                     <div className="flex items-center justify-between pt-2 border-t border-border/40">

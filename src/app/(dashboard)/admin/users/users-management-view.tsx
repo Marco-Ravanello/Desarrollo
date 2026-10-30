@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { UniversalExportMenu } from "@/components/ui/universal-export-menu";
 import { PageHeader } from "@/components/layout/page-header";
 import { StatCard } from "@/components/ui/stat-card";
@@ -14,7 +15,7 @@ import { EmptyMessage } from "@/components/ui/empty-message";
 import { TableCards } from "@/components/ui/table";
 import {
   Users, UserCheck, UserX, Shield, Search, Plus, Edit2,
-  Building2, UserCog
+  Building2, KeyRound
 } from "lucide-react";
 import {
   Sheet,
@@ -162,7 +163,7 @@ export function UsersManagementView({
             ? "Quién puede entrar a la app, con qué rol y en qué área."
             : "Quién puede entrar a la app, con qué rol y en qué área. Crear usuarios y restablecer contraseñas lo hace el Superadmin."
         }
-        icon={UserCog}
+        icon={KeyRound}
         actions={
           isSuperadmin && (
           <Sheet open={isCreateOpen} onOpenChange={setIsCreateOpen}>
@@ -329,12 +330,7 @@ export function UsersManagementView({
                       </span>
                     )}
                   </button>
-                  <Badge
-                    variant="outline"
-                    className={`shrink-0 text-xs font-bold ${u.isActive ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30" : "bg-rose-500/15 text-rose-700 dark:text-rose-300 border-rose-500/30"}`}
-                  >
-                    {u.isActive ? "Activa" : "Suspendida"}
-                  </Badge>
+                  <StatusBadge tone={u.isActive ? "green" : "red"}>{u.isActive ? "Activa" : "Suspendida"}</StatusBadge>
                   {isSuperadmin && !isSelf && (
                     <TemporaryPasswordButton userId={u.id} userName={u.name || u.email || "esta persona"} isActive={u.isActive} />
                   )}
@@ -345,13 +341,13 @@ export function UsersManagementView({
         )}
         <TableCards className={filteredUsers.length > 0 ? "hidden md:block" : undefined}>
           <table className="w-full text-xs text-left">
-            <thead className="bg-muted/40 text-muted-foreground font-bold border-b border-border/40">
+            <thead className="bg-muted/40 border-b border-border/60">
               <tr>
-                <th className="px-5 py-3.5 min-w-[240px]">Persona</th>
-                <th className="px-4 py-3.5">Rol</th>
-                <th className="px-4 py-3.5">Área</th>
-                <th className="px-4 py-3.5">Estado y último ingreso</th>
-                <th className="px-4 py-3.5 text-right">Acciones</th>
+                <th className="h-11 px-4 text-left align-middle text-xs font-semibold text-muted-foreground whitespace-nowrap min-w-[240px]">Persona</th>
+                <th className="h-11 px-4 text-left align-middle text-xs font-semibold text-muted-foreground whitespace-nowrap">Rol</th>
+                <th className="h-11 px-4 text-left align-middle text-xs font-semibold text-muted-foreground whitespace-nowrap">Área</th>
+                <th className="h-11 px-4 text-left align-middle text-xs font-semibold text-muted-foreground whitespace-nowrap">Estado y último ingreso</th>
+                <th className="h-11 px-4 align-middle text-xs font-semibold text-muted-foreground whitespace-nowrap text-right">Acciones</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border/30">
@@ -359,8 +355,8 @@ export function UsersManagementView({
                 filteredUsers.map((u) => {
                   const isSelf = currentUserId === u.id;
                   return (
-                    <tr key={u.id} className="hover:bg-muted/30 transition-colors">
-                      <td className="px-5 py-3.5 font-bold text-foreground">
+                    <tr key={u.id} className="border-b border-border/50 transition-colors hover:bg-muted/60">
+                      <td className="px-4 py-3 align-middle font-bold text-foreground">
                         <div className="flex items-center gap-3">
                           <InitialsAvatar name={u.name || u.username || u.email} seed={u.id} square />
                           <div className="min-w-0">
@@ -381,16 +377,16 @@ export function UsersManagementView({
                           </div>
                         </div>
                       </td>
-                      <td className="px-4 py-3.5">
+                      <td className="px-4 py-3 align-middle">
                         {renderRoleBadge(u.role)}
                       </td>
-                      <td className="px-4 py-3.5 text-muted-foreground font-semibold">
+                      <td className="px-4 py-3 align-middle text-muted-foreground font-semibold">
                         <div className="flex items-center gap-1.5">
                           <Building2 className="h-3.5 w-3.5 text-primary shrink-0" />
                           <span className={u.area ? "line-clamp-2" : "italic"} title={u.area?.name}>{u.area?.name || "Sin área"}</span>
                         </div>
                       </td>
-                      <td className="px-4 py-3.5">
+                      <td className="px-4 py-3 align-middle">
                         <button
                           type="button"
                           disabled={isSelf || isPending}
@@ -413,7 +409,7 @@ export function UsersManagementView({
                           </p>
                         )}
                       </td>
-                      <td className="px-4 py-3.5 text-right">
+                      <td className="px-4 py-3 align-middle text-right">
                         <div className="flex items-center justify-end gap-1 whitespace-nowrap">
                         {isSuperadmin && !isSelf && (
                           <TemporaryPasswordButton userId={u.id} userName={u.name || u.email || "esta persona"} isActive={u.isActive} />

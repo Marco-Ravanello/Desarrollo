@@ -136,19 +136,19 @@ export default async function TeamWorkloadPage({ searchParams }: { searchParams:
           </MobileList>
           <div className="hidden overflow-x-auto md:block">
             <table className="w-full min-w-[40rem] text-sm">
-              <thead>
+              <thead className="bg-muted/40 border-b border-border/60">
                 <tr className="border-b border-border/60 text-left text-xs text-muted-foreground">
-                  <th className="px-2 py-2 font-medium">Profesional</th>
-                  <th className="px-2 py-2 font-medium">Sin cerrar</th>
-                  <th className="px-2 py-2 text-right font-medium">Urgentes</th>
-                  <th className="px-2 py-2 text-right font-medium">Sin movimiento</th>
-                  <th className="px-2 py-2 text-right font-medium">Nuevos (7 días)</th>
+                  <th className="h-11 px-4 text-left align-middle text-xs font-semibold text-muted-foreground whitespace-nowrap">Profesional</th>
+                  <th className="h-11 px-4 text-left align-middle text-xs font-semibold text-muted-foreground whitespace-nowrap">Sin cerrar</th>
+                  <th className="h-11 px-4 align-middle text-xs font-semibold text-muted-foreground whitespace-nowrap text-right">Urgentes</th>
+                  <th className="h-11 px-4 align-middle text-xs font-semibold text-muted-foreground whitespace-nowrap text-right">Sin movimiento</th>
+                  <th className="h-11 px-4 align-middle text-xs font-semibold text-muted-foreground whitespace-nowrap text-right">Nuevos (7 días)</th>
                 </tr>
               </thead>
               <tbody>
                 {rows.map((r) => (
-                  <tr key={r.userId} className="border-b border-border/30 last:border-0">
-                    <td className="px-2 py-2.5">
+                  <tr key={r.userId} className="border-b border-border/50 transition-colors hover:bg-muted/60">
+                    <td className="px-4 py-3 align-middle">
                       <span className="flex min-w-0 items-center gap-2.5">
                         <InitialsAvatar name={r.name} seed={r.userId} size="sm" />
                         <span className="min-w-0">
@@ -158,7 +158,7 @@ export default async function TeamWorkloadPage({ searchParams }: { searchParams:
                         </span>
                       </span>
                     </td>
-                    <td className="px-2 py-2.5">
+                    <td className="px-4 py-3 align-middle">
                       <span className="flex items-center gap-2.5">
                         <span className="w-8 text-right tabular-nums">{countLink(r.open, casesHref({ assigned: r.userId }))}</span>
                         <span aria-hidden className="h-2 w-28 overflow-hidden rounded bg-muted sm:w-40">
@@ -166,9 +166,9 @@ export default async function TeamWorkloadPage({ searchParams }: { searchParams:
                         </span>
                       </span>
                     </td>
-                    <td className="px-2 py-2.5 text-right tabular-nums">{countLink(r.urgent, casesHref({ assigned: r.userId, priority: "URGENTE" }))}</td>
-                    <td className="px-2 py-2.5 text-right tabular-nums">{countLink(r.stale, casesHref({ assigned: r.userId, quiet: "1" }), true)}</td>
-                    <td className="px-2 py-2.5 text-right tabular-nums">{r.recent === 0 ? <span className="text-muted-foreground">0</span> : formatNumber(r.recent)}</td>
+                    <td className="px-4 py-3 align-middle text-right tabular-nums">{countLink(r.urgent, casesHref({ assigned: r.userId, priority: "URGENTE" }))}</td>
+                    <td className="px-4 py-3 align-middle text-right tabular-nums">{countLink(r.stale, casesHref({ assigned: r.userId, quiet: "1" }), true)}</td>
+                    <td className="px-4 py-3 align-middle text-right tabular-nums">{r.recent === 0 ? <span className="text-muted-foreground">0</span> : formatNumber(r.recent)}</td>
                   </tr>
                 ))}
               </tbody>

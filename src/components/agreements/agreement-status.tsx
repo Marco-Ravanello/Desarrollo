@@ -1,12 +1,14 @@
 import { CalendarClock } from "lucide-react";
 import type { AgreementState, AgreementTone } from "@/lib/convenios";
+import { StatusBadge } from "@/components/ui/status-badge";
+import type { StatusTone } from "@/lib/status-tones";
 
-const BADGE: Record<AgreementTone, string> = {
-  green: "bg-emerald-500/15 text-emerald-800 border-emerald-500/30 dark:text-emerald-300",
-  amber: "bg-amber-500/15 text-amber-800 border-amber-500/30 dark:text-amber-300",
-  rose: "bg-rose-500/15 text-rose-800 border-rose-500/30 dark:text-rose-300",
-  blue: "bg-blue-500/15 text-blue-800 border-blue-500/30 dark:text-blue-300",
-  gray: "bg-muted text-muted-foreground border-border/60",
+const BADGE_TONE: Record<AgreementTone, StatusTone> = {
+  green: "green",
+  amber: "amber",
+  rose: "red",
+  blue: "blue",
+  gray: "slate",
 };
 
 const TEXT: Record<AgreementTone, string> = {
@@ -20,9 +22,9 @@ const TEXT: Record<AgreementTone, string> = {
 /** "Vigente", "En revisión", "Vencido"…, con su color. */
 export function AgreementStatusBadge({ state, className = "" }: { state: AgreementState; className?: string }) {
   return (
-    <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-bold ${BADGE[state.tone]} ${className}`}>
+    <StatusBadge tone={BADGE_TONE[state.tone]} className={className}>
       {state.label}
-    </span>
+    </StatusBadge>
   );
 }
 

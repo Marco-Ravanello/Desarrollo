@@ -18,7 +18,8 @@ import { fechaDeRecorrida, getBarrioRecorridas, getRecorridaUserOptions, getRefe
 import { PageHeader } from "@/components/layout/page-header";
 import { PageBreadcrumbs } from "@/components/layout/breadcrumbs-context";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { PRIORITY_TONE, RECORRIDA_ESTADO_TONE, toneOf } from "@/lib/status-tones";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { StatCard } from "@/components/ui/stat-card";
@@ -47,13 +48,8 @@ function pct(part: number, total: number) {
 const daysSince = (iso: string) => Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000));
 
 function PriorityBadge({ priority }: { priority: string }) {
-  if (priority === "URGENTE") {
-    return <Badge variant="outline" className="bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/30 text-xs font-bold">Urgente</Badge>;
-  }
-  if (priority === "ALTA") {
-    return <Badge variant="outline" className="bg-orange-500/10 text-orange-700 dark:text-orange-300 border-orange-500/30 text-xs font-bold">Prioridad alta</Badge>;
-  }
-  return null;
+  if (priority !== "URGENTE" && priority !== "ALTA") return null;
+  return <StatusBadge tone={toneOf(PRIORITY_TONE, priority)}>{priority === "URGENTE" ? "Urgente" : "Prioridad alta"}</StatusBadge>;
 }
 
 const TABS = [
@@ -485,12 +481,9 @@ export default async function BarrioPage({
                       <span className="min-w-0">
                         <span className="flex flex-wrap items-center gap-2">
                           <span className="font-semibold text-foreground">{fechaDeRecorrida(r.fecha)}</span>
-                          <Badge
-                            variant="outline"
-                            className={r.estado === "HECHA" ? "border-emerald-500/30 bg-emerald-500/10 text-xs text-emerald-700 dark:text-emerald-300" : "border-primary/30 bg-primary/10 text-xs text-primary"}
-                          >
+                          <StatusBadge tone={toneOf(RECORRIDA_ESTADO_TONE, r.estado)}>
                             {RECORRIDA_ESTADOS[r.estado as RecorridaEstado] ?? r.estado}
-                          </Badge>
+                          </StatusBadge>
                           {r.objetivo && <span className="text-sm text-foreground">{r.objetivo}</span>}
                         </span>
                         <span className="block text-xs text-muted-foreground">{r.equipo.join(", ") || "Sin equipo"}</span>
