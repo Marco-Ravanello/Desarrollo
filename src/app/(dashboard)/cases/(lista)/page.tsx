@@ -5,7 +5,8 @@ import { redirect } from "next/navigation";
 import { getAllCases, getAreas } from "@/services/cases";
 import { countDerivationsToAnswer } from "@/services/derivations";
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { PRIORITY_TONE, toneOf } from "@/lib/status-tones";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -106,21 +107,14 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
     : null;
   const now = new Date();
 
-  const getPriorityBadge = (p: string) => {
-    switch (p) {
-      case "URGENTE":
-        return <Badge variant="outline" className="bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/30 text-xs font-bold">Urgente</Badge>;
-      case "ALTA":
-        return <Badge variant="outline" className="bg-orange-500/10 text-orange-700 dark:text-orange-300 border-orange-500/30 text-xs font-bold">Prioridad alta</Badge>;
-      default:
-        return null;
-    }
-  };
+  // Solo se marcan las prioridades que piden atención.
+  const getPriorityBadge = (p: string) =>
+    p === "URGENTE" || p === "ALTA" ? (
+      <StatusBadge tone={toneOf(PRIORITY_TONE, p)}>{CASE_PRIORITY_LABEL[p]}</StatusBadge>
+    ) : null;
 
   const getStatusBadge = (s: string) => (
-    <Badge variant="outline" className={`text-xs font-bold ${getCaseStatusConfig(s).badgeClass}`}>
-      {CASE_STATUS_LABEL[s] ?? s}
-    </Badge>
+    <StatusBadge tone={getCaseStatusConfig(s).tone}>{CASE_STATUS_LABEL[s] ?? s}</StatusBadge>
   );
 
   const pageHref = (n: number) => {
@@ -363,12 +357,12 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
           <Table mobileCards={false}>
               <TableHeader>
                 <TableRow className="border-border/60 bg-muted/30">
-                  <TableHead className="text-xs font-bold text-muted-foreground">Expediente</TableHead>
-                  <TableHead className="text-xs font-bold text-muted-foreground">A cargo</TableHead>
-                  <TableHead className="text-xs font-bold text-muted-foreground">Estado</TableHead>
-                  <TableHead className="text-xs font-bold text-muted-foreground">Abierto</TableHead>
-                  <TableHead className="text-xs font-bold text-muted-foreground">Última intervención</TableHead>
-                  <TableHead className="text-xs font-bold text-muted-foreground text-center">Acción</TableHead>
+                  <TableHead>Expediente</TableHead>
+                  <TableHead>A cargo</TableHead>
+                  <TableHead>Estado</TableHead>
+                  <TableHead>Abierto</TableHead>
+                  <TableHead>Última intervención</TableHead>
+                  <TableHead className="text-center">Acción</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -447,9 +441,9 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
                               </div>
                             )}
                             {summary.stale && (
-                              <div className="mt-1 inline-flex items-center gap-1 rounded-full border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-xs font-bold text-amber-800 dark:text-amber-300">
-                                <AlertTriangle className="h-3 w-3" /> Sin movimiento hace {STALE_DAYS}+ días
-                              </div>
+                              <StatusBadge tone="amber" icon={AlertTriangle} className="mt-1">
+                                Sin movimiento hace {STALE_DAYS}+ días
+                              </StatusBadge>
                             )}
                           </>
                         )}

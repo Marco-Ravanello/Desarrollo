@@ -14,7 +14,8 @@ import { getCurso, getCursoFormOptions } from "@/services/cursos";
 import { PageHeader } from "@/components/layout/page-header";
 import { PageBreadcrumbs } from "@/components/layout/breadcrumbs-context";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { CURSO_ESTADO_TONE, toneOf } from "@/lib/status-tones";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { Button } from "@/components/ui/button";
 import { StatCard } from "@/components/ui/stat-card";
 import { StatRow } from "@/components/ui/mobile-list";
@@ -125,12 +126,9 @@ export default async function CursoPage({ params }: Params) {
             .join(" · ")}
           icon={GraduationCap}
           badge={
-            <Badge
-              variant="outline"
-              className={terminado ? "border-border bg-muted text-muted-foreground" : "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"}
-            >
+            <StatusBadge tone={toneOf(CURSO_ESTADO_TONE, curso.estado)}>
               {CURSO_ESTADOS[curso.estado as CursoEstado] ?? curso.estado}
-            </Badge>
+            </StatusBadge>
           }
           actions={
             <div className="flex flex-wrap items-center gap-2">
@@ -249,7 +247,7 @@ export default async function CursoPage({ params }: Params) {
                             </TableCell>
                             <TableCell className="text-sm">{i.telefono || <span className="text-muted-foreground">Sin teléfono</span>}</TableCell>
                             <TableCell className="text-sm whitespace-nowrap">{dia(i.fecha)}</TableCell>
-                            <TableCell className="text-right">
+                            <TableCell className="text-right tabular-nums">
                               <span className="font-semibold tabular-nums">{i.asistencia.porcentaje === null ? "—" : `${i.asistencia.porcentaje} %`}</span>
                               <p className="text-xs text-muted-foreground tabular-nums">
                                 {i.asistencia.presentes} P · {i.asistencia.ausentes} A{i.asistencia.avisos ? ` · ${i.asistencia.avisos} CA` : ""}
@@ -265,7 +263,7 @@ export default async function CursoPage({ params }: Params) {
                               )}
                             </TableCell>
                             {canManage && (
-                              <TableCell className="text-right">
+                              <TableCell className="text-right tabular-nums">
                                 {!terminado && (
                                   <InscriptoActions cursoId={curso.id} inscriptoId={i.id} nombre={i.nombre || `DNI ${i.dni}`} dejo={i.estado === "DEJO"} programa={curso.programaLabel} />
                                 )}

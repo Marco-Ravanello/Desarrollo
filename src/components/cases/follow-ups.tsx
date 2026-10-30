@@ -1,5 +1,6 @@
 "use client";
 
+import { StatusBadge } from "@/components/ui/status-badge";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -156,15 +157,7 @@ export function FollowUpList({ items, today, currentUserId }: { items: CaseFollo
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="text-xs font-bold text-foreground first-letter:uppercase">{fechaLarga(day)}</span>
                   {(isToday || f.overdue) && (
-                    <span
-                      className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
-                        f.overdue
-                          ? "bg-rose-500/15 text-rose-700 dark:text-rose-300"
-                          : "bg-amber-500/20 text-amber-800 dark:text-amber-200"
-                      }`}
-                    >
-                      {f.overdue ? "Atrasado" : "Hoy"}
-                    </span>
+                    <StatusBadge tone={f.overdue ? "red" : "orange"}>{f.overdue ? "Atrasado" : "Hoy"}</StatusBadge>
                   )}
                 </div>
                 <p className="text-sm text-foreground break-words">{f.title}</p>

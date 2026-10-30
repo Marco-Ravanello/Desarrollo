@@ -6,7 +6,7 @@ import { adjustStockAction } from "@/app/(dashboard)/admin/actions/stock-actions
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { toast } from "sonner";
 import { AlertTriangle, Package, Download } from "lucide-react";
 import { EmptyMessage } from "@/components/ui/empty-message";
@@ -113,17 +113,13 @@ export function StockList({ supplies: all, canEdit }: { supplies: any[]; canEdit
                 </TableCell>
                 <TableCell>
                   {low ? (
-                    <Badge variant="outline" className="w-fit gap-1 border-rose-500/30 bg-rose-500/10 text-rose-700 dark:text-rose-300">
-                      <AlertTriangle className="h-3 w-3" /> Para reponer
-                    </Badge>
+                    <StatusBadge tone="red" icon={AlertTriangle}>Para reponer</StatusBadge>
                   ) : (
-                    <Badge variant="outline" className="border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">
-                      Alcanza
-                    </Badge>
+                    <StatusBadge tone="green">Alcanza</StatusBadge>
                   )}
                 </TableCell>
                 {canEdit && (
-                  <TableCell className="text-right">
+                  <TableCell className="text-right tabular-nums">
                     {editingId === item.id ? (
                       <div className="flex justify-end gap-1">
                         <Button size="sm" variant="ghost" onClick={() => setEditingId(null)}>

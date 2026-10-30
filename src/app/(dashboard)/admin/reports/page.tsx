@@ -182,13 +182,13 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
                   {areaRows.map((a) => (
                     <TableRow key={a.area}>
                       <TableCell className="font-medium text-sm">{a.area}</TableCell>
-                      <TableCell className="text-right">{a.cases}</TableCell>
-                      <TableCell className="text-right hidden md:table-cell">{a.closed}</TableCell>
-                      <TableCell className="text-right hidden md:table-cell">{a.urgent}</TableCell>
-                      <TableCell className="text-right">{a.interventions}</TableCell>
-                      <TableCell className="text-right hidden md:table-cell">{a.orders}</TableCell>
-                      <TableCell className="text-right whitespace-nowrap">{a.executed}</TableCell>
-                      <TableCell className="text-right hidden lg:table-cell text-xs text-muted-foreground whitespace-nowrap">{a.budgetPct}</TableCell>
+                      <TableCell className="text-right tabular-nums">{a.cases}</TableCell>
+                      <TableCell className="text-right hidden md:table-cell tabular-nums">{a.closed}</TableCell>
+                      <TableCell className="text-right hidden md:table-cell tabular-nums">{a.urgent}</TableCell>
+                      <TableCell className="text-right tabular-nums">{a.interventions}</TableCell>
+                      <TableCell className="text-right hidden md:table-cell tabular-nums">{a.orders}</TableCell>
+                      <TableCell className="text-right whitespace-nowrap tabular-nums">{a.executed}</TableCell>
+                      <TableCell className="text-right hidden lg:table-cell text-xs text-muted-foreground whitespace-nowrap tabular-nums">{a.budgetPct}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -226,7 +226,7 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
                   {caseRows.map((c) => (
                     <TableRow key={c.estado}>
                       <TableCell>{c.estado}</TableCell>
-                      <TableCell className="text-right font-medium">{c.cantidad}</TableCell>
+                      <TableCell className="text-right font-medium tabular-nums">{c.cantidad}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -261,8 +261,8 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
                   {orderRows.map((o) => (
                     <TableRow key={o.estado}>
                       <TableCell>{o.estado}</TableCell>
-                      <TableCell className="text-right">{o.cantidad}</TableCell>
-                      <TableCell className="text-right font-medium">{o.monto}</TableCell>
+                      <TableCell className="text-right tabular-nums">{o.cantidad}</TableCell>
+                      <TableCell className="text-right font-medium tabular-nums">{o.monto}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -423,8 +423,8 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
                     <TableRow key={`${p.name}-${p.cuit}`}>
                       <TableCell className="font-medium">{p.name}</TableCell>
                       <TableCell className="hidden sm:table-cell font-mono text-xs">{p.cuit}</TableCell>
-                      <TableCell className="text-right">{p.orders}</TableCell>
-                      <TableCell className="text-right">{p.executed}</TableCell>
+                      <TableCell className="text-right tabular-nums">{p.orders}</TableCell>
+                      <TableCell className="text-right tabular-nums">{p.executed}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>

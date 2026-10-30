@@ -5,7 +5,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { ArrowRightLeft, Check, Loader2, Send, X, Clock } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/ui/status-badge";
+import { DERIVATION_STATUS_TONE, toneOf } from "@/lib/status-tones";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -19,11 +20,11 @@ import { RequiredMark } from "@/components/ui/form-section";
 
 const fecha = formatFecha;
 
-const ESTADO: Record<DerivationRow["status"], { label: string; className: string }> = {
-  PENDIENTE: { label: "Esperando respuesta", className: "bg-amber-500/15 text-amber-800 dark:text-amber-300 border-amber-500/30" },
-  ACEPTADA: { label: "Aceptada", className: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30" },
-  RECHAZADA: { label: "Rechazada", className: "bg-rose-500/15 text-rose-700 dark:text-rose-300 border-rose-500/30" },
-  COMPLETADA: { label: "Completada", className: "bg-muted text-muted-foreground border-border/60" },
+const ESTADO: Record<DerivationRow["status"], { label: string }> = {
+  PENDIENTE: { label: "Esperando respuesta" },
+  ACEPTADA: { label: "Aceptada" },
+  RECHAZADA: { label: "Rechazada" },
+  COMPLETADA: { label: "Completada" },
 };
 
 const selectClass =
@@ -178,10 +179,9 @@ export function DerivationCard({ d, canRespond, showCase }: { d: DerivationRow; 
             Derivado el {fecha(d.createdAt)}{d.createdBy ? ` por ${d.createdBy}` : ""}
           </p>
         </div>
-        <Badge variant="outline" className={`shrink-0 text-xs font-bold ${estado.className}`}>
-          {d.status === "PENDIENTE" && <Clock className="h-3 w-3 mr-1" />}
+        <StatusBadge tone={toneOf(DERIVATION_STATUS_TONE, d.status)} icon={d.status === "PENDIENTE" ? Clock : undefined}>
           {estado.label}
-        </Badge>
+        </StatusBadge>
       </div>
       <p className="text-xs text-foreground whitespace-pre-line"><span className="font-semibold text-muted-foreground">Motivo:</span> {d.reason}</p>
       {d.observations && <p className="text-xs text-foreground whitespace-pre-line"><span className="font-semibold text-muted-foreground">Observaciones:</span> {d.observations}</p>}

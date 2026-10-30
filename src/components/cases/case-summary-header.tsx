@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { AlertTriangle, CalendarClock, Clock, Landmark, MessageSquareText, User, UserCheck } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/ui/status-badge";
+import { PRIORITY_TONE, toneOf } from "@/lib/status-tones";
 import { getCaseStatusConfig } from "@/lib/status-styles";
 import { CASE_PRIORITY_LABEL, CASE_STATUS_LABEL, STALE_DAYS, agoText, daysText, fechaCorta, type CaseSummary } from "@/lib/case-summary";
 import { interventionTypeLabel } from "@/lib/intervention-types";
@@ -8,13 +9,6 @@ import type { InterventionRow } from "@/services/interventions";
 
 // Resumen del expediente arriba de todo: estado, área, cuánto lleva abierto y
 // la última intervención, para entender el caso de un vistazo.
-
-const PRIORITY_CLASS: Record<string, string> = {
-  URGENTE: "bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/30",
-  ALTA: "bg-orange-500/10 text-orange-700 dark:text-orange-300 border-orange-500/30",
-  MEDIA: "bg-muted text-muted-foreground border-border/60",
-  BAJA: "bg-muted text-muted-foreground border-border/60",
-};
 
 function Tile({
   label,
@@ -95,12 +89,8 @@ export function CaseSummaryHeader({
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Tile label="Estado" icon={Clock}>
           <div className="flex flex-wrap items-center gap-1.5">
-            <Badge variant="outline" className={`text-xs font-bold ${statusStyle.badgeClass}`}>
-              {CASE_STATUS_LABEL[status] ?? status}
-            </Badge>
-            <Badge variant="outline" className={`text-xs font-bold ${PRIORITY_CLASS[priority] ?? PRIORITY_CLASS.MEDIA}`}>
-              {CASE_PRIORITY_LABEL[priority] ?? priority}
-            </Badge>
+            <StatusBadge tone={statusStyle.tone}>{CASE_STATUS_LABEL[status] ?? status}</StatusBadge>
+            <StatusBadge tone={toneOf(PRIORITY_TONE, priority)}>{CASE_PRIORITY_LABEL[priority] ?? priority}</StatusBadge>
           </div>
           {pendingTo && <p className="text-xs text-muted-foreground">Esperando respuesta de {pendingTo}</p>}
         </Tile>

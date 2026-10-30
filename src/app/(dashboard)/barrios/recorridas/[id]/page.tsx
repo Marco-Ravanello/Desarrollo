@@ -16,7 +16,8 @@ import { fechaDeRecorrida, getRecorrida, getRecorridaUserOptions } from "@/servi
 import { PageHeader } from "@/components/layout/page-header";
 import { PageBreadcrumbs } from "@/components/layout/breadcrumbs-context";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { RECORRIDA_ESTADO_TONE, toneOf } from "@/lib/status-tones";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { Button } from "@/components/ui/button";
 import { StatCard } from "@/components/ui/stat-card";
 import { StatRow } from "@/components/ui/mobile-list";
@@ -93,12 +94,9 @@ export default async function RecorridaPage({ params }: Params) {
           icon={Footprints}
           actions={
             <div className="flex flex-wrap items-center gap-2">
-              <Badge
-                variant="outline"
-                className={done ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300" : "border-primary/30 bg-primary/10 text-primary"}
-              >
+              <StatusBadge tone={toneOf(RECORRIDA_ESTADO_TONE, rec.estado)}>
                 {RECORRIDA_ESTADOS[rec.estado as RecorridaEstado] ?? rec.estado}
-              </Badge>
+              </StatusBadge>
               <PrintButton label="Imprimir la lista" />
               {canManage && (
                 <EditRecorridaDialog id={rec.id} barrio={rec.barrio} fecha={rec.fecha} objetivo={rec.objetivo} equipoIds={rec.equipoIds} userOptions={userOptions} />

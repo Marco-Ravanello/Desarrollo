@@ -1,7 +1,8 @@
 import prisma from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 import { getPeopleStats, getPeopleForMap } from "@/services/people";
-import { staleCutoff, summarizeCase } from "@/lib/case-summary";
+import { CASE_STATUS_LABEL, staleCutoff, summarizeCase } from "@/lib/case-summary";
+import { CASE_STATUS_TONE, VEHICLE_STATUS_TONE, toneOf } from "@/lib/status-tones";
 import { diaAR, diaDeVencimiento, diasEntre, formatFecha, formatFechaCorta } from "@/lib/fechas";
 import { formatPesos } from "@/lib/formato";
 
@@ -144,8 +145,8 @@ async function loadDashboardStats(scope: DashboardScope) {
     openedOn: formatFechaCorta(c.createdAt),
     citizenName: c.person ? `${c.person.lastName}, ${c.person.firstName}` : c.title,
     type: c.area?.name || "General",
-    status: c.status === "CERRADO" ? "Resuelto" : c.status === "EN_PROCESO" ? "En proceso" : "Abierto",
-    statusVariant: c.status === "CERRADO" ? "resolved" : c.status === "EN_PROCESO" ? "in_progress" : "pending",
+    status: CASE_STATUS_LABEL[c.status] ?? c.status,
+    statusTone: toneOf(CASE_STATUS_TONE, c.status),
   }));
 
   const attentionItems = [
@@ -169,7 +170,7 @@ async function loadDashboardStats(scope: DashboardScope) {
     id: v.id,
     name: `${v.brand} ${v.model} (${v.plate})`,
     status: v.status === "DISPONIBLE" ? "Disponible" : v.status === "EN_TALLER" ? "En taller" : "Fuera de servicio",
-    statusVariant: v.status === "DISPONIBLE" ? "active" : v.status === "EN_TALLER" ? "maintenance" : "inactive",
+    statusTone: toneOf(VEHICLE_STATUS_TONE, v.status),
     nextExpiry: v.vtvExpiry
       ? `VTV: ${new Date(v.vtvExpiry).toLocaleDateString("es-AR", { month: "2-digit", year: "2-digit", timeZone: "UTC" })}`
       : "Al día",

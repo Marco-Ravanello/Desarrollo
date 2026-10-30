@@ -153,14 +153,14 @@ export default async function PurchaseOrdersPage({
         <div className="space-y-4">
           <Card className="overflow-hidden rounded-2xl border-border/60 shadow-sm">
             <Table>
-              <TableHeader className="bg-muted/40">
+              <TableHeader>
                 <TableRow className="hover:bg-transparent">
-                  <TableHead className="px-4 text-xs font-semibold">Orden</TableHead>
-                  <TableHead className="px-4 text-xs font-semibold">Proveedor</TableHead>
-                  <TableHead className="px-4 text-xs font-semibold">Área</TableHead>
-                  <TableHead className="px-4 text-xs font-semibold">Monto</TableHead>
-                  <TableHead className="px-4 text-xs font-semibold">Estado</TableHead>
-                  <TableHead className="px-4 text-xs font-semibold">
+                  <TableHead>Orden</TableHead>
+                  <TableHead>Proveedor</TableHead>
+                  <TableHead>Área</TableHead>
+                  <TableHead numeric>Monto</TableHead>
+                  <TableHead>Estado</TableHead>
+                  <TableHead>
                     <span className="sr-only">Acciones</span>
                   </TableHead>
                 </TableRow>

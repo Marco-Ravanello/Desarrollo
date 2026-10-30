@@ -12,7 +12,8 @@ import { getCursoFormOptions, getCursos } from "@/services/cursos";
 import { PageHeader } from "@/components/layout/page-header";
 import { PageBreadcrumbs } from "@/components/layout/breadcrumbs-context";
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { CURSO_ESTADO_TONE, toneOf } from "@/lib/status-tones";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { Button } from "@/components/ui/button";
 import { EmptyMessage } from "@/components/ui/empty-message";
 import { MobileList, MobileListItem } from "@/components/ui/mobile-list";
@@ -31,15 +32,7 @@ const ESTADO_TABS = [
 ] as const;
 
 function EstadoBadge({ estado }: { estado: string }) {
-  const done = estado === "TERMINADO";
-  return (
-    <Badge
-      variant="outline"
-      className={done ? "border-border bg-muted text-muted-foreground" : "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"}
-    >
-      {CURSO_ESTADOS[estado as CursoEstado] ?? estado}
-    </Badge>
-  );
+  return <StatusBadge tone={toneOf(CURSO_ESTADO_TONE, estado)}>{CURSO_ESTADOS[estado as CursoEstado] ?? estado}</StatusBadge>;
 }
 
 const pct = (n: number | null) => (n === null ? <span className="text-muted-foreground">Sin clases</span> : `${n} %`);

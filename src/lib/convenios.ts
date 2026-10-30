@@ -38,7 +38,7 @@ export type AgreementState = {
 };
 
 const TONES: Record<string, AgreementTone> = {
-  EN_REVISION: "blue",
+  EN_REVISION: "amber",
   VIGENTE: "green",
   VENCIDO: "rose",
   RESCINDIDO: "gray",

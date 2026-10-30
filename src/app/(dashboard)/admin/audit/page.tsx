@@ -5,7 +5,6 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { Card } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PageHeader } from "@/components/layout/page-header";
@@ -166,7 +165,7 @@ export default async function AuditPage({ searchParams }: { searchParams: Promis
             </MobileList>
             <div className="hidden md:block">
               <Table mobileCards={false} className="table-fixed">
-                <TableHeader className="bg-muted/40">
+                <TableHeader>
                   <TableRow className="border-border/40">
                     <TableHead className="w-36">Fecha y hora</TableHead>
                     <TableHead className="w-48">Quién</TableHead>
@@ -180,7 +179,7 @@ export default async function AuditPage({ searchParams }: { searchParams: Promis
                     const details = formatAuditDetails(log.details);
                     const href = auditLink(log);
                     return (
-                      <TableRow key={log.id} className="align-top hover:bg-muted/20">
+                      <TableRow key={log.id} className="align-top">
                         <TableCell className="whitespace-nowrap pt-3 font-mono text-xs text-muted-foreground">{formatFechaHora(log.createdAt)}</TableCell>
                         <TableCell className="pt-3">
                           <div className="truncate text-xs font-semibold text-foreground" title={personName(log.user)}>{personName(log.user)}</div>

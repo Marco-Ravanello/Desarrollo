@@ -2,7 +2,7 @@ export const dynamic = "force-dynamic";
 import { getPurchaseOrderById, getOrderAuditLogs } from "@/services/admin";
 import { notFound } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { Briefcase, PackageCheck, Truck, Wallet } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
 import { StatCard } from "@/components/ui/stat-card";
@@ -70,9 +70,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
       <PageHeader
         title={<>Orden {order.number}</>}
         badge={
-          <Badge variant="outline" className={statusCfg.badgeClass}>
-            {statusCfg.label}
-          </Badge>
+          <StatusBadge tone={statusCfg.tone}>{statusCfg.label}</StatusBadge>
         }
         description={
           <>

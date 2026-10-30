@@ -3,10 +3,10 @@ export const dynamic = "force-dynamic";
 import { getVehicleWithHistory } from "@/services/admin";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
+import { RESERVATION_STATUS_TONE, VEHICLE_STATUS_TONE, toneOf } from "@/lib/status-tones";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { PageHeader } from "@/components/layout/page-header";
 import { EmptyMessage } from "@/components/ui/empty-message";
-import { cn } from "@/lib/utils";
 import { Car, Fuel, Calendar, ShieldCheck, Wrench } from "lucide-react";
 import { notFound } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -51,14 +51,12 @@ export default async function VehicleDetailPage({ params }: { params: Promise<{ 
   const fuelMonth = vehicle.fuelRecords.filter((r) => r.date >= monthStart).reduce((t, r) => t + Number(r.amount), 0);
   const fuelLimit = Number(vehicle.fuelMonthlyLimit || 0);
   const canReserve = vehicle.status === "DISPONIBLE";
-  const statusClass =
-    vehicle.status === "DISPONIBLE" && (enUso || reservadoAhora)
-      ? "border-amber-500/30 bg-amber-500/10 text-amber-800 dark:text-amber-300"
-      : vehicle.status === "DISPONIBLE"
-        ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
-        : vehicle.status === "EN_TALLER"
-          ? "border-rose-500/30 bg-rose-500/10 text-rose-700 dark:text-rose-300"
-          : "bg-muted text-muted-foreground";
+  const statusTone =
+    vehicle.status === "DISPONIBLE" && enUso
+      ? RESERVATION_STATUS_TONE.EN_CURSO
+      : vehicle.status === "DISPONIBLE" && reservadoAhora
+        ? RESERVATION_STATUS_TONE.APROBADA
+        : toneOf(VEHICLE_STATUS_TONE, vehicle.status);
 
   return (
     <div className="space-y-6">
@@ -68,7 +66,7 @@ export default async function VehicleDetailPage({ params }: { params: Promise<{ 
         badge={<span className="rounded-md bg-muted px-2 py-0.5 text-xs font-semibold text-foreground">{vehicle.plate}</span>}
         description={
           // Va dentro de un párrafo: tiene que ser un span, no un Badge (que es un div).
-          <span className={cn("mt-1 inline-flex rounded-full border px-2.5 py-0.5 text-xs font-semibold", statusClass)}>{ahora}</span>
+          <StatusBadge tone={statusTone} className="mt-1 h-auto min-h-6 whitespace-normal py-1">{ahora}</StatusBadge>
         }
         actions={
           <>
@@ -127,12 +125,12 @@ export default async function VehicleDetailPage({ params }: { params: Promise<{ 
         </CardHeader>
         <CardContent className="p-0 md:px-6 md:pb-6">
           <Table>
-            <TableHeader className="bg-muted/40">
+            <TableHeader>
               <TableRow className="hover:bg-transparent">
-                <TableHead className="text-xs font-semibold">Fecha</TableHead>
-                <TableHead className="text-xs font-semibold">Quién</TableHead>
-                <TableHead className="text-xs font-semibold">Motivo</TableHead>
-                <TableHead className="text-xs font-semibold">Estado</TableHead>
+                <TableHead>Fecha</TableHead>
+                <TableHead>Quién</TableHead>
+                <TableHead>Motivo</TableHead>
+                <TableHead>Estado</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -151,9 +149,9 @@ export default async function VehicleDetailPage({ params }: { params: Promise<{ 
                     </span>
                   </TableCell>
                   <TableCell>
-                    <Badge variant="outline" className={RESERVATION_STATUS[res.status].className}>
+                    <StatusBadge tone={RESERVATION_STATUS[res.status].tone}>
                       {RESERVATION_STATUS[res.status].label}
-                    </Badge>
+                    </StatusBadge>
                   </TableCell>
                 </TableRow>
               ))}
@@ -180,12 +178,12 @@ export default async function VehicleDetailPage({ params }: { params: Promise<{ 
         </CardHeader>
         <CardContent className="p-0 md:px-6 md:pb-6">
           <Table>
-            <TableHeader className="bg-muted/40">
+            <TableHeader>
               <TableRow className="hover:bg-transparent">
-                <TableHead className="text-xs font-semibold">Fecha</TableHead>
-                <TableHead className="text-right text-xs font-semibold">Importe</TableHead>
-                <TableHead className="text-right text-xs font-semibold">Litros</TableHead>
-                <TableHead className="text-xs font-semibold">Ticket</TableHead>
+                <TableHead>Fecha</TableHead>
+                <TableHead className="text-right">Importe</TableHead>
+                <TableHead className="text-right">Litros</TableHead>
+                <TableHead>Ticket</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>

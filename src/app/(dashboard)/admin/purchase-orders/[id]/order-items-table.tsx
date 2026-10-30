@@ -42,16 +42,16 @@ export function OrderItemsTable({ orderId, orderStatus, items, canRecord }: Orde
       <div className="bg-card rounded-2xl border border-border/60 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm min-w-[860px] table-auto border-collapse">
-            <thead>
+            <thead className="bg-muted/40 border-b border-border/60">
               <tr className="bg-muted/40 border-b border-border/60">
-                <th className="w-12 px-4 py-3 text-left text-xs font-semibold text-muted-foreground">N°</th>
-                <th className="min-w-[280px] px-4 py-3 text-left text-xs font-semibold text-muted-foreground">Qué se compra</th>
-                <th className="w-32 px-4 py-3 text-right text-xs font-semibold text-muted-foreground">Cantidad</th>
-                <th className="w-52 px-4 py-3 text-left text-xs font-semibold text-muted-foreground">Entregado</th>
-                <th className="w-36 px-4 py-3 text-right text-xs font-semibold text-muted-foreground">Precio unitario</th>
-                <th className="w-36 px-4 py-3 text-right text-xs font-semibold text-muted-foreground">Subtotal</th>
+                <th className="h-11 px-4 text-left align-middle text-xs font-semibold text-muted-foreground whitespace-nowrap w-12">N°</th>
+                <th className="h-11 px-4 text-left align-middle text-xs font-semibold text-muted-foreground whitespace-nowrap min-w-[280px]">Qué se compra</th>
+                <th className="h-11 px-4 align-middle text-xs font-semibold text-muted-foreground whitespace-nowrap w-32 text-right">Cantidad</th>
+                <th className="h-11 px-4 text-left align-middle text-xs font-semibold text-muted-foreground whitespace-nowrap w-52">Entregado</th>
+                <th className="h-11 px-4 align-middle text-xs font-semibold text-muted-foreground whitespace-nowrap w-36 text-right">Precio unitario</th>
+                <th className="h-11 px-4 align-middle text-xs font-semibold text-muted-foreground whitespace-nowrap w-36 text-right">Subtotal</th>
                 {canEdit && (
-                  <th className="w-32 px-4 py-3">
+                  <th className="h-11 px-4 text-left align-middle text-xs font-semibold text-muted-foreground whitespace-nowrap w-32">
                     <span className="sr-only">Acciones</span>
                   </th>
                 )}
@@ -65,7 +65,7 @@ export function OrderItemsTable({ orderId, orderStatus, items, canRecord }: Orde
                 const isFulfilled = f >= q && q > 0;
 
                 return (
-                  <tr key={idx} className="transition-colors hover:bg-muted/30">
+                  <tr key={idx} className="border-b border-border/50 transition-colors hover:bg-muted/60">
                     <td className="px-4 py-3 align-top text-xs tabular-nums text-muted-foreground">{idx + 1}</td>
                     <td className="px-4 py-3 align-top">
                       <p className="whitespace-pre-line text-sm text-foreground">{item.description}</p>
@@ -92,10 +92,10 @@ export function OrderItemsTable({ orderId, orderStatus, items, canRecord }: Orde
                         </div>
                       </div>
                     </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-right align-top tabular-nums text-muted-foreground">
+                    <td className="px-4 py-3 whitespace-nowrap text-right align-top tabular-nums text-muted-foreground">
                       {formatPesosExactos(Number(item.unitPrice))}
                     </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-right align-top font-semibold tabular-nums text-foreground">
+                    <td className="px-4 py-3 whitespace-nowrap text-right align-top font-semibold tabular-nums text-foreground">
                       {formatPesosExactos(Number(item.totalPrice))}
                     </td>
                     {canEdit && (
@@ -125,13 +125,13 @@ export function OrderItemsTable({ orderId, orderStatus, items, canRecord }: Orde
             </tbody>
             <tfoot className="bg-muted/30 border-t border-border/60">
               <tr>
-                <td colSpan={5} className="px-4 py-3 text-right text-sm font-semibold text-muted-foreground">
+                <td colSpan={5} className="px-4 py-3 align-middle text-right text-sm font-semibold text-muted-foreground">
                   Total
                 </td>
-                <td className="px-4 py-3 text-right text-base font-bold tabular-nums text-foreground">
+                <td className="px-4 py-3 align-middle text-right text-base font-bold tabular-nums text-foreground">
                   {formatPesosExactos(items.reduce((acc, item) => acc + Number(item.totalPrice), 0))}
                 </td>
-                {canEdit && <td className="px-4 py-3"></td>}
+                {canEdit && <td className="px-4 py-3 align-middle"></td>}
               </tr>
             </tfoot>
           </table>

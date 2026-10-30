@@ -158,14 +158,14 @@ export default async function PeoplePage({
         )}
         <div className={people.length > 0 ? "hidden md:block" : undefined}>
           <Table mobileCards={false}>
-            <TableHeader className="bg-muted/40">
+            <TableHeader>
               <TableRow className="hover:bg-transparent">
-                <TableHead className="px-4 text-xs font-semibold">Apellido y nombre</TableHead>
-                <TableHead className="px-4 text-xs font-semibold">DNI</TableHead>
-                <TableHead className="px-4 text-xs font-semibold">Programas activos</TableHead>
-                <TableHead className="px-4 text-xs font-semibold">Barrio</TableHead>
-                <TableHead className="px-4 text-xs font-semibold">Teléfono</TableHead>
-                <TableHead className="px-4 text-xs font-semibold">
+                <TableHead>Apellido y nombre</TableHead>
+                <TableHead>DNI</TableHead>
+                <TableHead>Programas activos</TableHead>
+                <TableHead>Barrio</TableHead>
+                <TableHead>Teléfono</TableHead>
+                <TableHead>
                   <span className="sr-only">Acciones</span>
                 </TableHead>
               </TableRow>
@@ -176,7 +176,7 @@ export default async function PeoplePage({
                   const chips = programChips(p.programasActivos);
                   return (
                     <TableRow key={p.id}>
-                      <TableCell className="px-4 py-2 text-sm font-semibold text-foreground">
+                      <TableCell className="text-sm font-semibold text-foreground">
                         <Link href={`/people/${p.id}`} className="flex items-center gap-2.5 hover:text-primary">
                           <InitialsAvatar name={p.firstName} lastName={p.lastName} seed={p.dni} size="sm" />
                           <span>
@@ -184,8 +184,8 @@ export default async function PeoplePage({
                           </span>
                         </Link>
                       </TableCell>
-                      <TableCell className="px-4 py-2 text-sm tabular-nums text-muted-foreground">{p.dni}</TableCell>
-                      <TableCell className="px-4 py-2">
+                      <TableCell className="text-sm tabular-nums text-muted-foreground">{p.dni}</TableCell>
+                      <TableCell>
                         {chips.shown.length > 0 ? (
                           <div className="flex max-w-[18rem] items-center gap-1" title={p.programasActivos.join(", ")}>
                             {chips.shown.map((prog) => (
@@ -207,15 +207,15 @@ export default async function PeoplePage({
                           <span className="text-xs text-muted-foreground">Sin programas</span>
                         )}
                       </TableCell>
-                      <TableCell className="max-w-[14rem] px-4 py-2 text-sm text-muted-foreground">
+                      <TableCell className="max-w-[14rem] text-sm text-muted-foreground">
                         <span className="block truncate" title={p.address || undefined}>
                           {p.barrio ? barrioLabel(p.barrio) : p.address || "Sin dirección"}
                         </span>
                       </TableCell>
-                      <TableCell className="whitespace-nowrap px-4 py-2 text-sm tabular-nums text-muted-foreground">
+                      <TableCell className="whitespace-nowrap text-sm tabular-nums text-muted-foreground">
                         {p.phone || <span className="text-xs">Sin teléfono</span>}
                       </TableCell>
-                      <TableCell className="px-4 py-2 text-right">
+                      <TableCell className="text-right tabular-nums">
                         <Button variant="ghost" size="sm" asChild className="h-8 gap-1 px-2.5 text-xs font-semibold text-primary">
                           <Link href={`/people/${p.id}`}>
                             Ver ficha <ChevronRight className="h-3.5 w-3.5" />

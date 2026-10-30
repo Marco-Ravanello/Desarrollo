@@ -5,6 +5,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/ui/status-badge";
+import { CASE_STATUS_TONE, PRIORITY_TONE, toneOf } from "@/lib/status-tones";
 import { UniversalExportMenu } from "@/components/ui/universal-export-menu";
 import { TableCards } from "@/components/ui/table";
 import { PageHeader } from "@/components/layout/page-header";
@@ -15,11 +17,13 @@ import { CaseTag } from "@/components/cases/case-tag";
 import { EmptyMessage } from "@/components/ui/empty-message";
 import {
   FolderPlus, Search, ShieldAlert, Users, AlertTriangle, Clock,
-  CheckCircle2, FileText, ArrowRight, Eye, Layers, Sparkles
+  CheckCircle2, FileText, ArrowRight, Eye, Sparkles, HeartHandshake, Home, Baby
 } from "lucide-react";
 import Link from "next/link";
 import { plural } from "@/lib/formato";
 import { formatFecha } from "@/lib/fechas";
+
+const AREA_PRIORITY_LABEL: Record<string, string> = { URGENTE: "Urgente", ALTA: "Alta", MEDIA: "Media", BAJA: "Baja" };
 
 interface CaseItem {
   id: string;
@@ -99,6 +103,7 @@ export function AreaDashboardView({
     }
   }[themeColor];
 
+  const AreaIcon = { emerald: HeartHandshake, blue: Home, amber: Baby, rose: ShieldAlert }[themeColor];
   const statTone = ({ emerald: "green", blue: "blue", amber: "orange", rose: "red" } as const)[themeColor];
 
   const filteredCases = initialCases.filter((c) => {
@@ -142,42 +147,20 @@ export function AreaDashboardView({
     interventionsCount: c._count?.interventions || 0
   }));
 
-  const renderStatusBadge = (status: string) => {
-    switch (status) {
-      case "ABIERTO":
-        return <Badge className="bg-blue-500/15 text-blue-700 dark:text-blue-400 border border-blue-500/30 font-bold text-xs">Abierto</Badge>;
-      case "EN_PROCESO":
-        return <Badge className="bg-amber-500/15 text-amber-800 dark:text-amber-400 border border-amber-500/30 font-bold text-xs">En proceso</Badge>;
-      case "DERIVADO":
-        return <Badge className="bg-purple-500/15 text-purple-700 dark:text-purple-400 border border-purple-500/30 font-bold text-xs">Derivado</Badge>;
-      case "CERRADO":
-        return <Badge className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 font-bold text-xs">Cerrado</Badge>;
-      default:
-        return <Badge variant="outline" className="font-bold text-xs">{status}</Badge>;
-    }
-  };
+  const renderStatusBadge = (status: string) => (
+    <StatusBadge tone={toneOf(CASE_STATUS_TONE, status)}>{CASE_STATUS_LABEL[status] ?? status}</StatusBadge>
+  );
 
-  const renderPriorityBadge = (priority: string) => {
-    switch (priority) {
-      case "URGENTE":
-        return <Badge className="bg-rose-500/15 text-rose-700 dark:text-rose-400 border border-rose-500/30 font-bold text-xs">🔴 Urgente</Badge>;
-      case "ALTA":
-        return <Badge className="bg-amber-500/15 text-amber-800 dark:text-amber-400 border border-amber-500/30 font-bold text-xs">🟠 Alta</Badge>;
-      case "MEDIA":
-        return <Badge className="bg-blue-500/15 text-blue-700 dark:text-blue-400 border border-blue-500/30 font-bold text-xs">🟡 Media</Badge>;
-      case "BAJA":
-        return <Badge className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 font-bold text-xs">🟢 Baja</Badge>;
-      default:
-        return <Badge variant="outline" className="font-bold text-xs">{priority}</Badge>;
-    }
-  };
+  const renderPriorityBadge = (priority: string) => (
+    <StatusBadge tone={toneOf(PRIORITY_TONE, priority)}>{AREA_PRIORITY_LABEL[priority] ?? priority}</StatusBadge>
+  );
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       <PageHeader
         title={areaTitle}
         description={areaDescription}
-        icon={Layers}
+        icon={AreaIcon}
         actions={
           area && (
             <Button asChild className={`rounded-2xl h-11 px-5 font-bold text-xs ${colorStyles.buttonBg} shadow-md`}>
@@ -356,15 +339,15 @@ export function AreaDashboardView({
         )}
         <TableCards className={filteredCases.length > 0 ? "hidden md:block" : undefined}>
           <table className="w-full table-fixed text-xs text-left">
-            <thead className="bg-muted/40 text-muted-foreground font-bold border-b border-border/40">
+            <thead className="bg-muted/40 border-b border-border/60">
               <tr>
-                <th className="px-5 py-3.5">Carátula / asunto</th>
-                <th className="w-44 px-4 py-3.5">Titular</th>
-                <th className="w-28 px-4 py-3.5">DNI</th>
-                <th className="w-28 px-4 py-3.5">Estado</th>
-                <th className="w-28 px-4 py-3.5">Prioridad</th>
-                <th className="w-36 px-4 py-3.5">Intervenciones</th>
-                <th className="w-16 px-4 py-3.5"><span className="sr-only">Ver</span></th>
+                <th className="h-11 px-4 text-left align-middle text-xs font-semibold text-muted-foreground whitespace-nowrap">Carátula / asunto</th>
+                <th className="h-11 px-4 text-left align-middle text-xs font-semibold text-muted-foreground whitespace-nowrap w-44">Titular</th>
+                <th className="h-11 px-4 text-left align-middle text-xs font-semibold text-muted-foreground whitespace-nowrap w-28">DNI</th>
+                <th className="h-11 px-4 text-left align-middle text-xs font-semibold text-muted-foreground whitespace-nowrap w-28">Estado</th>
+                <th className="h-11 px-4 text-left align-middle text-xs font-semibold text-muted-foreground whitespace-nowrap w-28">Prioridad</th>
+                <th className="h-11 px-4 text-left align-middle text-xs font-semibold text-muted-foreground whitespace-nowrap w-36">Intervenciones</th>
+                <th className="h-11 px-4 text-left align-middle text-xs font-semibold text-muted-foreground whitespace-nowrap w-16"><span className="sr-only">Ver</span></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border/30">
@@ -372,8 +355,8 @@ export function AreaDashboardView({
                 filteredCases.map((c) => {
                   const shown = splitCaseTitle(c.title);
                   return (
-                  <tr key={c.id} className="hover:bg-muted/30 transition-colors">
-                    <td className="px-5 py-3.5 font-bold text-foreground">
+                  <tr key={c.id} className="border-b border-border/50 transition-colors hover:bg-muted/60">
+                    <td className="px-4 py-3 align-middle font-bold text-foreground">
                       <div className="flex min-w-0 items-center gap-1.5">
                         <CaseTag tag={shown.tag} />
                         <Link href={`/cases/${c.id}`} title={c.title} className="min-w-0 truncate hover:text-primary transition-colors">
@@ -381,24 +364,24 @@ export function AreaDashboardView({
                         </Link>
                       </div>
                     </td>
-                    <td className="px-4 py-3.5 text-foreground font-semibold">
+                    <td className="px-4 py-3 align-middle text-foreground font-semibold">
                       <Link href={`/people/${c.person.id}`} className="block truncate hover:underline" title={`${c.person.lastName}, ${c.person.firstName}`}>
                         {c.person.lastName}, {c.person.firstName}
                       </Link>
                     </td>
-                    <td className="px-4 py-3.5 font-mono text-muted-foreground">
+                    <td className="px-4 py-3 align-middle font-mono text-muted-foreground">
                       {isProvisionalDni(c.person.dni) ? <span className="font-sans">Sin DNI</span> : c.person.dni}
                     </td>
-                    <td className="px-4 py-3.5">
+                    <td className="px-4 py-3 align-middle">
                       {renderStatusBadge(c.status)}
                     </td>
-                    <td className="px-4 py-3.5">
+                    <td className="px-4 py-3 align-middle">
                       {renderPriorityBadge(c.priority)}
                     </td>
-                    <td className="px-4 py-3.5 whitespace-nowrap text-muted-foreground font-bold">
+                    <td className="px-4 py-3 align-middle whitespace-nowrap text-muted-foreground font-bold">
                       {plural(c._count?.interventions || 0, "intervención")}
                     </td>
-                    <td className="px-4 py-3.5 text-right">
+                    <td className="px-4 py-3 align-middle text-right">
                       <Button variant="ghost" size="icon" asChild className="h-8 w-8 text-primary hover:bg-primary/10 rounded-xl">
                         <Link href={`/cases/${c.id}`} aria-label="Ver expediente" title="Ver expediente">
                           <Eye className="h-4 w-4" />
@@ -410,7 +393,7 @@ export function AreaDashboardView({
                 })
               ) : (
                 <tr>
-                  <td colSpan={7} className="p-0">
+                  <td colSpan={7} className="px-4 py-3 align-middle">
                     {searchQuery.trim() || priorityFilter !== "TODAS" ? (
                       <EmptyMessage
                         kind="search"

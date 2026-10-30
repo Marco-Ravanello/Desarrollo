@@ -1,5 +1,7 @@
 export const dynamic = "force-dynamic";
 
+import { PRIORITY_TONE, toneOf } from "@/lib/status-tones";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { InitialsAvatar } from "@/components/ui/initials-avatar";
 import {
   getDashboardStats, countStaleCases, countPendingDerivations, getAreaOverview, getAreaTeam, getQuietCases, getFollowUpsDue,
@@ -502,9 +504,9 @@ function BudgetCard({ stats, areaName }: { stats: DashboardStats; areaName?: str
           <h3 className="text-sm font-semibold text-foreground truncate">{areaName ? `Presupuesto del área` : "Presupuesto"}</h3>
         </div>
         <Link href="/admin/budget" className="flex items-center gap-1 shrink-0">
-          <span className={`text-xs font-medium rounded-full px-2 py-0.5 whitespace-nowrap ${hasBudget ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400" : "bg-muted text-muted-foreground"}`}>
+          <StatusBadge tone={hasBudget ? "green" : "slate"} dot={false}>
             {hasBudget ? `${executionPercentage}% ejecutado` : "Sin cargar"}
-          </span>
+          </StatusBadge>
           <ChevronRight className="h-3 w-3 text-muted-foreground" />
         </Link>
       </div>
@@ -571,15 +573,9 @@ function RecentCasesCard({ cases, viewAllHref }: { cases: DashboardStats["recent
                 {getAreaShortName(c.type)} · Desde el {c.openedOn}
               </p>
             </div>
-            <span className={`inline-block shrink-0 px-2 py-0.5 rounded-full text-xs font-medium ${
-              c.statusVariant === "pending"
-                ? "bg-amber-500/10 text-amber-700 dark:text-amber-400"
-                : c.statusVariant === "in_progress"
-                ? "bg-blue-500/10 text-blue-600 dark:text-blue-400"
-                : "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
-            }`}>
+            <StatusBadge tone={c.statusTone}>
               {c.status}
-            </span>
+            </StatusBadge>
           </Link>
         ))}
       </div>
@@ -616,14 +612,13 @@ function MyCasesCard({ total, cases }: { total: number; cases: MyAssignedCase[] 
               <p className="text-xs font-medium text-foreground truncate group-hover:text-primary transition-colors">{c.titular || c.title}</p>
               <p className="text-xs text-muted-foreground truncate">{c.titular ? `${c.title} · ${c.status}` : c.status}</p>
             </div>
-            <span
-              className={`inline-block shrink-0 px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap ${
-                c.stale ? "bg-amber-500/15 text-amber-800 dark:text-amber-300" : "bg-muted text-muted-foreground"
-              }`}
+            <StatusBadge
+              tone={c.stale ? "amber" : "slate"}
+              dot={c.stale}
               title="Desde la última intervención o, si no tiene, desde que se abrió"
             >
               {c.quietDays <= 0 ? "Movido hoy" : c.quietDays === 1 ? "Movido ayer" : `${c.quietDays} días sin movimiento`}
-            </span>
+            </StatusBadge>
           </Link>
         ))}
       </div>
@@ -656,15 +651,9 @@ function TasksCard({ tasks }: { tasks: { id: string; title: string; priority: st
             >
               <p className="text-xs font-medium text-foreground truncate group-hover:text-primary transition-colors">{t.title}</p>
               <div className="flex items-center gap-2 shrink-0">
-                <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${
-                  high
-                    ? "bg-rose-500/10 text-rose-700 dark:text-rose-400"
-                    : priority === "MEDIA"
-                    ? "bg-amber-500/10 text-amber-700 dark:text-amber-400"
-                    : "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
-                }`}>
+                <StatusBadge tone={toneOf(PRIORITY_TONE, priority)}>
                   {textoNormal(priority)}
-                </span>
+                </StatusBadge>
                 <span className="text-muted-foreground font-mono text-xs">
                   {t.dueDate ? formatVencimiento(t.dueDate) : "Sin fecha"}
                 </span>
@@ -695,15 +684,9 @@ function VehiclesCard({ vehicles }: { vehicles: DashboardStats["vehiclesList"] }
               <p className="text-xs font-medium text-foreground truncate group-hover:text-primary transition-colors">{v.name}</p>
               <p className="text-xs text-muted-foreground font-mono">{v.nextExpiry}</p>
             </div>
-            <span className={`inline-block shrink-0 px-2 py-0.5 rounded-full text-xs font-medium ${
-              v.statusVariant === "active"
-                ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
-                : v.statusVariant === "maintenance"
-                ? "bg-sky-500/10 text-sky-700 dark:text-sky-400"
-                : "bg-slate-500/10 text-slate-600 dark:text-slate-400"
-            }`}>
+            <StatusBadge tone={v.statusTone}>
               {v.status}
-            </span>
+            </StatusBadge>
           </Link>
         ))}
       </div>
@@ -746,27 +729,27 @@ function AreasCard({ rows }: { rows: AreaOverviewRow[] }) {
             ))}
           </MobileList>
           <table className="hidden md:table w-full mt-2 text-xs">
-            <thead>
+            <thead className="bg-muted/40 border-b border-border/60">
               <tr className="text-left text-muted-foreground">
-                <th className="py-2 font-medium">Área</th>
-                <th className="py-2 font-medium text-right">Abiertos</th>
-                <th className="py-2 font-medium text-right">Urgentes</th>
-                <th className="py-2 font-medium text-right" title={`Sin intervenciones hace ${STALE_DAYS} días o más`}>Sin movimiento</th>
-                <th className="py-2 font-medium text-right">Derivaciones sin responder</th>
+                <th className="h-11 px-4 text-left align-middle text-xs font-semibold text-muted-foreground whitespace-nowrap">Área</th>
+                <th className="h-11 px-4 align-middle text-xs font-semibold text-muted-foreground whitespace-nowrap text-right">Abiertos</th>
+                <th className="h-11 px-4 align-middle text-xs font-semibold text-muted-foreground whitespace-nowrap text-right">Urgentes</th>
+                <th className="h-11 px-4 align-middle text-xs font-semibold text-muted-foreground whitespace-nowrap text-right" title={`Sin intervenciones hace ${STALE_DAYS} días o más`}>Sin movimiento</th>
+                <th className="h-11 px-4 align-middle text-xs font-semibold text-muted-foreground whitespace-nowrap text-right">Derivaciones sin responder</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border/30">
               {rows.map((r) => (
                 <tr key={r.id}>
-                  <td className="py-2.5 pr-2">
+                  <td className="px-4 py-3 align-middle">
                     <Link href={href(r.id, { status: "ACTIVOS" })} className="font-medium text-foreground hover:text-primary">
                       {getAreaShortName(r.name)}
                     </Link>
                   </td>
-                  <td className="py-2.5 text-right tabular-nums">{cell(r.open, href(r.id, { status: "ACTIVOS" }))}</td>
-                  <td className="py-2.5 text-right tabular-nums">{cell(r.urgent, href(r.id, { status: "ACTIVOS", priority: "URGENTE" }), true)}</td>
-                  <td className="py-2.5 text-right tabular-nums">{cell(r.stale, href(r.id, { quiet: "1" }), true)}</td>
-                  <td className="py-2.5 text-right tabular-nums">{cell(r.derivations, "/cases/derivaciones", true)}</td>
+                  <td className="px-4 py-3 align-middle text-right tabular-nums">{cell(r.open, href(r.id, { status: "ACTIVOS" }))}</td>
+                  <td className="px-4 py-3 align-middle text-right tabular-nums">{cell(r.urgent, href(r.id, { status: "ACTIVOS", priority: "URGENTE" }), true)}</td>
+                  <td className="px-4 py-3 align-middle text-right tabular-nums">{cell(r.stale, href(r.id, { quiet: "1" }), true)}</td>
+                  <td className="px-4 py-3 align-middle text-right tabular-nums">{cell(r.derivations, "/cases/derivaciones", true)}</td>
                 </tr>
               ))}
             </tbody>
@@ -810,9 +793,7 @@ function TeamCard({ rows, areaId, areaName }: { rows: TeamMemberRow[]; areaId: s
               <span className="flex shrink-0 items-center gap-2 text-xs">
                 <span className="text-foreground">{plural(r.open, "expediente")}</span>
                 {r.stale > 0 && (
-                  <span className="rounded-full bg-amber-500/15 px-2 py-0.5 font-medium text-amber-800 dark:text-amber-300">
-                    {formatNumber(r.stale)} sin movimiento
-                  </span>
+                  <StatusBadge tone="amber">{formatNumber(r.stale)} sin movimiento</StatusBadge>
                 )}
               </span>
             </Link>
@@ -843,9 +824,7 @@ function QuietCasesCard({ cases, total, viewAllHref }: { cases: QuietCase[]; tot
                 <p className="text-xs font-medium text-foreground truncate group-hover:text-primary transition-colors">{c.titular || c.title}</p>
                 <p className="text-xs text-muted-foreground truncate">{c.assignee ? `A cargo: ${c.assignee}` : "Sin profesional a cargo"}</p>
               </div>
-              <span className="shrink-0 rounded-full bg-amber-500/15 px-2 py-0.5 text-xs font-medium text-amber-800 dark:text-amber-300 whitespace-nowrap">
-                {c.quietDays} días
-              </span>
+              <StatusBadge tone="amber">{c.quietDays} días</StatusBadge>
             </Link>
           ))}
         </div>
@@ -868,13 +847,9 @@ function FollowUpsCard({ items }: { items: DueFollowUp[] }) {
                 <p className="text-xs font-medium text-foreground truncate group-hover:text-primary transition-colors">{f.title}</p>
                 <p className="text-xs text-muted-foreground truncate">{f.caseTitle}</p>
               </div>
-              <span
-                className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium whitespace-nowrap ${
-                  f.overdueDays > 0 ? "bg-rose-500/10 text-rose-700 dark:text-rose-400" : "bg-amber-500/10 text-amber-800 dark:text-amber-300"
-                }`}
-              >
+              <StatusBadge tone={f.overdueDays > 0 ? "red" : "orange"}>
                 {f.overdueDays <= 0 ? "Hoy" : f.overdueDays === 1 ? "Atrasado 1 día" : `Atrasado ${f.overdueDays} días`}
-              </span>
+              </StatusBadge>
             </Link>
           ))}
         </div>

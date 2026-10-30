@@ -8,7 +8,7 @@ import { getOrderStatusConfig } from "@/lib/status-styles";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { Building2, CheckCircle2, FileText, PenLine, Pencil } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
 import { EmptyMessage } from "@/components/ui/empty-message";
@@ -141,9 +141,7 @@ export default async function ProviderDetailPage({ params }: { params: Promise<{
                           {o.area?.name ? getAreaShortName(o.area.name) : "Sin área"}
                         </TableCell>
                         <TableCell>
-                          <Badge variant="outline" className={status.badgeClass}>
-                            {status.label}
-                          </Badge>
+                          <StatusBadge tone={status.tone}>{status.label}</StatusBadge>
                         </TableCell>
                         <TableCell className="text-right font-semibold tabular-nums">{formatPesos(Number(o.amount || 0))}</TableCell>
                       </TableRow>

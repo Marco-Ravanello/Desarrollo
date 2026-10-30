@@ -7,7 +7,8 @@ import { Download, FileCheck2, PackageCheck } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { textoNormal } from "@/lib/formato";
-import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/ui/status-badge";
+import { STORM_PRIORITY_TONE, toneOf } from "@/lib/status-tones";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { EmergencyStockItem, StormDeliveryListItem, StormVictimItem } from "@/types/emergency";
 import { stormBarrioLabel } from "@/lib/storm-barrios";
@@ -245,15 +246,15 @@ export function StormSummaryTab({ records, stock, onDeliver, deliveries = [] }: 
               {byItem.map((i) => (
                 <TableRow key={i.key}>
                   <TableCell className="font-semibold">{i.title}</TableCell>
-                  <TableCell className="text-right">{i.pedido}</TableCell>
-                  <TableCell className="text-right">{i.entregado}</TableCell>
-                  <TableCell className="text-right font-bold">{i.falta}</TableCell>
-                  <TableCell className="text-right">
+                  <TableCell className="text-right tabular-nums">{i.pedido}</TableCell>
+                  <TableCell className="text-right tabular-nums">{i.entregado}</TableCell>
+                  <TableCell className="text-right font-bold tabular-nums">{i.falta}</TableCell>
+                  <TableCell className="text-right tabular-nums">
                     {i.deposito}
                     {i.falta > i.deposito && (
-                      <Badge variant="outline" className="ml-2 text-xs font-bold bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/30">
+                      <StatusBadge tone="red" className="ml-2">
                         No alcanza: faltan {i.falta - i.deposito}
-                      </Badge>
+                      </StatusBadge>
                     )}
                   </TableCell>
                 </TableRow>
@@ -288,10 +289,10 @@ export function StormSummaryTab({ records, stock, onDeliver, deliveries = [] }: 
                 {byBarrio.map((b) => (
                   <TableRow key={b.barrio}>
                     <TableCell className="font-semibold">{b.barrio}</TableCell>
-                    <TableCell className="text-right">{b.fichas}</TableCell>
-                    <TableCell className="text-right">{b.alta}</TableCell>
-                    <TableCell className="text-right">{b.ninos}</TableCell>
-                    <TableCell className="text-right font-bold">{b.falta}</TableCell>
+                    <TableCell className="text-right tabular-nums">{b.fichas}</TableCell>
+                    <TableCell className="text-right tabular-nums">{b.alta}</TableCell>
+                    <TableCell className="text-right tabular-nums">{b.ninos}</TableCell>
+                    <TableCell className="text-right font-bold tabular-nums">{b.falta}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -314,8 +315,8 @@ export function StormSummaryTab({ records, stock, onDeliver, deliveries = [] }: 
                 {byPriority.map((p) => (
                   <TableRow key={p.prioridad}>
                     <TableCell className="font-semibold">{textoNormal(p.prioridad)}</TableCell>
-                    <TableCell className="text-right">{p.fichas}</TableCell>
-                    <TableCell className="text-right font-bold">{p.pendientes}</TableCell>
+                    <TableCell className="text-right tabular-nums">{p.fichas}</TableCell>
+                    <TableCell className="text-right font-bold tabular-nums">{p.pendientes}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -348,12 +349,7 @@ export function StormSummaryTab({ records, stock, onDeliver, deliveries = [] }: 
               {pendingRecords.map((r) => (
                 <TableRow key={r.id}>
                   <TableCell>
-                    <Badge
-                      variant="outline"
-                      className={`text-xs font-bold ${r.prioridad === "ALTA" ? "bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/30" : ""}`}
-                    >
-                      {textoNormal(r.prioridad)}
-                    </Badge>
+                    <StatusBadge tone={toneOf(STORM_PRIORITY_TONE, r.prioridad)}>{textoNormal(r.prioridad)}</StatusBadge>
                   </TableCell>
                   <TableCell className="font-semibold uppercase">{r.nombreApellido}</TableCell>
                   <TableCell className="text-xs">
@@ -362,7 +358,7 @@ export function StormSummaryTab({ records, stock, onDeliver, deliveries = [] }: 
                   </TableCell>
                   <TableCell className="text-xs">{missingText(r, extraNames)}</TableCell>
                   {onDeliver && (
-                    <TableCell className="text-right">
+                    <TableCell className="text-right tabular-nums">
                       {r.fromTable && (
                         <Button size="sm" variant="outline" onClick={() => onDeliver(r)} className="h-8 rounded-lg text-xs font-bold">
                           <PackageCheck className="mr-1 h-3.5 w-3.5" /> Entregar
@@ -406,7 +402,7 @@ export function StormSummaryTab({ records, stock, onDeliver, deliveries = [] }: 
                     </TableCell>
                     <TableCell className="text-xs">{d.summary}</TableCell>
                     <TableCell className="text-xs">{d.deliveredBy}</TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="text-right tabular-nums">
                       <Button size="sm" variant="outline" asChild className="h-8 rounded-lg text-xs font-bold">
                         <Link href={`/admin/emergency/constancia/${d.id}`} target="_blank">
                           <FileCheck2 className="mr-1 h-3.5 w-3.5" /> Constancia

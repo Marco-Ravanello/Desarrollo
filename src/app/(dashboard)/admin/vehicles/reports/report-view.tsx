@@ -109,7 +109,7 @@ export function FuelReportView({ vehicles }: { vehicles: any[] }) {
                      <TableRow>
                        <TableHead>Fecha</TableHead>
                        <TableHead>Ticket</TableHead>
-                       <TableHead>Litros</TableHead>
+                       <TableHead numeric>Litros</TableHead>
                        <TableHead className="text-right">Importe</TableHead>
                      </TableRow>
                    </TableHeader>
@@ -118,14 +118,14 @@ export function FuelReportView({ vehicles }: { vehicles: any[] }) {
                        <TableRow key={r.id}>
                          <TableCell>{formatFecha(r.date)}</TableCell>
                          <TableCell className="text-xs">{r.ticketNumber}</TableCell>
-                         <TableCell>{Number(r.liters).toFixed(2)} L</TableCell>
-                         <TableCell className="text-right font-bold">{formatPesos(Number(r.amount))}</TableCell>
+                         <TableCell numeric>{Number(r.liters).toFixed(2)} L</TableCell>
+                         <TableCell className="text-right font-bold tabular-nums">{formatPesos(Number(r.amount))}</TableCell>
                        </TableRow>
                      ))}
-                     <TableRow className="bg-slate-50 dark:bg-slate-900 font-bold">
+                     <TableRow className="bg-muted/50 font-bold hover:bg-muted/50">
                         <TableCell colSpan={2}>Total del mes</TableCell>
-                        <TableCell>{totalLiters.toFixed(2)} L</TableCell>
-                        <TableCell className="text-right">{formatPesos(totalSpent)}</TableCell>
+                        <TableCell numeric>{totalLiters.toFixed(2)} L</TableCell>
+                        <TableCell className="text-right tabular-nums">{formatPesos(totalSpent)}</TableCell>
                      </TableRow>
                    </TableBody>
                  </Table>

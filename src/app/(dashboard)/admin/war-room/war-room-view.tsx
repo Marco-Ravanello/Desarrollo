@@ -7,12 +7,14 @@ import { CaseTag } from "@/components/cases/case-tag";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { PRIORITY_TONE, toneOf } from "@/lib/status-tones";
+import { StatusBadge } from "@/components/ui/status-badge";
 import {
   Maximize2, Minimize2, RefreshCw, Activity, ShieldAlert,
   Users, Car, Package, DollarSign, Clock,
-  Radio, TrendingUp, Building2
+  Radio, TrendingUp, Building2, Tv
 } from "lucide-react";
-import { MunicipalCrest } from "@/components/ui/municipal-crest";
+import { PageHeader } from "@/components/layout/page-header";
 import { plural } from "@/lib/formato";
 import { TZ_AR, formatFechaLarga } from "@/lib/fechas";
 
@@ -115,41 +117,33 @@ export function WarRoomView({ initialData }: WarRoomViewProps) {
   return (
     <div className={`space-y-6 transition-all duration-500 ${isFullscreen ? "p-6 sm:p-8 fixed inset-0 z-50 bg-background text-foreground overflow-y-auto" : ""}`}>
       {/* Header Institucional */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 p-5 sm:p-6 rounded-2xl bg-card border border-border/70 text-card-foreground shadow-sm backdrop-blur-xl">
-        <div className="flex items-center gap-4">
-          <div className="p-3 bg-primary/10 border border-primary/20 rounded-2xl shrink-0">
-            <MunicipalCrest className="h-10 w-10 text-primary" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="flex h-2.5 w-2.5 relative">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
-              </span>
-              <span className="text-xs font-bold text-primary">
-                En vivo • Municipalidad de Tres de Febrero
-              </span>
-            </div>
-            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground mt-0.5">
-              Sala de Situación
-            </h1>
-          </div>
-        </div>
-        <div className="flex flex-wrap items-center gap-3 sm:gap-4">
-          <div className="flex items-center gap-3 bg-muted/60 border border-border/60 px-4 py-2 rounded-2xl">
-            <Clock className="h-5 w-5 text-amber-500 shrink-0" />
-            <div className="text-right">
-              <div className="text-lg font-bold tabular-nums tracking-tight text-foreground leading-none">
-                {currentTime || "12:00:00"}
-              </div>
-              <div className="text-xs text-muted-foreground font-semibold mt-0.5">
-                {currentDate || "Cargando fecha..."}
+      <PageHeader
+        title="Sala de Situación"
+        icon={Tv}
+        description={
+          <span className="inline-flex items-center gap-2">
+            <span className="relative flex h-2.5 w-2.5 shrink-0" aria-hidden>
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75 motion-reduce:animate-none"></span>
+              <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500"></span>
+            </span>
+            En vivo: lo que está pasando ahora en la Secretaría.
+          </span>
+        }
+        actions={
+          <>
+            <div className="flex items-center gap-3 bg-muted/60 border border-border/60 px-4 py-2 rounded-2xl">
+              <Clock className="h-5 w-5 text-amber-500 shrink-0" />
+              <div className="text-right">
+                <div className="text-lg font-bold tabular-nums tracking-tight text-foreground leading-none">
+                  {currentTime || "12:00:00"}
+                </div>
+                <div className="text-xs text-muted-foreground font-semibold mt-0.5">
+                  {currentDate || "Cargando fecha..."}
+                </div>
               </div>
             </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <Badge variant="outline" className="border-border/60 bg-muted/40 text-xs font-mono text-muted-foreground px-3 py-1.5 rounded-xl">
-              <RefreshCw className="mr-1.5 h-3 w-3 animate-spin text-primary" /> Refresco en {countdown}s
+            <Badge variant="outline" className="border-border/60 bg-muted/40 text-xs text-muted-foreground tabular-nums px-3 py-1.5">
+              <RefreshCw className="mr-1.5 h-3 w-3 animate-spin text-primary motion-reduce:animate-none" /> Se actualiza en {countdown} s
             </Badge>
             <Button
               onClick={toggleFullscreen}
@@ -159,9 +153,9 @@ export function WarRoomView({ initialData }: WarRoomViewProps) {
               {isFullscreen ? <Minimize2 className="mr-2 h-4 w-4" /> : <Maximize2 className="mr-2 h-4 w-4 text-primary" />}
               {isFullscreen ? "Salir" : "Proyector"}
             </Button>
-          </div>
-        </div>
-      </div>
+          </>
+        }
+      />
       {/* Alerta COE si está activa */}
       {isEmergencyActive && (
         <div className="p-4 rounded-2xl bg-amber-500/10 border-2 border-amber-500/40 text-amber-800 dark:text-amber-300 flex items-center justify-between animate-pulse">
@@ -276,12 +270,7 @@ export function WarRoomView({ initialData }: WarRoomViewProps) {
                 >
                   <div className="min-w-0 space-y-1">
                     <div className="flex flex-wrap items-center gap-2">
-                      <Badge className={`text-xs font-bold border-none ${
-                        alert.priority === 'URGENTE' ? 'bg-rose-600 text-white' :
-                        alert.priority === 'ALTA' ? 'bg-amber-500 text-black' : 'bg-muted text-foreground'
-                      }`}>
-                        {alert.priorityLabel}
-                      </Badge>
+                      <StatusBadge tone={toneOf(PRIORITY_TONE, alert.priority)}>{alert.priorityLabel}</StatusBadge>
                       <CaseTag tag={alert.tag} />
                       <span className="text-xs font-bold text-muted-foreground">{alert.area}</span>
                     </div>

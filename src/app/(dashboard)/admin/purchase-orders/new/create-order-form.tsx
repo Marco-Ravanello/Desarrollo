@@ -307,14 +307,14 @@ export function CreatePurchaseOrderForm({
         ) : (
           <div className="overflow-x-auto rounded-xl border border-border/60">
             <table className="w-full min-w-[640px] text-sm">
-              <thead className="border-b border-border/60 bg-muted/50">
+              <thead className="bg-muted/40 border-b border-border/60">
                 <tr>
-                  <th className="p-3 text-left font-medium text-muted-foreground">Cantidad</th>
-                  <th className="p-3 text-left font-medium text-muted-foreground">Unidad</th>
-                  <th className="w-full p-3 text-left font-medium text-muted-foreground">Qué se compra</th>
-                  <th className="p-3 text-right font-medium text-muted-foreground">Precio unitario</th>
-                  <th className="p-3 text-right font-medium text-muted-foreground">Subtotal</th>
-                  <th className="p-3">
+                  <th className="h-11 px-4 text-left align-middle text-xs font-semibold text-muted-foreground whitespace-nowrap">Cantidad</th>
+                  <th className="h-11 px-4 text-left align-middle text-xs font-semibold text-muted-foreground whitespace-nowrap">Unidad</th>
+                  <th className="h-11 px-4 text-left align-middle text-xs font-semibold text-muted-foreground whitespace-nowrap w-full">Qué se compra</th>
+                  <th className="h-11 px-4 align-middle text-xs font-semibold text-muted-foreground whitespace-nowrap text-right">Precio unitario</th>
+                  <th className="h-11 px-4 align-middle text-xs font-semibold text-muted-foreground whitespace-nowrap text-right">Subtotal</th>
+                  <th className="h-11 px-4 text-left align-middle text-xs font-semibold text-muted-foreground whitespace-nowrap">
                     <span className="sr-only">Quitar</span>
                   </th>
                 </tr>
@@ -359,7 +359,7 @@ export function CreatePurchaseOrderForm({
                         onChange={(e) => updateItem(index, "unitPrice", e.target.value)}
                       />
                     </td>
-                    <td className="whitespace-nowrap p-3 text-right font-medium tabular-nums text-foreground">
+                    <td className="px-4 py-3 align-middle whitespace-nowrap text-right font-medium tabular-nums text-foreground">
                       {formatPesosExactos(parseFloat(item.totalPrice) || 0)}
                     </td>
                     <td className="p-2">
@@ -379,10 +379,10 @@ export function CreatePurchaseOrderForm({
               </tbody>
               <tfoot className="border-t border-border/60 bg-muted/30">
                 <tr>
-                  <td colSpan={4} className="p-3 text-right font-semibold text-muted-foreground">
+                  <td colSpan={4} className="px-4 py-3 align-middle text-right font-semibold text-muted-foreground">
                     Suma de los ítems
                   </td>
-                  <td className="whitespace-nowrap p-3 text-right font-bold tabular-nums text-foreground">
+                  <td className="px-4 py-3 align-middle whitespace-nowrap text-right font-bold tabular-nums text-foreground">
                     {formatPesosExactos(itemsTotal)}
                   </td>
                   <td />

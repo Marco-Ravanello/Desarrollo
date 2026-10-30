@@ -3,7 +3,7 @@ export const dynamic = "force-dynamic";
 import prisma from "@/lib/prisma";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { ReservationActions } from "./reservation-actions";
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
@@ -92,13 +92,13 @@ export default async function VehicleRequestsPage() {
         </CardHeader>
         <CardContent className="p-0 overflow-x-auto">
           <Table>
-            <TableHeader className="bg-muted/40">
+            <TableHeader>
               <TableRow className="border-border/40">
-                <TableHead className="text-muted-foreground font-semibold">Solicitante</TableHead>
-                <TableHead className="text-muted-foreground font-semibold">Vehículo</TableHead>
-                <TableHead className="text-muted-foreground font-semibold">Cuándo</TableHead>
-                <TableHead className="text-muted-foreground font-semibold">Motivo</TableHead>
-                <TableHead className="text-muted-foreground font-semibold text-right">Acciones</TableHead>
+                <TableHead>Solicitante</TableHead>
+                <TableHead>Vehículo</TableHead>
+                <TableHead>Cuándo</TableHead>
+                <TableHead>Motivo</TableHead>
+                <TableHead className="text-right">Acciones</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -112,7 +112,7 @@ export default async function VehicleRequestsPage() {
                 pending.map((r) => {
                   const clash = clashes.get(r.id)!;
                   return (
-                    <TableRow key={r.id} className="hover:bg-muted/30 transition-colors border-border/40 align-top">
+                    <TableRow key={r.id} className="border-border/40 align-top">
                       <TableCell><Solicitante r={r} /></TableCell>
                       <TableCell><Vehiculo r={r} /></TableCell>
                       <TableCell className="text-sm text-foreground min-w-[11rem]">
@@ -131,7 +131,7 @@ export default async function VehicleRequestsPage() {
                         ))}
                       </TableCell>
                       <TableCell className="max-w-[220px] text-sm text-muted-foreground break-words">{r.reason || "Sin motivo"}</TableCell>
-                      <TableCell className="text-right">
+                      <TableCell className="text-right tabular-nums">
                         <ReservationActions
                           reservationId={r.id}
                           actions={reservationActionsFor(user, r).filter((a) => a !== "APROBADA" || clash.blocking.length === 0)}
@@ -155,13 +155,13 @@ export default async function VehicleRequestsPage() {
         </CardHeader>
         <CardContent className="p-0 overflow-x-auto">
           <Table>
-            <TableHeader className="bg-muted/40">
+            <TableHeader>
               <TableRow className="border-border/40">
-                <TableHead className="text-muted-foreground font-semibold">Solicitante</TableHead>
-                <TableHead className="text-muted-foreground font-semibold">Vehículo</TableHead>
-                <TableHead className="text-muted-foreground font-semibold">Cuándo</TableHead>
-                <TableHead className="text-muted-foreground font-semibold">Estado</TableHead>
-                <TableHead className="text-muted-foreground font-semibold text-right">Acciones</TableHead>
+                <TableHead>Solicitante</TableHead>
+                <TableHead>Vehículo</TableHead>
+                <TableHead>Cuándo</TableHead>
+                <TableHead>Estado</TableHead>
+                <TableHead className="text-right">Acciones</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -176,7 +176,7 @@ export default async function VehicleRequestsPage() {
                   const st = RESERVATION_STATUS[r.status];
                   const late = r.status === "EN_CURSO" && r.endDate < new Date();
                   return (
-                    <TableRow key={r.id} className="hover:bg-muted/30 transition-colors border-border/40 align-top">
+                    <TableRow key={r.id} className="border-border/40 align-top">
                       <TableCell><Solicitante r={r} /></TableCell>
                       <TableCell><Vehiculo r={r} /></TableCell>
                       <TableCell className="text-sm text-foreground min-w-[11rem]">
@@ -184,10 +184,10 @@ export default async function VehicleRequestsPage() {
                         {r.observations && <p className="mt-1 text-xs text-muted-foreground whitespace-pre-line">{r.observations}</p>}
                       </TableCell>
                       <TableCell>
-                        <Badge variant="outline" className={`text-xs font-bold ${st.className}`}>{st.label}</Badge>
+                        <StatusBadge tone={st.tone}>{st.label}</StatusBadge>
                         {late && <p className="mt-1 text-xs font-semibold text-amber-800 dark:text-amber-400">Tendría que haber vuelto</p>}
                       </TableCell>
-                      <TableCell className="text-right">
+                      <TableCell className="text-right tabular-nums">
                         <ReservationActions reservationId={r.id} actions={reservationActionsFor(user, r)} />
                       </TableCell>
                     </TableRow>

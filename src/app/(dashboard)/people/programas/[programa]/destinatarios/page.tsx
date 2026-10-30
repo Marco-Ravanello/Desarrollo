@@ -133,7 +133,7 @@ export default async function ProgramCandidatesPage({
                       {p.ultimaBaja ? `Tuvo baja el ${dayText(p.ultimaBaja)}` : <span className="text-muted-foreground">Nunca estuvo</span>}
                     </TableCell>
                     {canManage && (
-                      <TableCell className="text-right">
+                      <TableCell className="text-right tabular-nums">
                         <EnrollCandidateButton dni={p.dni} name={p.nombre || `DNI ${p.dni}`} column={program.column} programLabel={program.label} />
                       </TableCell>
                     )}
