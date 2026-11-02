@@ -4,7 +4,7 @@
 export const TASK_PRIORITIES = [
   { value: "URGENTE", label: "Urgente" },
   { value: "ALTA", label: "Alta" },
-  { value: "MEDIA", label: "Normal" },
+  { value: "MEDIA", label: "Media" },
   { value: "BAJA", label: "Baja" },
 ] as const;
 

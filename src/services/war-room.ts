@@ -6,6 +6,7 @@ import { formatPesos, formatPesosCorto } from "@/lib/formato";
 import { CASE_PRIORITY_LABEL, splitCaseTitle } from "@/lib/case-summary";
 import { getAreaShortName } from "@/lib/area-theme";
 import type { Prisma } from "@prisma/client";
+import { URGENT_OPEN_CASE_WHERE } from "@/lib/case-urgency";
 
 function formatRelativeTime(date: Date) {
   const now = new Date();
@@ -49,8 +50,8 @@ export async function getWarRoomData({ canViewSensitive }: { canViewSensitive: b
       prisma.case.count({
         where: {
           ...caseScope,
-          priority: { in: ['URGENTE', 'ALTA'] },
-          status: { in: ['ABIERTO', 'EN_PROCESO', 'PENDIENTE'] }
+          // Mismo criterio que el Inicio y Expedientes (lib/case-urgency.ts).
+          ...URGENT_OPEN_CASE_WHERE
         }
       }).catch(() => 0),
       // Cerrados hoy (día de Argentina): antes contaba todos los cerrados de la historia.

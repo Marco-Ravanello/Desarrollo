@@ -19,7 +19,7 @@ import { diaAR, diaDeVencimiento, diasEntre, formatVencimiento } from "@/lib/fec
 import { parseViewerIds, repeatLabel, TASK_PRIORITIES, TASK_REPEATS } from "@/lib/tasks";
 import { EditTaskDialog, type ShareableUser } from "./edit-task-dialog";
 
-const TASK_PRIORITY_BADGE: Record<string, string> = { URGENTE: "Urgente", ALTA: "Alta", MEDIA: "Normal", BAJA: "Baja" };
+const TASK_PRIORITY_BADGE: Record<string, string> = { URGENTE: "Urgente", ALTA: "Alta", MEDIA: "Media", BAJA: "Baja" };
 
 type PriorityType = "BAJA" | "MEDIA" | "ALTA" | "URGENTE";
 
@@ -355,7 +355,7 @@ export function TaskList({
             <option value="TODAS">Todas las prioridades</option>
             <option value="URGENTE">Urgente</option>
             <option value="ALTA">Alta</option>
-            <option value="MEDIA">Normal</option>
+            <option value="MEDIA">Media</option>
             <option value="BAJA">Baja</option>
           </select>
         </div>

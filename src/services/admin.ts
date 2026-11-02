@@ -189,7 +189,7 @@ export async function createProvider(rawData: z.infer<typeof CreateProviderSchem
 export async function getVehicles() {
   const now = new Date();
   const yesterday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
-  return await prisma.vehicle.findMany({
+  const vehicles = await prisma.vehicle.findMany({
     include: {
       _count: { select: { reservations: true } },
       reservations: {
@@ -208,6 +208,12 @@ export async function getVehicles() {
     },
     orderBy: { plate: 'asc' }
   });
+  // Los montos de Prisma (Decimal) no pasan a las pantallas del navegador: van como números comunes.
+  return vehicles.map((v) => ({
+    ...v,
+    fuelMonthlyLimit: v.fuelMonthlyLimit === null ? null : Number(v.fuelMonthlyLimit),
+    fuelRecords: v.fuelRecords.map((r) => ({ ...r, amount: Number(r.amount), liters: Number(r.liters) })),
+  }));
 }
 
 export async function getVehicleWithHistory(id: string) {
@@ -259,7 +265,7 @@ export async function getAllReservations() {
 
 export async function getSupplies() {
   return await prisma.supplyItem.findMany({
-    include: { area: true },
+    include: { area: { select: { id: true, name: true } } },
     orderBy: { name: 'asc' }
   });
 }

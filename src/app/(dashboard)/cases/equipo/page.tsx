@@ -107,7 +107,7 @@ export default async function TeamWorkloadPage({ searchParams }: { searchParams:
           icon={UserX}
           tone={unassigned.open > 0 ? "orange" : "green"}
         />
-        <StatCard label="Urgentes" value={formatNumber(totals.urgent)} hint="Con prioridad urgente" icon={AlertTriangle} tone="red" />
+        <StatCard label="Urgentes" value={formatNumber(totals.urgent)} hint="Abiertos con prioridad urgente" icon={AlertTriangle} tone="red" />
         <StatCard label="Sin movimiento" value={formatNumber(totals.stale)} hint={`Sin intervenciones hace ${STALE_DAYS} días o más`} icon={Hourglass} tone="slate" />
       </StatRow>
 
@@ -166,7 +166,7 @@ export default async function TeamWorkloadPage({ searchParams }: { searchParams:
                         </span>
                       </span>
                     </td>
-                    <td className="px-4 py-3 align-middle text-right tabular-nums">{countLink(r.urgent, casesHref({ assigned: r.userId, priority: "URGENTE" }))}</td>
+                    <td className="px-4 py-3 align-middle text-right tabular-nums">{countLink(r.urgent, casesHref({ assigned: r.userId, priority: "URGENTE", status: "ACTIVOS" }))}</td>
                     <td className="px-4 py-3 align-middle text-right tabular-nums">{countLink(r.stale, casesHref({ assigned: r.userId, quiet: "1" }), true)}</td>
                     <td className="px-4 py-3 align-middle text-right tabular-nums">{r.recent === 0 ? <span className="text-muted-foreground">0</span> : formatNumber(r.recent)}</td>
                   </tr>

@@ -9,9 +9,11 @@ interface PeoplePaginationProps {
   totalPages: number;
   totalItems: number;
   pageSize: number;
+  /** Cómo se llaman las filas en plural ("personas", "expedientes"). */
+  itemLabel?: string;
 }
 
-export function PeoplePagination({ currentPage, totalPages, totalItems, pageSize }: PeoplePaginationProps) {
+export function PeoplePagination({ currentPage, totalPages, totalItems, pageSize, itemLabel = "personas" }: PeoplePaginationProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -58,7 +60,7 @@ export function PeoplePagination({ currentPage, totalPages, totalItems, pageSize
         <p className="text-muted-foreground">
           Mostrando <b className="font-semibold text-foreground">{startItem}</b> a{" "}
           <b className="font-semibold text-foreground">{endItem}</b> de{" "}
-          <b className="font-semibold text-foreground">{totalItems.toLocaleString("es-AR")}</b> personas
+          <b className="font-semibold text-foreground">{totalItems.toLocaleString("es-AR")}</b> {itemLabel}
         </p>
         <label className="flex items-center gap-1.5 text-muted-foreground">
           Filas por página
