@@ -140,12 +140,16 @@ export function AppSidebar({ isMobile = false, onNavigate }: AppSidebarProps) {
                     onClick={() => onNavigate?.()}
                     title={isCollapsed ? item.title : ""}
                     aria-current={isActive ? "page" : undefined}
-                    className={`flex items-center gap-3 px-2 py-1.5 rounded-xl transition-colors group mb-0.5 ${
+                    className={`relative flex items-center gap-3 px-2 py-1.5 rounded-xl transition-colors group mb-0.5 ${
                       isCollapsed ? "justify-center" : ""
                     } ${
                       isActive ? "bg-muted text-foreground font-semibold" : "text-muted-foreground hover:text-foreground hover:bg-muted/60 font-medium"
                     }`}
                   >
+                    {/* Rayita naranja institucional junto a la pantalla en la que estás. */}
+                    {isActive && (
+                      <span aria-hidden className="absolute -left-3 top-1/2 h-6 w-1 -translate-y-1/2 rounded-r-full bg-muni-orange" />
+                    )}
                     <span
                       className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-colors ${
                         isActive ? `${tone.chipActive} shadow-sm` : tone.chip

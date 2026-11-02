@@ -51,7 +51,7 @@ export default async function DerivationsPage() {
       />
 
       <Tabs defaultValue="responder" className="space-y-4">
-        <TabsList className="h-auto flex-wrap rounded-xl">
+        <TabsList className="h-auto flex-wrap">
           {tabs.map((t) => (
             <TabsTrigger key={t.id} value={t.id} className="gap-1.5 rounded-lg text-xs font-bold">
               <t.icon className="h-3.5 w-3.5" /> {t.label} ({t.rows.length})

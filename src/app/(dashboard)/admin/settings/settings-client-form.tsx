@@ -1,5 +1,6 @@
 "use client";
 
+import { TAB_LIST_CLASS, tabLinkClass } from "@/lib/tab-styles";
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
@@ -150,47 +151,31 @@ export function MunicipalSettingsClient({
         </p>
       )}
 
-      <div className="flex flex-wrap items-center gap-2 p-1.5 bg-muted/40 rounded-2xl border border-border/50 max-w-2xl">
+      <div className={`flex w-fit max-w-full flex-wrap items-center gap-1 ${TAB_LIST_CLASS}`}>
         <button
           onClick={() => setActiveTab("identity")}
-          className={`flex items-center gap-2 py-2.5 px-4 rounded-xl text-xs font-bold transition-all ${
-            activeTab === "identity"
-              ? "bg-primary text-primary-foreground shadow-sm"
-              : "text-muted-foreground hover:text-foreground"
-          }`}
+          className={tabLinkClass(activeTab === "identity")}
         >
           <Building2 className="h-4 w-4" />
           <span>Identidad y logotipo</span>
         </button>
         <button
           onClick={() => setActiveTab("contact")}
-          className={`flex items-center gap-2 py-2.5 px-4 rounded-xl text-xs font-bold transition-all ${
-            activeTab === "contact"
-              ? "bg-primary text-primary-foreground shadow-sm"
-              : "text-muted-foreground hover:text-foreground"
-          }`}
+          className={tabLinkClass(activeTab === "contact")}
         >
           <Phone className="h-4 w-4" />
           <span>Contacto y enlaces</span>
         </button>
         <button
           onClick={() => setActiveTab("preview")}
-          className={`flex items-center gap-2 py-2.5 px-4 rounded-xl text-xs font-bold transition-all ${
-            activeTab === "preview"
-              ? "bg-primary text-primary-foreground shadow-sm"
-              : "text-muted-foreground hover:text-foreground"
-          }`}
+          className={tabLinkClass(activeTab === "preview")}
         >
           <FileText className="h-4 w-4" />
           <span>Previsualización membrete</span>
         </button>
         <button
           onClick={() => setActiveTab("security")}
-          className={`flex items-center gap-2 py-2.5 px-4 rounded-xl text-xs font-bold transition-all ${
-            activeTab === "security"
-              ? "bg-primary text-primary-foreground shadow-sm"
-              : "text-muted-foreground hover:text-foreground"
-          }`}
+          className={tabLinkClass(activeTab === "security")}
         >
           <Shield className="h-4 w-4" />
           <span>Estado del sistema</span>
@@ -513,7 +498,7 @@ export function MunicipalSettingsClient({
           </div>
 
           <div className="p-6 sm:p-8 rounded-2xl border border-border/60 bg-background shadow-inner space-y-6 relative overflow-hidden">
-            <MunicipalLetterhead showWatermark={true} preview={settings} />
+            <MunicipalLetterhead preview={settings} />
 
             <div className="space-y-4 py-4 text-xs leading-relaxed text-foreground/90">
               <div className="p-4 rounded-2xl bg-muted/30 border border-border/40 space-y-2">

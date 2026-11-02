@@ -1,5 +1,6 @@
 export const dynamic = "force-dynamic";
 
+import { TAB_LIST_CLASS, tabLinkClass } from "@/lib/tab-styles";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import {
@@ -119,7 +120,7 @@ const NIVEL_CLASS: Record<string, string> = {
 function Tabs({ id, active, periodo }: { id: string; active: Tab; periodo: string }) {
   return (
     <nav aria-label="Secciones del control del gasto" className="-mx-1 overflow-x-auto px-1">
-      <ul className="inline-flex min-w-max gap-1 rounded-2xl border border-border/40 bg-muted/40 p-1">
+      <ul className={`inline-flex min-w-max gap-1 ${TAB_LIST_CLASS}`}>
         {TABS.map((t) => {
           const on = t.key === active;
           const qs = new URLSearchParams();
@@ -130,7 +131,7 @@ function Tabs({ id, active, periodo }: { id: string; active: Tab; periodo: strin
               <Link
                 href={`/convenios/${id}${qs.size ? `?${qs}` : ""}`}
                 aria-current={on ? "page" : undefined}
-                className={`inline-flex min-h-9 items-center gap-1.5 rounded-xl px-3 text-xs font-bold transition-colors ${on ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+                className={tabLinkClass(on)}
               >
                 <t.icon className="h-3.5 w-3.5" aria-hidden />
                 {t.label}

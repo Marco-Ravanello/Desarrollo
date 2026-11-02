@@ -33,7 +33,8 @@
 
     --border: 0 0% 90%;               /* #E5E5E5 */
     --input: 0 0% 90%;
-    --ring: 212 65% 25%;
+    /* Borde de foco en naranja institucional, un poco más oscuro para que se vea sobre blanco (3 a 1). */
+    --ring: 32 90% 45%;
     --radius: 0.75rem;
   }
 
@@ -194,4 +195,12 @@
 }
 @media print {
   .dark .leaflet-tile-pane { filter: none; }
+}
+
+/* Al imprimir, los colores del membrete institucional (franja azul y naranja) se imprimen igual. */
+@media print {
+  .print-colors, .print-colors * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
 }

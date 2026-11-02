@@ -170,7 +170,7 @@ export default async function PersonDetailPage({
       <Card className="border border-border/60 shadow-xs bg-card text-card-foreground rounded-2xl overflow-hidden">
         <PersonTabs defaultTab={activeTab}>
           <div className="px-4 pt-4 overflow-x-auto">
-            <TabsList className="bg-muted/40 p-1 border border-border/40 rounded-2xl">
+            <TabsList>
               <TabsTrigger value="datos" className="rounded-xl text-xs font-bold gap-1.5"><Contact className="h-3.5 w-3.5" />Datos</TabsTrigger>
               <TabsTrigger value="programas" className="rounded-xl text-xs font-bold gap-1.5"><Layers className="h-3.5 w-3.5" />Programas ({totalProgramas})</TabsTrigger>
               <TabsTrigger value="expedientes" className="rounded-xl text-xs font-bold gap-1.5"><FolderOpen className="h-3.5 w-3.5" />Expedientes ({allowedCases.length})</TabsTrigger>

@@ -220,14 +220,14 @@ export function UsersManagementView({
 
       <Card className="bg-card text-card-foreground border border-border/60 shadow-xs rounded-2xl overflow-hidden">
         <div className="p-4 sm:p-5 border-b border-border/40 bg-muted/20 flex flex-col xl:flex-row xl:items-center justify-between gap-4">
-          <div className="-mx-4 flex items-center gap-1.5 overflow-x-auto px-4 [scrollbar-width:none] [&>button]:shrink-0 [&>button]:whitespace-nowrap sm:mx-0 sm:flex-wrap sm:overflow-visible sm:bg-muted/40 sm:p-1 sm:rounded-2xl sm:border sm:border-border/40 shrink-0">
+          <div className="-mx-4 flex items-center gap-1.5 overflow-x-auto px-4 [scrollbar-width:none] [&>button]:shrink-0 [&>button]:whitespace-nowrap sm:mx-0 sm:flex-wrap sm:overflow-visible sm:bg-secondary/70 sm:p-1 sm:rounded-2xl sm:border sm:border-primary/10 shrink-0">
             <button
               type="button"
               onClick={() => setStatusFilter("TODOS")}
               className={`text-xs px-3.5 py-2 sm:py-1.5 rounded-xl font-bold transition-all ${
                 statusFilter === "TODOS"
-                  ? "bg-card text-foreground shadow-xs border border-border/40"
-                  : "text-muted-foreground hover:text-foreground"
+                  ? "bg-card text-primary shadow-xs ring-1 ring-primary/10"
+                  : "text-secondary-foreground/80 hover:text-primary"
               }`}
             >
               Todos ({totalUsers})
@@ -237,8 +237,8 @@ export function UsersManagementView({
               onClick={() => setStatusFilter("ACTIVOS")}
               className={`text-xs px-3.5 py-2 sm:py-1.5 rounded-xl font-bold transition-all ${
                 statusFilter === "ACTIVOS"
-                  ? "bg-card text-foreground shadow-xs border border-border/40"
-                  : "text-muted-foreground hover:text-foreground"
+                  ? "bg-card text-primary shadow-xs ring-1 ring-primary/10"
+                  : "text-secondary-foreground/80 hover:text-primary"
               }`}
             >
               Activos ({activeCount})
@@ -248,8 +248,8 @@ export function UsersManagementView({
               onClick={() => setStatusFilter("INACTIVOS")}
               className={`text-xs px-3.5 py-2 sm:py-1.5 rounded-xl font-bold transition-all ${
                 statusFilter === "INACTIVOS"
-                  ? "bg-card text-foreground shadow-xs border border-border/40"
-                  : "text-muted-foreground hover:text-foreground"
+                  ? "bg-card text-primary shadow-xs ring-1 ring-primary/10"
+                  : "text-secondary-foreground/80 hover:text-primary"
               }`}
             >
               Suspendidos ({inactiveCount})
@@ -260,8 +260,8 @@ export function UsersManagementView({
               title={`Cuentas activas que no entran hace ${UNUSED_ACCOUNT_DAYS} días o más`}
               className={`text-xs px-3.5 py-2 sm:py-1.5 rounded-xl font-bold transition-all ${
                 statusFilter === "SIN_USO"
-                  ? "bg-card text-foreground shadow-xs border border-border/40"
-                  : "text-muted-foreground hover:text-foreground"
+                  ? "bg-card text-primary shadow-xs ring-1 ring-primary/10"
+                  : "text-secondary-foreground/80 hover:text-primary"
               }`}
             >
               Sin entrar hace {UNUSED_ACCOUNT_DAYS} días ({unusedCount})

@@ -1,5 +1,6 @@
 export const dynamic = "force-dynamic";
 
+import { TAB_LIST_CLASS, tabLinkClass } from "@/lib/tab-styles";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { GraduationCap, Search } from "lucide-react";
@@ -19,7 +20,6 @@ import { EmptyMessage } from "@/components/ui/empty-message";
 import { MobileList, MobileListItem } from "@/components/ui/mobile-list";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { CursoDialog } from "@/components/cursos/curso-controls";
-import { cn } from "@/lib/utils";
 
 export const metadata = { title: "Cursos y talleres" };
 
@@ -82,16 +82,13 @@ export default async function CursosPage({ searchParams }: { searchParams: Searc
       />
 
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <nav aria-label="Estado" className="inline-flex rounded-xl border border-border/60 bg-muted/30 p-1">
+        <nav aria-label="Estado" className={`inline-flex gap-1 ${TAB_LIST_CLASS}`}>
           {ESTADO_TABS.map((t) => (
             <Link
               key={t.key}
               href={href({ estado: t.key })}
               aria-current={estado === t.key ? "page" : undefined}
-              className={cn(
-                "rounded-lg px-3 py-1.5 text-xs font-bold transition-colors",
-                estado === t.key ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-              )}
+              className={tabLinkClass(estado === t.key)}
             >
               {t.label}
             </Link>

@@ -82,7 +82,7 @@ export default async function RecorridaPage({ params }: Params) {
       />
       {/* El membrete lo pone el marco de la app al imprimir; acá va solo el título de la lista. */}
       <div className="hidden text-slate-900 print:block">
-        <h1 className="text-lg font-bold uppercase tracking-tight">Recorrida por {rec.barrio}</h1>
+        <h1 className="text-lg font-bold uppercase tracking-tight text-[#163C68]">Recorrida por {rec.barrio}</h1>
         <p className="text-xs text-slate-600">
           {fecha} · Salen: {rec.equipo.map((e) => e.name).join(", ")}{rec.objetivo ? ` · ${rec.objetivo}` : ""}
         </p>

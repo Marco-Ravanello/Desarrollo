@@ -70,7 +70,7 @@ export default async function DeliveryReceiptPage({ params }: { params: Promise<
           <div className="flex items-center gap-3">
             <FileCheck2 className="h-8 w-8 text-primary print:hidden" />
             <div>
-              <h1 className="text-lg font-bold uppercase tracking-tight text-foreground print:text-slate-900">
+              <h1 className="text-lg font-bold uppercase tracking-tight text-foreground print:text-[#163C68]">
                 Constancia de entrega de elementos de emergencia
               </h1>
               <p className="text-xs text-muted-foreground print:text-slate-600">Contingencia climática · Ficha de tormenta</p>

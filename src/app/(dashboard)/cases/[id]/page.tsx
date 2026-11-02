@@ -189,7 +189,7 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
       )}
 
       <Tabs defaultValue="historia" className="space-y-4">
-        <TabsList className="h-auto flex-wrap justify-start gap-1 rounded-2xl border border-border/40 bg-muted/40 p-1">
+        <TabsList className="h-auto flex-wrap justify-start gap-1">
           <TabsTrigger value="historia" className={tabClass}>
             <History className="h-3.5 w-3.5" /> Historia ({historyCount})
           </TabsTrigger>
