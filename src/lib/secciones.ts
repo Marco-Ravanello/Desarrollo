@@ -1,7 +1,7 @@
 import type { LucideIcon } from "lucide-react";
 import {
   LayoutDashboard, Users, ShieldAlert, ClipboardList, Briefcase, Car, UserCog, CheckCircle2, MapPin, Wallet,
-  Building2, FileSpreadsheet, Calendar, Sparkles, CloudRain, Settings, Tv, Network, BarChart3, Package,
+  Building2, FileSpreadsheet, Calendar, Sparkles, CloudRain, Settings, Tv, BarChart3, Package,
   ScrollText, MapPinned, GraduationCap, Landmark, Baby, Home, HeartHandshake, KeyRound,
 } from "lucide-react";
 
@@ -95,12 +95,11 @@ export const NAV_GROUPS: NavGroup[] = [
     tone: "navy",
     items: [
       { title: "Inicio", url: "/dashboard", icon: LayoutDashboard },
-      { title: "Ficha Social 360°", url: "/ficha-social", icon: Network },
+      { title: "Registro Único", url: "/people", icon: Users },
       { title: "Expedientes", url: "/cases", icon: ClipboardList },
       { title: "Mapa Social", url: "/maps", icon: MapPin },
       { title: "Barrios", url: "/barrios", icon: MapPinned },
       { title: "Mis tareas", url: "/tasks", icon: CheckCircle2 },
-      { title: "Registro Único", url: "/people", icon: Users },
       { title: "Cursos y talleres", url: "/cursos", icon: GraduationCap },
     ],
   },

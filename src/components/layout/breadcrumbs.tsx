@@ -42,7 +42,6 @@ const PATH_DICTIONARY: Record<string, string> = {
   maps: "Mapa Social",
   barrios: "Barrios",
   ubicar: "Ubicar en el mapa",
-  "ficha-social": "Ficha Social 360°",
   "cambiar-clave": "Cambiar mi contraseña",
   derivaciones: "Derivaciones",
   equipo: "Carga del equipo",

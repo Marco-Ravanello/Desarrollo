@@ -109,8 +109,8 @@ export async function lookupPersonByName(query: string): Promise<AIResponse | nu
     answer,
     dataSummary: {
       hasResults: true,
-      sources: result.matches.map((p) => ({ type: "Padrón Social Unificado", name: p.nombre_completo, url: "/ficha-social" })),
-      actions: [{ label: "Ver Ficha Social 360°", actionType: "NAVIGATE", payload: { path: "/ficha-social" } }],
+      sources: result.matches.map((p) => ({ type: "Padrón Social Unificado", name: p.nombre_completo, url: `/people/${p.dni}` })),
+      actions: [{ label: "Ver Registro Único", actionType: "NAVIGATE", payload: { path: "/people" } }],
     },
   };
 }

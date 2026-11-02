@@ -13,7 +13,7 @@ import {
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 
 /**
- * Botones del Registro Único: a la vista "Ficha 360°" y "Cargar persona"; el resto en "Más".
+ * Botones del Registro Único: "Cargar persona" a la vista; el resto en "Más".
  * El panel de importación llega armado desde el servidor (importContent).
  */
 export function PeopleHeaderActions({ canImport, importContent }: { canImport: boolean; importContent?: ReactNode }) {
@@ -22,13 +22,6 @@ export function PeopleHeaderActions({ canImport, importContent }: { canImport: b
 
   return (
     <>
-      <Button variant="outline" asChild className="rounded-2xl h-11 px-4 text-sm font-bold border-border/60 gap-2">
-        <Link href="/ficha-social">
-          <Network className="h-4 w-4 text-primary" />
-          Ficha 360°
-        </Link>
-      </Button>
-
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="outline" className="rounded-2xl h-11 px-4 text-sm font-bold border-border/60 gap-2">
@@ -44,7 +37,7 @@ export function PeopleHeaderActions({ canImport, importContent }: { canImport: b
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild className={itemClass}>
-            <Link href="/ficha-social/cruces">
+            <Link href="/people/programas/cruces">
               <Shuffle className="h-4 w-4 text-muted-foreground" /> Cruces de programas
             </Link>
           </DropdownMenuItem>

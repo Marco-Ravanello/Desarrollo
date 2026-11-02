@@ -2,7 +2,7 @@ export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ArrowLeft, Layers } from "lucide-react";
+import { ArrowLeft, Layers, Shuffle } from "lucide-react";
 import { auth } from "@/auth";
 import { canAssignProgramArea } from "@/lib/program-ownership";
 import { formatNumber, plural } from "@/lib/formato";
@@ -44,9 +44,14 @@ export default async function ProgramsPage() {
         description="Cuántas personas tiene hoy cada programa del padrón y qué área lo tiene a cargo. Tocá un programa para ver sus barrios, sus altas y bajas y la lista de personas."
         icon={Layers}
         actions={
-          <Button variant="ghost" size="icon" asChild className="hidden md:inline-flex rounded-xl">
-            <Link href="/people" aria-label="Volver"><ArrowLeft className="h-4 w-4" /></Link>
-          </Button>
+          <>
+            <Button variant="ghost" size="icon" asChild className="hidden md:inline-flex rounded-xl">
+              <Link href="/people" aria-label="Volver"><ArrowLeft className="h-4 w-4" /></Link>
+            </Button>
+            <Button variant="outline" asChild className="h-9 gap-1.5 rounded-xl text-xs font-bold">
+              <Link href="/people/programas/cruces"><Shuffle className="h-4 w-4 text-primary" /> Cruces de programas</Link>
+            </Button>
+          </>
         }
       />
 

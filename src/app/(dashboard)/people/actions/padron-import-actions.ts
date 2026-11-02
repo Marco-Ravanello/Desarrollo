@@ -69,7 +69,7 @@ export async function importPadronChunkAction(
       .catch((e) => console.warn("AuditLog skipped:", e));
 
     revalidatePath("/people");
-    revalidatePath("/ficha-social");
+    revalidatePath("/people/programas/cruces");
     return { success: true, counts, errors };
   } catch (err) {
     console.error("Error importando al padrón:", err);
