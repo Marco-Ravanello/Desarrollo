@@ -10,13 +10,14 @@ import { Badge } from "@/components/ui/badge";
 import { PRIORITY_TONE, toneOf } from "@/lib/status-tones";
 import { StatusBadge } from "@/components/ui/status-badge";
 import {
-  Maximize2, Minimize2, RefreshCw, Activity, ShieldAlert,
+  Maximize2, RefreshCw, Activity, ShieldAlert,
   Users, Car, Package, DollarSign, Clock,
   Radio, Building2, Tv
 } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
 import { plural } from "@/lib/formato";
 import { TZ_AR, formatFechaLarga } from "@/lib/fechas";
+import { WarRoomTv } from "./war-room-tv";
 
 interface WarRoomViewProps {
   initialData: {
@@ -50,6 +51,8 @@ interface WarRoomViewProps {
     }>;
   };
 }
+
+export type WarRoomData = WarRoomViewProps["initialData"];
 
 const KPI_NUMBER = "font-heading text-3xl sm:text-4xl font-bold tracking-tight tabular-nums";
 /** Azul institucional para las cifras; naranja solo para lo que pide atención. */
@@ -113,16 +116,55 @@ export function WarRoomView({ initialData }: WarRoomViewProps) {
     return () => clearInterval(timer);
   }, [router]);
 
-  const toggleFullscreen = () => {
-    if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen().then(() => setIsFullscreen(true));
-    } else {
-      document.exitFullscreen().then(() => setIsFullscreen(false));
-    }
+  // Pantalla completa para una tele o un proyector. Con ?tele=1 en la dirección arranca así
+  // (útil para dejar una tele fija); el navegador solo deja ocupar toda la pantalla tras un clic.
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("tele") === "1") setIsFullscreen(true);
+  }, []);
+
+  useEffect(() => {
+    if (!isFullscreen) return;
+    const onFullscreenChange = () => {
+      if (!document.fullscreenElement) setIsFullscreen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && !document.fullscreenElement) setIsFullscreen(false);
+    };
+    document.addEventListener("fullscreenchange", onFullscreenChange);
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("fullscreenchange", onFullscreenChange);
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [isFullscreen]);
+
+  const enterFullscreen = () => {
+    setIsFullscreen(true);
+    document.documentElement.requestFullscreen?.().catch(() => {
+      // Si el navegador no lo permite, igual queda la vista grande dentro de la ventana.
+    });
   };
 
+  const exitFullscreen = () => {
+    setIsFullscreen(false);
+    if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+  };
+
+  if (isFullscreen) {
+    return (
+      <WarRoomTv
+        data={initialData}
+        time={currentTime}
+        date={currentDate}
+        countdown={countdown}
+        emergency={isEmergencyActive}
+        onExit={exitFullscreen}
+      />
+    );
+  }
+
   return (
-    <div className={`space-y-6 transition-all duration-500 ${isFullscreen ? "p-6 sm:p-8 fixed inset-0 z-50 bg-background text-foreground overflow-y-auto" : ""}`}>
+    <div className="space-y-6">
       {/* Header Institucional */}
       <PageHeader
         title="Sala de Situación"
@@ -153,12 +195,12 @@ export function WarRoomView({ initialData }: WarRoomViewProps) {
               <RefreshCw className="mr-1.5 h-3 w-3 animate-spin text-primary motion-reduce:animate-none" /> Se actualiza en {countdown} s
             </Badge>
             <Button
-              onClick={toggleFullscreen}
+              onClick={enterFullscreen}
               variant="outline"
-              className="rounded-xl h-10 px-4 text-xs font-bold border-border/60 hover:bg-accent text-foreground transition-colors cursor-pointer"
+              className="rounded-xl h-10 px-4 text-xs font-bold gap-2"
+              title="Para verla en una tele o un proyector: letra grande, sin menú y con la hora"
             >
-              {isFullscreen ? <Minimize2 className="mr-2 h-4 w-4" /> : <Maximize2 className="mr-2 h-4 w-4 text-primary" />}
-              {isFullscreen ? "Salir" : "Proyector"}
+              <Maximize2 className="h-4 w-4 text-primary" /> Pantalla completa
             </Button>
           </>
         }

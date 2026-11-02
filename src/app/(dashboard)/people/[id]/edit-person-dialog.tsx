@@ -24,7 +24,16 @@ const UBICACION: Record<string, string> = {
 
 const inputClass = "rounded-xl bg-muted/40 border-border/60 font-semibold";
 
-export function EditPersonDialog({ person, options }: { person: PersonEditData; options: AddressOptions }) {
+export function EditPersonDialog({
+  person,
+  options,
+  triggerClassName,
+}: {
+  person: PersonEditData;
+  options: AddressOptions;
+  /** Para el botón sobre la banda azul del encabezado de la ficha. */
+  triggerClassName?: string;
+}) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -81,8 +90,12 @@ export function EditPersonDialog({ person, options }: { person: PersonEditData; 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className="gap-2 rounded-2xl border-border/60 hover:bg-muted font-bold text-xs h-9">
-          <Edit className="h-3.5 w-3.5 text-primary" /> Editar datos
+        <Button
+          variant="outline"
+          size="sm"
+          className={triggerClassName ?? "gap-2 rounded-2xl border-border/60 hover:bg-muted font-bold text-xs h-9"}
+        >
+          <Edit className={triggerClassName ? "h-3.5 w-3.5" : "h-3.5 w-3.5 text-primary"} /> Editar datos
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[560px] max-h-[90vh] overflow-y-auto rounded-2xl bg-card border-border/60 p-6 shadow-2xl">
