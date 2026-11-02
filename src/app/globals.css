@@ -99,6 +99,23 @@
   }
 }
 
+/* Encabezado fijo en listas largas (Table stickyHeader). Desde 640 px: en celulares son tarjetas. */
+@media (min-width: 640px) {
+  .table-sticky {
+    max-height: max(22rem, calc(100dvh - 15rem));
+    overscroll-behavior: contain;
+  }
+  .table-sticky > table > thead > tr > th {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    /* Fondo lleno para que las filas no se vean por detrás; misma tinta que el encabezado común. */
+    background: linear-gradient(hsl(var(--muted) / 0.6), hsl(var(--muted) / 0.6)), hsl(var(--card));
+    box-shadow: inset 0 -1px 0 hsl(var(--border));
+  }
+  .table-sticky:focus-visible { outline: 2px solid hsl(var(--ring)); outline-offset: 2px; }
+}
+
 /* Tablas como tarjetas en celulares (ver components/ui/table.tsx) */
 @media (max-width: 639px) {
   .table-cards { overflow: visible; }

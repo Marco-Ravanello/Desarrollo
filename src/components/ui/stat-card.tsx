@@ -8,7 +8,16 @@ const tones = {
   red: "bg-rose-500/10 text-rose-700 dark:text-rose-400",
   purple: "bg-violet-500/10 text-violet-600 dark:text-violet-300",
   slate: "bg-muted text-muted-foreground",
+  /** Azul institucional: el número también va en azul (Inicio). */
+  navy: "bg-[#E0EEFF] text-[#163C68] dark:bg-white/10 dark:text-blue-200",
+  /** Naranja institucional: solo para lo que pide atención; el número también va en naranja. */
+  attention: "bg-orange-500/10 text-[#C2410C] dark:text-muni-orange",
 } as const;
+
+const valueTones: Partial<Record<keyof typeof tones, string>> = {
+  navy: "text-[#163C68] dark:text-blue-100",
+  attention: "text-[#C2410C] dark:text-muni-orange",
+};
 
 export type StatTone = keyof typeof tones;
 
@@ -34,7 +43,14 @@ export function StatCard({ label, value, hint, icon: Icon, tone = "blue", classN
           </div>
         )}
       </div>
-      <div className="mt-2 font-heading text-xl font-bold tracking-tight text-foreground [overflow-wrap:anywhere] sm:text-3xl">{value}</div>
+      <div
+        className={cn(
+          "mt-2 font-heading text-xl font-bold tracking-tight tabular-nums [overflow-wrap:anywhere] sm:text-3xl",
+          valueTones[tone] ?? "text-foreground"
+        )}
+      >
+        {value}
+      </div>
       {hint && <div className="mt-1.5 text-xs text-muted-foreground">{hint}</div>}
     </div>
   );

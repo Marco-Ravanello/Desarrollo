@@ -37,14 +37,24 @@ function useMobileCardLabels(containerRef: React.RefObject<HTMLElement | null>, 
 interface TableProps extends React.HTMLAttributes<HTMLTableElement> {
   /** En celulares, mostrar cada fila como tarjeta (por defecto sí). */
   mobileCards?: boolean
+  /**
+   * Listas largas: el encabezado queda fijo arriba mientras se baja. La tabla se recorre dentro de
+   * su propio recuadro (alto máximo según la pantalla); en celulares las filas siguen como tarjetas.
+   */
+  stickyHeader?: boolean
 }
 
-const Table = React.forwardRef<HTMLTableElement, TableProps>(({ className, mobileCards = true, ...props }, ref) => {
+const Table = React.forwardRef<HTMLTableElement, TableProps>(({ className, mobileCards = true, stickyHeader = false, ...props }, ref) => {
   const containerRef = React.useRef<HTMLDivElement | null>(null)
   useMobileCardLabels(containerRef, mobileCards)
 
   return (
-    <div ref={containerRef} className={cn("relative w-full overflow-auto", mobileCards && "table-cards")}>
+    <div
+      ref={containerRef}
+      className={cn("relative w-full overflow-auto", mobileCards && "table-cards", stickyHeader && "table-sticky")}
+      // Con encabezado fijo, la tabla tiene su propio recorrido: se puede llegar con el teclado.
+      tabIndex={stickyHeader ? 0 : undefined}
+    >
       <table ref={ref} className={cn("w-full caption-bottom text-sm", className)} {...props} />
     </div>
   )
@@ -52,11 +62,15 @@ const Table = React.forwardRef<HTMLTableElement, TableProps>(({ className, mobil
 Table.displayName = "Table"
 
 /** Envoltorio para tablas escritas a mano con <table>: en celulares las muestra como tarjetas. */
-function TableCards({ className, children }: { className?: string; children: React.ReactNode }) {
+function TableCards({ className, children, stickyHeader = false }: { className?: string; children: React.ReactNode; stickyHeader?: boolean }) {
   const containerRef = React.useRef<HTMLDivElement | null>(null)
   useMobileCardLabels(containerRef, true)
   return (
-    <div ref={containerRef} className={cn("relative w-full overflow-auto table-cards", className)}>
+    <div
+      ref={containerRef}
+      className={cn("relative w-full overflow-auto table-cards", stickyHeader && "table-sticky", className)}
+      tabIndex={stickyHeader ? 0 : undefined}
+    >
       {children}
     </div>
   )

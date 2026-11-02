@@ -106,7 +106,7 @@ export default async function ProvidersPage({ searchParams }: { searchParams: Pr
             />
           ) : (
             <div className="overflow-x-auto">
-              <Table>
+              <Table stickyHeader>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Razón social</TableHead>

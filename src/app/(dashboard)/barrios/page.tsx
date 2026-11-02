@@ -66,7 +66,7 @@ export default async function BarriosPage() {
           {formatNumber(inList)} de {plural(data.totalPeople, "persona")} del padrón tienen uno de estos barrios en su domicilio.
         </p>
         <div className="hidden md:block">
-          <Table>
+          <Table stickyHeader>
             <TableHeader>
               <TableRow>
                 <TableHead>Barrio</TableHead>

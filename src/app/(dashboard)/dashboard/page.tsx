@@ -214,13 +214,15 @@ export default async function DashboardPage({
   const casesQuery = (extra: Record<string, string>) =>
     `/cases?${new URLSearchParams({ ...(areaId ? { area: areaId } : {}), ...extra })}`;
 
+  // Azul institucional para las cifras; naranja solo para lo que pide atención.
+  const ATTENTION_TEXT = "font-medium text-[#C2410C] dark:text-muni-orange";
   const kpis: Record<KpiId, { href: string; label: string; value: string | number; icon: any; tone: StatTone; hint: React.ReactNode }> = {
     people: {
       href: "/people",
       label: "Personas registradas",
       value: formatNumber(stats.peopleCount),
       icon: Users,
-      tone: "blue",
+      tone: "navy",
       hint: "En el padrón unificado",
     },
     activeCases: {
@@ -228,7 +230,7 @@ export default async function DashboardPage({
       label: area ? "Expedientes abiertos del área" : "Expedientes abiertos",
       value: formatNumber(stats.activeCases),
       icon: FileText,
-      tone: "blue",
+      tone: "navy",
       hint: "Abiertos o en proceso",
     },
     urgentCases: {
@@ -236,17 +238,17 @@ export default async function DashboardPage({
       label: profile === "operativo" && area ? "Urgentes del área" : "Expedientes urgentes",
       value: formatNumber(stats.criticalCases),
       icon: stats.criticalCases > 0 ? AlertTriangle : ShieldCheck,
-      tone: stats.criticalCases > 0 ? "red" : "green",
+      tone: stats.criticalCases > 0 ? "attention" : "navy",
       hint: stats.criticalCases > 0
-        ? <span className="text-rose-600 dark:text-rose-400 font-medium">Requieren atención</span>
-        : <span className="text-emerald-700 dark:text-emerald-400 font-medium">Todo en orden</span>,
+        ? <span className={ATTENTION_TEXT}>Requieren atención</span>
+        : "Todo en orden",
     },
     staleCases: {
       href: casesQuery({ quiet: "1" }),
       label: "Sin movimiento",
       value: formatNumber(staleCount),
       icon: Hourglass,
-      tone: staleCount > 0 ? "orange" : "green",
+      tone: staleCount > 0 ? "attention" : "navy",
       hint: `Sin intervenciones hace ${STALE_DAYS} días o más`,
     },
     pendingDerivations: {
@@ -254,7 +256,7 @@ export default async function DashboardPage({
       label: "Derivaciones sin responder",
       value: formatNumber(pendingDerivations),
       icon: ArrowRightLeft,
-      tone: pendingDerivations > 0 ? "orange" : "green",
+      tone: pendingDerivations > 0 ? "attention" : "navy",
       hint: pendingDerivations > 0 ? (area ? "Esperan que el área responda" : "Esperan respuesta de un área") : "Ninguna pendiente",
     },
     pendingOrders: {
@@ -262,7 +264,7 @@ export default async function DashboardPage({
       label: "Órdenes por firmar",
       value: formatNumber(stats.pendingPurchaseOrders),
       icon: FileSignature,
-      tone: stats.pendingPurchaseOrders > 0 ? "orange" : "green",
+      tone: stats.pendingPurchaseOrders > 0 ? "attention" : "navy",
       hint: stats.pendingPurchaseOrders > 0 ? "Esperan aprobación" : "Ninguna pendiente",
     },
     myTasks: {
@@ -270,9 +272,9 @@ export default async function DashboardPage({
       label: "Mis tareas pendientes",
       value: formatNumber(pendingTasks.length),
       icon: CheckCircle2,
-      tone: "orange",
+      tone: highPriorityTasksCount > 0 ? "attention" : "navy",
       hint: highPriorityTasksCount > 0
-        ? <span className="text-orange-700 dark:text-orange-400 font-medium">{plural(highPriorityTasksCount, "de alta prioridad", "de alta prioridad")}</span>
+        ? <span className={ATTENTION_TEXT}>{plural(highPriorityTasksCount, "de alta prioridad", "de alta prioridad")}</span>
         : "Ninguna de alta prioridad",
     },
     myCases: {
@@ -280,9 +282,9 @@ export default async function DashboardPage({
       label: "Mis expedientes a cargo",
       value: formatNumber(myCases.total),
       icon: FolderOpen,
-      tone: "blue",
+      tone: myCases.cases.some((c) => c.stale) ? "attention" : "navy",
       hint: myCases.cases.some((c) => c.stale)
-        ? <span className="text-amber-700 dark:text-amber-400 font-medium">Hay expedientes sin movimiento</span>
+        ? <span className={ATTENTION_TEXT}>Hay expedientes sin movimiento</span>
         : "Sin cerrar",
     },
     followUpsToday: {
@@ -290,9 +292,9 @@ export default async function DashboardPage({
       label: "Seguimientos para hoy",
       value: formatNumber(followUps.length),
       icon: CalendarCheck,
-      tone: followUps.some((f) => f.overdueDays > 0) ? "red" : followUps.length > 0 ? "orange" : "green",
+      tone: followUps.length > 0 ? "attention" : "navy",
       hint: followUps.some((f) => f.overdueDays > 0)
-        ? <span className="text-rose-600 dark:text-rose-400 font-medium">{plural(followUps.filter((f) => f.overdueDays > 0).length, "atrasado")}</span>
+        ? <span className={ATTENTION_TEXT}>{plural(followUps.filter((f) => f.overdueDays > 0).length, "atrasado")}</span>
         : followUps.length > 0 ? "Vencen hoy" : "Nada para hoy",
     },
   };
@@ -334,19 +336,21 @@ export default async function DashboardPage({
               </>
             )}
             {canSeeReports && <ExecutiveReportButton />}
+            {isSuperadmin && (
+              <ViewAsSelector options={viewAsOptions} areas={allAreas} current={viewAs?.role ?? ""} currentArea={areaId} />
+            )}
           </>
         }
       />
 
-      {isSuperadmin && (
-        <div className="space-y-2">
-          <ViewAsSelector options={viewAsOptions} areas={allAreas} current={viewAs?.role ?? ""} currentArea={areaId} />
-          {viewAs && (
-            <p role="status" className="text-xs text-muted-foreground">
-              Así se ve el inicio para {roleLabel(viewAs.role)}{area ? ` de ${area.name}` : ""}. Los números son los de ese rol; tus tareas, seguimientos y expedientes a cargo son los tuyos.
-            </p>
-          )}
-        </div>
+      {viewAs && (
+        <p role="status" className="flex flex-wrap items-center gap-x-2 gap-y-1 rounded-xl bg-[#E0EEFF] px-3 py-2 text-xs text-[#163C68] dark:bg-white/10 dark:text-blue-100">
+          <span>
+            Así se ve el inicio para <strong>{roleLabel(viewAs.role)}{area ? ` de ${area.name}` : ""}</strong>. Los números son los de ese rol; tus tareas, seguimientos y expedientes a cargo son los tuyos.
+          </span>
+          {/* Enlace común (carga completa): ver view-as-selector.tsx, por los mapas del inicio. */}
+          <a href="/dashboard" className="font-semibold underline underline-offset-2">Volver a tu inicio</a>
+        </p>
       )}
 
       {deniedAccess && (

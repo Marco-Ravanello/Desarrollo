@@ -256,15 +256,33 @@ export function CaseSkeleton() {
   );
 }
 
-/** Ficha de una persona: encabezado, pestañas y datos. */
+/** Ficha de una persona: la credencial azul, los datos de contacto, pestañas y datos. */
 export function PersonSkeleton() {
   return (
     <LoadingPage label="Cargando la ficha…">
-      <SkeletonHeader actions={1} />
-      <div className="flex flex-wrap gap-2">
-        <Skeleton className="h-5 w-28 rounded-full" />
-        <Skeleton className="h-5 w-24 rounded-full" />
-        <Skeleton className="h-5 w-32 rounded-full" />
+      <div className={cn(card, "overflow-hidden")}>
+        <div className="flex items-center gap-4 border-b-[3px] border-muni-orange bg-gradient-to-r from-[#0E2A49] via-[#163C68] to-[#22507F] px-4 py-5 sm:px-6">
+          <Skeleton className="h-16 w-16 shrink-0 rounded-2xl bg-white/15 sm:h-20 sm:w-20" />
+          <div className="flex-1 space-y-2.5">
+            <Skeleton className="h-7 w-56 max-w-[60vw] bg-white/20" />
+            <div className="flex flex-wrap gap-1.5">
+              <Skeleton className="h-6 w-28 rounded-full bg-white/15" />
+              <Skeleton className="h-6 w-16 rounded-full bg-white/15" />
+              <Skeleton className="h-6 w-36 rounded-full bg-white/15" />
+            </div>
+          </div>
+        </div>
+        <div className="grid grid-cols-1 gap-3 px-4 py-4 sm:grid-cols-2 sm:px-6 lg:grid-cols-4">
+          {range(4).map((i) => (
+            <div key={i} className="flex items-start gap-2.5">
+              <Skeleton className="h-7 w-7 shrink-0 rounded-lg" />
+              <div className="flex-1 space-y-1.5">
+                <Skeleton className="h-3 w-16" />
+                <Skeleton className={cn("h-4", widths[i % widths.length])} />
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
       <div className={cn(card, "space-y-6 p-5")}>
         <SkeletonTabs count={6} />
@@ -272,6 +290,51 @@ export function PersonSkeleton() {
           <SkeletonPanel lines={4} />
           <SkeletonPanel lines={3} />
         </div>
+      </div>
+    </LoadingPage>
+  );
+}
+
+/**
+ * Páginas de detalle (una orden, un vehículo, un proveedor, un convenio, un curso, un barrio):
+ * encabezado con botones, columna principal con datos y una lista, y paneles al costado.
+ */
+export function DetailSkeleton({
+  label = "Cargando…",
+  actions = 2,
+  stats = 0,
+  tabs = 0,
+  side = true,
+}: {
+  label?: string;
+  actions?: number;
+  stats?: number;
+  tabs?: number;
+  side?: boolean;
+}) {
+  return (
+    <LoadingPage label={label}>
+      <SkeletonHeader actions={actions} badge />
+      {stats > 0 && <SkeletonStats count={stats} />}
+      {tabs > 0 && <SkeletonTabs count={tabs} />}
+      <div className={cn("grid gap-4 sm:gap-6", side && "lg:grid-cols-3")}>
+        <div className={cn("space-y-4 sm:space-y-6", side && "lg:col-span-2")}>
+          <div className={cn(card, "grid gap-5 p-5 sm:grid-cols-2 sm:p-6")}>
+            {range(6).map((i) => (
+              <div key={i} className="space-y-2">
+                <Skeleton className="h-3 w-24" />
+                <Skeleton className={cn("h-5", widths[i % widths.length])} />
+              </div>
+            ))}
+          </div>
+          <SkeletonTable rows={4} columns={4} />
+        </div>
+        {side && (
+          <div className="space-y-4 sm:space-y-6">
+            <SkeletonPanel lines={3} />
+            <SkeletonPanel lines={2} />
+          </div>
+        )}
       </div>
     </LoadingPage>
   );

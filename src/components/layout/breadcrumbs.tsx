@@ -43,6 +43,7 @@ const PATH_DICTIONARY: Record<string, string> = {
   barrios: "Barrios",
   ubicar: "Ubicar en el mapa",
   "cambiar-clave": "Cambiar mi contraseña",
+  novedades: "Novedades",
   derivaciones: "Derivaciones",
   equipo: "Carga del equipo",
   duplicados: "Posibles duplicados",
