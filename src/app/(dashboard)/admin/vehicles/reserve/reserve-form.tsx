@@ -155,7 +155,7 @@ export function ReserveVehicleForm({ vehicleId, vehicles }: { vehicleId: string,
                   <p className="text-xs leading-relaxed">
                     Este vehículo ya tiene una reserva de <b>{conflictReservation.user?.name || "otro agente"}</b> en ese horario:
                   </p>
-                  <div className="p-2.5 rounded-xl bg-rose-500/15 font-mono text-xs font-bold">
+                  <div className="p-2.5 rounded-xl bg-rose-500/15 tabular-nums text-xs font-bold">
                     📅 {formatRange(conflictReservation.startDate, conflictReservation.endDate)} ({reservationStatusLabel(conflictReservation.status).toLowerCase()})
                   </div>
                   <p className="text-xs italic">Cambiá la fecha u hora, o elegí otro vehículo.</p>
@@ -211,7 +211,7 @@ export function ReserveVehicleForm({ vehicleId, vehicles }: { vehicleId: string,
             <div className="space-y-3">
               <div className="p-3 rounded-2xl bg-muted/40 border border-border/40 space-y-1">
                 <p className="text-xs font-bold text-foreground">{selectedVehicle.brand} {selectedVehicle.model}</p>
-                <Badge variant="outline" className="font-mono text-xs font-bold text-foreground border-border">{selectedVehicle.plate}</Badge>
+                <Badge variant="outline" className="tabular-nums text-xs font-bold text-foreground border-border">{selectedVehicle.plate}</Badge>
               </div>
 
               {existingReservations.length === 0 ? (
@@ -246,7 +246,7 @@ export function ReserveVehicleForm({ vehicleId, vehicles }: { vehicleId: string,
                           </Badge>
                         </div>
 
-                        <div className="space-y-1 font-mono text-xs font-bold">
+                        <div className="space-y-1 tabular-nums text-xs font-bold">
                           <p>Inicio: {format(new Date(r.startDate), "dd/MM/yyyy HH:mm", { locale: es })} hs</p>
                           <p>Fin: {format(new Date(r.endDate), "dd/MM/yyyy HH:mm", { locale: es })} hs</p>
                         </div>

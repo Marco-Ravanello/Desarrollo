@@ -77,7 +77,7 @@ export default async function DeliveryReceiptPage({ params }: { params: Promise<
             </div>
           </div>
           <div className="text-right">
-            <p className="font-mono text-sm font-bold text-foreground print:text-slate-900">N° {receipt.number}</p>
+            <p className="tabular-nums text-sm font-bold text-foreground print:text-slate-900">N° {receipt.number}</p>
             <p className="text-xs text-muted-foreground print:text-slate-600">{fechaHora(receipt.date)}</p>
           </div>
         </header>

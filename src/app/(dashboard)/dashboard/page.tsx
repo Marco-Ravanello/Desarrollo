@@ -654,7 +654,7 @@ function TasksCard({ tasks }: { tasks: { id: string; title: string; priority: st
                 <StatusBadge tone={toneOf(PRIORITY_TONE, priority)}>
                   {textoNormal(priority)}
                 </StatusBadge>
-                <span className="text-muted-foreground font-mono text-xs">
+                <span className="text-muted-foreground tabular-nums text-xs">
                   {t.dueDate ? formatVencimiento(t.dueDate) : "Sin fecha"}
                 </span>
               </div>
@@ -682,7 +682,7 @@ function VehiclesCard({ vehicles }: { vehicles: DashboardStats["vehiclesList"] }
           >
             <div className="min-w-0">
               <p className="text-xs font-medium text-foreground truncate group-hover:text-primary transition-colors">{v.name}</p>
-              <p className="text-xs text-muted-foreground font-mono">{v.nextExpiry}</p>
+              <p className="text-xs text-muted-foreground tabular-nums">{v.nextExpiry}</p>
             </div>
             <StatusBadge tone={v.statusTone}>
               {v.status}
@@ -878,7 +878,7 @@ function ActivityCard({ entries }: { entries: Awaited<ReturnType<typeof getRecen
                   </p>
                   <p className="text-xs text-muted-foreground truncate">{e.user.name || e.user.username || "Usuario"}</p>
                 </div>
-                <span className="shrink-0 text-xs text-muted-foreground font-mono">{formatFechaHora(e.createdAt)}</span>
+                <span className="shrink-0 text-xs text-muted-foreground tabular-nums">{formatFechaHora(e.createdAt)}</span>
               </>
             );
             return href ? (

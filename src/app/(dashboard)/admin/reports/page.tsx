@@ -422,7 +422,7 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
                   {providerRows.map((p) => (
                     <TableRow key={`${p.name}-${p.cuit}`}>
                       <TableCell className="font-medium">{p.name}</TableCell>
-                      <TableCell className="hidden sm:table-cell font-mono text-xs">{p.cuit}</TableCell>
+                      <TableCell className="hidden sm:table-cell tabular-nums text-xs">{p.cuit}</TableCell>
                       <TableCell className="text-right tabular-nums">{p.orders}</TableCell>
                       <TableCell className="text-right tabular-nums">{p.executed}</TableCell>
                     </TableRow>

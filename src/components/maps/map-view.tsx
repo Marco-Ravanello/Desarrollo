@@ -244,7 +244,7 @@ function PersonCard({ person }: { person: MapPerson }) {
         </div>
         <div>
           <h3 className="font-bold text-sm leading-tight text-foreground">{person.nombre}</h3>
-          <Badge variant="outline" className="font-mono text-xs font-bold mt-0.5 border-border/60">
+          <Badge variant="outline" className="tabular-nums text-xs font-bold mt-0.5 border-border/60">
             DNI: {person.dni}
           </Badge>
         </div>
@@ -266,7 +266,7 @@ function PersonCard({ person }: { person: MapPerson }) {
         {person.telefono && (
           <div className="flex items-center gap-1.5">
             <Phone className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
-            <span className="font-mono">{person.telefono}</span>
+            <span className="tabular-nums">{person.telefono}</span>
           </div>
         )}
       </div>
@@ -312,7 +312,7 @@ function CaseCard({ item }: { item: MapCaseItem }) {
       {item.titular && (
         <p className="border-t border-border/30 pt-1.5 text-xs text-muted-foreground">
           Titular: <span className="font-semibold text-foreground">{item.titular}</span>
-          {item.dni ? <span className="font-mono"> · DNI {item.dni}</span> : null}
+          {item.dni ? <span className="tabular-nums"> · DNI {item.dni}</span> : null}
         </p>
       )}
       <Button asChild size="sm" className="h-7 w-full text-xs font-bold rounded-xl !text-primary-foreground">

@@ -8,14 +8,14 @@ import { Input } from "@/components/ui/input";
 import { MobileFilters } from "@/components/ui/mobile-filters";
 import { FilterForm } from "@/components/ui/filter-form";
 import { ActiveFilters } from "@/components/ui/active-filters";
+import { filterSelectClass } from "@/components/ui/form-section";
 
 interface PeopleFiltersProps {
   barrios: string[];
   programas: string[];
 }
 
-const selectClass =
-  "h-10 w-full rounded-xl border border-border/60 bg-muted/30 px-3 text-xs font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-primary";
+const selectClass = filterSelectClass;
 
 /** Filtros del Registro Único: el barrio y el programa se aplican al elegirlos; el texto, con Enter o Buscar. */
 export function PeopleFilters({ barrios, programas }: PeopleFiltersProps) {

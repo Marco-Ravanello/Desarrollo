@@ -111,7 +111,7 @@ export function GlobalSearch() {
       >
         <Search className="h-4 w-4 shrink-0 text-muted-foreground group-hover:text-primary transition-colors" />
         <span className="flex-1 text-left font-medium">Buscar o ir a…</span>
-        <kbd className="pointer-events-none hidden h-5 select-none items-center gap-1 rounded-md border border-border/60 bg-background/80 px-1.5 font-mono text-xs font-bold text-muted-foreground sm:flex">
+        <kbd className="pointer-events-none hidden h-5 select-none items-center gap-1 rounded-md border border-border/60 bg-background/80 px-1.5 tabular-nums text-xs font-bold text-muted-foreground sm:flex">
           <span className="text-xs">⌘</span>K
         </kbd>
       </button>
@@ -190,7 +190,7 @@ export function GlobalSearch() {
                           <InitialsAvatar name={c.title} seed={c.dni || c.id} />
                           <div className="flex flex-col">
                             <span className="font-semibold text-sm text-foreground">{c.title}</span>
-                            <span className="text-xs text-muted-foreground font-mono">{c.subtitle}</span>
+                            <span className="text-xs text-muted-foreground tabular-nums">{c.subtitle}</span>
                           </div>
                         </Command.Item>
                       ))}
@@ -210,7 +210,7 @@ export function GlobalSearch() {
                           </div>
                           <div className="flex flex-col">
                             <span className="font-semibold text-sm text-foreground">{c.title}</span>
-                            <span className="text-xs text-muted-foreground font-mono">{c.subtitle}</span>
+                            <span className="text-xs text-muted-foreground tabular-nums">{c.subtitle}</span>
                           </div>
                         </Command.Item>
                       ))}
@@ -230,7 +230,7 @@ export function GlobalSearch() {
                           </div>
                           <div className="flex flex-col">
                             <span className="font-semibold text-sm text-foreground">{h.title}</span>
-                            <span className="text-xs text-muted-foreground font-mono">{h.subtitle}</span>
+                            <span className="text-xs text-muted-foreground tabular-nums">{h.subtitle}</span>
                           </div>
                         </Command.Item>
                       ))}
@@ -250,7 +250,7 @@ export function GlobalSearch() {
                           </div>
                           <div className="flex flex-col">
                             <span className="font-semibold text-sm text-foreground">{a.title}</span>
-                            <span className="text-xs text-muted-foreground font-mono">{a.subtitle}</span>
+                            <span className="text-xs text-muted-foreground tabular-nums">{a.subtitle}</span>
                           </div>
                         </Command.Item>
                       ))}

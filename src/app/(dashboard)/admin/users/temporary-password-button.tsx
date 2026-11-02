@@ -71,7 +71,7 @@ export function TemporaryPasswordButton({
         {password ? (
           <div className="space-y-3">
             <div className="flex items-center gap-2 rounded-2xl border border-border/60 bg-muted/30 p-3">
-              <code className="flex-1 select-all break-all text-center font-mono text-xl font-bold tracking-wider text-foreground">{password}</code>
+              <code className="flex-1 select-all break-all text-center tabular-nums text-xl font-bold tracking-wider text-foreground">{password}</code>
               <Button type="button" variant="outline" size="sm" onClick={copy} className="shrink-0 rounded-xl gap-1.5 font-bold">
                 <Copy className="h-3.5 w-3.5" /> Copiar
               </Button>

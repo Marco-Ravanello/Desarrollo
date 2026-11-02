@@ -131,11 +131,11 @@ export function EditUserDialog({
                 placeholder="Ej: maria.perez"
                 autoCapitalize="none"
                 spellCheck={false}
-                className="h-10 rounded-xl bg-muted/30 border-border/60 text-xs font-mono"
+                className="h-10 rounded-xl bg-muted/30 border-border/60 text-xs tabular-nums"
                 required
               />
             ) : (
-              <p className="flex h-10 items-center rounded-xl border border-border/40 bg-muted/20 px-3 font-mono text-xs text-muted-foreground">
+              <p className="flex h-10 items-center rounded-xl border border-border/40 bg-muted/20 px-3 tabular-nums text-xs text-muted-foreground">
                 {user?.username || "Sin usuario"}
               </p>
             )}
@@ -153,7 +153,7 @@ export function EditUserDialog({
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="nombre@tresdefebrero.gob.ar"
-              className="h-10 rounded-xl bg-muted/30 border-border/60 text-xs font-mono"
+              className="h-10 rounded-xl bg-muted/30 border-border/60 text-xs tabular-nums"
             />
           </div>
 

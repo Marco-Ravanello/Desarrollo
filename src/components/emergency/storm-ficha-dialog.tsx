@@ -273,12 +273,12 @@ export function StormFichaDialog({
           {/* Encabezado Institucional Ficha */}
           <div className="bg-muted/30 border border-border/60 rounded-2xl p-4 grid grid-cols-1 md:grid-cols-3 gap-4 text-xs font-semibold">
             <div>
-              <Label htmlFor="storm-barrio" className="text-xs text-muted-foreground font-bold">Barrio / localidad</Label>
+              <Label htmlFor="storm-barrio" className="text-sm text-muted-foreground font-bold">Barrio / localidad</Label>
               <select
                 id="storm-barrio"
                 value={barrio}
                 onChange={(e) => setBarrio(e.target.value)}
-                className="flex h-9 w-full rounded-xl border border-input bg-background px-3 text-xs mt-1 focus:outline-none focus:ring-2 focus:ring-primary"
+                className="flex h-11 w-full rounded-xl border border-input bg-background px-3 text-sm mt-1 focus:outline-none focus:ring-2 focus:ring-primary"
               >
                 <option value="">Elegí el barrio…</option>
                 {barrio && !matchStormBarrio(barrio) && <option value={barrio}>{barrio} (cargado antes)</option>}
@@ -288,20 +288,20 @@ export function StormFichaDialog({
               </select>
             </div>
             <div>
-              <Label className="text-xs text-muted-foreground font-bold">Agentes que intervinieron</Label>
+              <Label className="text-sm text-muted-foreground font-bold">Agentes que intervinieron</Label>
               <Input
                 value={agentes}
                 onChange={(e) => setAgentes(e.target.value)}
                 placeholder="Nombre del agente operativo"
-                className="h-9 rounded-xl text-xs mt-1"
+                className="h-11 rounded-xl text-sm mt-1"
               />
             </div>
             <div>
-              <Label className="text-xs text-muted-foreground font-bold">Fecha y hora</Label>
+              <Label className="text-sm text-muted-foreground font-bold">Fecha y hora</Label>
               <Input
                 value={formatFechaHora(new Date())}
                 readOnly
-                className="h-9 rounded-xl text-xs mt-1 bg-muted/50 font-mono"
+                className="h-11 rounded-xl text-sm mt-1 bg-muted/50 tabular-nums"
               />
             </div>
           </div>
@@ -314,12 +314,12 @@ export function StormFichaDialog({
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="relative md:col-span-2">
-                <Label className="text-xs font-bold">Nombre y apellido <RequiredMark /></Label>
+                <Label className="text-sm font-bold">Nombre y apellido <RequiredMark /></Label>
                 <Input
                   value={nombreApellido}
                   onChange={(e) => handleSearchName(e.target.value)}
                   placeholder="Escribí para buscar en el padrón"
-                  className="h-10 rounded-xl text-xs font-bold mt-1"
+                  className="h-11 rounded-xl text-sm font-bold mt-1"
                   required
                 />
                 {isSearching && (
@@ -356,34 +356,34 @@ export function StormFichaDialog({
               </div>
 
               <div>
-                <Label className="text-xs font-bold">DNI / documento</Label>
+                <Label className="text-sm font-bold">DNI / documento</Label>
                 <Input
                   value={dni}
                   onChange={(e) => setDni(e.target.value)}
                   placeholder="Número de DNI"
-                  className="h-10 rounded-xl text-xs font-bold mt-1"
+                  className="h-11 rounded-xl text-sm font-bold mt-1"
                 />
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div>
-                <Label className="text-xs font-bold">Edad aprox.</Label>
+                <Label className="text-sm font-bold">Edad aprox.</Label>
                 <Input
                   value={edad}
                   onChange={(e) => setEdad(e.target.value)}
                   placeholder="Ej: 38"
-                  className="h-10 rounded-xl text-xs mt-1"
+                  className="h-11 rounded-xl text-sm mt-1"
                 />
               </div>
 
               <div>
-                <Label className="text-xs font-bold">Teléfono / contacto</Label>
+                <Label className="text-sm font-bold">Teléfono / contacto</Label>
                 <Input
                   value={contacto}
                   onChange={(e) => setContacto(e.target.value)}
                   placeholder="Ej: 11-2345-6789"
-                  className="h-10 rounded-xl text-xs mt-1"
+                  className="h-11 rounded-xl text-sm mt-1"
                 />
               </div>
 
@@ -394,18 +394,18 @@ export function StormFichaDialog({
                   onCheckedChange={(checked) => setGrupoFamiliar(Boolean(checked))}
                   className="rounded-md"
                 />
-                <Label htmlFor="grupoFamiliar" className="text-xs font-bold cursor-pointer">
+                <Label htmlFor="grupoFamiliar" className="text-sm font-bold cursor-pointer">
                   ¿Posee Grupo Familiar a cargo?
                 </Label>
               </div>
 
               <div>
-                <Label className="text-xs font-bold">Cantidad de niños</Label>
+                <Label className="text-sm font-bold">Cantidad de niños</Label>
                 <Input
                   type="number"
                   value={ninos}
                   onChange={(e) => setNinos(e.target.value)}
-                  className="h-10 rounded-xl text-xs font-bold mt-1"
+                  className="h-11 rounded-xl text-sm font-bold mt-1"
                   min="0"
                 />
               </div>
@@ -413,23 +413,23 @@ export function StormFichaDialog({
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="md:col-span-2">
-                <Label className="text-xs font-bold">Domicilio exacto <RequiredMark /></Label>
+                <Label className="text-sm font-bold">Domicilio exacto <RequiredMark /></Label>
                 <Input
                   value={domicilio}
                   onChange={(e) => setDomicilio(e.target.value)}
                   placeholder="Calle, número, entre calles..."
-                  className="h-10 rounded-xl text-xs font-bold mt-1"
+                  className="h-11 rounded-xl text-sm font-bold mt-1"
                   required
                 />
               </div>
 
               <div>
-                <Label className="text-xs font-bold">Referencia territorial</Label>
+                <Label className="text-sm font-bold">Referencia territorial</Label>
                 <Input
                   value={referencia}
                   onChange={(e) => setReferencia(e.target.value)}
                   placeholder="Ej: Frente al zanjón / Casa esquina azul"
-                  className="h-10 rounded-xl text-xs mt-1"
+                  className="h-11 rounded-xl text-sm mt-1"
                 />
               </div>
             </div>
@@ -469,12 +469,12 @@ export function StormFichaDialog({
             </div>
 
             <div>
-              <Label className="text-xs font-bold">Descripción de la intervención social</Label>
+              <Label className="text-sm font-bold">Descripción de la intervención social</Label>
               <textarea
                 value={descripcionIntervencion}
                 onChange={(e) => setDescripcionIntervencion(e.target.value)}
                 placeholder="Detalle de afectación por temporal (ingreso de agua, voladura de techo, asistencia médica, contención)..."
-                className="w-full min-h-[90px] rounded-2xl bg-background border border-border text-xs p-3 font-medium mt-1 focus:outline-none focus:ring-2 focus:ring-primary"
+                className="w-full min-h-[100px] rounded-2xl bg-background border border-border text-sm p-3 font-medium mt-1 focus:outline-none focus:ring-2 focus:ring-primary"
               />
             </div>
           </div>
@@ -497,19 +497,19 @@ export function StormFichaDialog({
                       if (c && cantidadColchon === 0) setCantidadColchon(1);
                     }}
                   />
-                  <Label htmlFor="reqColchon" className="text-xs font-bold cursor-pointer">
+                  <Label htmlFor="reqColchon" className="text-sm font-bold cursor-pointer">
                     Colchón
                   </Label>
                 </div>
                 {requiereColchon && (
                   <div className="pt-1">
-                    <Label className="text-xs text-muted-foreground font-bold">Cantidad</Label>
+                    <Label className="text-sm text-muted-foreground font-bold">Cantidad</Label>
                     <Input
                       type="number"
                       value={cantidadColchon}
                       onChange={(e) => setCantidadColchon(Number(e.target.value))}
                       min="1"
-                      className="h-8 rounded-lg text-xs font-bold mt-0.5"
+                      className="h-10 rounded-lg text-sm font-bold mt-0.5"
                     />
                   </div>
                 )}
@@ -526,19 +526,19 @@ export function StormFichaDialog({
                       if (c && cantidadCama === 0) setCantidadCama(1);
                     }}
                   />
-                  <Label htmlFor="reqCama" className="text-xs font-bold cursor-pointer">
+                  <Label htmlFor="reqCama" className="text-sm font-bold cursor-pointer">
                     Cama
                   </Label>
                 </div>
                 {requiereCama && (
                   <div className="pt-1">
-                    <Label className="text-xs text-muted-foreground font-bold">Cantidad</Label>
+                    <Label className="text-sm text-muted-foreground font-bold">Cantidad</Label>
                     <Input
                       type="number"
                       value={cantidadCama}
                       onChange={(e) => setCantidadCama(Number(e.target.value))}
                       min="1"
-                      className="h-8 rounded-lg text-xs font-bold mt-0.5"
+                      className="h-10 rounded-lg text-sm font-bold mt-0.5"
                     />
                   </div>
                 )}
@@ -555,19 +555,19 @@ export function StormFichaDialog({
                       if (c && cantidadCucheta === 0) setCantidadCucheta(1);
                     }}
                   />
-                  <Label htmlFor="reqCucheta" className="text-xs font-bold cursor-pointer">
+                  <Label htmlFor="reqCucheta" className="text-sm font-bold cursor-pointer">
                     Cucheta
                   </Label>
                 </div>
                 {requiereCucheta && (
                   <div className="pt-1">
-                    <Label className="text-xs text-muted-foreground font-bold">Cantidad</Label>
+                    <Label className="text-sm text-muted-foreground font-bold">Cantidad</Label>
                     <Input
                       type="number"
                       value={cantidadCucheta}
                       onChange={(e) => setCantidadCucheta(Number(e.target.value))}
                       min="1"
-                      className="h-8 rounded-lg text-xs font-bold mt-0.5"
+                      className="h-10 rounded-lg text-sm font-bold mt-0.5"
                     />
                   </div>
                 )}
@@ -584,19 +584,19 @@ export function StormFichaDialog({
                       if (c && cantidadFrazada === 0) setCantidadFrazada(1);
                     }}
                   />
-                  <Label htmlFor="reqFrazada" className="text-xs font-bold cursor-pointer">
+                  <Label htmlFor="reqFrazada" className="text-sm font-bold cursor-pointer">
                     Frazada
                   </Label>
                 </div>
                 {requiereFrazada && (
                   <div className="pt-1">
-                    <Label className="text-xs text-muted-foreground font-bold">Cantidad</Label>
+                    <Label className="text-sm text-muted-foreground font-bold">Cantidad</Label>
                     <Input
                       type="number"
                       value={cantidadFrazada}
                       onChange={(e) => setCantidadFrazada(Number(e.target.value))}
                       min="1"
-                      className="h-8 rounded-lg text-xs font-bold mt-0.5"
+                      className="h-10 rounded-lg text-sm font-bold mt-0.5"
                     />
                   </div>
                 )}
@@ -618,20 +618,20 @@ export function StormFichaDialog({
                             checked={qty > 0}
                             onCheckedChange={(c) => setOtros((o) => ({ ...o, [item.id]: c ? Math.max(1, o[item.id] || 0) : 0 }))}
                           />
-                          <Label htmlFor={inputId} className="text-xs font-bold cursor-pointer min-w-0 break-words">
+                          <Label htmlFor={inputId} className="text-sm font-bold cursor-pointer min-w-0 break-words">
                             {item.name}
                           </Label>
                         </div>
                         {qty > 0 && (
                           <div className="pt-1">
-                            <Label className="text-xs text-muted-foreground font-bold">Cantidad ({item.unit.toLowerCase()})</Label>
+                            <Label className="text-sm text-muted-foreground font-bold">Cantidad ({item.unit.toLowerCase()})</Label>
                             <Input
                               type="number"
                               value={qty}
                               onChange={(e) => setOtros((o) => ({ ...o, [item.id]: Math.max(1, Math.floor(Number(e.target.value)) || 1) }))}
                               min="1"
                               aria-label={`Cantidad de ${item.name}`}
-                              className="h-8 rounded-lg text-xs font-bold mt-0.5"
+                              className="h-10 rounded-lg text-sm font-bold mt-0.5"
                             />
                           </div>
                         )}

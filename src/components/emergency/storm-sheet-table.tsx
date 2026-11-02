@@ -1,170 +1,53 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { StormVictimItem, SearchPersonSuggestion, EmergencyExtraItem } from "@/types/emergency";
+import { StormVictimItem, EmergencyExtraItem } from "@/types/emergency";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { textoNormal } from "@/lib/formato";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { DELIVERY_STATUS_TONE, STORM_PRIORITY_TONE, toneOf } from "@/lib/status-tones";
-import { Checkbox } from "@/components/ui/checkbox";
-import { FileText, Trash2, Plus, Search, Filter, Sparkles, UserCheck, PackageCheck } from "lucide-react";
+import { FileText, Trash2, Plus, Search, Filter, PackageCheck } from "lucide-react";
 import { DELIVERY_STATUS_LABEL, deliveryStatus, extraQuantityText } from "@/lib/emergency-categories";
 import { toast } from "sonner";
-import {
-  searchPeopleForEmergencyAction,
-  deleteStormVictimAction
-} from "@/app/(dashboard)/admin/actions/emergency-actions";
-import { saveFichaOrQueue } from "@/lib/emergency-offline";
-import { SIN_BARRIO, STORM_BARRIOS, matchStormBarrio, stormBarrioLabel } from "@/lib/storm-barrios";
-import { barrioLabel } from "@/lib/person-display";
+import { deleteStormVictimAction } from "@/app/(dashboard)/admin/actions/emergency-actions";
+import { SIN_BARRIO, STORM_BARRIOS, stormBarrioLabel } from "@/lib/storm-barrios";
 import { confirmar } from "@/components/ui/confirm-dialog";
 import { nombrePropio } from "@/lib/nombres";
+import { filterSelectClass } from "@/components/ui/form-section";
 
 interface StormSheetTableProps {
   records: StormVictimItem[];
-  operatorName: string;
-  areaName: string;
+  /** Ya no se usan acá (las fichas nuevas se cargan en su ficha); quedan por compatibilidad. */
+  operatorName?: string;
+  areaName?: string;
   onOpenFicha: (record: StormVictimItem) => void;
   onRefresh: () => void;
-  /** Usuario que carga (las fichas sin conexión se guardan a su nombre en el dispositivo). */
-  userId: string;
+  userId?: string;
   /** Auditoría consulta pero no carga ni borra. */
   canEdit?: boolean;
   /** Abre el registro de entrega (solo para quien puede mover stock). */
   onDeliver?: (record: StormVictimItem) => void;
   /** Nombres de los otros insumos que se pueden pedir. */
   extraItems?: EmergencyExtraItem[];
+  /** Abre una ficha nueva (con campos grandes) para cargar otra familia. */
+  onNewFicha?: () => void;
 }
 
 export function StormSheetTable({
   records,
-  operatorName,
-  areaName,
   onOpenFicha,
   onRefresh,
-  userId,
   canEdit = true,
   onDeliver,
   extraItems = [],
+  onNewFicha,
 }: StormSheetTableProps) {
   const extraNames = new Map(extraItems.map((i) => [i.id, i.name]));
   const [searchTerm, setSearchTerm] = useState("");
   const [priorityFilter, setPriorityFilter] = useState<string>("ALL");
   const [barrioFilter, setBarrioFilter] = useState<string>("ALL");
-
-  // State for fast-add row at the bottom
-  const [fastNombre, setFastNombre] = useState("");
-  const [fastDni, setFastDni] = useState("");
-  const [fastGrupoFam, setFastGrupoFam] = useState(false);
-  const [fastNinos, setFastNinos] = useState("0");
-  const [fastDomicilio, setFastDomicilio] = useState("");
-  const [fastRef, setFastRef] = useState("");
-  const [fastBarrio, setFastBarrio] = useState("");
-
-  const [fastReqColchon, setFastReqColchon] = useState(false);
-  const [fastCantColchon, setFastCantColchon] = useState(0);
-  const [fastReqCama, setFastReqCama] = useState(false);
-  const [fastCantCama, setFastCantCama] = useState(0);
-  const [fastReqCucheta, setFastReqCucheta] = useState(false);
-  const [fastCantCucheta, setFastCantCucheta] = useState(0);
-  const [fastReqFrazada, setFastReqFrazada] = useState(false);
-  const [fastCantFrazada, setFastCantFrazada] = useState(0);
-
-  const [fastObs, setFastObs] = useState("");
-  const [suggestions, setSuggestions] = useState<SearchPersonSuggestion[]>([]);
-  const [showSuggestions, setShowSuggestions] = useState(false);
-  const [isAdding, setIsAdding] = useState(false);
-
-  const handleSearchName = async (val: string) => {
-    setFastNombre(val);
-    if (val.trim().length >= 3 && navigator.onLine !== false) {
-      // Sin conexión no hay búsqueda en el padrón: se completa a mano.
-      const res = await searchPeopleForEmergencyAction(val).catch(() => []);
-      setSuggestions(res);
-      setShowSuggestions(true);
-    } else {
-      setSuggestions([]);
-      setShowSuggestions(false);
-    }
-  };
-
-  const handleSelectSuggestion = (s: SearchPersonSuggestion) => {
-    setFastNombre(s.nombreApellido);
-    setFastDni(s.dni);
-    if (s.domicilio) setFastDomicilio(s.domicilio);
-    // El barrio del padrón se elige en el desplegable si está en la lista; si no, queda como referencia.
-    const barrioPadron = matchStormBarrio(s.barrio);
-    if (barrioPadron) setFastBarrio(barrioPadron);
-    else if (s.barrio && !fastRef) setFastRef(barrioLabel(s.barrio));
-    setFastGrupoFam(s.grupoFamiliar);
-    if (s.ninos) setFastNinos(s.ninos);
-    setShowSuggestions(false);
-    toast.success("Sugerencia de padrón aplicada a la fila rápida");
-  };
-
-  const handleFastAdd = async () => {
-    if (!fastNombre.trim() || !fastDomicilio.trim()) {
-      toast.error("Completá nombre y apellido y domicilio para agregar la fila");
-      return;
-    }
-
-    setIsAdding(true);
-    const toastId = toast.loading("Agregando fila y generando expediente...");
-
-    const payload: Partial<StormVictimItem> = {
-      nombreApellido: fastNombre,
-      dni: fastDni,
-      grupoFamiliar: fastGrupoFam,
-      ninos: fastNinos,
-      domicilio: fastDomicilio,
-      referencia: fastRef,
-      barrio: fastBarrio,
-      requiereColchon: fastReqColchon,
-      cantidadColchon: fastReqColchon ? Math.max(1, fastCantColchon) : 0,
-      requiereCama: fastReqCama,
-      cantidadCama: fastReqCama ? Math.max(1, fastCantCama) : 0,
-      requiereCucheta: fastReqCucheta,
-      cantidadCucheta: fastReqCucheta ? Math.max(1, fastCantCucheta) : 0,
-      requiereFrazada: fastReqFrazada,
-      cantidadFrazada: fastReqFrazada ? Math.max(1, fastCantFrazada) : 0,
-      observaciones: fastObs,
-      prioridad: "MEDIA",
-      agentes: operatorName,
-    };
-
-    const res = await saveFichaOrQueue(userId, payload);
-    setIsAdding(false);
-
-    if (res.status !== "error") {
-      if (res.status === "saved") {
-        toast.success("Fila agregada correctamente", { id: toastId });
-      } else {
-        toast.warning("Sin conexión: la fila quedó guardada en este dispositivo y se envía sola cuando vuelva internet.", { id: toastId, duration: 6000 });
-      }
-      setFastNombre("");
-      setFastDni("");
-      setFastGrupoFam(false);
-      setFastNinos("0");
-      setFastDomicilio("");
-      setFastRef("");
-      setFastBarrio("");
-      setFastReqColchon(false);
-      setFastCantColchon(0);
-      setFastReqCama(false);
-      setFastCantCama(0);
-      setFastReqCucheta(false);
-      setFastCantCucheta(0);
-      setFastReqFrazada(false);
-      setFastCantFrazada(0);
-      setFastObs("");
-      if (res.status === "saved") onRefresh();
-    } else {
-      toast.error(res.error || "Error al agregar fila", { id: toastId });
-    }
-  };
 
   const handleDelete = async (id: string) => {
     if (!(await confirmar({ title: "¿Borrar esta fila del relevamiento?", confirmLabel: "Borrar", danger: true }))) return;
@@ -201,6 +84,19 @@ export function StormSheetTable({
     return matchesSearch && matchesPriority && matchesBarrio;
   });
 
+  // Totales de lo que se ve: familias, chicos y lo pedido de cada elemento.
+  const totals = filteredRecords.reduce(
+    (t, r) => ({
+      familias: t.familias + 1,
+      ninos: t.ninos + (Number(r.ninos) || 0),
+      colchones: t.colchones + (r.requiereColchon ? Math.max(1, Number(r.cantidadColchon) || 0) : 0),
+      camas: t.camas + (r.requiereCama ? Math.max(1, Number(r.cantidadCama) || 0) : 0),
+      cuchetas: t.cuchetas + (r.requiereCucheta ? Math.max(1, Number(r.cantidadCucheta) || 0) : 0),
+      frazadas: t.frazadas + (r.requiereFrazada ? Math.max(1, Number(r.cantidadFrazada) || 0) : 0),
+    }),
+    { familias: 0, ninos: 0, colchones: 0, camas: 0, cuchetas: 0, frazadas: 0 }
+  );
+
   return (
     <div className="space-y-4">
       {/* Controles de Búsqueda y Filtros */}
@@ -221,7 +117,7 @@ export function StormSheetTable({
             value={barrioFilter}
             onChange={(e) => setBarrioFilter(e.target.value)}
             aria-label="Filtrar por barrio"
-            className="h-9 max-w-[14rem] rounded-xl bg-background border border-border text-xs px-3 font-bold"
+            className={`${filterSelectClass} h-9 max-w-[14rem]`}
           >
             <option value="ALL">Todos los barrios</option>
             {barrioOptions.map((o) => (
@@ -234,109 +130,99 @@ export function StormSheetTable({
             aria-label="Filtrar por prioridad"
             value={priorityFilter}
             onChange={(e) => setPriorityFilter(e.target.value)}
-            className="h-9 rounded-xl bg-background border border-border text-xs px-3 font-bold"
+            className={`${filterSelectClass} h-9 sm:w-auto`}
           >
             <option value="ALL">Todas las prioridades</option>
-            <option value="ALTA">Prioridad ALTA</option>
-            <option value="MEDIA">Prioridad MEDIA</option>
-            <option value="BAJA">Prioridad BAJA</option>
+            <option value="ALTA">Prioridad alta</option>
+            <option value="MEDIA">Prioridad media</option>
+            <option value="BAJA">Prioridad baja</option>
           </select>
         </div>
       </div>
 
-      {/* Tabla Oficial Relevamiento Territorial (Exacta a Excel) */}
+      {/* Totales de lo que se ve (con los filtros de arriba). */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+        <SheetTotal label="Familias" value={totals.familias} />
+        <SheetTotal label="Niños y niñas" value={totals.ninos} />
+        <SheetTotal label="Colchones" value={totals.colchones} highlight />
+        <SheetTotal label="Camas" value={totals.camas} highlight />
+        <SheetTotal label="Cuchetas" value={totals.cuchetas} highlight />
+        <SheetTotal label="Frazadas" value={totals.frazadas} highlight />
+      </div>
+
+      {/* Planilla compacta: lo pedido va en una sola columna; cada familia se carga en su ficha. */}
       <div className="rounded-2xl border border-border/60 overflow-x-auto bg-card shadow-sm">
-        <Table mobileCards={false} className="min-w-[1200px] text-xs">
+        <Table mobileCards={false} className="min-w-[860px] text-sm">
           <TableHeader className="border-b border-border/60">
             <TableRow className="hover:bg-transparent">
-              <TableHead className="w-10 text-center border-r border-border/40" rowSpan={2}>#</TableHead>
-              <TableHead className="border-r border-border/40" rowSpan={2}>Nombre y apellido</TableHead>
-              <TableHead className="border-r border-border/40 w-28" rowSpan={2}>DNI</TableHead>
-              <TableHead className="border-r border-border/40 text-center w-20" rowSpan={2}>G. fam.</TableHead>
-              <TableHead className="border-r border-border/40 text-center w-16" rowSpan={2}>Niños</TableHead>
-              <TableHead className="border-r border-border/40" rowSpan={2}>Domicilio / referencia</TableHead>
-
-              {/* Subencabezados Elementos */}
-              <TableHead className="text-center border-r border-border/40 bg-amber-500/10" colSpan={8}>
-                Elementos (a criterio profesional)
-              </TableHead>
-
-              <TableHead className="border-r border-border/40" rowSpan={2}>Observaciones / contacto</TableHead>
-              <TableHead className="text-center w-28" rowSpan={2}>Acciones</TableHead>
-            </TableRow>
-
-            <TableRow className="hover:bg-transparent bg-amber-500/5">
-              <TableHead className="text-center border-r border-border/30 w-12">Colchón</TableHead>
-              <TableHead className="text-center border-r border-border/40 w-12">Cant.</TableHead>
-              <TableHead className="text-center border-r border-border/30 w-12">Cama</TableHead>
-              <TableHead className="text-center border-r border-border/40 w-12">Cant.</TableHead>
-              <TableHead className="text-center border-r border-border/30 w-12">Cucheta</TableHead>
-              <TableHead className="text-center border-r border-border/40 w-12">Cant.</TableHead>
-              <TableHead className="text-center border-r border-border/30 w-12">Frazada</TableHead>
-              <TableHead className="text-center border-r border-border/40 w-12">Cant.</TableHead>
+              <TableHead className="w-10 text-center">#</TableHead>
+              <TableHead>Familia</TableHead>
+              <TableHead>Domicilio</TableHead>
+              <TableHead>Pidió</TableHead>
+              <TableHead className="w-40">Estado</TableHead>
+              <TableHead className="w-28 text-right"><span className="sr-only">Acciones</span></TableHead>
             </TableRow>
           </TableHeader>
 
           <TableBody>
-            {filteredRecords.map((r, idx) => (
-              <TableRow key={r.id || idx}>
-                <TableCell className="text-center font-bold border-r border-border/40">{idx + 1}</TableCell>
-                <TableCell className="font-bold border-r border-border/40">{nombrePropio(r.nombreApellido)}</TableCell>
-                <TableCell className="font-mono border-r border-border/40">{r.dni || "-"}</TableCell>
-                <TableCell className="text-center border-r border-border/40">
-                  <Badge variant={r.grupoFamiliar ? "default" : "outline"} className="text-xs">
-                    {r.grupoFamiliar ? "Sí" : "No"}
-                  </Badge>
+            {filteredRecords.map((r, idx) => {
+              const pedidos = pedidosDe(r, extraNames);
+              const ninos = Number(r.ninos || 0);
+              return (
+              <TableRow key={r.id || idx} className="align-top">
+                <TableCell className="text-center font-semibold text-muted-foreground tabular-nums">{idx + 1}</TableCell>
+                <TableCell>
+                  <button
+                    type="button"
+                    onClick={() => onOpenFicha(r)}
+                    className="text-left font-semibold text-foreground hover:text-primary hover:underline"
+                  >
+                    {nombrePropio(r.nombreApellido) || "Sin nombre"}
+                  </button>
+                  <div className="text-xs text-muted-foreground tabular-nums">
+                    {r.dni ? `DNI ${r.dni}` : "Sin DNI"}
+                    {r.grupoFamiliar ? " · Con grupo familiar" : ""}
+                    {ninos > 0 ? ` · ${ninos === 1 ? "1 niño/a" : `${ninos} niños/as`}` : ""}
+                  </div>
+                  {r.contacto && <div className="text-xs text-muted-foreground tabular-nums">Tel. {r.contacto}</div>}
                 </TableCell>
-                <TableCell className="text-center font-bold border-r border-border/40">{r.ninos || "0"}</TableCell>
-                <TableCell className="border-r border-border/40">
-                  <div className="font-semibold">{r.domicilio}</div>
-                  {r.referencia && <div className="text-xs text-muted-foreground">Ref: {r.referencia}</div>}
-                  {r.barrio && <div className="text-xs text-primary font-bold">{r.barrio}</div>}
-                </TableCell>
-
-                {/* Elementos */}
-                <TableCell className="text-center border-r border-border/30">
-                  {r.requiereColchon ? <span className="font-bold text-amber-700 dark:text-amber-400">Sí</span> : <span className="text-muted-foreground">No</span>}
-                </TableCell>
-                <TableCell className="text-center font-bold border-r border-border/40">{r.cantidadColchon || 0}</TableCell>
-
-                <TableCell className="text-center border-r border-border/30">
-                  {r.requiereCama ? <span className="font-bold text-amber-700 dark:text-amber-400">Sí</span> : <span className="text-muted-foreground">No</span>}
-                </TableCell>
-                <TableCell className="text-center font-bold border-r border-border/40">{r.cantidadCama || 0}</TableCell>
-
-                <TableCell className="text-center border-r border-border/30">
-                  {r.requiereCucheta ? <span className="font-bold text-amber-700 dark:text-amber-400">Sí</span> : <span className="text-muted-foreground">No</span>}
-                </TableCell>
-                <TableCell className="text-center font-bold border-r border-border/40">{r.cantidadCucheta || 0}</TableCell>
-
-                <TableCell className="text-center border-r border-border/30">
-                  {r.requiereFrazada ? <span className="font-bold text-amber-700 dark:text-amber-400">Sí</span> : <span className="text-muted-foreground">No</span>}
-                </TableCell>
-                <TableCell className="text-center font-bold border-r border-border/40">{r.cantidadFrazada || 0}</TableCell>
-
-                <TableCell className="border-r border-border/40 text-xs">
-                  {Object.keys(r.otrosElementos || {}).length > 0 && (
-                    <div className="font-bold text-amber-700 dark:text-amber-400">
-                      Otros: {Object.entries(r.otrosElementos || {}).map(([id, n]) => extraQuantityText(id, n, extraNames)).join(", ")}
+                <TableCell>
+                  <div className="text-foreground">{r.domicilio}</div>
+                  {(r.barrio || r.referencia) && (
+                    <div className="text-xs text-muted-foreground">
+                      {[r.barrio && stormBarrioLabel(r.barrio), r.referencia].filter(Boolean).join(" · ")}
                     </div>
                   )}
-                  {r.observaciones && <div>{r.observaciones}</div>}
-                  {r.contacto && <div className="text-muted-foreground font-semibold">Tel: {r.contacto}</div>}
-                  <StatusBadge tone={toneOf(STORM_PRIORITY_TONE, r.prioridad)} className="mt-1">
+                </TableCell>
+                <TableCell>
+                  {pedidos.length > 0 ? (
+                    <div className="flex flex-wrap gap-1">
+                      {pedidos.map((p) => (
+                        <span key={p} className="rounded-md bg-muni-orange/10 px-1.5 py-0.5 text-xs font-semibold text-[#9A4A07] dark:text-muni-orange">
+                          {p}
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <span className="text-xs text-muted-foreground">Nada</span>
+                  )}
+                  {r.observaciones && <p className="mt-1 line-clamp-2 text-xs text-muted-foreground" title={r.observaciones}>{r.observaciones}</p>}
+                </TableCell>
+                <TableCell>
+                  <StatusBadge tone={toneOf(STORM_PRIORITY_TONE, r.prioridad)}>
                     {textoNormal(r.prioridad)}
                   </StatusBadge>
                   <DeliveryBadge record={r} />
                 </TableCell>
 
-                <TableCell className="text-center">
-                  <div className="flex items-center justify-center gap-1">
+                <TableCell className="text-right">
+                  <div className="flex items-center justify-end gap-1">
                     <Button
                       size="icon"
                       variant="ghost"
                       onClick={() => onOpenFicha(r)}
-                      title="Ver / editar ficha tormenta"
+                      title="Ver o editar la ficha"
+                      aria-label="Ver o editar la ficha"
                       className="h-8 w-8 rounded-lg hover:bg-primary/10 hover:text-primary"
                     >
                       <FileText className="h-4 w-4" />
@@ -347,6 +233,7 @@ export function StormSheetTable({
                         variant="ghost"
                         onClick={() => onDeliver(r)}
                         title="Registrar entrega"
+                        aria-label="Registrar entrega"
                         className="h-8 w-8 rounded-lg hover:bg-emerald-500/10 hover:text-emerald-600"
                       >
                         <PackageCheck className="h-4 w-4" />
@@ -356,7 +243,8 @@ export function StormSheetTable({
                       size="icon"
                       variant="ghost"
                       onClick={() => handleDelete(r.id)}
-                      title="Eliminar fila"
+                      title="Borrar la fila"
+                      aria-label="Borrar la fila"
                       className="h-8 w-8 rounded-lg hover:bg-rose-500/10 hover:text-rose-600"
                     >
                       <Trash2 className="h-4 w-4" />
@@ -364,130 +252,52 @@ export function StormSheetTable({
                   </div>
                 </TableCell>
               </TableRow>
-            ))}
+              );
+            })}
 
-            {/* FILA INFERIOR INTERACTIVA DE CARGA RÁPIDA CONTINUA */}
-            {canEdit && <TableRow className="bg-primary/5 border-t-2 border-primary/30">
-              <TableCell className="text-center font-bold text-primary">+</TableCell>
-              <TableCell className="relative">
-                <Input
-                  value={fastNombre}
-                  onChange={(e) => handleSearchName(e.target.value)}
-                  placeholder="Escribí nombre o DNI…"
-                  className="h-8 text-xs font-bold rounded-lg border-primary/40"
-                />
-                {showSuggestions && suggestions.length > 0 && (
-                  <div className="absolute left-0 bottom-10 z-50 w-72 bg-popover text-popover-foreground border border-border rounded-xl shadow-xl max-h-48 overflow-y-auto p-1">
-                    {suggestions.map((s, idx) => (
-                      <button
-                        key={idx}
-                        type="button"
-                        onClick={() => handleSelectSuggestion(s)}
-                        className="w-full text-left p-2 text-xs hover:bg-muted rounded-lg block font-semibold"
-                      >
-                        {nombrePropio(s.nombreApellido)} (DNI {s.dni})
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </TableCell>
-              <TableCell>
-                <Input
-                  value={fastDni}
-                  onChange={(e) => setFastDni(e.target.value)}
-                  placeholder="DNI"
-                  className="h-8 text-xs rounded-lg"
-                />
-              </TableCell>
-              <TableCell className="text-center">
-                <Checkbox
-                  aria-label="Grupo familiar"
-                  checked={fastGrupoFam}
-                  onCheckedChange={(c) => setFastGrupoFam(Boolean(c))}
-                />
-              </TableCell>
-              <TableCell>
-                <Input
-                  type="number"
-                  aria-label="Niños"
-                  value={fastNinos}
-                  onChange={(e) => setFastNinos(e.target.value)}
-                  className="h-8 text-xs text-center rounded-lg"
-                  min="0"
-                />
-              </TableCell>
-              <TableCell>
-                <Input
-                  value={fastDomicilio}
-                  onChange={(e) => setFastDomicilio(e.target.value)}
-                  placeholder="Domicilio / referencia..."
-                  className="h-8 text-xs rounded-lg"
-                />
-                <select
-                  aria-label="Barrio / localidad"
-                  value={fastBarrio}
-                  onChange={(e) => setFastBarrio(e.target.value)}
-                  className="mt-1 h-8 w-full rounded-lg border border-input bg-background px-2 text-xs"
-                >
-                  <option value="">Barrio…</option>
-                  {STORM_BARRIOS.map((b) => (
-                    <option key={b} value={b}>{b}</option>
-                  ))}
-                </select>
-              </TableCell>
-
-              {/* Checkbox y Cantidades Rápidas */}
-              <TableCell className="text-center">
-                <Checkbox aria-label="Pide colchones" checked={fastReqColchon} onCheckedChange={(c) => { setFastReqColchon(Boolean(c)); if (c && fastCantColchon === 0) setFastCantColchon(1); }} />
-              </TableCell>
-              <TableCell>
-                <Input type="number" aria-label="Cantidad de colchones" value={fastCantColchon} onChange={(e) => setFastCantColchon(Number(e.target.value))} className="h-8 text-xs text-center p-0 rounded-lg" min="0" />
-              </TableCell>
-
-              <TableCell className="text-center">
-                <Checkbox aria-label="Pide camas" checked={fastReqCama} onCheckedChange={(c) => { setFastReqCama(Boolean(c)); if (c && fastCantCama === 0) setFastCantCama(1); }} />
-              </TableCell>
-              <TableCell>
-                <Input type="number" aria-label="Cantidad de camas" value={fastCantCama} onChange={(e) => setFastCantCama(Number(e.target.value))} className="h-8 text-xs text-center p-0 rounded-lg" min="0" />
-              </TableCell>
-
-              <TableCell className="text-center">
-                <Checkbox aria-label="Pide cuchetas" checked={fastReqCucheta} onCheckedChange={(c) => { setFastReqCucheta(Boolean(c)); if (c && fastCantCucheta === 0) setFastCantCucheta(1); }} />
-              </TableCell>
-              <TableCell>
-                <Input type="number" aria-label="Cantidad de cuchetas" value={fastCantCucheta} onChange={(e) => setFastCantCucheta(Number(e.target.value))} className="h-8 text-xs text-center p-0 rounded-lg" min="0" />
-              </TableCell>
-
-              <TableCell className="text-center">
-                <Checkbox aria-label="Pide frazadas" checked={fastReqFrazada} onCheckedChange={(c) => { setFastReqFrazada(Boolean(c)); if (c && fastCantFrazada === 0) setFastCantFrazada(1); }} />
-              </TableCell>
-              <TableCell>
-                <Input type="number" aria-label="Cantidad de frazadas" value={fastCantFrazada} onChange={(e) => setFastCantFrazada(Number(e.target.value))} className="h-8 text-xs text-center p-0 rounded-lg" min="0" />
-              </TableCell>
-
-              <TableCell>
-                <Input
-                  value={fastObs}
-                  onChange={(e) => setFastObs(e.target.value)}
-                  placeholder="Observaciones..."
-                  className="h-8 text-xs rounded-lg"
-                />
-              </TableCell>
-
-              <TableCell className="text-center">
-                <Button
-                  onClick={handleFastAdd}
-                  disabled={isAdding}
-                  size="sm"
-                  className="h-8 rounded-lg font-bold text-xs bg-primary text-primary-foreground px-3"
-                >
-                  <Plus className="h-3.5 w-3.5 mr-1" /> Cargar
-                </Button>
-              </TableCell>
-            </TableRow>}
+            {filteredRecords.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={6} className="py-8 text-center text-sm text-muted-foreground">
+                  {records.length === 0 ? "Todavía no hay familias cargadas." : "Ninguna familia coincide con la búsqueda."}
+                </TableCell>
+              </TableRow>
+            )}
           </TableBody>
         </Table>
       </div>
+
+      {canEdit && onNewFicha && (
+        <Button onClick={onNewFicha} variant="outline" className="h-11 w-full rounded-xl border-dashed text-sm font-semibold">
+          <Plus className="mr-2 h-4 w-4" /> Cargar otra familia
+        </Button>
+      )}
+    </div>
+  );
+}
+
+/** Lo que pidió la familia, en frases cortas ("2 colchones", "1 frazada", "Otros: …"). */
+function pedidosDe(r: StormVictimItem, extraNames: Map<string, string>): string[] {
+  const out: string[] = [];
+  const add = (pide: boolean | undefined, n: number | undefined, uno: string, varios: string) => {
+    if (!pide) return;
+    const cant = Math.max(1, Number(n || 0));
+    out.push(`${cant} ${cant === 1 ? uno : varios}`);
+  };
+  add(r.requiereColchon, r.cantidadColchon, "colchón", "colchones");
+  add(r.requiereCama, r.cantidadCama, "cama", "camas");
+  add(r.requiereCucheta, r.cantidadCucheta, "cucheta", "cuchetas");
+  add(r.requiereFrazada, r.cantidadFrazada, "frazada", "frazadas");
+  for (const [id, n] of Object.entries(r.otrosElementos || {})) out.push(extraQuantityText(id, n, extraNames));
+  return out;
+}
+
+function SheetTotal({ label, value, highlight = false }: { label: string; value: number; highlight?: boolean }) {
+  return (
+    <div className="rounded-xl border border-border/60 bg-card px-3.5 py-2.5">
+      <p className="text-xs font-medium text-muted-foreground">{label}</p>
+      <p className={`font-heading text-xl font-bold tabular-nums ${highlight && value > 0 ? "text-[#C2410C] dark:text-muni-orange" : "text-[#163C68] dark:text-blue-100"}`}>
+        {value.toLocaleString("es-AR")}
+      </p>
     </div>
   );
 }

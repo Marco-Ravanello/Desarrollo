@@ -270,7 +270,7 @@ export default function CrucesSocialesPage() {
           <span className="text-xs font-bold text-foreground">
             Listado nominal de beneficiarios cruzados
           </span>
-          <span className="text-xs text-muted-foreground font-mono">
+          <span className="text-xs text-muted-foreground tabular-nums">
             Mostrando {cruceData?.resultados.length || 0} registros
           </span>
         </div>
@@ -291,7 +291,7 @@ export default function CrucesSocialesPage() {
                 cruceData.resultados.map((row, idx) => (
                   <tr key={idx} className="border-b border-border/50 transition-colors hover:bg-muted/60">
                     <td className="px-4 py-3 align-middle font-bold text-foreground">{row.nombre}</td>
-                    <td className="px-4 py-3 align-middle font-mono text-muted-foreground">{row.dni}</td>
+                    <td className="px-4 py-3 align-middle tabular-nums text-muted-foreground">{row.dni}</td>
                     <td className="px-4 py-3 align-middle">
                       <div className="flex flex-wrap gap-1">
                         {row.programas.map((p, pIdx) => (
@@ -304,7 +304,7 @@ export default function CrucesSocialesPage() {
                     <td className="px-4 py-3 align-middle text-muted-foreground">
                       {row.contacto?.barrio || row.contacto?.localidad || "No especificado"}
                     </td>
-                    <td className="px-4 py-3 align-middle text-muted-foreground font-mono">
+                    <td className="px-4 py-3 align-middle text-muted-foreground tabular-nums">
                       {row.contacto?.telefono || "N/R"}
                     </td>
                     <td className="px-4 py-3 align-middle text-right">

@@ -227,7 +227,7 @@ export function NewCaseForm({
                           <p className="font-bold text-foreground group-hover:text-primary transition-colors">
                             {item.lastName}, {item.firstName}
                           </p>
-                          <p className="text-muted-foreground text-xs font-mono mt-0.5">
+                          <p className="text-muted-foreground text-xs tabular-nums mt-0.5">
                             DNI: {item.dni} {item.barrio ? `• ${barrioLabel(item.barrio)}` : ""}
                           </p>
                         </div>
@@ -258,7 +258,7 @@ export function NewCaseForm({
                     {selectedPerson.lastName}, {selectedPerson.firstName}
                   </h4>
                   <div className="flex flex-wrap items-center gap-2 mt-1">
-                    <Badge variant="outline" className="font-mono text-xs font-bold border-border/60">
+                    <Badge variant="outline" className="tabular-nums text-xs font-bold border-border/60">
                       DNI: {selectedPerson.dni}
                     </Badge>
                     {selectedPerson.barrio && (

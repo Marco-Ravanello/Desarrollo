@@ -130,7 +130,7 @@ export function PrintButton({
     >
       <Printer className="h-4 w-4 text-primary" />
       <span>{label}</span>
-      <kbd className="hidden sm:inline-block text-[10px] font-mono bg-muted px-1.5 py-0.5 rounded border border-border/60 text-muted-foreground">
+      <kbd className="hidden sm:inline-block text-[10px] tabular-nums bg-muted px-1.5 py-0.5 rounded border border-border/60 text-muted-foreground">
         Ctrl+P
       </kbd>
     </Button>
