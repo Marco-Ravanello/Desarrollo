@@ -285,6 +285,7 @@ export function EmergencyView({ initialData, deniedAccess }: EmergencyViewProps)
             userId={operator.userId}
             canEdit={viewer.canEdit}
             onDeliver={viewer.canDeliver ? setDeliveryRecord : undefined}
+            onNewFicha={handleOpenNewFicha}
           />
         </div>
       )}
@@ -311,7 +312,7 @@ export function EmergencyView({ initialData, deniedAccess }: EmergencyViewProps)
                   <StatusBadge tone={toneOf(STORM_PRIORITY_TONE, r.prioridad)}>
                     Prioridad {textoNormal(r.prioridad).toLowerCase()}
                   </StatusBadge>
-                  <span className="text-xs font-mono text-muted-foreground">Ficha #{idx + 1}</span>
+                  <span className="text-xs tabular-nums text-muted-foreground">Ficha #{idx + 1}</span>
                 </div>
 
                 <div>

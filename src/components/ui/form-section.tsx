@@ -7,6 +7,13 @@ import { cn } from "@/lib/utils";
 export const fieldSelectClass =
   "flex h-10 w-full rounded-xl border border-input bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary disabled:cursor-not-allowed disabled:opacity-50";
 
+/**
+ * Clase de los <select> de los filtros de las listas (Expedientes, Registro Único, áreas…).
+ * La flecha y el relleno de la derecha los pone globals.css para todos los <select>.
+ */
+export const filterSelectClass =
+  "h-10 w-full rounded-xl border border-input bg-card px-3 text-sm font-medium text-foreground shadow-xs transition-colors hover:border-primary/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50";
+
 /** La marca de campo obligatorio. Es la misma en toda la app. */
 export function RequiredMark() {
   return (

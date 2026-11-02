@@ -30,7 +30,7 @@ export default function CaseDetailError({
           Puede ser un problema momentáneo de conexión. Probá de nuevo en unos segundos.
         </p>
         {error.digest && (
-          <p className="text-xs font-mono text-muted-foreground pt-1">
+          <p className="text-xs tabular-nums text-muted-foreground pt-1">
             Código de diagnóstico: {error.digest}
           </p>
         )}

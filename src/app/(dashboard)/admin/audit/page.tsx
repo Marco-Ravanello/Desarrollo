@@ -180,7 +180,7 @@ export default async function AuditPage({ searchParams }: { searchParams: Promis
                     const href = auditLink(log);
                     return (
                       <TableRow key={log.id} className="align-top">
-                        <TableCell className="whitespace-nowrap pt-3 font-mono text-xs text-muted-foreground">{formatFechaHora(log.createdAt)}</TableCell>
+                        <TableCell className="whitespace-nowrap pt-3 tabular-nums text-xs text-muted-foreground">{formatFechaHora(log.createdAt)}</TableCell>
                         <TableCell className="pt-3">
                           <div className="truncate text-xs font-semibold text-foreground" title={personName(log.user)}>{personName(log.user)}</div>
                           <div className="truncate text-xs text-muted-foreground" title={log.user.area?.name}>{log.user.area ? getAreaShortName(log.user.area.name) : "Sin área"}</div>

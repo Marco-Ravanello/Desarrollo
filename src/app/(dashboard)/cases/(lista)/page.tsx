@@ -35,6 +35,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { formatNumber, plural } from "@/lib/formato";
+import { filterSelectClass } from "@/components/ui/form-section";
 
 interface CasesPageProps {
   searchParams: Promise<{
@@ -209,7 +210,7 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
               name="area"
               aria-label="Área"
               defaultValue={area || "all"}
-              className="w-full h-10 px-3 rounded-xl bg-muted/30 border border-border/60 text-xs font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+              className={filterSelectClass}
             >
               <option value="all">Todas las áreas</option>
               {areasList.map((a) => (
@@ -222,7 +223,7 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
               name="status"
               aria-label="Estado"
               defaultValue={status || "all"}
-              className="w-full h-10 px-3 rounded-xl bg-muted/30 border border-border/60 text-xs font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+              className={filterSelectClass}
             >
               <option value="all">Todos los estados</option>
               <option value="ACTIVOS">Activos (abiertos y en proceso)</option>
@@ -237,7 +238,7 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
               name="priority"
               aria-label="Prioridad"
               defaultValue={priority || "all"}
-              className="w-full h-10 px-3 rounded-xl bg-muted/30 border border-border/60 text-xs font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+              className={filterSelectClass}
             >
               <option value="all">Todas las prioridades</option>
               <option value="URGENTE">Urgente</option>
@@ -251,7 +252,7 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
               name="assigned"
               aria-label="Profesional a cargo"
               defaultValue={assigned || "all"}
-              className="w-full h-10 px-3 rounded-xl bg-muted/30 border border-border/60 text-xs font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+              className={filterSelectClass}
             >
               <option value="all">Cualquier profesional a cargo</option>
               <option value="mine">Mis expedientes</option>
@@ -264,7 +265,7 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
               name="label"
               aria-label="Etiqueta"
               defaultValue={label || ""}
-              className="w-full h-10 px-3 rounded-xl bg-muted/30 border border-border/60 text-xs font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+              className={filterSelectClass}
             >
               <option value="">Cualquier etiqueta</option>
               {labelCounts.map((l) => (
@@ -400,7 +401,7 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
                                 {isProvisionalDni(c.person.dni) ? (
                                   <span> · Sin DNI</span>
                                 ) : (
-                                  <span className="font-mono"> · DNI {c.person.dni}</span>
+                                  <span className="tabular-nums"> · DNI {c.person.dni}</span>
                                 )}
                               </div>
                             ) : (

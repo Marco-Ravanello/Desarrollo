@@ -24,6 +24,7 @@ import {
 import Link from "next/link";
 import { plural } from "@/lib/formato";
 import { PeoplePagination } from "@/components/people/people-pagination";
+import { filterSelectClass } from "@/components/ui/form-section";
 import { areaCaseListQuery, type AreaCaseFilters, type AreaCaseTab, type AreaPageSlug } from "@/lib/area-cases";
 import { getAreaExportAction } from "@/app/(dashboard)/areas/actions";
 
@@ -311,13 +312,13 @@ export function AreaDashboardView({
               aria-label="Filtrar por prioridad"
               value={filters.priority ?? "TODAS"}
               onChange={(e) => go({ priority: e.target.value === "TODAS" ? null : (e.target.value as AreaCaseFilters["priority"]) })}
-              className="h-9 px-3 rounded-xl bg-muted/20 border border-border/60 text-xs font-bold text-foreground focus:outline-none focus:ring-1 focus:ring-primary w-full sm:w-auto"
+              className={`${filterSelectClass} h-9 sm:w-auto`}
             >
               <option value="TODAS">Todas las prioridades</option>
-              <option value="URGENTE">🔴 Urgente</option>
-              <option value="ALTA">🟠 Alta</option>
-              <option value="MEDIA">🟡 Media</option>
-              <option value="BAJA">🟢 Baja</option>
+              <option value="URGENTE">Urgente</option>
+              <option value="ALTA">Alta</option>
+              <option value="MEDIA">Media</option>
+              <option value="BAJA">Baja</option>
             </select>
 
             <UniversalExportMenu
@@ -391,7 +392,7 @@ export function AreaDashboardView({
                         <span className="text-muted-foreground font-normal">Sin titular</span>
                       )}
                     </td>
-                    <td className="px-4 py-3 align-middle font-mono text-muted-foreground">
+                    <td className="px-4 py-3 align-middle tabular-nums text-muted-foreground">
                       {holderDni(c) === "Sin DNI" || !c.person ? <span className="font-sans">{holderDni(c) ?? "—"}</span> : c.person.dni}
                     </td>
                     <td className="px-4 py-3 align-middle">

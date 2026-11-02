@@ -105,7 +105,7 @@ export function FichaSearch() {
                         <User className="h-4 w-4 text-primary shrink-0" />
                         <div className="min-w-0">
                           <span className="font-bold text-foreground group-hover:text-primary">{sugg.nombre}</span>
-                          <span className="text-muted-foreground ml-2 font-mono">DNI {sugg.dni}</span>
+                          <span className="text-muted-foreground ml-2 tabular-nums">DNI {sugg.dni}</span>
                         </div>
                       </div>
                       <Badge variant="outline" className="text-xs border-border/60 text-muted-foreground truncate max-w-[200px]">

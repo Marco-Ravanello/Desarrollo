@@ -146,7 +146,7 @@ export default async function PersonDetailPage({
           actions={editData && addressOptions ? <EditPersonDialog person={editData} options={addressOptions} /> : undefined}
         />
         <div className="flex flex-wrap gap-2 items-center">
-          <Badge variant="outline" className="border-border text-foreground font-mono font-bold">DNI {dni}</Badge>
+          <Badge variant="outline" className="border-border text-foreground tabular-nums font-bold">DNI {dni}</Badge>
           {person?.barrio && (
             <Badge variant="outline" className="border-primary/40 text-primary bg-primary/5 text-xs font-bold">
               {matchBarrio(person.barrio) ? (
@@ -317,7 +317,7 @@ export default async function PersonDetailPage({
                       <div key={m.id} className="flex items-center justify-between gap-2 p-3 border border-border/60 rounded-2xl bg-muted/20 min-w-0">
                         <Link href={`/people/${m.dni}`} className="min-w-0 flex-1">
                           <p className="text-sm font-bold text-foreground truncate">{m.lastName}, {m.firstName}</p>
-                          <p className="text-xs text-muted-foreground font-mono">DNI {m.dni}</p>
+                          <p className="text-xs text-muted-foreground tabular-nums">DNI {m.dni}</p>
                         </Link>
                         <RemoveFamilyMemberButton id={m.id} name={`${m.firstName} ${m.lastName}`.trim()} />
                       </div>

@@ -99,7 +99,7 @@ export function CreateUserForm({
             setUsername(e.target.value.toLowerCase().replace(/\s/g, ""));
           }}
           placeholder="Ej: maria.perez"
-          className={`${fieldClass} font-mono`}
+          className={`${fieldClass} tabular-nums`}
         />
         <p className="text-xs text-muted-foreground">Con este nombre ingresa a la app. Sin espacios ni tildes.</p>
       </div>
@@ -108,7 +108,7 @@ export function CreateUserForm({
         <Label htmlFor="email" className="text-xs font-bold text-foreground">
           Correo <span className="font-normal text-muted-foreground">(opcional)</span>
         </Label>
-        <Input id="email" name="email" type="email" placeholder="nombre@tresdefebrero.gob.ar" className={`${fieldClass} font-mono`} />
+        <Input id="email" name="email" type="email" placeholder="nombre@tresdefebrero.gob.ar" className={`${fieldClass} tabular-nums`} />
       </div>
 
       <div className="space-y-1.5">
@@ -124,7 +124,7 @@ export function CreateUserForm({
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="Mínimo 8, con letras y números"
-            className={`${fieldClass} font-mono`}
+            className={`${fieldClass} tabular-nums`}
           />
           <Button type="button" variant="outline" size="icon" onClick={() => setPassword(generateTemporaryPassword())} title="Generar otra" aria-label="Generar otra clave" className="h-10 w-10 shrink-0 rounded-xl">
             <Dices className="h-4 w-4" />

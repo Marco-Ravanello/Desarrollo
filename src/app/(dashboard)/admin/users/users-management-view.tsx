@@ -364,10 +364,10 @@ export function UsersManagementView({
                               {u.name || "Sin nombre"}
                             </p>
                             {u.username && (
-                              <p className="mt-0.5 truncate font-mono text-xs font-semibold text-foreground/80" title="Nombre de usuario para ingresar">{u.username}</p>
+                              <p className="mt-0.5 truncate tabular-nums text-xs font-semibold text-foreground/80" title="Nombre de usuario para ingresar">{u.username}</p>
                             )}
                             {u.email && (
-                              <p className="truncate font-mono text-xs font-normal text-muted-foreground" title={u.email}>{u.email}</p>
+                              <p className="truncate tabular-nums text-xs font-normal text-muted-foreground" title={u.email}>{u.email}</p>
                             )}
                             {isSelf && (
                               <Badge variant="outline" className="text-xs font-bold border-primary/30 text-primary mt-0.5">
