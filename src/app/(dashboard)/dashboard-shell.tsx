@@ -16,18 +16,21 @@ import { OfflineSupport, SituationRoomButton } from "@/components/layout/header-
 import { InactivityLogout } from "@/components/layout/inactivity-logout";
 import { MunicipalSettingsProvider } from "@/components/providers/municipal-settings";
 import type { PublicMunicipalSettings } from "@/types/settings";
+import type { Session } from "next-auth";
 
 export function DashboardShell({
   children,
   settings,
+  session,
 }: {
   children: React.ReactNode;
   settings: PublicMunicipalSettings;
+  session?: Session | null;
 }) {
   const [mobileOpen, setMobileOpen] = React.useState(false);
 
   return (
-    <Providers>
+    <Providers session={session}>
       <MunicipalSettingsProvider settings={settings}>
         <OfflineSupport />
         <InactivityLogout />
@@ -38,10 +41,8 @@ export function DashboardShell({
           </aside>
 
           <main className="flex-1 min-w-0 print:p-0 flex flex-col min-h-screen">
-            {/* Franja superior institucional Tres de Febrero */}
-            <div className="h-1 w-full bg-gradient-to-r from-[#163C68] via-[#163C68] to-[#F69321] shrink-0 print:hidden" />
-
-            <header className="h-16 sticky top-0 z-40 border-b border-border/60 bg-card/85 backdrop-blur-md flex items-center justify-between px-4 sm:px-6 lg:px-8 shadow-xs text-foreground print:hidden">
+            {/* Encabezado institucional: azul de Tres de Febrero con la línea naranja abajo. */}
+            <header className="h-16 sticky top-0 z-40 border-b-[3px] border-muni-orange bg-gradient-to-r from-[#0E2A49] via-[#163C68] to-[#22507F] dark:from-[#0A1F37] dark:via-[#10304F] dark:to-[#163C68] flex items-center justify-between px-4 sm:px-6 lg:px-8 shadow-md text-white print:hidden">
               <div className="flex items-center gap-2 sm:gap-3 min-w-0">
                 {/* Botón menú responsive mobile */}
                 <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
@@ -49,7 +50,7 @@ export function DashboardShell({
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="md:hidden h-9 w-9 rounded-xl border border-border/60 text-muted-foreground hover:text-foreground shrink-0"
+                      className="md:hidden h-9 w-9 rounded-xl border border-white/25 text-white/90 hover:bg-white/10 hover:text-white shrink-0"
                       aria-label="Abrir menú de navegación"
                     >
                       <Menu className="h-5 w-5" />
@@ -62,10 +63,10 @@ export function DashboardShell({
 
                 <MunicipalCrest className="h-8 w-8 md:hidden" />
                 <div className="min-w-0">
-                  <p className="text-sm font-semibold text-foreground truncate font-heading">
-                    Desarrollo Humano y Hábitat
+                  <p className="text-sm font-bold text-white truncate font-heading tracking-tight">
+                    Desarrollo Humano y Hábitat <span className="text-muni-orange">3F</span>
                   </p>
-                  <p className="text-xs text-muted-foreground truncate hidden sm:block">
+                  <p className="text-xs text-white/75 truncate hidden sm:block">
                     Municipalidad de Tres de Febrero
                   </p>
                 </div>
@@ -76,7 +77,7 @@ export function DashboardShell({
 
                 <EmergencyHeaderWidget />
                 <NotificationBell />
-                <div className="h-6 w-px bg-border/60 mx-1 hidden sm:block" />
+                <div className="h-6 w-px bg-white/20 mx-1 hidden sm:block" />
                 <UserNav variant="header" />
               </div>
             </header>

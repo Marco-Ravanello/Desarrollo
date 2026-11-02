@@ -6,14 +6,15 @@ import { toast } from "sonner";
 import { UserCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { markBackFromLeaveAction } from "@/app/(dashboard)/admin/actions/hr-actions";
+import { confirmar } from "@/components/ui/confirm-dialog";
 
 /** "Ya volvió": pasa a la persona a Activo sin entrar a Recursos Humanos. */
 export function BackFromLeaveButton({ id, name }: { id: string; name: string }) {
   const [pending, startTransition] = useTransition();
   const router = useRouter();
 
-  const onClick = () => {
-    if (!confirm(`¿${name} ya volvió? Pasa a Activo en Recursos Humanos.`)) return;
+  const onClick = async () => {
+    if (!(await confirmar({ title: `¿${name} ya volvió?`, description: "Pasa a Activo en Recursos Humanos.", confirmLabel: "Sí, ya volvió" }))) return;
     startTransition(async () => {
       const res = await markBackFromLeaveAction(id);
       if (!res.success) {

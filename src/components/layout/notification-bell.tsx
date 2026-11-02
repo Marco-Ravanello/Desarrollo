@@ -52,11 +52,11 @@ export function NotificationBell() {
           variant="ghost"
           size="icon"
           aria-label={unreadCount > 0 ? `Avisos (${unreadCount} sin leer)` : "Avisos"}
-          className="relative text-foreground hover:bg-muted/50"
+          className="relative text-white hover:bg-white/10 hover:text-white"
         >
           <Bell className="h-5 w-5" />
           {unreadCount > 0 && (
-            <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 bg-muni-orange hover:bg-muni-orange border-2 border-background text-muni-navy font-bold text-xs">
+            <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 bg-muni-orange hover:bg-muni-orange border-2 border-[#163C68] text-muni-navy font-bold text-xs">
               {unreadCount}
             </Badge>
           )}

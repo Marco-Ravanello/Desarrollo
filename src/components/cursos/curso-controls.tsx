@@ -16,6 +16,7 @@ import {
   abrirClaseAction, borrarClaseAction, deleteCursoAction, inscribirAction, marcarDejoAction, saveCursoAction, terminarCursoAction,
   volverAInscribirAction,
 } from "@/app/(dashboard)/cursos/actions";
+import { confirmar } from "@/components/ui/confirm-dialog";
 
 const selectClass =
   "w-full h-10 px-3 rounded-xl bg-background border border-input text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary";
@@ -316,7 +317,7 @@ export function DeleteCursoButton({ id, nombre }: { id: string; nombre: string }
   const router = useRouter();
   const [saving, setSaving] = useState(false);
   const run = async () => {
-    if (!window.confirm(`¿Borrar "${nombre}"? Se borran también sus inscriptos. Las altas en el programa quedan como están.`)) return;
+    if (!(await confirmar({ title: `¿Borrar "${nombre}"?`, description: "Se borran también sus inscriptos. Las altas en el programa quedan como están.", confirmLabel: "Borrar", danger: true }))) return;
     setSaving(true);
     const res = await deleteCursoAction(id).catch(() => null);
     setSaving(false);
@@ -531,7 +532,7 @@ export function BorrarClaseButton({ cursoId, claseId, fecha }: { cursoId: string
   const router = useRouter();
   const [saving, setSaving] = useState(false);
   const run = async () => {
-    if (!window.confirm(`¿Borrar la clase del ${fecha}? Se borra la asistencia anotada ese día.`)) return;
+    if (!(await confirmar({ title: `¿Borrar la clase del ${fecha}?`, description: "Se borra la asistencia anotada ese día.", confirmLabel: "Borrar", danger: true }))) return;
     setSaving(true);
     const res = await borrarClaseAction(cursoId, claseId).catch(() => null);
     setSaving(false);

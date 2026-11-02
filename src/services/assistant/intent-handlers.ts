@@ -46,7 +46,7 @@ export async function handleChartRequest(query: string): Promise<AIResponse> {
       answer: `### Capacidades de Generación de Gráficos del Asistente
 ¡Sí! Puedo generar gráficos interactivos en tiempo real basados en cualquier módulo de la base de datos municipal.
 
-#### Gráficos que puedes pedirme en lenguaje natural:
+#### Gráficos que podés pedirme con tus palabras:
 1. **Casos Sociales por Área Municipal** (ej: *"mostrar gráfico de casos por área"*).
 2. **Casos por Rango Etario / Edad** (ej: *"mostrar un gráfico de casos por edad"*).
 3. **Distribución de Casos por Género** (ej: *"dibujar gráfico de casos por género"*).
@@ -511,7 +511,7 @@ export async function handleBudgetQuery(query: string): Promise<AIResponse> {
 
   if (query.includes("lista") || query.includes("todas") || query.includes("tengo") || query.includes("cargar") || query.includes("que orden") || query.includes("qué orden") || query.includes("mostrar órdenes") || query.includes("mostrar ordenes")) {
     let answer = `### Listado Completo de Órdenes de Compra Registradas\n\n`;
-    answer += `Aquí tienes el listado de todas las órdenes de compra reales en el sistema:\n\n`;
+    answer += `Acá tenés todas las órdenes de compra cargadas en la app:\n\n`;
     answer += `| Nro Orden | Área Solicitante | Proveedor | Monto Total | Estado |\n`;
     answer += `| :--- | :--- | :--- | :---: | :---: |\n`;
     orders.forEach(o => {
@@ -1004,7 +1004,7 @@ ${areas.map(a => {
   return count > 0 ? `*   **${a.name}:** ${count} totales (${active} activos)` : null;
 }).filter(Boolean).join("\n") || "*Padrón social unificado activo sin casos tradicionales agrupados.*"}
 
-Por favor, especifique si requiere un informe pormenorizado de algún expediente de asistencia social en particular.`;
+Si querés el detalle de algún expediente en particular, pedímelo con el DNI o el apellido.`;
 
   return {
     intent: "social_query",

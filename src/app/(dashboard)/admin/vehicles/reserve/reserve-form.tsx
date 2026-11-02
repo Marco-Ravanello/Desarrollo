@@ -65,10 +65,10 @@ export function ReserveVehicleForm({ vehicleId, vehicles }: { vehicleId: string,
     const res = await createVehicleReservationAction(formData);
 
     if (res.success) {
-      toast.success("Solicitud de reserva enviada correctamente");
+      toast.success("Listo, se mandó el pedido de reserva.");
       router.push("/admin/vehicles");
     } else {
-      toast.error(res.error || "Error al enviar la solicitud");
+      toast.error(res.error || "No se pudo mandar el pedido. Probá de nuevo.");
     }
     setLoading(false);
   }
@@ -152,7 +152,7 @@ export function ReserveVehicleForm({ vehicleId, vehicles }: { vehicleId: string,
                     ¡Conflicto de horario detectado!
                   </div>
                   <p className="text-xs leading-relaxed">
-                    Esta unidad ya cuenta con una reserva registrada por <b>{conflictReservation.user?.name || "otro agente"}</b> en el período seleccionado:
+                    Este vehículo ya tiene una reserva de <b>{conflictReservation.user?.name || "otro agente"}</b> en ese horario:
                   </p>
                   <div className="p-2.5 rounded-xl bg-rose-500/15 font-mono text-xs font-bold">
                     📅 {formatRange(conflictReservation.startDate, conflictReservation.endDate)} ({reservationStatusLabel(conflictReservation.status).toLowerCase()})
@@ -177,7 +177,7 @@ export function ReserveVehicleForm({ vehicleId, vehicles }: { vehicleId: string,
               <div className="bg-primary/10 border border-primary/20 rounded-2xl p-4 flex gap-3 items-start text-xs text-foreground">
                  <Info className="h-5 w-5 text-primary shrink-0 mt-0.5" />
                  <div className="leading-relaxed">
-                   <strong>Nota de logística:</strong> El envío de este formulario genera una solicitud. Recibirá una notificación una vez que sea aprobada por el área de administración de flota.
+                   <strong>Nota de logística:</strong> Esto manda un pedido de reserva. Te avisamos en la campana cuando el área de flota lo apruebe o lo rechace.
                  </div>
               </div>
 

@@ -498,7 +498,7 @@ export default function AssistantPage() {
           <Card className="bg-card text-card-foreground border border-border/60 shadow-sm h-full flex flex-col overflow-hidden rounded-2xl">
             <CardHeader className="pb-3 shrink-0">
               <CardTitle className="text-xs font-bold text-foreground">Consultas frecuentes</CardTitle>
-              <CardDescription className="text-xs text-muted-foreground">Selecciona un tema para consultar los datos reales al instante.</CardDescription>
+              <CardDescription className="text-xs text-muted-foreground">Elegí un tema para consultar los datos reales al instante.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-2.5 overflow-y-auto flex-1 min-h-0 pr-2 custom-scrollbar">
               {suggestions.map((s, idx) => (

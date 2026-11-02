@@ -14,6 +14,7 @@ import { FICHA_LIMITS, type FichaNnya } from "@/lib/convenio-nnya";
 import { GENEROS } from "@/lib/person-display";
 import type { AddressOptions } from "@/lib/localidades";
 import { buscarEnRegistroAction, guardarFichaNnyaAction, sacarNnyaAction, sumarNnyaAction } from "@/app/(dashboard)/convenios/actions";
+import { confirmar } from "@/components/ui/confirm-dialog";
 
 const failed = (res: { success: boolean; error?: string } | null) =>
   toast.error(res && !res.success && res.error ? res.error : "No se pudo guardar. Probá de nuevo.");
@@ -424,7 +425,7 @@ export function SacarNnyaButton({ agreementId, nnyaId, nombre }: { agreementId: 
   const router = useRouter();
   const [saving, setSaving] = useState(false);
   const remove = async () => {
-    if (!window.confirm(`¿Sacar a ${nombre} de la lista del convenio? Sigue en el Registro Único.`)) return;
+    if (!(await confirmar({ title: `¿Sacar a ${nombre} de la lista del convenio?`, description: "Sigue en el Registro Único.", confirmLabel: "Sacar de la lista", danger: true }))) return;
     setSaving(true);
     const res = await sacarNnyaAction(agreementId, nnyaId).catch(() => null);
     setSaving(false);

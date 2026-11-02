@@ -110,7 +110,7 @@ export function StormStockTab({ stock, onRefresh }: StormStockTabProps) {
 
   const handleCreateNewSupply = async () => {
     if (!newSupplyName.trim()) {
-      toast.error("Ingresa el nombre del insumo");
+      toast.error("Escribí el nombre del insumo.");
       return;
     }
 
@@ -374,7 +374,7 @@ export function StormStockTab({ stock, onRefresh }: StormStockTabProps) {
               Configuración de stock real en depósito
             </DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground">
-              Ingresa la cantidad física exacta de unidades disponibles actualmente en los galpones de Desarrollo Humano.
+              Anotá la cantidad física exacta de unidades disponibles actualmente en los galpones de Desarrollo Humano.
             </DialogDescription>
           </DialogHeader>
 

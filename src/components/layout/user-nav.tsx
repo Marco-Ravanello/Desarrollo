@@ -64,11 +64,11 @@ export function UserNav({ variant = "header", isCollapsed = false }: UserNavProp
           <Button
             variant="ghost"
             size="sm"
-            className="h-9 gap-2 px-2.5 rounded-xl text-xs font-bold text-foreground hover:bg-muted/60"
+            className="h-9 gap-2 px-2.5 rounded-xl text-xs font-bold text-white hover:bg-white/10 hover:text-white"
           >
             <InitialsAvatar name={user.name || "Usuario"} seed={user.id} size="sm" square className="h-7 w-7 rounded-lg" />
             <span className="hidden lg:inline-block max-w-[120px] truncate">{user.name || "Agente"}</span>
-            <ChevronDown className="h-3.5 w-3.5 text-muted-foreground hidden lg:block" />
+            <ChevronDown className="h-3.5 w-3.5 text-white/70 hidden lg:block" />
           </Button>
         )}
       </DropdownMenuTrigger>

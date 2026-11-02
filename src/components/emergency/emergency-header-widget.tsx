@@ -110,21 +110,21 @@ export function EmergencyHeaderWidget() {
         onClick={() => setConfirmOpen(true)}
         className={`flex items-center gap-2 px-3 py-2 sm:py-1.5 rounded-full text-xs font-bold transition-all border shadow-sm ${
           isEmergencyActive
-            ? "bg-rose-500/15 border-rose-500/40 text-rose-700 dark:text-rose-400 animate-pulse hover:bg-rose-500/25"
-            : "bg-muted/40 hover:bg-muted border-border/60 text-muted-foreground hover:text-foreground"
+            ? "bg-rose-500/30 border-rose-300/60 text-white animate-pulse hover:bg-rose-500/40"
+            : "bg-white/10 hover:bg-white/20 border-white/25 text-white/85 hover:text-white"
         }`}
         title={isEmergencyActive ? "Desactivar la emergencia climática" : "Activar la emergencia climática"}
         aria-label={isEmergencyActive ? "Emergencia climática activa. Desactivar" : "Emergencia climática apagada. Activar"}
       >
         {isEmergencyActive ? (
           <>
-            <ShieldAlert className="h-4 w-4 text-rose-500" />
+            <ShieldAlert className="h-4 w-4 text-rose-200" />
             <span className="hidden sm:inline">Emergencia climática: activa</span>
-            <span className="h-2 w-2 rounded-full bg-rose-500 animate-ping"></span>
+            <span className="h-2 w-2 rounded-full bg-rose-300 animate-ping"></span>
           </>
         ) : (
           <>
-            <CloudRain className="h-4 w-4 text-slate-400" />
+            <CloudRain className="h-4 w-4 text-white/70" />
             <span className="hidden sm:inline font-bold">Emergencia climática: apagada</span>
           </>
         )}
