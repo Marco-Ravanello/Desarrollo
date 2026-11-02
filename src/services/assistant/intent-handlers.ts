@@ -11,6 +11,7 @@ import { extractTextFromPDFBuffer } from "@/services/pdf-rag";
 import { agreementState } from "@/lib/convenios";
 import { todayInArgentina } from "@/lib/follow-up-dates";
 import { TZ_AR, formatFecha, formatFechaCalendario, formatFechaHora, formatFechaLarga, formatHora } from "@/lib/fechas";
+import { isUrgentOpenCase } from "@/lib/case-urgency";
 
 // Pasa a minúsculas y saca los acentos (conserva la ñ) para que "cuántas" o "padrón"
 // se reconozcan igual que "cuantas" o "padron".
@@ -965,7 +966,7 @@ export async function handleSocialQuery(query: string): Promise<AIResponse> {
   const totalCases = cases.length > 0 ? cases.length : totalPrestaciones;
   const activeCases = cases.filter(c => c.status === "ABIERTO" || c.status === "EN_PROCESO").length;
   const closedCases = cases.filter(c => c.status === "CERRADO").length;
-  const criticalCases = cases.filter(c => c.priority === "URGENTE" && c.status !== "CERRADO").length;
+  const criticalCases = cases.filter(isUrgentOpenCase).length;
 
   const priorities = {
     URGENTE: cases.filter(c => c.priority === "URGENTE").length,

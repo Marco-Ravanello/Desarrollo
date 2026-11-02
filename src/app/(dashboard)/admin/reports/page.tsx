@@ -63,7 +63,7 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
   const fileSuffix = `${period.fromStr}_${period.toStr}`;
 
   const kpis: { label: string; value: string; hint?: string; icon: typeof FolderOpen; tone: StatTone }[] = [
-    { label: "Expedientes nuevos", value: data.totals.cases.toLocaleString("es-AR"), hint: `${data.totals.urgent} urgentes`, icon: FolderOpen, tone: "blue" },
+    { label: "Expedientes nuevos", value: data.totals.cases.toLocaleString("es-AR"), hint: `${data.totals.urgent} con prioridad urgente`, icon: FolderOpen, tone: "blue" },
     { label: "Intervenciones", value: data.totals.interventions.toLocaleString("es-AR"), icon: HandHeart, tone: "orange" },
     { label: "Órdenes de compra", value: data.totals.orders.toLocaleString("es-AR"), icon: Briefcase, tone: "purple" },
     { label: "Ejecutado", value: formatPesos(data.totals.executed), hint: "Órdenes aprobadas o cumplidas", icon: Wallet, tone: "green" },
@@ -154,7 +154,7 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
               { header: "Área", accessorKey: "area" },
               { header: "Expedientes nuevos", accessorKey: "cases" },
               { header: "Cerrados", accessorKey: "closed" },
-              { header: "Urgentes", accessorKey: "urgent" },
+              { header: "Prioridad urgente", accessorKey: "urgent" },
               { header: "Intervenciones", accessorKey: "interventions" },
               { header: "Órdenes de compra", accessorKey: "orders" },
               { header: "Ejecutado", accessorKey: "executed" },
@@ -171,7 +171,7 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
                     <TableHead>Área</TableHead>
                     <TableHead className="text-right">Expedientes</TableHead>
                     <TableHead className="text-right hidden md:table-cell">Cerrados</TableHead>
-                    <TableHead className="text-right hidden md:table-cell">Urgentes</TableHead>
+                    <TableHead className="text-right hidden md:table-cell">Prioridad urgente</TableHead>
                     <TableHead className="text-right">Intervenciones</TableHead>
                     <TableHead className="text-right hidden md:table-cell">OC</TableHead>
                     <TableHead className="text-right">Ejecutado</TableHead>

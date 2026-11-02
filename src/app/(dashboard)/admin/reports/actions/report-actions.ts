@@ -4,6 +4,7 @@ import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
 import { PERMISSIONS, hasPermission } from "@/lib/permissions";
 import { formatFecha, formatFechaHora } from "@/lib/fechas";
+import { URGENT_OPEN_CASE_WHERE } from "@/lib/case-urgency";
 
 export async function getWeeklyExecutiveData() {
   const session = await auth();
@@ -28,7 +29,7 @@ export async function getWeeklyExecutiveData() {
     }),
 
     // Casos Críticos actuales
-    prisma.case.count({ where: { priority: 'URGENTE', status: { not: 'CERRADO' } } })
+    prisma.case.count({ where: URGENT_OPEN_CASE_WHERE })
   ]);
 
   const totalSpent = poStats

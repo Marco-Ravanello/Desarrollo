@@ -4,6 +4,7 @@ import { isEligibleAssignee } from "@/lib/case-assignment";
 import { summarizeCase } from "@/lib/case-summary";
 import { sortByLoad, type WorkloadMember } from "@/lib/team-workload";
 import { dashboardCaseWhere, staleCaseWhere, type DashboardScope } from "@/services/dashboard";
+import { URGENT_OPEN_CASE_WHERE } from "@/lib/case-urgency";
 
 // Carga del equipo de un área: cuántos expedientes tiene cada profesional y cuáles esperan a alguien.
 
@@ -36,7 +37,7 @@ export async function getTeamWorkload(scope: Scope, now = new Date()) {
       select: { id: true, name: true, username: true, role: true, areaId: true, isActive: true },
     }),
     prisma.case.groupBy({ by: ["assignedToId"], where: notClosed, _count: { _all: true } }),
-    prisma.case.groupBy({ by: ["assignedToId"], where: { ...notClosed, priority: "URGENTE" }, _count: { _all: true } }),
+    prisma.case.groupBy({ by: ["assignedToId"], where: { ...dashboardCaseWhere(scope), ...URGENT_OPEN_CASE_WHERE }, _count: { _all: true } }),
     prisma.case.groupBy({ by: ["assignedToId"], where: staleCaseWhere(scope, now), _count: { _all: true } }),
     prisma.case.groupBy({ by: ["assignedToId"], where: { ...notClosed, assignedAt: { gte: since } }, _count: { _all: true } }),
   ]);

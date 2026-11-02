@@ -2,6 +2,9 @@ import prisma from "@/lib/prisma";
 import { CASE_STATUS_LABEL, staleCutoff, summarizeCase } from "@/lib/case-summary";
 import { pickAreaByKeywords } from "@/lib/area-theme";
 import { isCaseLabel, normalizeCaseLabels } from "@/lib/case-labels";
+import { ACTIVE_CASE_STATUSES, URGENT_OPEN_CASE_WHERE } from "@/lib/case-urgency";
+import { AREA_EXPORT_MAX_ROWS, areaCaseListWhere, parseAreaCaseFilters, type AreaCaseFilters } from "@/lib/area-cases";
+import type { Prisma } from "@prisma/client";
 
 export async function getCasesByArea(areaName: string) {
   return await prisma.case.findMany({
@@ -34,9 +37,11 @@ export async function createCase(data: any) {
 }
 
 export async function getAreas() {
-  return await prisma.area.findMany({
+  const areas = await prisma.area.findMany({
     orderBy: { name: 'asc' }
   });
+  // El presupuesto (Decimal) va como número común para poder pasarlo a pantallas del navegador.
+  return areas.map((a) => ({ ...a, annualBudget: Number(a.annualBudget) }));
 }
 
 export async function getCaseById(id: string) {
@@ -60,79 +65,108 @@ export async function getCaseById(id: string) {
   }
 }
 
-export async function getAreaDashboardData(areaKeywords: string[]) {
-  const allAreas = await prisma.area.findMany({ orderBy: { name: "asc" } });
-  const matchingArea = pickAreaByKeywords(allAreas, areaKeywords);
+/** Lo que necesita la lista de un área: el expediente, su titular y cuántas intervenciones tiene. */
+const AREA_CASE_SELECT = {
+  id: true,
+  title: true,
+  status: true,
+  priority: true,
+  updatedAt: true,
+  createdAt: true,
+  person: { select: { id: true, dni: true, firstName: true, lastName: true } },
+  _count: { select: { interventions: true } },
+} satisfies Prisma.CaseSelect;
+
+export type AreaCaseRow = Prisma.CaseGetPayload<{ select: typeof AREA_CASE_SELECT }>;
+
+async function findAreaByKeywords(areaKeywords: readonly string[]) {
+  const allAreas = await prisma.area.findMany({
+    select: { id: true, name: true, description: true },
+    orderBy: { name: "asc" },
+  });
+  return pickAreaByKeywords(allAreas, [...areaKeywords]);
+}
+
+/**
+ * Página de un área: cifras contadas en la base y una sola página de expedientes según los
+ * filtros de la dirección (pestaña, prioridad, búsqueda). No trae todos los expedientes juntos.
+ */
+export async function getAreaDashboardData(
+  areaKeywords: readonly string[],
+  filters: AreaCaseFilters = parseAreaCaseFilters({})
+) {
+  const matchingArea = await findAreaByKeywords(areaKeywords);
+
+  const emptyStats = {
+    totalCases: 0,
+    activeCases: 0,
+    urgentCases: 0,
+    monthlyInterventions: 0,
+    uniquePersons: 0,
+  };
 
   if (!matchingArea) {
-    return {
-      area: null,
-      cases: [],
-      stats: {
-        totalCases: 0,
-        activeCases: 0,
-        urgentCases: 0,
-        monthlyInterventions: 0,
-        uniquePersons: 0
-      }
-    };
+    return { area: null, cases: [] as AreaCaseRow[], total: 0, totalPages: 0, currentPage: 1, pageSize: filters.limit, stats: emptyStats };
   }
 
-  const cases = await prisma.case.findMany({
-    where: {
-      areaId: matchingArea.id
-    },
-    include: {
-      person: true,
-      interventions: {
-        orderBy: { date: 'desc' },
-        take: 1
-      },
-      _count: {
-        select: {
-          interventions: true,
-          documents: true
-        }
-      }
-    },
-    orderBy: { updatedAt: 'desc' }
-  });
-
-  const totalCases = cases.length;
-  const activeCases = cases.filter(
-    (c) => c.status === 'ABIERTO' || c.status === 'EN_PROCESO'
-  ).length;
-  const urgentCases = cases.filter(
-    (c) => c.priority === 'URGENTE' || c.priority === 'ALTA'
-  ).length;
+  const areaId = matchingArea.id;
+  const listWhere = areaCaseListWhere(areaId, filters);
 
   const startOfMonth = new Date();
   startOfMonth.setDate(1);
   startOfMonth.setHours(0, 0, 0, 0);
 
-  const monthlyInterventionsCount = await prisma.intervention.count({
-    where: {
-      case: {
-        areaId: matchingArea.id
-      },
-      date: {
-        gte: startOfMonth
-      }
-    }
-  });
+  const [total, totalCases, activeCases, urgentCases, monthlyInterventions, persons] = await Promise.all([
+    prisma.case.count({ where: listWhere }),
+    prisma.case.count({ where: { areaId } }),
+    prisma.case.count({ where: { areaId, status: { in: [...ACTIVE_CASE_STATUSES] } } }),
+    prisma.case.count({ where: { areaId, ...URGENT_OPEN_CASE_WHERE } }),
+    prisma.intervention.count({ where: { case: { areaId }, date: { gte: startOfMonth } } }),
+    prisma.$queryRaw<{ n: bigint }[]>`SELECT COUNT(DISTINCT "personId")::bigint AS n FROM "Case" WHERE "areaId" = ${areaId}`,
+  ]);
 
-  const uniquePersonIds = new Set(cases.map((c) => c.personId));
+  const totalPages = Math.max(1, Math.ceil(total / filters.limit));
+  const currentPage = Math.min(filters.page, totalPages);
+
+  const cases = await prisma.case.findMany({
+    where: listWhere,
+    select: AREA_CASE_SELECT,
+    orderBy: [{ updatedAt: "desc" }, { id: "asc" }],
+    skip: (currentPage - 1) * filters.limit,
+    take: filters.limit,
+  });
 
   return {
     area: matchingArea,
     cases,
+    total,
+    totalPages,
+    currentPage,
+    pageSize: filters.limit,
     stats: {
       totalCases,
       activeCases,
       urgentCases,
-      monthlyInterventions: monthlyInterventionsCount,
-      uniquePersons: uniquePersonIds.size
-    }
+      monthlyInterventions,
+      uniquePersons: Number(persons[0]?.n ?? 0),
+    },
+  };
+}
+
+/** Todos los expedientes de un área que cumplen los filtros (para exportar), hasta un tope. */
+export async function getAreaCasesForExport(areaKeywords: readonly string[], filters: Pick<AreaCaseFilters, "tab" | "priority" | "q">) {
+  const matchingArea = await findAreaByKeywords(areaKeywords);
+  if (!matchingArea) return { area: null, cases: [] as AreaCaseRow[], truncated: false };
+  const rows = await prisma.case.findMany({
+    where: areaCaseListWhere(matchingArea.id, filters),
+    select: AREA_CASE_SELECT,
+    orderBy: [{ updatedAt: "desc" }, { id: "asc" }],
+    take: AREA_EXPORT_MAX_ROWS + 1,
+  });
+  return {
+    area: matchingArea,
+    cases: rows.slice(0, AREA_EXPORT_MAX_ROWS),
+    truncated: rows.length > AREA_EXPORT_MAX_ROWS,
   };
 }
 
@@ -235,7 +269,7 @@ export async function getAllCases(filters: GetCasesFilters = {}) {
     }),
     prisma.case.count({ where }),
     prisma.case.count({ where: { ...where, status: { in: ["ABIERTO", "EN_PROCESO"] } } }),
-    prisma.case.count({ where: { ...where, priority: "URGENTE", status: { in: ["ABIERTO", "EN_PROCESO"] } } }),
+    prisma.case.count({ where: { ...where, ...URGENT_OPEN_CASE_WHERE } }),
     prisma.case.count({ where: { ...where, status: "CERRADO" } }),
   ]);
 

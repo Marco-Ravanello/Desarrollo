@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,28 +23,26 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { plural } from "@/lib/formato";
-import { formatFecha } from "@/lib/fechas";
+import { PeoplePagination } from "@/components/people/people-pagination";
+import { areaCaseListQuery, type AreaCaseFilters, type AreaCaseTab, type AreaPageSlug } from "@/lib/area-cases";
+import { getAreaExportAction } from "@/app/(dashboard)/areas/actions";
 
 const AREA_PRIORITY_LABEL: Record<string, string> = { URGENTE: "Urgente", ALTA: "Alta", MEDIA: "Media", BAJA: "Baja" };
 
 interface CaseItem {
   id: string;
   title: string;
-  description?: string | null;
   status: "ABIERTO" | "EN_PROCESO" | "DERIVADO" | "CERRADO" | "PENDIENTE";
   priority: "BAJA" | "MEDIA" | "ALTA" | "URGENTE";
-  updatedAt: string | Date;
-  createdAt: string | Date;
+  updatedAt: string;
+  /** Puede faltar en expedientes viejos sin titular cargado. */
   person: {
     id: string;
     dni: string;
     firstName: string;
     lastName: string;
-  };
-  _count?: {
-    interventions: number;
-    documents: number;
-  };
+  } | null;
+  interventions: number;
 }
 
 interface AreaStats {
@@ -54,27 +54,85 @@ interface AreaStats {
 }
 
 interface AreaDashboardViewProps {
+  slug: AreaPageSlug;
   areaTitle: string;
   areaDescription: string;
   themeColor: "emerald" | "blue" | "amber" | "rose";
   area: { id: string; name: string; description?: string | null } | null;
-  initialCases: CaseItem[];
+  /** Solo la página que se ve; el servidor ya aplicó los filtros. */
+  cases: CaseItem[];
+  filters: AreaCaseFilters;
+  total: number;
+  totalPages: number;
+  currentPage: number;
+  pageSize: number;
   stats: AreaStats;
   isSensitive?: boolean;
 }
 
+function holderName(c: CaseItem): string {
+  return c.person ? `${c.person.lastName}, ${c.person.firstName}` : "Sin titular";
+}
+
+function holderDni(c: CaseItem): string | null {
+  if (!c.person) return null;
+  return isProvisionalDni(c.person.dni) ? "Sin DNI" : c.person.dni;
+}
+
+const TAB_OPTIONS: { value: AreaCaseTab; label: string }[] = [
+  { value: "ACTIVOS", label: "Activos" },
+  { value: "EN_PROCESO", label: "En proceso" },
+  { value: "DERIVADOS", label: "Derivados" },
+  { value: "CERRADOS", label: "Cerrados" },
+  { value: "TODOS", label: "Todos" },
+];
+
 export function AreaDashboardView({
+  slug,
   areaTitle,
   areaDescription,
   themeColor,
   area,
-  initialCases,
+  cases,
+  filters,
+  total,
+  totalPages,
+  currentPage,
+  pageSize,
   stats,
   isSensitive = false
 }: AreaDashboardViewProps) {
-  const [activeTab, setActiveTab] = useState<"ACTIVOS" | "TODOS" | "EN_PROCESO" | "DERIVADOS" | "CERRADOS">("ACTIVOS");
-  const [priorityFilter, setPriorityFilter] = useState<string>("TODAS");
-  const [searchQuery, setSearchQuery] = useState("");
+  const router = useRouter();
+  const pathname = usePathname();
+  const [isPending, startTransition] = useTransition();
+  const [searchQuery, setSearchQuery] = useState(filters.q);
+  const lastPushedQuery = useRef(filters.q);
+
+  // Si la dirección cambia desde afuera (atrás/adelante), el cuadro de búsqueda la sigue.
+  useEffect(() => {
+    setSearchQuery(filters.q);
+    lastPushedQuery.current = filters.q;
+  }, [filters.q]);
+
+  const go = (next: Partial<AreaCaseFilters>) => {
+    // Cambiar un filtro vuelve a la primera página.
+    const merged: AreaCaseFilters = { ...filters, page: 1, ...next };
+    startTransition(() => router.push(`${pathname}${areaCaseListQuery(merged)}`, { scroll: false }));
+  };
+
+  // La búsqueda se manda sola un momento después de dejar de escribir.
+  useEffect(() => {
+    const q = searchQuery.trim();
+    if (q === lastPushedQuery.current) return;
+    const t = setTimeout(() => {
+      lastPushedQuery.current = q;
+      go({ q });
+    }, 400);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchQuery]);
+
+  const hasFilters = Boolean(filters.q) || Boolean(filters.priority);
 
   const colorStyles = {
     emerald: {
@@ -106,25 +164,6 @@ export function AreaDashboardView({
   const AreaIcon = { emerald: HeartHandshake, blue: Home, amber: Baby, rose: ShieldAlert }[themeColor];
   const statTone = ({ emerald: "green", blue: "blue", amber: "orange", rose: "red" } as const)[themeColor];
 
-  const filteredCases = initialCases.filter((c) => {
-    if (activeTab === "ACTIVOS" && c.status !== "ABIERTO" && c.status !== "EN_PROCESO") return false;
-    if (activeTab === "EN_PROCESO" && c.status !== "EN_PROCESO") return false;
-    if (activeTab === "DERIVADOS" && c.status !== "DERIVADO") return false;
-    if (activeTab === "CERRADOS" && c.status !== "CERRADO") return false;
-
-    if (priorityFilter !== "TODAS" && c.priority !== priorityFilter) return false;
-
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase().trim();
-      const matchTitle = c.title.toLowerCase().includes(q);
-      const matchDni = c.person.dni.includes(q);
-      const matchName = `${c.person.firstName} ${c.person.lastName}`.toLowerCase().includes(q);
-      if (!matchTitle && !matchDni && !matchName) return false;
-    }
-
-    return true;
-  });
-
   const exportColumns = [
     { header: "Expediente", accessorKey: "title" },
     { header: "Etiqueta", accessorKey: "tag" },
@@ -136,16 +175,19 @@ export function AreaDashboardView({
     { header: "Intervenciones", accessorKey: "interventionsCount" }
   ];
 
-  const exportData = filteredCases.map((c) => ({
-    title: splitCaseTitle(c.title).title,
-    tag: splitCaseTitle(c.title).tag ?? "",
-    citizenName: `${c.person.lastName}, ${c.person.firstName}`,
-    dni: isProvisionalDni(c.person.dni) ? "Sin DNI" : c.person.dni,
-    status: CASE_STATUS_LABEL[c.status] ?? c.status,
-    priority: CASE_PRIORITY_LABEL[c.priority] ?? c.priority,
-    updatedAt: formatFecha(c.updatedAt),
-    interventionsCount: c._count?.interventions || 0
-  }));
+  const loadExportRows = async () => {
+    const res = await getAreaExportAction(slug, {
+      pestana: filters.tab,
+      prioridad: filters.priority ?? undefined,
+      q: filters.q,
+    });
+    if (!res.success) {
+      toast.error(res.error);
+      return null;
+    }
+    if (res.truncated) toast.info(`La planilla trae los primeros ${res.rows.length.toLocaleString("es-AR")} expedientes. Filtrá para ver el resto.`);
+    return res.rows;
+  };
 
   const renderStatusBadge = (status: string) => (
     <StatusBadge tone={toneOf(CASE_STATUS_TONE, status)}>{CASE_STATUS_LABEL[status] ?? status}</StatusBadge>
@@ -197,7 +239,7 @@ export function AreaDashboardView({
         <StatCard
           label="Urgentes"
           value={stats.urgentCases}
-          hint={<span className="font-bold text-amber-700 dark:text-amber-400">Prioridad alta / urgente</span>}
+          hint={<span className="font-bold text-amber-700 dark:text-amber-400">Abiertos con prioridad urgente</span>}
           icon={AlertTriangle}
           tone="orange"
         />
@@ -209,7 +251,7 @@ export function AreaDashboardView({
           tone="blue"
         />
         <StatCard
-          label="Familias asistidas"
+          label="Personas atendidas"
           value={stats.uniquePersons}
           hint={<span className="font-bold text-emerald-700 dark:text-emerald-400">Personas distintas con expedientes en el área</span>}
           icon={Users}
@@ -217,67 +259,41 @@ export function AreaDashboardView({
         />
       </StatRow>
 
-      <Card className="bg-card text-card-foreground border border-border/60 shadow-xs rounded-2xl overflow-hidden">
+      <Card
+        aria-busy={isPending}
+        className={`bg-card text-card-foreground border border-border/60 shadow-xs rounded-2xl overflow-hidden transition-opacity ${isPending ? "opacity-60" : ""}`}
+      >
         <div className="p-4 sm:p-5 border-b border-border/40 bg-muted/20 flex flex-col xl:flex-row xl:items-center justify-between gap-4">
-          <div className="flex max-w-full items-center gap-1.5 bg-secondary/70 p-1 rounded-2xl border border-primary/10 shrink-0 overflow-x-auto [scrollbar-width:none] [&>button]:shrink-0 [&>button]:whitespace-nowrap">
-            <button
-              type="button"
-              onClick={() => setActiveTab("ACTIVOS")}
-              className={`text-xs px-3.5 py-2 sm:py-1.5 rounded-xl font-bold transition-all flex items-center gap-1.5 ${
-                activeTab === "ACTIVOS"
-                  ? "bg-card text-primary shadow-xs ring-1 ring-primary/10"
-                  : "text-secondary-foreground/80 hover:text-primary"
-              }`}
-            >
-              <span>Activos</span>
-              <Badge variant="secondary" className="text-xs px-1.5 py-0 rounded-md tabular-nums">
-                {stats.activeCases}
-              </Badge>
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab("EN_PROCESO")}
-              className={`text-xs px-3.5 py-2 sm:py-1.5 rounded-xl font-bold transition-all ${
-                activeTab === "EN_PROCESO"
-                  ? "bg-card text-primary shadow-xs ring-1 ring-primary/10"
-                  : "text-secondary-foreground/80 hover:text-primary"
-              }`}
-            >
-              En proceso
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab("DERIVADOS")}
-              className={`text-xs px-3.5 py-2 sm:py-1.5 rounded-xl font-bold transition-all ${
-                activeTab === "DERIVADOS"
-                  ? "bg-card text-primary shadow-xs ring-1 ring-primary/10"
-                  : "text-secondary-foreground/80 hover:text-primary"
-              }`}
-            >
-              Derivados
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab("CERRADOS")}
-              className={`text-xs px-3.5 py-2 sm:py-1.5 rounded-xl font-bold transition-all ${
-                activeTab === "CERRADOS"
-                  ? "bg-card text-primary shadow-xs ring-1 ring-primary/10"
-                  : "text-secondary-foreground/80 hover:text-primary"
-              }`}
-            >
-              Cerrados
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab("TODOS")}
-              className={`text-xs px-3.5 py-2 sm:py-1.5 rounded-xl font-bold transition-all ${
-                activeTab === "TODOS"
-                  ? "bg-card text-primary shadow-xs ring-1 ring-primary/10"
-                  : "text-secondary-foreground/80 hover:text-primary"
-              }`}
-            >
-              Todos ({stats.totalCases})
-            </button>
+          <div
+            role="tablist"
+            aria-label="Estado de los expedientes"
+            className="flex max-w-full items-center gap-1.5 bg-secondary/70 p-1 rounded-2xl border border-primary/10 shrink-0 overflow-x-auto [scrollbar-width:none] [&>button]:shrink-0 [&>button]:whitespace-nowrap"
+          >
+            {TAB_OPTIONS.map((t) => {
+              const active = filters.tab === t.value;
+              const count = t.value === "ACTIVOS" ? stats.activeCases : t.value === "TODOS" ? stats.totalCases : null;
+              return (
+                <button
+                  key={t.value}
+                  type="button"
+                  role="tab"
+                  aria-selected={active}
+                  onClick={() => go({ tab: t.value })}
+                  className={`text-xs px-3.5 py-2 sm:py-1.5 rounded-xl font-bold transition-all flex items-center gap-1.5 ${
+                    active
+                      ? "bg-card text-primary shadow-xs ring-1 ring-primary/10"
+                      : "text-secondary-foreground/80 hover:text-primary"
+                  }`}
+                >
+                  <span>{t.label}</span>
+                  {count !== null && (
+                    <Badge variant="secondary" className="text-xs px-1.5 py-0 rounded-md tabular-nums">
+                      {count.toLocaleString("es-AR")}
+                    </Badge>
+                  )}
+                </button>
+              );
+            })}
           </div>
 
           <div className="flex flex-col sm:flex-row sm:flex-wrap items-center gap-2">
@@ -293,8 +309,8 @@ export function AreaDashboardView({
 
             <select
               aria-label="Filtrar por prioridad"
-              value={priorityFilter}
-              onChange={(e) => setPriorityFilter(e.target.value)}
+              value={filters.priority ?? "TODAS"}
+              onChange={(e) => go({ priority: e.target.value === "TODAS" ? null : (e.target.value as AreaCaseFilters["priority"]) })}
               className="h-9 px-3 rounded-xl bg-muted/20 border border-border/60 text-xs font-bold text-foreground focus:outline-none focus:ring-1 focus:ring-primary w-full sm:w-auto"
             >
               <option value="TODAS">Todas las prioridades</option>
@@ -305,7 +321,9 @@ export function AreaDashboardView({
             </select>
 
             <UniversalExportMenu
-              data={exportData}
+              data={[]}
+              loadData={loadExportRows}
+              pdfMaxRows={1000}
               columns={exportColumns}
               filename={`expedientes_${areaTitle.toLowerCase().replace(/\s+/g, "_")}`}
               title={`Expedientes: ${areaTitle}`}
@@ -315,17 +333,17 @@ export function AreaDashboardView({
           </div>
         </div>
 
-        {filteredCases.length > 0 && (
+        {cases.length > 0 && (
           <MobileList label="Expedientes del área">
-            {filteredCases.map((c) => {
+            {cases.map((c) => {
               const shown = splitCaseTitle(c.title);
               return (
                 <MobileListItem
                   key={c.id}
                   href={`/cases/${c.id}`}
-                  title={`${c.person.lastName}, ${c.person.firstName}`}
-                  subtitle={[shown.title, shown.tag, isProvisionalDni(c.person.dni) ? "Sin DNI" : `DNI ${c.person.dni}`].filter(Boolean).join(" · ")}
-                  meta={plural(c._count?.interventions || 0, "intervención")}
+                  title={holderName(c)}
+                  subtitle={[shown.title, shown.tag, c.person && (isProvisionalDni(c.person.dni) ? "Sin DNI" : `DNI ${c.person.dni}`)].filter(Boolean).join(" · ")}
+                  meta={plural(c.interventions, "intervención")}
                   aside={
                     <>
                       {renderStatusBadge(c.status)}
@@ -337,7 +355,7 @@ export function AreaDashboardView({
             })}
           </MobileList>
         )}
-        <TableCards className={filteredCases.length > 0 ? "hidden md:block" : undefined}>
+        <TableCards className={cases.length > 0 ? "hidden md:block" : undefined}>
           <table className="w-full table-fixed text-xs text-left">
             <thead className="bg-muted/40 border-b border-border/60">
               <tr>
@@ -351,8 +369,8 @@ export function AreaDashboardView({
               </tr>
             </thead>
             <tbody className="divide-y divide-border/30">
-              {filteredCases.length > 0 ? (
-                filteredCases.map((c) => {
+              {cases.length > 0 ? (
+                cases.map((c) => {
                   const shown = splitCaseTitle(c.title);
                   return (
                   <tr key={c.id} className="border-b border-border/50 transition-colors hover:bg-muted/60">
@@ -365,12 +383,16 @@ export function AreaDashboardView({
                       </div>
                     </td>
                     <td className="px-4 py-3 align-middle text-foreground font-semibold">
-                      <Link href={`/people/${c.person.id}`} className="block truncate hover:underline" title={`${c.person.lastName}, ${c.person.firstName}`}>
-                        {c.person.lastName}, {c.person.firstName}
-                      </Link>
+                      {c.person ? (
+                        <Link href={`/people/${c.person.id}`} className="block truncate hover:underline" title={holderName(c)}>
+                          {holderName(c)}
+                        </Link>
+                      ) : (
+                        <span className="text-muted-foreground font-normal">Sin titular</span>
+                      )}
                     </td>
                     <td className="px-4 py-3 align-middle font-mono text-muted-foreground">
-                      {isProvisionalDni(c.person.dni) ? <span className="font-sans">Sin DNI</span> : c.person.dni}
+                      {holderDni(c) === "Sin DNI" || !c.person ? <span className="font-sans">{holderDni(c) ?? "—"}</span> : c.person.dni}
                     </td>
                     <td className="px-4 py-3 align-middle">
                       {renderStatusBadge(c.status)}
@@ -379,7 +401,7 @@ export function AreaDashboardView({
                       {renderPriorityBadge(c.priority)}
                     </td>
                     <td className="px-4 py-3 align-middle whitespace-nowrap text-muted-foreground font-bold">
-                      {plural(c._count?.interventions || 0, "intervención")}
+                      {plural(c.interventions, "intervención")}
                     </td>
                     <td className="px-4 py-3 align-middle text-right">
                       <Button variant="ghost" size="icon" asChild className="h-8 w-8 text-primary hover:bg-primary/10 rounded-xl">
@@ -394,7 +416,7 @@ export function AreaDashboardView({
               ) : (
                 <tr>
                   <td colSpan={7} className="px-4 py-3 align-middle">
-                    {searchQuery.trim() || priorityFilter !== "TODAS" ? (
+                    {hasFilters ? (
                       <EmptyMessage
                         kind="search"
                         title="Ningún expediente coincide con la búsqueda"
@@ -408,7 +430,8 @@ export function AreaDashboardView({
                             className="rounded-xl text-xs"
                             onClick={() => {
                               setSearchQuery("");
-                              setPriorityFilter("TODAS");
+                              lastPushedQuery.current = "";
+                              go({ q: "", priority: null });
                             }}
                           >
                             Quitar filtros
@@ -428,6 +451,13 @@ export function AreaDashboardView({
             </tbody>
           </table>
         </TableCards>
+        <PeoplePagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={total}
+          pageSize={pageSize}
+          itemLabel={total === 1 ? "expediente" : "expedientes"}
+        />
       </Card>
     </div>
   );

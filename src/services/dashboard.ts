@@ -17,7 +17,8 @@ export interface DashboardScope {
   canViewSensitive: boolean;
 }
 
-export const ACTIVE_CASE_STATUSES = ["ABIERTO", "EN_PROCESO"] as const;
+import { ACTIVE_CASE_STATUSES, URGENT_OPEN_CASE_WHERE } from "@/lib/case-urgency";
+export { ACTIVE_CASE_STATUSES };
 
 export function dashboardCaseWhere(scope: DashboardScope): Prisma.CaseWhereInput {
   const where: Prisma.CaseWhereInput = {};
@@ -48,7 +49,7 @@ export async function getDashboardStats(scope: DashboardScope): Promise<Dashboar
 async function loadDashboardStats(scope: DashboardScope) {
   const caseWhere = dashboardCaseWhere(scope);
   const activeWhere: Prisma.CaseWhereInput = { ...caseWhere, status: { in: [...ACTIVE_CASE_STATUSES] } };
-  const urgentWhere: Prisma.CaseWhereInput = { ...activeWhere, priority: "URGENTE" };
+  const urgentWhere: Prisma.CaseWhereInput = { ...caseWhere, ...URGENT_OPEN_CASE_WHERE };
   const orderWhere: Prisma.PurchaseOrderWhereInput = scope.areaId ? { areaId: scope.areaId } : {};
 
   const [
