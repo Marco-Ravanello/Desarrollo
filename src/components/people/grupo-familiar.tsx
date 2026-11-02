@@ -72,7 +72,7 @@ function MiembroCard({ m, onOpen }: { m: MiembroFamiliar; onOpen: (dni: string) 
           onClick={() => onOpen(m.dni!)}
           className="mt-auto h-8 w-full gap-1.5 rounded-xl text-xs font-bold text-primary hover:bg-primary/10"
         >
-          Ver su Ficha 360° <ArrowRight className="h-3.5 w-3.5" />
+          Ver su ficha <ArrowRight className="h-3.5 w-3.5" />
         </Button>
       )}
     </div>

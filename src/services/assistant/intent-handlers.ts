@@ -790,8 +790,7 @@ export async function handleSocialQuery(query: string): Promise<AIResponse> {
         totalPrestaciones,
         sources: [{ type: "Padrón Social Unificado", name: "Padrón 360° 3F", url: "/people" }],
         actions: [
-          { label: "Ver Registro Único", actionType: "NAVIGATE", payload: { path: "/people" } },
-          { label: "Ver Ficha Social 360°", actionType: "NAVIGATE", payload: { path: "/ficha-social" } }
+          { label: "Ver Registro Único", actionType: "NAVIGATE", payload: { path: "/people" } }
         ]
       }
     };
@@ -1432,8 +1431,8 @@ export async function handleFichaSocialAIQuery(query: string): Promise<AIRespons
         dataSummary: {
           hasResults: true,
           ficha,
-          sources: [{ type: "Ciudadano 360°", name: `${ficha.nombre_detectado}`, url: "/ficha-social" }],
-          actions: [{ label: "Ver Ficha 360° Completa", actionType: "NAVIGATE", payload: { path: "/ficha-social" } }]
+          sources: [{ type: "Registro Único", name: `${ficha.nombre_detectado}`, url: `/people/${ficha.dni}` }],
+          actions: [{ label: "Ver su ficha completa", actionType: "NAVIGATE", payload: { path: `/people/${ficha.dni}` } }]
         }
       };
     }
@@ -1447,8 +1446,8 @@ export async function handleFichaSocialAIQuery(query: string): Promise<AIRespons
     answer: `### Matriz de Cruce de Programas Sociales\n\nSe calcularon las intersecciones y duplicidades en tiempo real para **${progsToCross.join(" + ")}**:\n\n*   **Total de Personas Coincidentes:** **${cruce.total_coincidencias.toLocaleString("es-AR")} personas**`,
     dataSummary: {
       hasResults: true,
-      sources: [{ type: "Matriz de Cruces", name: "Cruce de Programas 3F", url: "/ficha-social/cruces" }],
-      actions: [{ label: "Ver cruces de programas", actionType: "NAVIGATE", payload: { path: "/ficha-social/cruces" } }]
+      sources: [{ type: "Matriz de Cruces", name: "Cruce de Programas 3F", url: "/people/programas/cruces" }],
+      actions: [{ label: "Ver cruces de programas", actionType: "NAVIGATE", payload: { path: "/people/programas/cruces" } }]
     }
   };
 }
