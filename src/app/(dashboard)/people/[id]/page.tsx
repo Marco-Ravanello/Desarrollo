@@ -1,5 +1,4 @@
 export const dynamic = "force-dynamic";
-import { InitialsAvatar } from "@/components/ui/initials-avatar";
 import { getPersonById, getRegistroFamilyMembers } from "@/services/people";
 import { getFichaSocialByDniFromDb } from "@/services/ficha-social-db";
 import { getFichaHistorial } from "@/services/ficha-historial";
@@ -16,7 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { StatusBadge } from "@/components/ui/status-badge";
 import {
-  Calendar, Phone, MapPin, ShieldAlert, Mail, History, Eye, FileIcon, ExternalLink, Users,
+  ShieldAlert, Mail, History, Eye, FileIcon, ExternalLink, Users,
   Contact, Layers, FolderOpen, CheckCircle2, UserPlus, PencilLine, User, Footprints, GraduationCap, Award,
 } from "lucide-react";
 import { notFound } from "next/navigation";
@@ -30,7 +29,6 @@ import { EditPersonDialog } from "./edit-person-dialog";
 import { RemoveFamilyMemberButton } from "./remove-family-member-button";
 import { PageBreadcrumbs } from "@/components/layout/breadcrumbs-context";
 import { RememberVisit } from "@/components/search/remember-visit";
-import { PageHeader } from "@/components/layout/page-header";
 import { EmptyMessage } from "@/components/ui/empty-message";
 import { ProgramasDetalle } from "@/components/people/programas-detalle";
 import { ProgramEnrollmentPanel } from "@/components/people/program-enrollment";
@@ -46,6 +44,9 @@ import { formatFecha, formatFechaHora } from "@/lib/fechas";
 import { barrioLabel } from "@/lib/person-display";
 import { barrioSlug, matchBarrio } from "@/lib/barrios";
 import { personTitle } from "@/lib/page-titles";
+import { ON_BAND_BUTTON, PersonIdCard } from "@/components/people/person-id-card";
+import { edadDe } from "@/lib/grupo-familiar";
+import { caseLabelName } from "@/lib/case-labels";
 
 export const generateMetadata = personTitle;
 
@@ -54,6 +55,15 @@ type Tab = (typeof TABS)[number];
 
 const fecha = formatFecha;
 const fechaHora = formatFechaHora;
+
+/** El padrón guarda el género como una letra. */
+function generoTexto(g: string): string {
+  const v = g.trim().toUpperCase();
+  if (v === "F") return "Femenino";
+  if (v === "M") return "Masculino";
+  if (v === "X") return "No binario";
+  return g;
+}
 
 function Dato({ icon: Icon, label, children }: { icon: React.ElementType; label: string; children: React.ReactNode }) {
   return (
@@ -126,46 +136,44 @@ export default async function PersonDetailPage({
   const familiaCount = grupo.declarados.length + grupo.mismoDomicilio.length;
   const activeTab: Tab = TABS.includes(tab as Tab) ? (tab as Tab) : "datos";
 
-  const edad = person?.birthDate
-    ? `${fecha(person.birthDate)}`
-    : person?.fechaNacimientoTexto
-      ? person.fechaNacimientoTexto
-      : person?.edadAprox && person.edadAprox !== "No registrada"
-      ? `${person.edadAprox} años (aprox.)`
-      : "Sin dato";
+  const fechaNac = person?.birthDate ? new Date(person.birthDate).toISOString().slice(0, 10) : person?.fechaNacimientoTexto || null;
+  const anios = edadDe(fechaNac, null) ?? edadDe(null, person?.edadAprox || null);
+  const edadCorta = anios === null ? null : edadDe(fechaNac, null) !== null ? plural(anios, "año") : `${plural(anios, "año")} (aprox.)`;
+  const domicilio = person?.address
+    ? `${person.address}${person.localidad && !String(person.address).includes(person.localidad) ? ` · ${person.localidad}` : ""}`
+    : null;
+  // Etiquetas de sus expedientes abiertos (adulto mayor, discapacidad…), sin repetir.
+  const etiquetas = Array.from(new Set(activeCases.flatMap((c) => (c.labels || []) as string[])))
+    .map((k) => caseLabelName(k))
+    .filter((l): l is string => Boolean(l));
 
   return (
     <div className="space-y-6">
       <PageBreadcrumbs items={[{ label: "Registro Único", href: "/people" }, { label: nombre, active: true }]} />
       {person && <RememberVisit kind="person" id={person.id} />}
 
-      <div className="space-y-3">
-        <PageHeader
-          title={nombre}
-          leading={<InitialsAvatar name={nombre} seed={dni} size="lg" square />}
-          actions={editData && addressOptions ? <EditPersonDialog person={editData} options={addressOptions} /> : undefined}
-        />
-        <div className="flex flex-wrap gap-2 items-center">
-          <Badge variant="outline" className="border-border text-foreground tabular-nums font-bold">DNI {dni}</Badge>
-          {person?.barrio && (
-            <Badge variant="outline" className="border-primary/40 text-primary bg-primary/5 text-xs font-bold">
-              {matchBarrio(person.barrio) ? (
-                <Link href={`/barrios/${barrioSlug(matchBarrio(person.barrio)!)}`} className="hover:underline" title="Ver la página del barrio">
-                  {barrioLabel(person.barrio)}
-                </Link>
-              ) : (
-                barrioLabel(person.barrio)
-              )}
-            </Badge>
-          )}
-          {totalProgramas > 0 && (
-            <StatusBadge tone="green">{plural(totalProgramas, "programa activo")}</StatusBadge>
-          )}
-          {activeCases.length > 0 && (
-            <StatusBadge tone="blue">{plural(activeCases.length, "expediente abierto")}</StatusBadge>
-          )}
-        </div>
-      </div>
+      <PersonIdCard
+        nombre={nombre}
+        dni={dni}
+        edad={edadCorta}
+        nacimiento={person?.birthDate ? fecha(person.birthDate) : person?.fechaNacimientoTexto || null}
+        domicilio={domicilio}
+        telefono={person?.phone || null}
+        barrio={
+          person?.barrio
+            ? {
+                label: barrioLabel(person.barrio),
+                href: matchBarrio(person.barrio) ? `/barrios/${barrioSlug(matchBarrio(person.barrio)!)}` : null,
+              }
+            : null
+        }
+        programasActivos={totalProgramas}
+        expedientesAbiertos={activeCases.length}
+        etiquetas={etiquetas}
+        enPadron={enPadron}
+        editButton={editData && addressOptions ? <EditPersonDialog person={editData} options={addressOptions} triggerClassName={ON_BAND_BUTTON} /> : undefined}
+        newCaseHref={person && canEdit ? `/cases/new?dni=${encodeURIComponent(dni)}` : null}
+      />
 
       <Card className="border border-border/60 shadow-xs bg-card text-card-foreground rounded-2xl overflow-hidden">
         <PersonTabs defaultTab={activeTab}>
@@ -188,17 +196,13 @@ export default async function PersonDetailPage({
               </p>
             )}
             <div className="grid gap-6 lg:grid-cols-2">
-              <div className="space-y-4">
-                <h3 className="text-xs font-bold text-muted-foreground">Contacto</h3>
-                <Dato icon={MapPin} label="Domicilio">
-                  {person?.address || "Sin dirección"}
-                  {person?.localidad && !String(person.address || "").includes(person.localidad) ? ` · ${person.localidad}` : ""}
-                </Dato>
-                <Dato icon={Phone} label="Teléfono">{person?.phone || "Sin teléfono"}</Dato>
-                {person?.email && <Dato icon={Mail} label="Correo">{person.email}</Dato>}
-                <Dato icon={Calendar} label={person?.birthDate || person?.fechaNacimientoTexto ? "Fecha de nacimiento" : "Edad"}>{edad}</Dato>
-                {person?.gender && person.gender !== "No especificado" && <Dato icon={User} label="Género">{person.gender}</Dato>}
-              </div>
+              {(person?.email || (person?.gender && person.gender !== "No especificado")) && (
+                <div className="space-y-4">
+                  <h3 className="text-xs font-bold text-muted-foreground">Otros datos</h3>
+                  {person?.email && <Dato icon={Mail} label="Correo">{person.email}</Dato>}
+                  {person?.gender && person.gender !== "No especificado" && <Dato icon={User} label="Género">{generoTexto(person.gender)}</Dato>}
+                </div>
+              )}
               <div className="space-y-4">
                 <h3 className="text-xs font-bold text-muted-foreground">Programas sociales</h3>
                 {programas.length === 0 ? (
