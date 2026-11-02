@@ -16,11 +16,11 @@ export function SituationRoomButton() {
       asChild
       variant="outline"
       size="sm"
-      className="rounded-xl h-9 px-3 text-xs font-bold border-border/60 hover:bg-primary/10 hover:text-primary transition-colors hidden md:flex items-center gap-1.5"
+      className="rounded-xl h-9 px-3 text-xs font-bold border-white/25 bg-white/10 text-white hover:bg-white/20 hover:text-white transition-colors hidden md:flex items-center gap-1.5"
       title="Abrir Sala de Situación Ejecutiva (Modo Proyector)"
     >
       <Link href="/admin/war-room">
-        <Tv className="h-3.5 w-3.5 text-blue-500" />
+        <Tv className="h-3.5 w-3.5 text-muni-orange" />
         <span>Sala de Situación</span>
       </Link>
     </Button>

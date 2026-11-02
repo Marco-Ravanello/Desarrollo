@@ -20,6 +20,7 @@ import {
 import { saveFichaOrQueue } from "@/lib/emergency-offline";
 import { SIN_BARRIO, STORM_BARRIOS, matchStormBarrio, stormBarrioLabel } from "@/lib/storm-barrios";
 import { barrioLabel } from "@/lib/person-display";
+import { confirmar } from "@/components/ui/confirm-dialog";
 
 interface StormSheetTableProps {
   records: StormVictimItem[];
@@ -165,7 +166,7 @@ export function StormSheetTable({
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("¿Borrar esta fila del relevamiento?")) return;
+    if (!(await confirmar({ title: "¿Borrar esta fila del relevamiento?", confirmLabel: "Borrar", danger: true }))) return;
     const toastId = toast.loading("Eliminando registro...");
     const res = await deleteStormVictimAction(id);
     if (res.success) {

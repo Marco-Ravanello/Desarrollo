@@ -18,56 +18,56 @@ export type SectionTone =
   // Propios de las áreas
   | "blue" | "emerald" | "amber" | "rose";
 
-export const SECTION_TONE_CLASSES: Record<SectionTone, { chip: string; chipActive: string; dot: string }> = {
+export const SECTION_TONE_CLASSES: Record<SectionTone, { chip: string; dot: string; icon: string }> = {
   navy: {
     chip: "bg-muni-blue/10 text-muni-blue dark:bg-muni-softblue/15 dark:text-muni-softblue",
-    chipActive: "bg-muni-blue text-white dark:bg-muni-softblue dark:text-muni-navy",
     dot: "bg-muni-blue dark:bg-muni-softblue",
+    icon: "text-muni-blue dark:text-muni-softblue",
   },
   azul: {
     chip: "bg-muni-midblue/10 text-muni-midblue dark:bg-muni-lightsky/15 dark:text-muni-lightsky",
-    chipActive: "bg-muni-midblue text-white dark:bg-muni-lightsky dark:text-muni-navy",
     dot: "bg-muni-midblue dark:bg-muni-lightsky",
+    icon: "text-muni-midblue dark:text-muni-lightsky",
   },
   celeste: {
     chip: "bg-muni-sky/10 text-muni-sky dark:bg-muni-sky/20 dark:text-muni-lightsky",
-    chipActive: "bg-muni-sky text-white dark:bg-muni-sky dark:text-white",
     dot: "bg-muni-sky",
+    icon: "text-muni-sky dark:text-muni-lightsky",
   },
   naranja: {
     chip: "bg-muni-orange/15 text-muni-ochre dark:bg-muni-orange/15 dark:text-muni-orange",
-    chipActive: "bg-muni-orange text-muni-navy",
     dot: "bg-muni-orange",
+    icon: "text-muni-ochre dark:text-muni-orange",
   },
   ocre: {
     chip: "bg-muni-ochre/10 text-muni-ochre dark:bg-muni-softorange/15 dark:text-muni-softorange",
-    chipActive: "bg-muni-ochre text-white dark:bg-muni-softorange dark:text-muni-navy",
     dot: "bg-muni-ochre dark:bg-muni-softorange",
+    icon: "text-muni-ochre dark:text-muni-softorange",
   },
   pizarra: {
     chip: "bg-muni-body/10 text-muni-body dark:bg-slate-400/15 dark:text-slate-300",
-    chipActive: "bg-muni-body text-white dark:bg-slate-300 dark:text-muni-navy",
     dot: "bg-muni-body dark:bg-slate-400",
+    icon: "text-muni-body dark:text-slate-300",
   },
   blue: {
     chip: "bg-blue-500/10 text-blue-600 dark:bg-blue-400/15 dark:text-blue-300",
-    chipActive: "bg-blue-600 text-white dark:bg-blue-500",
     dot: "bg-blue-500",
+    icon: "text-blue-600 dark:text-blue-300",
   },
   emerald: {
     chip: "bg-emerald-500/10 text-emerald-700 dark:bg-emerald-400/15 dark:text-emerald-300",
-    chipActive: "bg-emerald-600 text-white dark:bg-emerald-500",
     dot: "bg-emerald-500",
+    icon: "text-emerald-700 dark:text-emerald-300",
   },
   amber: {
     chip: "bg-amber-500/10 text-amber-700 dark:bg-amber-400/15 dark:text-amber-300",
-    chipActive: "bg-amber-600 text-white dark:bg-amber-500",
     dot: "bg-amber-500",
+    icon: "text-amber-700 dark:text-amber-300",
   },
   rose: {
     chip: "bg-rose-500/10 text-rose-600 dark:bg-rose-400/15 dark:text-rose-300",
-    chipActive: "bg-rose-600 text-white dark:bg-rose-500",
     dot: "bg-rose-500",
+    icon: "text-rose-600 dark:text-rose-300",
   },
 };
 

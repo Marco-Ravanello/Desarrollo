@@ -21,7 +21,9 @@ interface AppSidebarProps {
 }
 
 export function AppSidebar({ isMobile = false, onNavigate }: AppSidebarProps) {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
+  // Mientras se lee la sesión, el menú va en gris en lugar de mostrarse incompleto.
+  const loadingSession = status === "loading" && !session;
   const pathname = usePathname();
   const user = session?.user;
 
@@ -101,8 +103,18 @@ export function AppSidebar({ isMobile = false, onNavigate }: AppSidebarProps) {
         {!isCollapsed && !isEmergencySurveyor(role) && <GlobalSearch />}
       </div>
 
-      <nav className="flex-1 min-h-0 px-3 pb-3 overflow-y-auto custom-scrollbar">
-        {groups.map((group, index) => {
+      <nav className="flex-1 min-h-0 px-3 pb-3 overflow-y-auto custom-scrollbar" aria-busy={loadingSession}>
+        {loadingSession && (
+          <div className="space-y-1.5 px-2 pt-1" aria-label="Cargando el menú">
+            {Array.from({ length: 9 }).map((_, i) => (
+              <div key={i} className={`flex items-center gap-3 py-1.5 ${isCollapsed ? "justify-center" : ""}`}>
+                <span className="h-8 w-8 shrink-0 animate-pulse rounded-lg bg-muted" />
+                {!isCollapsed && <span className="h-3 animate-pulse rounded bg-muted" style={{ width: `${55 + ((i * 17) % 35)}%` }} />}
+              </div>
+            ))}
+          </div>
+        )}
+        {!loadingSession && groups.map((group, index) => {
           // El grupo de la pantalla actual siempre queda abierto.
           const isOpen = !group.collapsible || isCollapsed || group.id === activeGroup || !closedGroups.includes(group.id);
           const groupTone = SECTION_TONE_CLASSES[group.tone];
@@ -150,12 +162,9 @@ export function AppSidebar({ isMobile = false, onNavigate }: AppSidebarProps) {
                     {isActive && (
                       <span aria-hidden className="absolute -left-3 top-1/2 h-6 w-1 -translate-y-1/2 rounded-r-full bg-muni-orange" />
                     )}
-                    <span
-                      className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-colors ${
-                        isActive ? `${tone.chipActive} shadow-sm` : tone.chip
-                      }`}
-                    >
-                      <item.icon className="h-[17px] w-[17px]" />
+                    {/* Ícono sin fondo, en el color de su sección. */}
+                    <span className={`flex h-8 w-6 shrink-0 items-center justify-center ${tone.icon}`}>
+                      <item.icon className="h-[18px] w-[18px]" strokeWidth={isActive ? 2.4 : 2} />
                     </span>
                     {!isCollapsed && <span className="text-sm truncate">{item.title}</span>}
                   </Link>

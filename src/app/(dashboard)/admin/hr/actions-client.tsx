@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { UserMinus } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { confirmar } from "@/components/ui/confirm-dialog";
 
 export function DeleteHRAction({ agentId }: { agentId: string }) {
   const [loading, setLoading] = useState(false);
@@ -13,7 +14,7 @@ export function DeleteHRAction({ agentId }: { agentId: string }) {
 
   const handleAction = async (e: Event) => {
     e.preventDefault();
-    if (!confirm("¿Dar de baja a este agente?")) return;
+    if (!(await confirmar({ title: "¿Dar de baja a este agente?", confirmLabel: "Dar de baja", danger: true }))) return;
 
     setLoading(true);
     const res = await deleteHRRecordAction(agentId);

@@ -17,6 +17,7 @@ import {
 import { RequiredMark } from "@/components/ui/form-section";
 import { SumarNnyaDialog } from "@/components/convenios/nnya-ficha-controls";
 import type { AddressOptions } from "@/lib/localidades";
+import { confirmar } from "@/components/ui/confirm-dialog";
 
 const selectClass =
   "w-full h-10 px-3 rounded-xl bg-background border border-input text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary";
@@ -159,7 +160,7 @@ export function BorrarValorButton({ agreementId, id, label }: { agreementId: str
   const router = useRouter();
   const [saving, setSaving] = useState(false);
   const run = async () => {
-    if (!window.confirm(`¿Borrar el valor ${label}?`)) return;
+    if (!(await confirmar({ title: `¿Borrar el valor ${label}?`, confirmLabel: "Borrar", danger: true }))) return;
     setSaving(true);
     const res = await borrarValorHoraAction(agreementId, id).catch(() => null);
     setSaving(false);
@@ -240,7 +241,7 @@ export function CuidadoraActions({ agreementId, cuidadora }: { agreementId: stri
     router.refresh();
   };
   const toggle = async () => {
-    if (cuidadora.activa && !window.confirm(`¿Dar de baja a ${cuidadora.nombre}? Sus horas cargadas quedan; no se le pueden cargar horas nuevas.`)) return;
+    if (cuidadora.activa && !(await confirmar({ title: `¿Dar de baja a ${cuidadora.nombre}?`, description: "Sus horas cargadas quedan; no se le pueden cargar horas nuevas.", confirmLabel: "Dar de baja", danger: true }))) return;
     setSaving(true);
     const res = await activarCuidadoraAction(agreementId, cuidadora.id, !cuidadora.activa).catch(() => null);
     setSaving(false);
@@ -249,7 +250,7 @@ export function CuidadoraActions({ agreementId, cuidadora }: { agreementId: stri
     router.refresh();
   };
   const remove = async () => {
-    if (!window.confirm(`¿Borrar a ${cuidadora.nombre} de la lista?`)) return;
+    if (!(await confirmar({ title: `¿Borrar a ${cuidadora.nombre} de la lista?`, confirmLabel: "Borrar", danger: true }))) return;
     setSaving(true);
     const res = await borrarCuidadoraAction(agreementId, cuidadora.id).catch(() => null);
     setSaving(false);
@@ -480,7 +481,7 @@ export function FilaActions({
     router.refresh();
   };
   const remove = async () => {
-    if (!window.confirm(`¿Borrar ${descripcion}?`)) return;
+    if (!(await confirmar({ title: `¿Borrar ${descripcion}?`, confirmLabel: "Borrar", danger: true }))) return;
     setSaving(true);
     const res = await borrarHorasAction(agreementId, fila.id).catch(() => null);
     setSaving(false);

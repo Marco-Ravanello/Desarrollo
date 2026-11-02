@@ -13,6 +13,7 @@ import {
 } from "@/lib/emergency-offline";
 import { StormVictimItem } from "@/types/emergency";
 import { formatFechaCorta, formatHora } from "@/lib/fechas";
+import { confirmar } from "@/components/ui/confirm-dialog";
 
 const AUTO_SYNC_MS = 60 * 1000;
 
@@ -99,9 +100,9 @@ interface OfflineFichasPanelProps {
 export function OfflineFichasPanel({ userId, pending, online, syncing, onSyncNow, onEdit }: OfflineFichasPanelProps) {
   if (online && pending.length === 0) return null;
 
-  const discard = (item: PendingFicha) => {
+  const discard = async (item: PendingFicha) => {
     const name = item.payload.nombreApellido || "esta ficha";
-    if (!confirm(`¿Descartar la ficha de ${name}? Todavía no se envió, así que se pierde.`)) return;
+    if (!(await confirmar({ title: `¿Descartar la ficha de ${name}?`, description: "Todavía no se envió, así que se pierde.", confirmLabel: "Descartar", danger: true }))) return;
     removePendingFicha(userId, item.clientId);
   };
 

@@ -24,6 +24,7 @@ import {
   resetSystemSettingsAction
 } from "@/app/(dashboard)/admin/actions/settings-actions";
 import { MunicipalSettings, DEFAULT_MUNICIPAL_SETTINGS } from "@/types/settings";
+import { confirmar } from "@/components/ui/confirm-dialog";
 
 export interface SystemStatus {
   database: boolean;
@@ -98,7 +99,7 @@ export function MunicipalSettingsClient({
   };
 
   const handleReset = async () => {
-    if (!window.confirm("¿Volver todos los datos de Configuración a los de fábrica? Se pierde lo que se cargó.")) return;
+    if (!(await confirmar({ title: "¿Volver Configuración a los datos de fábrica?", description: "Se pierde todo lo que se cargó.", confirmLabel: "Volver a los de fábrica", danger: true }))) return;
     setLoading(true);
     try {
       const res = await resetSystemSettingsAction();

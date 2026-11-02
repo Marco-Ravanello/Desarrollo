@@ -50,7 +50,7 @@ const defaultTexts: Record<string, { title: string; description: string; actionL
   },
   tasks: {
     title: "¡Todo al día! No hay tareas pendientes",
-    description: "No tienes asignaciones territoriales ni trámites pendientes de resolución en este momento.",
+    description: "No tenés asignaciones territoriales ni trámites pendientes de resolución en este momento.",
     actionLabel: "Nueva tarea",
     actionHref: "/tasks"
   },

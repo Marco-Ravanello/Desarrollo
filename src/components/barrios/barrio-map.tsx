@@ -18,6 +18,7 @@ import type { Limite } from "@/lib/barrio-limites";
 import { Button } from "@/components/ui/button";
 import { getMapPeopleAction } from "@/app/(dashboard)/maps/actions";
 import { deleteLimiteAction, saveLimiteAction } from "@/app/(dashboard)/barrios/actions";
+import { confirmar } from "@/components/ui/confirm-dialog";
 
 // Mapa de un barrio: su gente (puntos chicos), los expedientes abiertos (cuadrados), los lugares de referencia
 // (pines violeta) y, en una recorrida, las casas a visitar numeradas en el orden de la lista. Si el barrio tiene
@@ -289,7 +290,7 @@ export function BarrioMap({
   };
   const backToOsm = async () => {
     if (!barrio) return;
-    if (!window.confirm("¿Borrar el límite dibujado? Vuelve el de OpenStreetMap, si hay uno.")) return;
+    if (!(await confirmar({ title: "¿Borrar el límite dibujado?", description: "Vuelve el de OpenStreetMap, si hay uno.", confirmLabel: "Borrar límite", danger: true }))) return;
     setSaving(true);
     const res = await deleteLimiteAction(barrio).catch(() => null);
     setSaving(false);

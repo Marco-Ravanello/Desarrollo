@@ -3,7 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Printer, Download, Filter } from "lucide-react";
+import { Printer, Download } from "lucide-react";
 import { useState } from "react";
 import { EmptyMessage } from "@/components/ui/empty-message";
 import { formatFecha } from "@/lib/fechas";
@@ -59,20 +59,20 @@ export function FuelReportView({ vehicles }: { vehicles: any[] }) {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center print:hidden">
-        <div className="flex gap-2 items-center">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between print:hidden">
+        <label className="flex items-center gap-2 text-sm font-medium text-foreground">
+          Mes
           <input
             aria-label="Mes del reporte"
             type="month"
             value={selectedMonth}
             onChange={(e) => setSelectedMonth(e.target.value)}
-            className="rounded-md border border-input bg-background px-3 py-1"
+            className="h-9 rounded-xl border border-input bg-background px-3 text-sm"
           />
-          <Button variant="outline" size="sm"><Filter className="h-4 w-4 mr-1"/> Filtrar</Button>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={handlePrint}><Printer className="h-4 w-4 mr-1"/> Imprimir PDF</Button>
-          <Button variant="outline" size="sm" onClick={handleExportCSV}><Download className="h-4 w-4 mr-1"/> Exportar CSV</Button>
+        </label>
+        <div className="grid grid-cols-2 gap-2 sm:flex">
+          <Button variant="outline" size="sm" onClick={handlePrint}><Printer className="h-4 w-4"/> Imprimir PDF</Button>
+          <Button variant="outline" size="sm" onClick={handleExportCSV}><Download className="h-4 w-4"/> Exportar CSV</Button>
         </div>
       </div>
 

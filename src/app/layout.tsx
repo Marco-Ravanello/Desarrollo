@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, Montserrat } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
+import { ConfirmHost } from "@/components/ui/confirm-dialog";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 
@@ -41,6 +42,7 @@ export default function RootLayout({
           <TooltipProvider>
             {children}
             <Toaster />
+            <ConfirmHost />
           </TooltipProvider>
         </ThemeProvider>
       </body>

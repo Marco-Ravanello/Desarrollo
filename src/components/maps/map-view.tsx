@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { MapPin, User, Phone, Layers, Flame, Download, Map as MapIcon, ExternalLink, Network, Loader2, FolderOpen, CloudRain, ChevronDown } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 import dynamic from "next/dynamic";
 import html2canvas from "html2canvas";
 import Link from "next/link";
@@ -660,7 +661,9 @@ export function MapView({
       link.click();
     } catch (error) {
       console.error("Error exporting map via html2canvas:", error);
-      alert("No se pudo completar la captura PNG del mapa debido a restricciones CORS de los mosaicos. Se sugiere usar la función de captura de pantalla del navegador.");
+      toast.error("No se pudo guardar la imagen del mapa.", {
+        description: "Probá con la captura de pantalla de tu compu o tu celular.",
+      });
     } finally {
       setIsExporting(false);
     }

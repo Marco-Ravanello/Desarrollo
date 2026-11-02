@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Check, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { enrollCandidateAction } from "@/app/(dashboard)/people/actions/program-requirements-actions";
+import { confirmar } from "@/components/ui/confirm-dialog";
 
 /** "Dar de alta" con un toque, con la fecha de hoy. La persona sale de la lista al recargar. */
 export function EnrollCandidateButton({ dni, name, column, programLabel }: { dni: string; name: string; column: string; programLabel: string }) {
@@ -13,8 +14,8 @@ export function EnrollCandidateButton({ dni, name, column, programLabel }: { dni
   const [done, setDone] = useState(false);
   const router = useRouter();
 
-  const onClick = () => {
-    if (!confirm(`¿Dar de alta a ${name} en ${programLabel}, con fecha de hoy?`)) return;
+  const onClick = async () => {
+    if (!(await confirmar({ title: `¿Dar de alta a ${name} en ${programLabel}?`, description: "Queda con fecha de hoy.", confirmLabel: "Dar de alta" }))) return;
     startTransition(async () => {
       const res = await enrollCandidateAction(dni, column);
       if (!res.success) {
