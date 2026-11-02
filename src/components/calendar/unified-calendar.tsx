@@ -441,11 +441,11 @@ export function UnifiedCalendar({ reservations = [], purchaseOrders = [], tasks 
     if (!showNow || nowClock.getHours() !== hour || Math.floor(nowClock.getMinutes() / 30) * 30 !== minute) return null;
     return (
       <div
-        className="pointer-events-none absolute inset-x-0 z-20 border-t-2 border-rose-500"
+        className="pointer-events-none absolute inset-x-0 z-20 border-t-2 border-[#DB7A0B]"
         style={{ top: `${((nowClock.getMinutes() - minute) / 30) * 100}%` }}
         aria-hidden
       >
-        <span className="absolute -left-1 -top-[5px] h-2 w-2 rounded-full bg-rose-500" />
+        <span className="absolute -left-1 -top-[5px] h-2 w-2 rounded-full bg-[#DB7A0B]" />
       </div>
     );
   };
@@ -680,7 +680,7 @@ export function UnifiedCalendar({ reservations = [], purchaseOrders = [], tasks 
                   </div>
                 )}
 
-                <div className="grid grid-cols-4 bg-muted/60 p-1 rounded-2xl border border-border/40" role="group" aria-label="Cómo ver la agenda">
+                <div className="grid grid-cols-4 bg-secondary/70 p-1 rounded-2xl border border-primary/10" role="group" aria-label="Cómo ver la agenda">
                   {(["month", "week", "day", "agenda"] as CalendarViewType[]).map((v) => (
                     <Button
                       key={v}
@@ -689,7 +689,7 @@ export function UnifiedCalendar({ reservations = [], purchaseOrders = [], tasks 
                       size="sm"
                       aria-pressed={view === v}
                       className={`h-8 text-xs font-bold px-3 rounded-xl ${
-                        view === v ? "bg-background text-foreground shadow-xs hover:bg-background" : "text-muted-foreground"
+                        view === v ? "bg-card text-primary shadow-xs ring-1 ring-primary/10 hover:bg-card hover:text-primary" : "text-secondary-foreground/80 hover:text-primary"
                       }`}
                     >
                       {v === "month" ? "Mes" : v === "week" ? "Semana" : v === "day" ? "Día" : "Lista"}

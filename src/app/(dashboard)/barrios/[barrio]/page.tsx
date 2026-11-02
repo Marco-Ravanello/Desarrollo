@@ -1,5 +1,6 @@
 export const dynamic = "force-dynamic";
 
+import { TAB_LIST_CLASS, tabLinkClass } from "@/lib/tab-styles";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { ArrowLeft, ClipboardList, Clock, CloudRain, Footprints, Layers, Map as MapIcon, MapPin, MapPinned, Phone, Route, Search, User, UserRound, Users } from "lucide-react";
@@ -64,7 +65,7 @@ type Tab = (typeof TABS)[number]["key"];
 function BarrioTabs({ slug, active, counts, hideMap }: { slug: string; active: Tab; counts: Partial<Record<Tab, number>>; hideMap: boolean }) {
   return (
     <nav aria-label="Secciones del barrio" className="-mx-1 overflow-x-auto px-1">
-      <ul className="inline-flex min-w-max gap-1 rounded-2xl border border-border/40 bg-muted/40 p-1">
+      <ul className={`inline-flex min-w-max gap-1 ${TAB_LIST_CLASS}`}>
         {TABS.filter((t) => !(hideMap && t.key === "mapa")).map((t) => {
           const on = t.key === active;
           return (
@@ -72,7 +73,7 @@ function BarrioTabs({ slug, active, counts, hideMap }: { slug: string; active: T
               <Link
                 href={t.key === "resumen" ? `/barrios/${slug}` : `/barrios/${slug}?ver=${t.key}`}
                 aria-current={on ? "page" : undefined}
-                className={`inline-flex min-h-9 items-center gap-1.5 rounded-xl px-3 text-xs font-bold transition-colors ${on ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+                className={tabLinkClass(on)}
               >
                 <t.icon className="h-3.5 w-3.5" aria-hidden />
                 {t.label}

@@ -219,14 +219,14 @@ export function AreaDashboardView({
 
       <Card className="bg-card text-card-foreground border border-border/60 shadow-xs rounded-2xl overflow-hidden">
         <div className="p-4 sm:p-5 border-b border-border/40 bg-muted/20 flex flex-col xl:flex-row xl:items-center justify-between gap-4">
-          <div className="flex max-w-full items-center gap-1.5 bg-muted/40 p-1 rounded-2xl border border-border/40 shrink-0 overflow-x-auto [scrollbar-width:none] [&>button]:shrink-0 [&>button]:whitespace-nowrap">
+          <div className="flex max-w-full items-center gap-1.5 bg-secondary/70 p-1 rounded-2xl border border-primary/10 shrink-0 overflow-x-auto [scrollbar-width:none] [&>button]:shrink-0 [&>button]:whitespace-nowrap">
             <button
               type="button"
               onClick={() => setActiveTab("ACTIVOS")}
               className={`text-xs px-3.5 py-2 sm:py-1.5 rounded-xl font-bold transition-all flex items-center gap-1.5 ${
                 activeTab === "ACTIVOS"
-                  ? "bg-card text-foreground shadow-xs border border-border/40"
-                  : "text-muted-foreground hover:text-foreground"
+                  ? "bg-card text-primary shadow-xs ring-1 ring-primary/10"
+                  : "text-secondary-foreground/80 hover:text-primary"
               }`}
             >
               <span>Activos</span>
@@ -239,8 +239,8 @@ export function AreaDashboardView({
               onClick={() => setActiveTab("EN_PROCESO")}
               className={`text-xs px-3.5 py-2 sm:py-1.5 rounded-xl font-bold transition-all ${
                 activeTab === "EN_PROCESO"
-                  ? "bg-card text-foreground shadow-xs border border-border/40"
-                  : "text-muted-foreground hover:text-foreground"
+                  ? "bg-card text-primary shadow-xs ring-1 ring-primary/10"
+                  : "text-secondary-foreground/80 hover:text-primary"
               }`}
             >
               En proceso
@@ -250,8 +250,8 @@ export function AreaDashboardView({
               onClick={() => setActiveTab("DERIVADOS")}
               className={`text-xs px-3.5 py-2 sm:py-1.5 rounded-xl font-bold transition-all ${
                 activeTab === "DERIVADOS"
-                  ? "bg-card text-foreground shadow-xs border border-border/40"
-                  : "text-muted-foreground hover:text-foreground"
+                  ? "bg-card text-primary shadow-xs ring-1 ring-primary/10"
+                  : "text-secondary-foreground/80 hover:text-primary"
               }`}
             >
               Derivados
@@ -261,8 +261,8 @@ export function AreaDashboardView({
               onClick={() => setActiveTab("CERRADOS")}
               className={`text-xs px-3.5 py-2 sm:py-1.5 rounded-xl font-bold transition-all ${
                 activeTab === "CERRADOS"
-                  ? "bg-card text-foreground shadow-xs border border-border/40"
-                  : "text-muted-foreground hover:text-foreground"
+                  ? "bg-card text-primary shadow-xs ring-1 ring-primary/10"
+                  : "text-secondary-foreground/80 hover:text-primary"
               }`}
             >
               Cerrados
@@ -272,8 +272,8 @@ export function AreaDashboardView({
               onClick={() => setActiveTab("TODOS")}
               className={`text-xs px-3.5 py-2 sm:py-1.5 rounded-xl font-bold transition-all ${
                 activeTab === "TODOS"
-                  ? "bg-card text-foreground shadow-xs border border-border/40"
-                  : "text-muted-foreground hover:text-foreground"
+                  ? "bg-card text-primary shadow-xs ring-1 ring-primary/10"
+                  : "text-secondary-foreground/80 hover:text-primary"
               }`}
             >
               Todos ({stats.totalCases})

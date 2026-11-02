@@ -77,10 +77,10 @@ export function FuelReportView({ vehicles }: { vehicles: any[] }) {
       </div>
 
       <div className="space-y-8 print:block">
-        <div className="hidden print:block text-center mb-8 border-b pb-4">
-           <h1 className="text-2xl font-bold">Dirección General de Desarrollo Humano y Hábitat</h1>
-           <h2 className="text-xl">Combustible del mes {selectedMonth}</h2>
-        </div>
+        {/* El membrete lo pone el marco de la app al imprimir; acá va solo el título. */}
+        <h1 className="hidden print:block mb-6 text-lg font-bold uppercase tracking-tight text-[#163C68]">
+          Combustible del mes {selectedMonth}
+        </h1>
 
         {vehicles.map(v => {
            const monthlyRecords = (v.fuelRecords || []).filter((r: any) => {

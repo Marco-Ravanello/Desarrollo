@@ -47,6 +47,11 @@ const config: Config = {
         muni: {
           blue: "#163C68",
           navy: "#0E2A49",
+          // Azules y naranja de la familia institucional, con contraste suficiente sobre blanco.
+          midblue: "#2A68A8",
+          sky: "#3A7FC1",
+          lightsky: "#8CB4E0",
+          ochre: "#A8590A",
           softblue: "#B8D0EB",
           iceblue: "#E0EEFF",
           orange: "#F69321",

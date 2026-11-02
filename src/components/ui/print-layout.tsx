@@ -23,27 +23,27 @@ export function PrintHeader({
 
   return (
     // print-default-header: una página con su propio membrete (por ejemplo, un certificado) puede ocultarlo.
-    <div className="print-default-header hidden print:flex flex-col w-full border-b-2 border-slate-900 pb-4 mb-6 text-slate-900">
-      <div className="flex items-center justify-between">
+    // Membrete institucional: franja azul y naranja, escudo y nombres en el azul de la Municipalidad.
+    <div className="print-default-header print-colors hidden print:flex flex-col w-full mb-6 text-slate-900">
+      <PrintBrandStrip />
+      <div className="flex items-center justify-between pt-4 pb-3">
         <div className="flex items-center gap-3">
-          <div className="p-1 border border-slate-900 rounded-xl">
-            <MunicipalCrest className="h-12 w-12 text-slate-900" forceDefault />
-          </div>
+          <MunicipalCrest className="h-14 w-14" forceDefault />
           <div>
-            <p className="text-[10px] font-bold tracking-[0.2em] uppercase text-slate-700">
+            <p className="text-[10px] font-bold tracking-[0.2em] uppercase text-[#A8590A]">
               {settings.municipalityName.toUpperCase()} • {settings.provinceName.toUpperCase()}
             </p>
-            <h1 className="text-base font-bold uppercase tracking-tight text-slate-900">
+            <h1 className="text-base font-bold uppercase tracking-tight text-[#163C68]">
               {settings.secretariatName}
             </h1>
-            <p className="text-[11px] font-semibold text-slate-600">
+            <p className="text-[11px] font-semibold text-[#2F4054]">
               {settings.directionName}
             </p>
           </div>
         </div>
 
         <div className="text-right text-xs">
-          <div className="border border-slate-900 px-3 py-1 rounded-lg inline-block font-mono font-bold text-xs bg-slate-50">
+          <div className="inline-block rounded-lg border border-[#163C68] border-l-4 border-l-[#F69321] bg-[#E0EEFF] px-3 py-1 font-bold text-xs text-[#163C68] tabular-nums">
             {referenceNumber ? `REF: ${referenceNumber}` : "DOCUMENTO OFICIAL"}
           </div>
           {currentDate && (
@@ -51,12 +51,13 @@ export function PrintHeader({
           )}
         </div>
       </div>
+      <div className="h-px w-full bg-[#163C68]/30" />
 
       {(documentTitle || documentSubtitle) && (
-        <div className="mt-4 pt-2 border-t border-slate-200 flex justify-between items-end">
+        <div className="mt-3 flex justify-between items-end">
           <div>
             {documentTitle && (
-              <h2 className="text-lg font-bold uppercase tracking-tight text-slate-900">
+              <h2 className="text-lg font-bold uppercase tracking-tight text-[#163C68]">
                 {documentTitle}
               </h2>
             )}
@@ -75,28 +76,39 @@ export function PrintHeader({
   );
 }
 
+/** Franja azul y naranja de la Municipalidad, arriba del membrete y abajo del pie. */
+export function PrintBrandStrip({ className = "" }: { className?: string }) {
+  return (
+    <div aria-hidden className={`flex h-1.5 w-full overflow-hidden rounded-full ${className}`}>
+      <span className="h-full flex-[4] bg-[#163C68]" />
+      <span className="h-full flex-1 bg-[#F69321]" />
+    </div>
+  );
+}
+
 export function PrintFooter() {
   const settings = useMunicipalSettings();
 
   return (
     // print-default-footer: una página con sus propias firmas (por ejemplo, una constancia) puede ocultarlo.
-    <div className="print-default-footer hidden print:flex flex-col w-full mt-12 pt-6 border-t-2 border-slate-900 text-slate-900 break-inside-avoid">
+    <div className="print-default-footer print-colors hidden print:flex flex-col w-full mt-12 pt-6 border-t border-[#163C68]/30 text-slate-900 break-inside-avoid">
       <div className="grid grid-cols-2 gap-12 pt-8 pb-4">
         <div className="text-center space-y-1">
           <div className="border-t border-slate-400 w-48 mx-auto mb-1" />
-          <p className="text-xs font-bold uppercase text-slate-900">Firma y sello del agente</p>
+          <p className="text-xs font-bold uppercase text-[#163C68]">Firma y sello del agente</p>
           <p className="text-[10px] text-slate-500">{settings.directionName}</p>
         </div>
         <div className="text-center space-y-1">
           <div className="border-t border-slate-400 w-48 mx-auto mb-1" />
-          <p className="text-xs font-bold uppercase text-slate-900">Firma de quien recibe</p>
+          <p className="text-xs font-bold uppercase text-[#163C68]">Firma de quien recibe</p>
           <p className="text-[10px] text-slate-500">Conformidad del trámite</p>
         </div>
       </div>
 
-      <div className="flex justify-between items-center text-[9px] text-slate-500 pt-3 border-t border-slate-200 mt-4">
+      <PrintBrandStrip className="mt-4" />
+      <div className="flex justify-between items-center text-[9px] text-slate-500 pt-2">
         <span>{settings.municipalityName} • Plataforma MuniGestión • Contiene datos personales protegidos por la Ley 25.326.</span>
-        <span className="font-mono font-bold">Página 1 de 1</span>
+        <span className="font-bold text-[#163C68]">MuniGestión 3F</span>
       </div>
     </div>
   );

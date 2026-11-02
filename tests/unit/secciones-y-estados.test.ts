@@ -7,21 +7,26 @@ import { getCaseStatusConfig, getOrderStatusConfig } from "@/lib/status-styles";
 
 describe("color de cada sección del menú", () => {
   it("cada pantalla toma el color de su grupo", () => {
-    expect(sectionToneForPath("/cases/abc")).toBe("blue");
-    expect(sectionToneForPath("/admin/calendar")).toBe("violet");
-    expect(sectionToneForPath("/admin/purchase-orders/123")).toBe("emerald");
-    expect(sectionToneForPath("/admin/vehicles/fuel")).toBe("orange");
-    expect(sectionToneForPath("/admin/users")).toBe("slate");
+    expect(sectionToneForPath("/cases/abc")).toBe("navy");
+    expect(sectionToneForPath("/admin/calendar")).toBe("naranja");
+    expect(sectionToneForPath("/admin/purchase-orders/123")).toBe("azul");
+    expect(sectionToneForPath("/admin/vehicles/fuel")).toBe("ocre");
+    expect(sectionToneForPath("/admin/users")).toBe("pizarra");
   });
 
   it("las áreas conservan su propio color y el control del gasto va con Convenios", () => {
     expect(sectionToneForPath("/areas/violence")).toBe("rose");
     expect(sectionToneForPath("/areas/ninez")).toBe("amber");
-    expect(sectionToneForPath("/convenios/xyz")).toBe("cyan");
+    expect(sectionToneForPath("/convenios/xyz")).toBe("celeste");
   });
 
-  it("una pantalla fuera del menú queda azul", () => {
-    expect(sectionToneForPath("/cambiar-clave")).toBe("blue");
+  it("las secciones usan solo colores institucionales", () => {
+    const institucionales = ["navy", "azul", "celeste", "naranja", "ocre", "pizarra"];
+    for (const g of NAV_GROUPS) expect(institucionales).toContain(g.tone);
+  });
+
+  it("una pantalla fuera del menú queda en el azul institucional", () => {
+    expect(sectionToneForPath("/cambiar-clave")).toBe("navy");
   });
 
   it("Inicio solo se marca en Inicio, y no se confunden rutas que empiezan igual", () => {

@@ -4,17 +4,15 @@ import React from "react";
 import { useMunicipalSettings } from "@/components/providers/municipal-settings";
 import type { MunicipalSettings } from "@/types/settings";
 import { MunicipalCrest } from "./municipal-crest";
-import { Badge } from "@/components/ui/badge";
+import { PrintBrandStrip } from "./print-layout";
 
 export function MunicipalLetterhead({
   department,
   direction,
-  showWatermark = false,
   preview
 }: {
   department?: string;
   direction?: string;
-  showWatermark?: boolean;
   /** Datos sin guardar todavía, para la vista previa de Configuración. */
   preview?: Pick<MunicipalSettings, "municipalityName" | "provinceName" | "secretariatName" | "directionName">;
 }) {
@@ -25,22 +23,17 @@ export function MunicipalLetterhead({
   const currentDir = direction || settings.directionName;
 
   return (
-    <div className="border-b border-border/80 pb-4 mb-6 bg-card/40 p-5 rounded-2xl relative overflow-hidden">
-      {showWatermark && (
-        <div className="absolute -right-8 -top-8 opacity-5 pointer-events-none">
-          <MunicipalCrest className="h-48 w-48" />
-        </div>
-      )}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+    // Mismo membrete institucional que sale al imprimir: franja azul y naranja, escudo y nombres en azul.
+    <div className="print-colors relative mb-6 overflow-hidden rounded-2xl border border-border/60 bg-card">
+      <PrintBrandStrip className="rounded-none" />
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-5">
         <div className="flex items-center gap-4 text-center sm:text-left">
-          <div className="p-2.5 bg-primary/10 rounded-2xl border border-primary/20 shrink-0">
-            <MunicipalCrest className="h-10 w-10 text-primary" />
-          </div>
+          <MunicipalCrest className="h-12 w-12 shrink-0" />
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary">
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muni-ochre dark:text-muni-orange">
               {settings.municipalityName.toUpperCase()} • {settings.provinceName.toUpperCase()}
             </p>
-            <h2 className="text-base sm:text-lg font-bold text-foreground tracking-tight">
+            <h2 className="text-base sm:text-lg font-bold tracking-tight text-muni-blue dark:text-muni-softblue">
               {currentDept}
             </h2>
             <p className="text-xs text-muted-foreground font-semibold">
@@ -48,13 +41,10 @@ export function MunicipalLetterhead({
             </p>
           </div>
         </div>
-        <div className="text-center sm:text-right space-y-1">
-          <Badge variant="outline" className="text-[10px] font-bold uppercase tracking-wider bg-background/80 border-border/80">
-            Sistema Oficial MuniGestión
-          </Badge>
-          <p className="text-[10px] text-muted-foreground font-mono">
+        <div className="text-center sm:text-right">
+          <span className="inline-block rounded-lg border border-muni-blue/40 border-l-4 border-l-muni-orange bg-secondary px-3 py-1 whitespace-nowrap text-[10px] font-bold uppercase tracking-wider text-secondary-foreground">
             Documento municipal
-          </p>
+          </span>
         </div>
       </div>
     </div>

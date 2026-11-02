@@ -56,7 +56,7 @@ export function NotificationBell() {
         >
           <Bell className="h-5 w-5" />
           {unreadCount > 0 && (
-            <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 bg-rose-500 border-2 border-background text-white font-bold text-xs">
+            <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 bg-muni-orange hover:bg-muni-orange border-2 border-background text-muni-navy font-bold text-xs">
               {unreadCount}
             </Badge>
           )}
@@ -74,13 +74,13 @@ export function NotificationBell() {
         <div className="max-h-[400px] overflow-y-auto divide-y divide-border/20">
           {notifications.length === 0 ? (
             <div className="px-4 py-8 text-center text-muted-foreground text-xs italic font-medium">
-              No tienes notificaciones pendientes.
+              No tenés avisos pendientes.
             </div>
           ) : (
             notifications.map((n) => (
               <DropdownMenuItem
                 key={n.id}
-                className={`flex flex-col items-start gap-1 p-3 cursor-default focus:bg-muted/40 ${!n.read ? "bg-primary/5" : ""}`}
+                className={`flex flex-col items-start gap-1 p-3 cursor-default focus:bg-muted/40 ${!n.read ? "bg-muni-orange/[0.07] shadow-[inset_3px_0_0_#F69321]" : ""}`}
               >
                 <div className="flex justify-between w-full gap-2">
                   <div className="flex items-center gap-2">

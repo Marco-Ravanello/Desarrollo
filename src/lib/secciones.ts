@@ -8,40 +8,56 @@ import {
 /**
  * Colores de cada sección del menú. Cada sección tiene uno solo, y el mismo color
  * se usa en el ícono del encabezado de sus pantallas.
+ * Las secciones usan los colores institucionales de Tres de Febrero (azules y naranja);
+ * las áreas sociales conservan su propio color.
  * Las clases van escritas enteras para que Tailwind las encuentre.
  */
-export type SectionTone = "blue" | "violet" | "emerald" | "cyan" | "orange" | "slate" | "amber" | "rose";
+export type SectionTone =
+  // Institucionales, para las secciones
+  | "navy" | "azul" | "celeste" | "naranja" | "ocre" | "pizarra"
+  // Propios de las áreas
+  | "blue" | "emerald" | "amber" | "rose";
 
 export const SECTION_TONE_CLASSES: Record<SectionTone, { chip: string; chipActive: string; dot: string }> = {
+  navy: {
+    chip: "bg-muni-blue/10 text-muni-blue dark:bg-muni-softblue/15 dark:text-muni-softblue",
+    chipActive: "bg-muni-blue text-white dark:bg-muni-softblue dark:text-muni-navy",
+    dot: "bg-muni-blue dark:bg-muni-softblue",
+  },
+  azul: {
+    chip: "bg-muni-midblue/10 text-muni-midblue dark:bg-muni-lightsky/15 dark:text-muni-lightsky",
+    chipActive: "bg-muni-midblue text-white dark:bg-muni-lightsky dark:text-muni-navy",
+    dot: "bg-muni-midblue dark:bg-muni-lightsky",
+  },
+  celeste: {
+    chip: "bg-muni-sky/10 text-muni-sky dark:bg-muni-sky/20 dark:text-muni-lightsky",
+    chipActive: "bg-muni-sky text-white dark:bg-muni-sky dark:text-white",
+    dot: "bg-muni-sky",
+  },
+  naranja: {
+    chip: "bg-muni-orange/15 text-muni-ochre dark:bg-muni-orange/15 dark:text-muni-orange",
+    chipActive: "bg-muni-orange text-muni-navy",
+    dot: "bg-muni-orange",
+  },
+  ocre: {
+    chip: "bg-muni-ochre/10 text-muni-ochre dark:bg-muni-softorange/15 dark:text-muni-softorange",
+    chipActive: "bg-muni-ochre text-white dark:bg-muni-softorange dark:text-muni-navy",
+    dot: "bg-muni-ochre dark:bg-muni-softorange",
+  },
+  pizarra: {
+    chip: "bg-muni-body/10 text-muni-body dark:bg-slate-400/15 dark:text-slate-300",
+    chipActive: "bg-muni-body text-white dark:bg-slate-300 dark:text-muni-navy",
+    dot: "bg-muni-body dark:bg-slate-400",
+  },
   blue: {
     chip: "bg-blue-500/10 text-blue-600 dark:bg-blue-400/15 dark:text-blue-300",
     chipActive: "bg-blue-600 text-white dark:bg-blue-500",
     dot: "bg-blue-500",
   },
-  violet: {
-    chip: "bg-violet-500/10 text-violet-600 dark:bg-violet-400/15 dark:text-violet-300",
-    chipActive: "bg-violet-600 text-white dark:bg-violet-500",
-    dot: "bg-violet-500",
-  },
   emerald: {
     chip: "bg-emerald-500/10 text-emerald-700 dark:bg-emerald-400/15 dark:text-emerald-300",
     chipActive: "bg-emerald-600 text-white dark:bg-emerald-500",
     dot: "bg-emerald-500",
-  },
-  cyan: {
-    chip: "bg-cyan-500/10 text-cyan-700 dark:bg-cyan-400/15 dark:text-cyan-300",
-    chipActive: "bg-cyan-600 text-white dark:bg-cyan-500",
-    dot: "bg-cyan-500",
-  },
-  orange: {
-    chip: "bg-orange-500/10 text-orange-600 dark:bg-orange-400/15 dark:text-orange-300",
-    chipActive: "bg-orange-600 text-white dark:bg-orange-500",
-    dot: "bg-orange-500",
-  },
-  slate: {
-    chip: "bg-slate-500/10 text-slate-600 dark:bg-slate-400/15 dark:text-slate-300",
-    chipActive: "bg-slate-600 text-white dark:bg-slate-500",
-    dot: "bg-slate-500",
   },
   amber: {
     chip: "bg-amber-500/10 text-amber-700 dark:bg-amber-400/15 dark:text-amber-300",
@@ -76,7 +92,7 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     id: "principal",
     title: "Principal",
-    tone: "blue",
+    tone: "navy",
     items: [
       { title: "Inicio", url: "/dashboard", icon: LayoutDashboard },
       { title: "Ficha Social 360°", url: "/ficha-social", icon: Network },
@@ -91,7 +107,7 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     id: "operacion",
     title: "Operación diaria",
-    tone: "violet",
+    tone: "naranja",
     collapsible: true,
     items: [
       { title: "Sala de Situación", url: "/admin/war-room", icon: Tv },
@@ -103,7 +119,7 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     id: "compras",
     title: "Compras y presupuesto",
-    tone: "emerald",
+    tone: "azul",
     collapsible: true,
     items: [
       { title: "Órdenes de compra", url: "/admin/purchase-orders", icon: Briefcase },
@@ -115,14 +131,14 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     id: "convenios",
     title: "Convenios",
-    tone: "cyan",
+    tone: "celeste",
     collapsible: true,
     items: [{ title: "Convenios", url: "/admin/agreements", icon: Landmark }],
   },
   {
     id: "recursos",
     title: "Recursos",
-    tone: "orange",
+    tone: "ocre",
     collapsible: true,
     items: [
       { title: "Vehículos", url: "/admin/vehicles", icon: Car },
@@ -133,7 +149,7 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     id: "sistema",
     title: "Sistema",
-    tone: "slate",
+    tone: "pizarra",
     collapsible: true,
     items: [
       { title: "Configuración", url: "/admin/settings", icon: Settings },
@@ -145,7 +161,7 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     id: "areas",
     title: "Áreas sociales",
-    tone: "blue",
+    tone: "navy",
     items: [
       { title: "Protección Social", url: "/areas/social", icon: HeartHandshake, tone: "emerald" },
       { title: "Niñez y Familia", url: "/areas/ninez", icon: Baby, tone: "amber" },
@@ -157,18 +173,18 @@ export const NAV_GROUPS: NavGroup[] = [
 
 /** Otras pantallas que no están en el menú pero pertenecen a una sección. */
 const EXTRA_PATHS: { prefix: string; tone: SectionTone }[] = [
-  { prefix: "/convenios", tone: "cyan" },
+  { prefix: "/convenios", tone: "celeste" },
 ];
 
 export function isNavItemActive(pathname: string, url: string) {
   return pathname === url || (url !== "/dashboard" && pathname.startsWith(`${url}/`));
 }
 
-/** Color de la sección a la que pertenece una pantalla (azul si no es de ninguna). */
+/** Color de la sección a la que pertenece una pantalla (azul institucional si no es de ninguna). */
 export function sectionToneForPath(pathname: string): SectionTone {
   for (const group of NAV_GROUPS) {
     const item = group.items.find((i) => isNavItemActive(pathname, i.url));
     if (item) return item.tone ?? group.tone;
   }
-  return EXTRA_PATHS.find((p) => pathname === p.prefix || pathname.startsWith(`${p.prefix}/`))?.tone ?? "blue";
+  return EXTRA_PATHS.find((p) => pathname === p.prefix || pathname.startsWith(`${p.prefix}/`))?.tone ?? "navy";
 }
