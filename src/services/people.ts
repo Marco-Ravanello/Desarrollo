@@ -3,6 +3,7 @@ import { PADRON_GAPS, isPadronGap, type PadronGap } from "@/lib/padron-quality";
 import { MUNICIPAL_LOCALITIES } from "@/lib/constants/localities";
 import { normalizeDni } from "@/lib/padron-import";
 import { parseFechaNacimiento, personAddress, barrioLabel } from "@/lib/person-display";
+import { nombrePropio } from "@/lib/nombres";
 
 export interface GetPeopleOptions {
   query?: string;
@@ -166,6 +167,8 @@ export async function getPaginatedPeople(options: GetPeopleOptions = {}): Promis
           lastName = parts[0] || "Ciudadano";
           firstName = parts.slice(1).join(" ") || "";
         }
+        lastName = nombrePropio(lastName);
+        firstName = nombrePropio(firstName);
 
         const progs = (r.programas_activos || "")
           .split("|")
@@ -382,6 +385,9 @@ export async function getPersonById(id: string) {
         lastName = parts[0] || "Ciudadano";
         firstName = parts.slice(1).join(" ") || "";
       }
+      // Solo para mostrar: lo guardado en el padrón queda como está.
+      lastName = nombrePropio(lastName);
+      firstName = nombrePropio(firstName);
 
       const partRows: any[] = await prisma.$queryRawUnsafe(
         `SELECT * FROM participaciones_programas WHERE dni = $1 ORDER BY programa ASC;`,
@@ -405,7 +411,7 @@ export async function getPersonById(id: string) {
           familyMembers.push({
             id: relDni || `fam-${idx}`,
             dni: relDni,
-            firstName: nombre,
+            firstName: nombrePropio(nombre),
             lastName: `(${tipoRel})`,
             relationship: tipoRel
           });

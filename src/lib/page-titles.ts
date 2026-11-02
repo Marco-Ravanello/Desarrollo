@@ -1,6 +1,7 @@
 import prisma from "@/lib/prisma";
 import { isSensitiveArea } from "@/lib/sensitive-areas";
 import { splitCaseTitle } from "@/lib/case-summary";
+import { nombrePropio } from "@/lib/nombres";
 
 // Títulos de la pestaña del navegador para las páginas de detalle: el nombre de lo que se está viendo,
 // así con varias pestañas abiertas se distinguen. Si algo falla, queda el título genérico.
@@ -34,9 +35,9 @@ export async function personTitle({ params }: Params) {
   const id = decodeURIComponent((await params).id || "");
   return safe("Persona", async () => {
     const rows = await prisma.$queryRaw<{ nombre_completo: string | null }[]>`SELECT nombre_completo FROM padron_unificado WHERE dni = ${id} LIMIT 1`;
-    if (rows[0]?.nombre_completo) return rows[0].nombre_completo;
+    if (rows[0]?.nombre_completo) return nombrePropio(rows[0].nombre_completo);
     const p = await prisma.person.findFirst({ where: { OR: [{ id }, { dni: id }] }, select: { lastName: true, firstName: true } });
-    return p ? `${p.lastName}, ${p.firstName}` : null;
+    return p ? nombrePropio(`${p.lastName}, ${p.firstName}`) : null;
   });
 }
 

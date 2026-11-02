@@ -63,7 +63,11 @@ export function DashboardShell({
 
                 <MunicipalCrest className="h-8 w-8 md:hidden" />
                 <div className="min-w-0">
-                  <p className="text-sm font-bold text-white truncate font-heading tracking-tight">
+                  {/* En el celular no entra el nombre largo: va el de la app. */}
+                  <p className="text-sm font-bold text-white truncate font-heading tracking-tight sm:hidden">
+                    MuniGestión <span className="text-muni-orange">3F</span>
+                  </p>
+                  <p className="text-sm font-bold text-white truncate font-heading tracking-tight hidden sm:block">
                     Desarrollo Humano y Hábitat <span className="text-muni-orange">3F</span>
                   </p>
                   <p className="text-xs text-white/75 truncate hidden sm:block">

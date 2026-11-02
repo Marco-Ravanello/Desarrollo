@@ -2,6 +2,7 @@ import prisma from "@/lib/prisma";
 import { buildMapWhere, normalizeMapFilters, type MapFilters } from "@/lib/map-filters";
 import { APPROXIMATE_POINT_SQL, isApproximatePoint } from "@/lib/geocoding";
 import type { MapStats, PackedMapData } from "@/lib/map-points";
+import { nombrePropio } from "@/lib/nombres";
 
 // Datos del Mapa Social. Al navegador viajan solo los puntos (DNI y coordenadas);
 // el nombre, la dirección y los programas se piden al tocar un punto.
@@ -119,7 +120,7 @@ export async function getMapPeople(dnis: string[]): Promise<MapPerson[]> {
   });
   return rows.map((r) => ({
     dni: r.dni,
-    nombre: r.nombre_completo || "Sin nombre",
+    nombre: nombrePropio(r.nombre_completo) || "Sin nombre",
     direccion: r.direccion,
     barrio: r.barrio,
     localidad: r.localidad,
@@ -152,7 +153,7 @@ export async function getMapExportRows(filters: MapFilters): Promise<MapExportRo
     ...params
   );
   return rows.map((r) => ({
-    name: r.nombre_completo || "Sin nombre",
+    name: nombrePropio(r.nombre_completo) || "Sin nombre",
     dni: r.dni,
     barrio: r.barrio || r.localidad || "No especificado",
     address: r.direccion || "Sin dirección",

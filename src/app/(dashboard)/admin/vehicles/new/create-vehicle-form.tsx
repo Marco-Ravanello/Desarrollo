@@ -10,6 +10,7 @@ import { createVehicleAction } from "../../actions/create-vehicle";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { RequiredMark } from "@/components/ui/form-section";
+import { FormActions } from "@/components/ui/form-section";
 
 export function CreateVehicleForm() {
   const router = useRouter();
@@ -96,14 +97,14 @@ export function CreateVehicleForm() {
             </div>
           </div>
 
-          <div className="flex gap-4 pt-4">
-            <Button type="button" variant="ghost" className="flex-1 rounded-xl" onClick={() => router.back()}>
+          <FormActions>
+            <Button type="button" variant="outline" onClick={() => router.back()}>
               Cancelar
             </Button>
-            <Button type="submit" disabled={loading} className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl shadow-md">
-              {loading ? "Registrando..." : "Guardar vehículo"}
+            <Button type="submit" disabled={loading}>
+              {loading ? "Guardando…" : "Guardar vehículo"}
             </Button>
-          </div>
+          </FormActions>
         </form>
       </CardContent>
     </Card>

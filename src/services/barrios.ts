@@ -9,6 +9,7 @@ import { APPROXIMATE_POINT_SQL, cleanAddressForSearch } from "@/lib/geocoding";
 import { georefLookup, osmLookup } from "@/services/geocoding";
 import { barrioDondeCae, getLimites, marcarFuera, type LimiteOrigen } from "@/services/barrio-limites";
 import type { Limite } from "@/lib/barrio-limites";
+import { nombrePropio } from "@/lib/nombres";
 
 // Página de cada barrio: lo que hay en el padrón, en los expedientes, en la emergencia y los lugares de referencia.
 // El barrio de una persona es el del padrón: la columna "barrio" si es uno de la lista y, si no, la "localidad"
@@ -248,7 +249,7 @@ export async function getBarrioDetail(barrio: Barrio3F, scope: BarrioScope) {
     cases: cases.map((c) => ({
       id: c.id,
       title: c.title,
-      titular: c.titular,
+      titular: nombrePropio(c.titular),
       areaName: c.area_name,
       priority: c.priority,
       labels: c.labels ?? [],
@@ -302,7 +303,7 @@ export async function getBarrioPeople(barrio: Barrio3F, opts: { q?: string; page
     WHERE ${where}
     ORDER BY p.nombre_completo ASC NULLS LAST, p.dni ASC
     LIMIT ${BARRIO_PEOPLE_PAGE} OFFSET ${(page - 1) * BARRIO_PEOPLE_PAGE}`;
-  return { total, page, pages, q, people };
+  return { total, page, pages, q, people: people.map((p) => ({ ...p, nombre: nombrePropio(p.nombre) })) };
 }
 
 // ---------------------------------------------------------------------------
@@ -482,7 +483,7 @@ export async function getBarrioMapData(barrio: Barrio3F, scope: BarrioScope): Pr
     limite: limite?.puntos ?? null,
     limiteOrigen: limite?.origen ?? null,
     fuera: peopleOut.filter(Boolean).length,
-    cases: cases.map((c, i) => ({ ...c, fuera: casesOut[i] })),
+    cases: cases.map((c, i) => ({ ...c, titular: nombrePropio(c.titular), fuera: casesOut[i] })),
     lugares: lugares
       .filter((l) => l.latitude !== null && l.longitude !== null)
       .map((l) => ({ id: l.id, tipo: l.tipo, nombre: l.nombre, direccion: l.direccion, lat: l.latitude!, lng: l.longitude! })),
@@ -527,7 +528,7 @@ export async function getPersonasFuera(barrio: Barrio3F): Promise<{ total: numbe
     .slice(0, FUERA_LIMIT)
     .map((r) => ({
       dni: r.dni,
-      nombre: r.nombre,
+      nombre: nombrePropio(r.nombre),
       direccion: r.direccion,
       barrioEscrito: r.barrio,
       localidad: r.localidad,

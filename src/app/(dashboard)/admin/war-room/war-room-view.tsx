@@ -12,7 +12,7 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import {
   Maximize2, Minimize2, RefreshCw, Activity, ShieldAlert,
   Users, Car, Package, DollarSign, Clock,
-  Radio, TrendingUp, Building2, Tv
+  Radio, Building2, Tv
 } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
 import { plural } from "@/lib/formato";
@@ -50,6 +50,13 @@ interface WarRoomViewProps {
     }>;
   };
 }
+
+const KPI_NUMBER = "font-heading text-3xl sm:text-4xl font-bold tracking-tight tabular-nums";
+/** Azul institucional para las cifras; naranja solo para lo que pide atención. */
+const NUM_CALM = "text-[#163C68] dark:text-blue-100";
+const NUM_ALERT = "text-[#C2410C] dark:text-muni-orange";
+const ICON_CALM = "p-2 rounded-xl bg-[#E0EEFF] text-[#163C68] dark:bg-white/10 dark:text-blue-200";
+const ICON_ALERT = "p-2 rounded-xl bg-orange-500/10 text-[#C2410C] dark:text-muni-orange";
 
 export function WarRoomView({ initialData }: WarRoomViewProps) {
   const router = useRouter();
@@ -132,7 +139,7 @@ export function WarRoomView({ initialData }: WarRoomViewProps) {
         actions={
           <>
             <div className="flex items-center gap-3 bg-muted/60 border border-border/60 px-4 py-2 rounded-2xl">
-              <Clock className="h-5 w-5 text-amber-500 shrink-0" />
+              <Clock className="h-5 w-5 text-muni-orange shrink-0" />
               <div className="text-right">
                 <div className="text-lg font-bold tabular-nums tracking-tight text-foreground leading-none">
                   {currentTime || "12:00:00"}
@@ -178,25 +185,25 @@ export function WarRoomView({ initialData }: WarRoomViewProps) {
         <Card className="rounded-2xl border-border/60 bg-card text-card-foreground shadow-sm hover:shadow-md transition-all p-5 relative overflow-hidden">
           <div className="flex justify-between items-start mb-2">
             <span className="text-xs font-bold text-muted-foreground">Personas en el padrón</span>
-            <div className="p-2 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-xl">
+            <div className={ICON_CALM}>
               <Users className="h-4 w-4" />
             </div>
           </div>
-          <div className="text-3xl sm:text-4xl font-bold font-mono tracking-tight text-foreground">
+          <div className={`${KPI_NUMBER} ${NUM_CALM}`}>
             {initialData.totalCitizens.toLocaleString("es-AR")}
           </div>
-          <div className="flex items-center gap-1.5 text-xs text-emerald-700 dark:text-emerald-400 mt-2 font-bold">
-            <TrendingUp className="h-3 w-3" /> Registro Único
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-2 font-semibold">
+            Registro Único
           </div>
         </Card>
         <Card className="rounded-2xl border-border/60 bg-card text-card-foreground shadow-sm hover:shadow-md transition-all p-5 relative overflow-hidden">
           <div className="flex justify-between items-start mb-2">
             <span className="text-xs font-bold text-muted-foreground">Expedientes urgentes</span>
-            <div className="p-2 bg-rose-500/10 text-rose-700 dark:text-rose-400 rounded-xl">
+            <div className={initialData.activeCriticalCases > 0 ? ICON_ALERT : ICON_CALM}>
               <ShieldAlert className="h-4 w-4" />
             </div>
           </div>
-          <div className="text-3xl sm:text-4xl font-bold font-mono tracking-tight text-rose-600 dark:text-rose-400">
+          <div className={`${KPI_NUMBER} ${initialData.activeCriticalCases > 0 ? NUM_ALERT : NUM_CALM}`}>
             {initialData.activeCriticalCases}
           </div>
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-2 font-semibold">
@@ -206,25 +213,25 @@ export function WarRoomView({ initialData }: WarRoomViewProps) {
         <Card className="rounded-2xl border-border/60 bg-card text-card-foreground shadow-sm hover:shadow-md transition-all p-5 relative overflow-hidden">
           <div className="flex justify-between items-start mb-2">
             <span className="text-xs font-bold text-muted-foreground">Flota disponible</span>
-            <div className="p-2 bg-amber-500/10 text-amber-700 dark:text-amber-400 rounded-xl">
+            <div className={ICON_CALM}>
               <Car className="h-4 w-4" />
             </div>
           </div>
-          <div className="text-3xl sm:text-4xl font-bold font-mono tracking-tight text-foreground">
+          <div className={`${KPI_NUMBER} ${NUM_CALM}`}>
             {initialData.activeVehicles} <span className="text-lg text-muted-foreground font-medium">/ {initialData.totalVehicles}</span>
           </div>
-          <div className="flex items-center gap-1.5 text-xs text-emerald-700 dark:text-emerald-400 mt-2 font-bold">
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-2 font-semibold">
             {initialData.totalVehicles > 0 ? `${Math.round((initialData.activeVehicles / initialData.totalVehicles) * 100)} % disponible` : "Sin vehículos cargados"}
           </div>
         </Card>
         <Card className="rounded-2xl border-border/60 bg-card text-card-foreground shadow-sm hover:shadow-md transition-all p-5 relative overflow-hidden">
           <div className="flex justify-between items-start mb-2">
             <span className="text-xs font-bold text-muted-foreground">Insumos bajo el mínimo</span>
-            <div className="p-2 bg-purple-500/10 text-purple-600 dark:text-purple-400 rounded-xl">
+            <div className={initialData.suppliesBelowMin > 0 ? ICON_ALERT : ICON_CALM}>
               <Package className="h-4 w-4" />
             </div>
           </div>
-          <div className={`text-3xl sm:text-4xl font-bold font-mono tracking-tight ${initialData.suppliesBelowMin > 0 ? "text-amber-700 dark:text-amber-400" : "text-foreground"}`}>
+          <div className={`${KPI_NUMBER} ${initialData.suppliesBelowMin > 0 ? NUM_ALERT : NUM_CALM}`}>
             {initialData.suppliesBelowMin}
           </div>
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-2 font-semibold">
@@ -234,11 +241,11 @@ export function WarRoomView({ initialData }: WarRoomViewProps) {
         <Card className="rounded-2xl border-border/60 bg-card text-card-foreground shadow-sm hover:shadow-md transition-all p-5 relative overflow-hidden">
           <div className="flex justify-between items-start mb-2">
             <span className="text-xs font-bold text-muted-foreground">Presupuesto adjudicado</span>
-            <div className="p-2 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 rounded-xl">
+            <div className={ICON_CALM}>
               <DollarSign className="h-4 w-4" />
             </div>
           </div>
-          <div className="text-2xl font-bold font-mono tracking-tight text-emerald-700 dark:text-emerald-400 truncate" title={initialData.committedBudgetFull}>
+          <div className={`font-heading text-2xl sm:text-3xl font-bold tracking-tight tabular-nums truncate ${NUM_CALM}`} title={initialData.committedBudgetFull}>
             {initialData.committedBudgetFormatted}
           </div>
           <div className="text-xs text-muted-foreground mt-2 font-semibold">
@@ -251,14 +258,11 @@ export function WarRoomView({ initialData }: WarRoomViewProps) {
         <Card className="lg:col-span-2 rounded-2xl border-border/60 bg-card text-card-foreground p-6 shadow-sm space-y-4">
           <div className="flex items-center justify-between border-b border-border/40 pb-4">
             <div className="flex items-center gap-2.5">
-              <Radio className="h-5 w-5 text-rose-500 animate-pulse" />
+              <Radio className="h-5 w-5 text-muni-orange animate-pulse motion-reduce:animate-none" />
               <h2 className="text-lg font-bold tracking-tight text-foreground">
                 Últimos expedientes
               </h2>
             </div>
-            <Badge variant="outline" className="border-border/60 text-muted-foreground text-xs font-bold">
-              Base de datos oficial
-            </Badge>
           </div>
           <div className="space-y-3">
             {initialData.territorialAlerts.length > 0 ? (
@@ -277,7 +281,7 @@ export function WarRoomView({ initialData }: WarRoomViewProps) {
                     <p className="truncate text-sm font-bold text-foreground" title={alert.title}>{alert.title}</p>
                     {alert.titular && <p className="truncate text-xs text-muted-foreground">{alert.titular}</p>}
                   </div>
-                  <span className="text-xs font-mono font-semibold text-muted-foreground shrink-0">{alert.time}</span>
+                  <span className="text-xs tabular-nums font-semibold text-muted-foreground shrink-0">{alert.time}</span>
                 </Link>
               ))
             ) : (
@@ -303,7 +307,7 @@ export function WarRoomView({ initialData }: WarRoomViewProps) {
                     <span className="shrink-0 font-semibold text-muted-foreground">{area.badgeText}</span>
                   </div>
                   <div className="w-full bg-muted h-2 rounded-full overflow-hidden">
-                    <div className="bg-primary h-full transition-all duration-500" style={{ width: `${area.percentage}%` }} />
+                    <div className="bg-[#163C68] dark:bg-blue-300 h-full transition-all duration-500" style={{ width: `${area.percentage}%` }} />
                   </div>
                 </div>
               ))

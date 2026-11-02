@@ -26,6 +26,7 @@ import { StormMissingDni } from "@/components/emergency/storm-missing-dni";
 import { exportStormSheetToExcel } from "@/lib/export-storm-excel";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { nombrePropio } from "@/lib/nombres";
 
 interface EmergencyViewProps {
   initialData: EmergencyOperationsData;
@@ -314,7 +315,7 @@ export function EmergencyView({ initialData, deniedAccess }: EmergencyViewProps)
                 </div>
 
                 <div>
-                  <h4 className="text-base font-bold text-foreground uppercase">{r.nombreApellido}</h4>
+                  <h4 className="text-base font-bold text-foreground">{nombrePropio(r.nombreApellido)}</h4>
                   <p className="text-xs text-muted-foreground">DNI: {r.dni || "S/D"} • Edad: {r.edad || "sin dato"}</p>
                   <p className="text-xs font-semibold text-foreground mt-1">{r.domicilio} {r.barrio ? `(${r.barrio})` : ""}</p>
                 </div>

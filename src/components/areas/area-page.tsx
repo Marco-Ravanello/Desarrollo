@@ -4,6 +4,7 @@ import { canAccessPath } from "@/lib/permissions";
 import { AREA_PAGES, canOpenAreaPage, parseAreaCaseFilters, type AreaPageSlug } from "@/lib/area-cases";
 import { getAreaDashboardData } from "@/services/cases";
 import { AreaDashboardView } from "@/components/areas/area-dashboard-view";
+import { personaPropia } from "@/lib/nombres";
 
 export type AreaSearchParams = Promise<Record<string, string | string[] | undefined>>;
 
@@ -31,7 +32,7 @@ export async function AreaPage({ slug, searchParams }: { slug: AreaPageSlug; sea
         status: c.status,
         priority: c.priority,
         updatedAt: c.updatedAt.toISOString(),
-        person: c.person,
+        person: c.person ? personaPropia(c.person) : null,
         interventions: c._count.interventions,
       }))}
       filters={filters}

@@ -1,6 +1,7 @@
 import prisma from "@/lib/prisma";
 import { parseRecent, type RecentKind } from "@/lib/recent-views";
 import { isSensitiveArea } from "@/lib/sensitive-areas";
+import { nombrePropio } from "@/lib/nombres";
 
 export interface RecentItem {
   kind: RecentKind;
@@ -13,7 +14,7 @@ export interface RecentItem {
 }
 
 function nameFromPadron(nombreCompleto: string | null): string {
-  const raw = (nombreCompleto || "").trim();
+  const raw = nombrePropio((nombreCompleto || "").trim());
   if (!raw.includes(",")) return raw;
   const [last, ...rest] = raw.split(",");
   return `${rest.join(",").trim()} ${last.trim()}`.trim();
@@ -58,7 +59,7 @@ export async function getRecentItems(rawRefs: unknown, canViewSensitive: boolean
     if (ref.kind === "case") {
       const c = cases.find((x) => x.id === ref.id);
       if (!c || (isSensitiveArea(c.area?.name) && !canViewSensitive)) continue;
-      const titular = c.person ? `${c.person.firstName} ${c.person.lastName}`.trim() : "";
+      const titular = c.person ? nombrePropio(`${c.person.firstName} ${c.person.lastName}`.trim()) : "";
       items.push({
         kind: "case",
         id: c.id,
@@ -69,7 +70,7 @@ export async function getRecentItems(rawRefs: unknown, canViewSensitive: boolean
     } else {
       const p = people.find((x) => x.id === ref.id) ?? people.find((x) => x.dni === ref.id);
       const fromPadron = padron.find((x) => x.dni === ref.id);
-      const name = p ? `${p.firstName} ${p.lastName}`.trim() : fromPadron ? nameFromPadron(fromPadron.nombre_completo) : "";
+      const name = p ? nombrePropio(`${p.firstName} ${p.lastName}`.trim()) : fromPadron ? nameFromPadron(fromPadron.nombre_completo) : "";
       if (!name) continue;
       const dni = p?.dni || fromPadron?.dni || "";
       items.push({ kind: "person", id: ref.id, title: name, subtitle: dni ? `DNI ${dni}` : "", url: `/people/${ref.id}`, dni: dni || undefined });

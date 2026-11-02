@@ -1,6 +1,7 @@
 import prisma from "@/lib/prisma";
 import { normalizeDni } from "@/lib/padron-import";
 import { todayInArgentina } from "@/lib/follow-up-dates";
+import { nombrePropio } from "@/lib/nombres";
 
 // Personas de las fichas de tormenta en el padrón unificado.
 
@@ -125,7 +126,7 @@ export async function lookupStormDni(rawDni: string) {
     dni,
     padron: padron
       ? {
-          nombre: padron.nombre_completo || "Sin nombre",
+          nombre: nombrePropio(padron.nombre_completo) || "Sin nombre",
           direccion: [padron.direccion, padron.barrio || padron.localidad].filter(Boolean).join(" · ") || null,
         }
       : null,

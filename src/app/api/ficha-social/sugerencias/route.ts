@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
+import { nombrePropio } from "@/lib/nombres";
 
 export const dynamic = "force-dynamic";
 
@@ -39,7 +40,7 @@ export async function GET(request: Request) {
 
     const suggestions = rows.map((r: any) => ({
       dni: r.dni,
-      nombre: r.nombre_completo || "Sin nombre registrado",
+      nombre: nombrePropio(r.nombre_completo) || "Sin nombre registrado",
       origen: (r.programas_activos || "Programas Sociales").split("|").slice(0, 2).join(" / ")
     }));
 

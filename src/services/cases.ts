@@ -5,6 +5,7 @@ import { isCaseLabel, normalizeCaseLabels } from "@/lib/case-labels";
 import { ACTIVE_CASE_STATUSES, URGENT_OPEN_CASE_WHERE } from "@/lib/case-urgency";
 import { AREA_EXPORT_MAX_ROWS, areaCaseListWhere, parseAreaCaseFilters, type AreaCaseFilters } from "@/lib/area-cases";
 import type { Prisma } from "@prisma/client";
+import { nombrePropio, personaPropia } from "@/lib/nombres";
 
 export async function getCasesByArea(areaName: string) {
   return await prisma.case.findMany({
@@ -47,7 +48,7 @@ export async function getAreas() {
 export async function getCaseById(id: string) {
   if (!id) return null;
   try {
-    return await prisma.case.findUnique({
+    const found = await prisma.case.findUnique({
       where: { id },
       include: {
         person: true,
@@ -59,6 +60,8 @@ export async function getCaseById(id: string) {
         assignedTo: { select: { id: true, name: true, email: true } }
       }
     });
+    // Nombre del titular con mayúscula inicial (solo para mostrar).
+    return found && found.person ? { ...found, person: personaPropia(found.person) } : found;
   } catch (error) {
     console.error(`Error in getCaseById for id=${id}:`, error);
     return null;
@@ -274,7 +277,7 @@ export async function getAllCases(filters: GetCasesFilters = {}) {
   ]);
 
   return {
-    cases,
+    cases: cases.map((c) => (c.person ? { ...c, person: personaPropia(c.person) } : c)),
     total,
     totalPages: Math.ceil(total / limit),
     currentPage: page,
@@ -317,7 +320,7 @@ export async function getMyAssignedCases(userId: string, limit = 5): Promise<{ t
       return {
         id: c.id,
         title: c.title,
-        titular: c.person ? `${c.person.lastName}, ${c.person.firstName}` : null,
+        titular: c.person ? nombrePropio(`${c.person.lastName}, ${c.person.firstName}`) : null,
         status: CASE_STATUS_LABEL[c.status] ?? c.status,
         quietDays: summary.quietDays,
         stale: summary.stale,

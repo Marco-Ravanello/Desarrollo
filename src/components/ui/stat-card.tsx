@@ -25,8 +25,8 @@ interface StatCardProps {
 /** Tarjeta de indicador (número grande con su etiqueta), igual en todas las pantallas. */
 export function StatCard({ label, value, hint, icon: Icon, tone = "blue", className }: StatCardProps) {
   return (
-    <div className={cn("rounded-2xl border border-border/60 bg-card p-4 shadow-sm sm:p-5", className)}>
-      <div className="flex items-start justify-between gap-3">
+    <div className={cn("min-w-0 rounded-2xl border border-border/60 bg-card p-3.5 shadow-sm sm:p-5", className)}>
+      <div className="flex items-start justify-between gap-2 sm:gap-3">
         <p className="text-xs font-medium text-muted-foreground sm:text-sm">{label}</p>
         {Icon && (
           <div className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-lg", tones[tone])}>
@@ -34,7 +34,7 @@ export function StatCard({ label, value, hint, icon: Icon, tone = "blue", classN
           </div>
         )}
       </div>
-      <div className="mt-2 font-heading text-2xl font-bold tracking-tight text-foreground sm:text-3xl">{value}</div>
+      <div className="mt-2 font-heading text-xl font-bold tracking-tight text-foreground [overflow-wrap:anywhere] sm:text-3xl">{value}</div>
       {hint && <div className="mt-1.5 text-xs text-muted-foreground">{hint}</div>}
     </div>
   );

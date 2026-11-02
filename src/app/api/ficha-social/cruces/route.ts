@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
 import { PADRON_PROGRAMS } from "@/lib/padron-programs";
+import { nombrePropio } from "@/lib/nombres";
 
 export const dynamic = "force-dynamic";
 
@@ -76,7 +77,7 @@ export async function GET(request: Request) {
 
     const formattedRows = rowsResult.map((r: any) => ({
       dni: r.dni,
-      nombre: r.nombre_completo || "Sin nombre",
+      nombre: nombrePropio(r.nombre_completo) || "Sin nombre",
       programas: (r.programas_activos || "").split("|").map((p: string) => p.trim()).filter(Boolean),
       cantidad_programas: r.cantidad_programas || 0,
       roles: { "General": r.roles || "Beneficiario" },

@@ -11,6 +11,7 @@ import { normalizeDni } from "@/lib/padron-import";
 import { recordsWithoutDni } from "@/lib/emergency-categories";
 import { completeStormRecordDniAction, lookupStormDniAction } from "@/app/(dashboard)/admin/actions/emergency-actions";
 import { formatFecha } from "@/lib/fechas";
+import { nombrePropio } from "@/lib/nombres";
 
 type Lookup = Awaited<ReturnType<typeof lookupStormDniAction>>;
 
@@ -49,7 +50,7 @@ function MissingDniRow({ record, onSaved }: { record: StormVictimItem; onSaved: 
   return (
     <li className="rounded-2xl border border-border/60 bg-card p-4 space-y-3">
       <div>
-        <p className="text-sm font-bold uppercase text-foreground">{record.nombreApellido}</p>
+        <p className="text-sm font-bold text-foreground">{nombrePropio(record.nombreApellido)}</p>
         <p className="text-xs text-muted-foreground">
           {[record.domicilio, record.barrio].filter(Boolean).join(" · ")}
           {record.createdAt ? ` · cargada el ${formatFecha(record.createdAt)}` : ""}
@@ -82,7 +83,7 @@ function MissingDniRow({ record, onSaved }: { record: StormVictimItem; onSaved: 
             <div className="flex items-start gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3 text-xs">
               <UserCheck className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
               <p className="text-foreground">
-                En el padrón con ese DNI está <b className="uppercase">{lookup.padron.nombre}</b>
+                En el padrón con ese DNI está <b>{lookup.padron.nombre}</b>
                 {lookup.padron.direccion ? ` (${lookup.padron.direccion})` : ""}. Si es la misma persona, se une la ficha con ella.
               </p>
             </div>

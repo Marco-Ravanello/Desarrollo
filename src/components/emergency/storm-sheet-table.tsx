@@ -21,6 +21,7 @@ import { saveFichaOrQueue } from "@/lib/emergency-offline";
 import { SIN_BARRIO, STORM_BARRIOS, matchStormBarrio, stormBarrioLabel } from "@/lib/storm-barrios";
 import { barrioLabel } from "@/lib/person-display";
 import { confirmar } from "@/components/ui/confirm-dialog";
+import { nombrePropio } from "@/lib/nombres";
 
 interface StormSheetTableProps {
   records: StormVictimItem[];
@@ -280,7 +281,7 @@ export function StormSheetTable({
             {filteredRecords.map((r, idx) => (
               <TableRow key={r.id || idx}>
                 <TableCell className="text-center font-bold border-r border-border/40">{idx + 1}</TableCell>
-                <TableCell className="font-bold uppercase border-r border-border/40">{r.nombreApellido}</TableCell>
+                <TableCell className="font-bold border-r border-border/40">{nombrePropio(r.nombreApellido)}</TableCell>
                 <TableCell className="font-mono border-r border-border/40">{r.dni || "-"}</TableCell>
                 <TableCell className="text-center border-r border-border/40">
                   <Badge variant={r.grupoFamiliar ? "default" : "outline"} className="text-xs">
@@ -384,7 +385,7 @@ export function StormSheetTable({
                         onClick={() => handleSelectSuggestion(s)}
                         className="w-full text-left p-2 text-xs hover:bg-muted rounded-lg block font-semibold"
                       >
-                        {s.nombreApellido} (DNI {s.dni})
+                        {nombrePropio(s.nombreApellido)} (DNI {s.dni})
                       </button>
                     ))}
                   </div>

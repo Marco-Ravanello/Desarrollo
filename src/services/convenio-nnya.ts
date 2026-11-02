@@ -11,6 +11,7 @@ import { actorFromDb, audit, getConvenioControl } from "@/services/convenio-gast
 import { findExistingPersonByDni } from "@/services/people";
 import { createPersonRecord, parsePersonDataForm } from "@/services/person-data";
 import { createAuditLog } from "@/services/system";
+import { nombrePropio } from "@/lib/nombres";
 
 // Cada niño, niña o adolescente de un convenio por horas: se suma desde el Registro Único (o se carga ahí si no está),
 // con los datos del acompañamiento; ingreso (su primer día con horas, lo lleva services/convenio-gasto.ts),
@@ -234,8 +235,8 @@ export async function buscarEnRegistro(user: Actor, agreementId: string, q: stri
     }),
   ]);
   const vistos = new Map<string, string>();
-  for (const p of padron) vistos.set(p.dni, p.nombre_completo || `DNI ${p.dni}`);
-  for (const p of personas) if (!vistos.has(p.dni)) vistos.set(p.dni, `${p.lastName}, ${p.firstName}`);
+  for (const p of padron) vistos.set(p.dni, nombrePropio(p.nombre_completo) || `DNI ${p.dni}`);
+  for (const p of personas) if (!vistos.has(p.dni)) vistos.set(p.dni, nombrePropio(`${p.lastName}, ${p.firstName}`));
   const dnis = [...vistos.keys()].slice(0, 8);
   if (dnis.length === 0) return [];
   const [datos, ya] = await Promise.all([
