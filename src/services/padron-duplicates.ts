@@ -2,6 +2,7 @@ import prisma from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 import { PADRON_PROGRAMS } from "@/lib/padron-programs";
 import { duplicateSignals, nameKey, pairKey, type DuplicateSignal } from "@/lib/padron-duplicates";
+import { nombrePropio } from "@/lib/nombres";
 
 // Posibles personas repetidas en el padrón (mismo nombre con DNI distinto y algo
 // más en común) y cómo unirlas en una sola sin perder datos.
@@ -98,7 +99,7 @@ export async function findPadronDuplicates(
   const counts = new Map(people.map((p) => [p.dni, p._count]));
   const toPerson = (r: Row): DuplicatePerson => ({
     dni: r.dni,
-    nombre: r.nombre_completo,
+    nombre: nombrePropio(r.nombre_completo),
     direccion: r.direccion,
     barrio: r.barrio,
     localidad: r.localidad,

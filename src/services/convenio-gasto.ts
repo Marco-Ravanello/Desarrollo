@@ -8,6 +8,7 @@ import {
   parseCuidadora, parseDia, parseHoras, parseValorHora, periodoDe, resumirPeriodo,
   type FilaHoras, type HorasInput, type Lugar, type Periodo, type ResumenPeriodo, type ValorHora,
 } from "@/lib/convenio-gasto";
+import { nombrePropio } from "@/lib/nombres";
 
 // Control del gasto de los convenios por horas: configuración (conducción), valor hora con historial,
 // cuidadoras y horas de cada día (conducción y el área del convenio). Cada cambio queda en Auditoría.
@@ -390,7 +391,7 @@ async function nnyaPorDni(dni: string): Promise<{ dni: string; nombre: string | 
   ]);
   if (!padron && !persona) return null;
   const nombre = padron?.nombre_completo || (persona ? [persona.lastName, persona.firstName].filter(Boolean).join(", ") : null) || null;
-  return { dni, nombre };
+  return { dni, nombre: nombrePropio(nombre) };
 }
 
 /** Revisa lo que no depende de la transacción: vigencia, cuidadora (si se eligió), valor hora y el niño, niña o adolescente. */

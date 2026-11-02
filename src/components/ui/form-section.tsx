@@ -102,3 +102,15 @@ export function FormSection({
     </section>
   );
 }
+
+/**
+ * Pie de formulario igual en todas las pantallas: "Cancelar" y el botón principal, chicos y a la derecha.
+ * En el celular quedan uno al lado del otro, con el principal a la derecha.
+ */
+export function FormActions({ children, className }: { children: React.ReactNode; className?: string }) {
+  return (
+    <div className={cn("flex items-center justify-end gap-2 border-t border-border/40 pt-4", className)}>
+      {children}
+    </div>
+  );
+}

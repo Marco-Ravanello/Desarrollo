@@ -4,6 +4,7 @@ import {
   PADRON_PROGRAMS, findPadronProgram, isPadronProgramColumn, programSlug, type PadronProgramColumn,
 } from "@/lib/padron-programs";
 import { canAssignProgramArea, canManageProgram } from "@/lib/program-ownership";
+import { nombrePropio } from "@/lib/nombres";
 
 // Página de cada programa del padrón (cuántas personas tiene, dónde están, altas y bajas) y qué área
 // lo tiene a cargo. Las personas de un programa son las que tienen su columna prog_... en 1, igual que
@@ -228,7 +229,7 @@ export async function getProgramPeople(column: PadronProgramColumn, opts: { q?: 
     page,
     pages,
     q,
-    people: rows.map((r) => ({ ...r, desde: r.desde ? r.desde.toISOString() : null })) as ProgramPerson[],
+    people: rows.map((r) => ({ ...r, nombre: nombrePropio(r.nombre), desde: r.desde ? r.desde.toISOString() : null })) as ProgramPerson[],
   };
 }
 

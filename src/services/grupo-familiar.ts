@@ -3,6 +3,7 @@ import { isSensitiveArea } from "@/lib/sensitive-areas";
 import { MAX_MISMO_DOMICILIO, cleanDni } from "@/services/ficha-social";
 import type { GrupoFamiliar, MiembroFamiliar } from "@/services/ficha-social";
 import { edadDe, normalizarDireccion, parseFamiliaresDeclarados } from "@/lib/grupo-familiar";
+import { nombrePropio } from "@/lib/nombres";
 
 // Grupo familiar para la Ficha Social 360°: los familiares cargados en los
 // programas y quienes figuran en el padrón con el mismo domicilio, cada uno con
@@ -137,7 +138,7 @@ export async function getGrupoFamiliar(rawDni: string, opts: { canViewSensitive:
     const row = d.dni ? padronPorDni.get(d.dni) : undefined;
     return {
       dni: d.dni,
-      nombre: d.nombre || row?.nombre_completo || (d.dni ? `DNI ${d.dni}` : "Sin nombre"),
+      nombre: nombrePropio(d.nombre || row?.nombre_completo) || (d.dni ? `DNI ${d.dni}` : "Sin nombre"),
       vinculo: d.vinculo,
       edad: row ? edadDe(row.fecha_nacimiento, row.edad_aprox) : null,
       programas: programasDe(row),

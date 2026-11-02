@@ -6,6 +6,7 @@ import { AREA_PAGES, canOpenAreaPage, isAreaPageSlug, parseAreaCaseFilters } fro
 import { getAreaCasesForExport } from "@/services/cases";
 import { CASE_PRIORITY_LABEL, CASE_STATUS_LABEL, isProvisionalDni, splitCaseTitle } from "@/lib/case-summary";
 import { formatFecha } from "@/lib/fechas";
+import { nombrePropio } from "@/lib/nombres";
 
 export interface AreaExportRow {
   title: string;
@@ -47,7 +48,7 @@ export async function getAreaExportAction(
       return {
         title: shown.title,
         tag: shown.tag ?? "",
-        citizenName: c.person ? `${c.person.lastName}, ${c.person.firstName}` : "Sin titular",
+        citizenName: c.person ? nombrePropio(`${c.person.lastName}, ${c.person.firstName}`) : "Sin titular",
         dni: !c.person ? "" : isProvisionalDni(c.person.dni) ? "Sin DNI" : c.person.dni,
         status: CASE_STATUS_LABEL[c.status] ?? c.status,
         priority: CASE_PRIORITY_LABEL[c.priority] ?? c.priority,

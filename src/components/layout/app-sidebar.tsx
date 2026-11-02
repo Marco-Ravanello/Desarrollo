@@ -86,22 +86,31 @@ export function AppSidebar({ isMobile = false, onNavigate }: AppSidebarProps) {
         </Button>
       )}
 
-      <div className={`p-5 space-y-4 shrink-0 ${isCollapsed ? "px-3" : ""}`}>
-        <div className={`text-2xl font-bold flex items-center gap-2.5 ${isCollapsed ? "justify-center" : ""}`}>
-          <MunicipalCrest className="h-11 w-11 shadow-sm" />
-          {!isCollapsed && (
-            <div className="flex flex-col min-w-0 leading-tight">
-              <span className="text-xs font-semibold text-muted-foreground truncate">
-                Tres de Febrero
-              </span>
-              <span className="tracking-tight truncate font-bold text-[#163C68] dark:text-blue-300 text-lg font-heading">
-                MuniGestión <span className="text-[#C2410C] dark:text-[#F69321]">3F</span>
-              </span>
-            </div>
-          )}
-        </div>
-        {!isCollapsed && !isEmergencySurveyor(role) && <GlobalSearch />}
+      {/* Franja azul con el escudo: sigue al encabezado (misma altura, mismo azul y la línea naranja abajo). */}
+      <div
+        className={`h-16 shrink-0 border-b-[3px] border-muni-orange bg-[#0E2A49] dark:bg-[#0A1F37] text-white flex items-center gap-2.5 ${
+          isCollapsed ? "justify-center px-3" : "px-5"
+        }`}
+      >
+        <MunicipalCrest className="h-10 w-10 shadow-sm ring-1 ring-white/15" />
+        {!isCollapsed && (
+          <div className="flex flex-col min-w-0 leading-tight">
+            <span className="text-xs font-semibold text-white/70 truncate">
+              Tres de Febrero
+            </span>
+            <span className="tracking-tight truncate font-bold text-white text-lg font-heading">
+              MuniGestión <span className="text-muni-orange">3F</span>
+            </span>
+          </div>
+        )}
       </div>
+
+      {!isCollapsed && !isEmergencySurveyor(role) && (
+        <div className="px-5 pt-4 pb-3 shrink-0">
+          <GlobalSearch />
+        </div>
+      )}
+      {(isCollapsed || isEmergencySurveyor(role)) && <div className="h-3 shrink-0" />}
 
       <nav className="flex-1 min-h-0 px-3 pb-3 overflow-y-auto custom-scrollbar" aria-busy={loadingSession}>
         {loadingSession && (

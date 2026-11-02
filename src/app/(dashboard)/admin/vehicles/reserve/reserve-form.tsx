@@ -15,6 +15,7 @@ import { Info, Calendar, Clock, User, AlertTriangle, CheckCircle2 } from "lucide
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { RequiredMark } from "@/components/ui/form-section";
+import { FormActions } from "@/components/ui/form-section";
 
 export function ReserveVehicleForm({ vehicleId, vehicles }: { vehicleId: string, vehicles: any[] }) {
   const router = useRouter();
@@ -181,18 +182,14 @@ export function ReserveVehicleForm({ vehicleId, vehicles }: { vehicleId: string,
                  </div>
               </div>
 
-              <div className="flex gap-3 pt-4">
-                <Button type="button" variant="outline" className="flex-1 rounded-xl border-border/60 text-foreground" onClick={() => router.back()}>
+              <FormActions>
+                <Button type="button" variant="outline" onClick={() => router.back()}>
                   Cancelar
                 </Button>
-                <Button
-                  type="submit"
-                  disabled={loading || Boolean(conflictReservation)}
-                  className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl shadow-md font-bold text-xs h-11"
-                >
+                <Button type="submit" disabled={loading || Boolean(conflictReservation)}>
                   {loading ? "Enviando pedido…" : "Pedir reserva"}
                 </Button>
-              </div>
+              </FormActions>
             </form>
           </CardContent>
         </Card>

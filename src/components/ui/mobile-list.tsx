@@ -57,16 +57,16 @@ export function MobileListItem({ href, title, subtitle, meta, aside, leading, cl
 }
 
 /**
- * Fila de indicadores: en celulares, una sola fila que se corre de costado;
- * desde tablet, la grilla de siempre.
+ * Fila de indicadores: en celulares, de a dos por fila (nada queda cortado en el borde);
+ * desde escritorio, la grilla de siempre.
  */
 export function StatRow({ children, className, ...rest }: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
       {...rest}
       className={cn(
-        "-mx-4 flex snap-x scroll-px-4 gap-3 overflow-x-auto px-4 pb-1 [scrollbar-width:none] sm:mx-0 sm:grid sm:grid-cols-2 sm:gap-4 sm:overflow-visible sm:px-0 sm:pb-0 lg:grid-cols-4",
-        "[&>*]:min-w-[9.5rem] [&>*]:shrink-0 [&>*]:snap-start sm:[&>*]:min-w-0",
+        "grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4",
+        "[&>*]:min-w-0",
         className
       )}
     >

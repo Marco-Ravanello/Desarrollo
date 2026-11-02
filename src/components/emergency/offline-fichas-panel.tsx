@@ -14,6 +14,7 @@ import {
 import { StormVictimItem } from "@/types/emergency";
 import { formatFechaCorta, formatHora } from "@/lib/fechas";
 import { confirmar } from "@/components/ui/confirm-dialog";
+import { nombrePropio } from "@/lib/nombres";
 
 const AUTO_SYNC_MS = 60 * 1000;
 
@@ -141,7 +142,7 @@ export function OfflineFichasPanel({ userId, pending, online, syncing, onSyncNow
           {pending.map((item) => (
             <li key={item.clientId} className="flex flex-wrap items-center justify-between gap-2 px-3 py-2.5">
               <div className="min-w-0">
-                <p className="text-xs font-bold uppercase text-foreground truncate">{item.payload.nombreApellido || "Sin nombre"}</p>
+                <p className="text-xs font-bold text-foreground truncate">{nombrePropio(item.payload.nombreApellido) || "Sin nombre"}</p>
                 <p className="text-xs text-muted-foreground truncate">
                   {item.payload.domicilio || "Sin domicilio"} · guardada el{" "}
                   {formatFechaCorta(item.savedAt)} {formatHora(item.savedAt)}

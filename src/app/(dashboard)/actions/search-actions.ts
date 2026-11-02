@@ -4,6 +4,7 @@ import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
 import { canAccessPath, hasPermission, PERMISSIONS } from "@/lib/permissions";
 import { getRecentItems } from "@/services/recent-views";
+import { nombrePropio } from "@/lib/nombres";
 
 export async function searchGlobalAction(query: string) {
   const session = await auth();
@@ -109,7 +110,7 @@ export async function searchGlobalAction(query: string) {
   const padronResults = padronCitizens.map((p: any) => ({
     id: p.dni,
     dni: p.dni,
-    title: p.nombre_completo,
+    title: nombrePropio(p.nombre_completo),
     subtitle: `DNI ${p.dni}${p.barrio ? ` • ${p.barrio}` : ''}`,
     url: `/people/${p.dni}`
   }));
@@ -120,7 +121,7 @@ export async function searchGlobalAction(query: string) {
     ...citizens.map((c: any) => ({
       id: c.id,
       dni: c.dni,
-      title: `${c.lastName}, ${c.firstName}`,
+      title: nombrePropio(`${c.lastName}, ${c.firstName}`),
       subtitle: `DNI ${c.dni}`,
       url: `/people/${c.id}`
     })),
@@ -137,7 +138,7 @@ export async function searchGlobalAction(query: string) {
     })),
     hr: hr.map((h: any) => ({
       id: h.id,
-      title: `${h.lastName}, ${h.firstName}`,
+      title: nombrePropio(`${h.lastName}, ${h.firstName}`),
       subtitle: `${h.area?.name || 'Sin Área'} • Leg. ${h.fileNumber || '---'}`,
       url: `/admin/hr`
     })),

@@ -19,6 +19,7 @@ import {
   requestedExtras,
 } from "@/lib/emergency-categories";
 import { deliverStormItemsAction } from "@/app/(dashboard)/admin/actions/emergency-actions";
+import { nombrePropio } from "@/lib/nombres";
 
 interface StormDeliveryDialogProps {
   record: StormVictimItem | null;
@@ -113,7 +114,7 @@ export function StormDeliveryDialog({ record, stock, onOpenChange, onDelivered }
           </DialogHeader>
           <div className="space-y-2 text-sm">
             <p>
-              <span className="font-bold">{record.nombreApellido}</span> recibió {done.summary}.
+              <span className="font-bold">{nombrePropio(record.nombreApellido)}</span> recibió {done.summary}.
             </p>
             <p className="text-muted-foreground">
               {done.complete ? "La ficha quedó completa." : "Queda pendiente el resto de lo pedido."} Imprimí la constancia para que firme quien
@@ -143,7 +144,7 @@ export function StormDeliveryDialog({ record, stock, onOpenChange, onDelivered }
             <PackageCheck className="h-5 w-5 text-emerald-600 dark:text-emerald-400" /> Registrar entrega
           </DialogTitle>
           <p className="text-xs text-muted-foreground">
-            {record.nombreApellido} · {record.domicilio}
+            {nombrePropio(record.nombreApellido)} · {record.domicilio}
             {record.barrio ? ` (${record.barrio})` : ""}
           </p>
         </DialogHeader>

@@ -13,6 +13,7 @@ import {
 } from "@/lib/recorridas";
 import { inBarrioSql } from "@/services/barrios";
 import { createNotification } from "@/services/notifications";
+import { nombrePropio } from "@/lib/nombres";
 
 // Recorridas por un barrio: armar la lista de a quién visitar, guardarla, anotar cada visita y terminarla
 // con lo que se encontró. También el referente de cada barrio.
@@ -216,7 +217,7 @@ export async function buildRecorridaList(barrio: Barrio3F, c: RecorridaCriteria)
     : [];
   let people: RecorridaCandidate[] = rows.map((r) => ({
     dni: r.dni,
-    nombre: r.nombre_completo,
+    nombre: nombrePropio(r.nombre_completo),
     direccion: r.direccion,
     telefono: r.telefono?.trim() || null,
     motivos: reasons.get(r.dni).motivos,

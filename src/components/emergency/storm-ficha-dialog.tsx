@@ -22,6 +22,7 @@ import { MunicipalLetterhead } from "@/components/ui/municipal-letterhead";
 import { STORM_BARRIOS, matchStormBarrio } from "@/lib/storm-barrios";
 import { formatFechaHora } from "@/lib/fechas";
 import { RequiredMark } from "@/components/ui/form-section";
+import { nombrePropio } from "@/lib/nombres";
 
 interface StormFichaDialogProps {
   open: boolean;
@@ -340,7 +341,7 @@ export function StormFichaDialog({
                         className="w-full text-left p-2.5 rounded-xl hover:bg-muted transition-colors text-xs flex justify-between items-center"
                       >
                         <div>
-                          <p className="font-bold text-foreground">{s.nombreApellido}</p>
+                          <p className="font-bold text-foreground">{nombrePropio(s.nombreApellido)}</p>
                           <p className="text-xs text-muted-foreground">
                             DNI: {s.dni} {s.domicilio ? `• ${s.domicilio}` : ""}
                           </p>

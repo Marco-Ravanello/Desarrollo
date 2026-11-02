@@ -24,6 +24,7 @@ import {
   requestedExtras,
 } from "@/lib/emergency-categories";
 import { formatFecha, formatFechaHora } from "@/lib/fechas";
+import { nombrePropio } from "@/lib/nombres";
 
 interface StormSummaryTabProps {
   records: StormVictimItem[];
@@ -351,7 +352,7 @@ export function StormSummaryTab({ records, stock, onDeliver, deliveries = [] }: 
                   <TableCell>
                     <StatusBadge tone={toneOf(STORM_PRIORITY_TONE, r.prioridad)}>{textoNormal(r.prioridad)}</StatusBadge>
                   </TableCell>
-                  <TableCell className="font-semibold uppercase">{r.nombreApellido}</TableCell>
+                  <TableCell className="font-semibold">{nombrePropio(r.nombreApellido)}</TableCell>
                   <TableCell className="text-xs">
                     {r.barrio && <span className="font-bold">{r.barrio} · </span>}
                     {r.domicilio}

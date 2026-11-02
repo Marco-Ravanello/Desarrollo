@@ -7,6 +7,7 @@ import {
   hasCheckableRequirements, parseRequirementsInput, requirementsFromRow, requirementsSummary, type ProgramRequirements,
 } from "@/lib/program-requirements";
 import { inBarriosSql } from "@/services/barrios";
+import { nombrePropio } from "@/lib/nombres";
 
 // Posibles destinatarios de un programa: las personas del padrón que cumplen sus requisitos simples
 // (edad, barrio, etiquetas de expedientes abiertos y otros programas) y todavía no están en él.
@@ -209,7 +210,7 @@ export async function getProgramCandidates(
     q,
     people: rows.map((row) => ({
       dni: row.dni,
-      nombre: row.nombre,
+      nombre: nombrePropio(row.nombre),
       edad: row.edad === null ? null : Number(row.edad),
       barrio: row.barrio,
       telefono: row.telefono,
