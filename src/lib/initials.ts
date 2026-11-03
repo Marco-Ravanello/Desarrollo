@@ -41,15 +41,11 @@ export function initialsOf(name: string | null | undefined, lastName?: string | 
  * Las clases van escritas enteras para que Tailwind las incluya.
  */
 export const INITIALS_COLORS = [
-  "bg-sky-100 text-sky-800 dark:bg-sky-500/20 dark:text-sky-200",
-  "bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-200",
-  "bg-violet-100 text-violet-800 dark:bg-violet-500/20 dark:text-violet-200",
+  "bg-[#E0EEFF] text-[#163C68] dark:bg-white/10 dark:text-blue-100",
   "bg-teal-100 text-teal-800 dark:bg-teal-500/20 dark:text-teal-200",
-  "bg-indigo-100 text-indigo-800 dark:bg-indigo-500/20 dark:text-indigo-200",
-  "bg-pink-100 text-pink-800 dark:bg-pink-500/20 dark:text-pink-200",
-  "bg-lime-100 text-lime-800 dark:bg-lime-500/20 dark:text-lime-200",
-  "bg-cyan-100 text-cyan-800 dark:bg-cyan-500/20 dark:text-cyan-200",
-  "bg-fuchsia-100 text-fuchsia-800 dark:bg-fuchsia-500/20 dark:text-fuchsia-200",
+  "bg-[#FDEBD3] text-[#8A4A0B] dark:bg-orange-500/20 dark:text-orange-200",
+  "bg-violet-100 text-violet-800 dark:bg-violet-500/20 dark:text-violet-200",
+  "bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-200",
   "bg-slate-200 text-slate-800 dark:bg-slate-500/25 dark:text-slate-200",
 ] as const;
 

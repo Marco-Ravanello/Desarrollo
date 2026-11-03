@@ -1,16 +1,15 @@
 "use client";
 
+import { useChartColors } from "@/components/charts/use-chart-colors";
 import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 const MONTHS = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
-// Colores probados para que se distingan también con daltonismo, en modo claro y oscuro.
-const ALTAS = "#0284c7";
-const BAJAS = "#ea580c";
 
 const monthLabel = (month: string) => `${MONTHS[Number(month.slice(5, 7)) - 1]} ${month.slice(2, 4)}`;
 
 /** Altas y bajas de cada mes del último año, con la misma tabla en texto para lectores de pantalla. */
 export function ProgramMonthsChart({ data }: { data: { month: string; altas: number; bajas: number }[] }) {
+  const [ALTAS, BAJAS] = useChartColors();
   const rows = data.map((d) => ({ ...d, label: monthLabel(d.month) }));
   return (
     <>

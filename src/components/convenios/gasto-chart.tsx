@@ -1,11 +1,9 @@
 "use client";
 
+import { useChartColors } from "@/components/charts/use-chart-colors";
 import { CartesianGrid, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { formatPesos, formatPesosCorto } from "@/lib/formato";
 
-// Colores probados para que se distingan también con daltonismo, en modo claro y oscuro.
-const GASTADO = "#0284c7";
-const PROYECCION = "#ea580c";
 const TOPE = "#e11d48";
 
 const addDays = (iso: string, n: number) => {
@@ -31,6 +29,7 @@ export function GastoChart({
   tope: number | null;
   proyeccion: number | null;
 }) {
+  const [GASTADO, PROYECCION] = useChartColors();
   const ultimo = porDia[porDia.length - 1];
   const rows: { fecha: string; label: string; gastado?: number; proyeccion?: number }[] = [];
   let acumulado = 0;

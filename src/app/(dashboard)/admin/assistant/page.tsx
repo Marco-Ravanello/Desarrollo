@@ -13,6 +13,7 @@ import {
 import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/page-header";
 import { useTheme } from "next-themes";
+import { chartPalette } from "@/lib/chart-colors";
 import {
   Bar, BarChart, ResponsiveContainer, XAxis, YAxis,
   Tooltip as RechartsTooltip, Cell, Pie, PieChart,
@@ -27,12 +28,12 @@ interface Message {
   dataSummary?: any;
 }
 
-const COLORS = ['#3b82f6', '#10b981', '#f5a623', '#ef4444', '#8b5cf6', '#ec4899'];
 
 export default function AssistantPage() {
   const router = useRouter();
-  const { theme } = useTheme();
-  const isDark = theme === "dark";
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === "dark";
+  const COLORS = chartPalette(isDark);
 
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -399,7 +400,7 @@ export default function AssistantPage() {
                   fontSize: '11px'
                 }}
               />
-              <Line type="monotone" dataKey="value" stroke="#3b82f6" strokeWidth={3} dot={{ r: 4, fill: '#3b82f6' }} />
+              <Line type="monotone" dataKey="value" stroke={COLORS[0]} strokeWidth={3} dot={{ r: 4, fill: COLORS[0] }} />
             </LineChart>
           </ResponsiveContainer>
         ) : chart.type === "area" ? (
@@ -433,7 +434,7 @@ export default function AssistantPage() {
                   fontSize: '11px'
                 }}
               />
-              <Bar dataKey="value" fill="#3b82f6" radius={[6, 6, 0, 0]}>
+              <Bar dataKey="value" fill={COLORS[0]} radius={[6, 6, 0, 0]}>
                 {chart.data.map((entry: any, index: number) => (
                   <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                 ))}
