@@ -11,6 +11,7 @@ import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { canAccessPath } from "@/lib/permissions";
 import { useTheme } from "next-themes";
+import { ABRIR_BUSCADOR } from "@/lib/atajos";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { getRecentItemsAction, searchGlobalAction } from "@/app/(dashboard)/actions/search-actions";
 import { forgetRecent, readRecent } from "@/lib/recent-views";
@@ -21,6 +22,7 @@ export function GlobalSearch() {
   const { data: session } = useSession();
   const { theme, setTheme } = useTheme();
   const [open, setOpen] = React.useState(false);
+  const buttonRef = React.useRef<HTMLButtonElement>(null);
   const [query, setQuery] = React.useState("");
   const [loading, setLoading] = React.useState(false);
   const [results, setResults] = React.useState<{ citizens: any[]; cases: any[]; hr: any[]; agreements: any[] }>({
@@ -62,8 +64,17 @@ export function GlobalSearch() {
         setOpen((open) => !open);
       }
     };
+    // Tecla / (components/layout/keyboard-shortcuts.tsx): abre el buscador que se ve en pantalla
+    // (en el celular hay otro adentro del menú, que solo cuenta cuando está abierto).
+    const openFromShortcut = () => {
+      if (buttonRef.current?.offsetParent) setOpen(true);
+    };
     document.addEventListener("keydown", down);
-    return () => document.removeEventListener("keydown", down);
+    window.addEventListener(ABRIR_BUSCADOR, openFromShortcut);
+    return () => {
+      document.removeEventListener("keydown", down);
+      window.removeEventListener(ABRIR_BUSCADOR, openFromShortcut);
+    };
   }, []);
 
   // Debounced search
@@ -106,7 +117,9 @@ export function GlobalSearch() {
   return (
     <>
       <button
+        ref={buttonRef}
         onClick={() => setOpen(true)}
+        title="Buscar (tecla / o Ctrl K)"
         className="flex items-center gap-2.5 w-full px-3.5 py-2.5 text-xs text-muted-foreground bg-muted/60 dark:bg-muted/30 hover:bg-muted rounded-xl border border-border/60 transition-all group shadow-sm"
       >
         <Search className="h-4 w-4 shrink-0 text-muted-foreground group-hover:text-primary transition-colors" />

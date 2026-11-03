@@ -1,7 +1,7 @@
 import { Sparkles } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
 import { Card } from "@/components/ui/card";
-import { NOVEDADES, fechaNovedad } from "@/lib/novedades";
+import { NOVEDADES, claveNovedad, fechaNovedad } from "@/lib/novedades";
 
 export const metadata = { title: "Novedades" };
 
@@ -12,7 +12,7 @@ export default function NovedadesPage() {
       <PageHeader title="Novedades" description="Lo que fue cambiando en la app, de lo más nuevo a lo más viejo." icon={Sparkles} />
       <ol className="relative max-w-3xl space-y-6 border-l-2 border-border/70 pl-6">
         {NOVEDADES.map((n) => (
-          <li key={n.fecha} className="relative">
+          <li key={claveNovedad(n)} className="relative">
             <span className="absolute -left-[33px] top-5 h-4 w-4 rounded-full border-[3px] border-background bg-muni-orange" aria-hidden />
             <Card className="rounded-2xl border-border/60 p-5 shadow-xs">
               <p className="text-xs font-semibold text-muted-foreground">{fechaNovedad(n.fecha)}</p>

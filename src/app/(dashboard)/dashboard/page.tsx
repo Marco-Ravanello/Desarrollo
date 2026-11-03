@@ -19,7 +19,7 @@ import { getConveniosParaCargar, type ConvenioConHoras } from "@/services/conven
 import { NIVELES } from "@/lib/convenio-gasto";
 import { auth } from "@/auth";
 import prisma from "@/lib/prisma";
-import { hasPermission, PERMISSIONS } from "@/lib/permissions";
+import { FLEET_ADMIN_ROLES, hasPermission, PERMISSIONS } from "@/lib/permissions";
 import { Card } from "@/components/ui/card";
 import {
   Users, FileText, CheckCircle2, ShieldCheck,
@@ -37,12 +37,14 @@ import { ExecutiveReportButton } from "../admin/reports/executive-report-button"
 import { TerritorialActivityWidget } from "@/components/dashboard/territorial-activity-widget";
 import { ViewAsSelector, type ViewAsOption } from "@/components/dashboard/view-as-selector";
 import Link from "next/link";
-import { formatFechaHora, formatVencimiento } from "@/lib/fechas";
+import { diaAR, diaDeVencimiento, formatFechaHora, formatVencimiento } from "@/lib/fechas";
 import { formatNumber, plural, textoNormal, formatPesos } from "@/lib/formato";
 import { getAreaShortName } from "@/lib/area-theme";
 import { roleLabel } from "@/lib/roles";
 import { STALE_DAYS } from "@/lib/case-summary";
 import { auditLink, describeAuditAction, formatAuditDetails } from "@/lib/audit-labels";
+import { applyHomeLayout, homeLayoutRows, parseHomeLayout, type HomeSectionId } from "@/lib/home-layout";
+import { HomeLayoutDialog } from "@/components/dashboard/home-layout-dialog";
 
 /**
  * Cada rol ve primero lo suyo:
@@ -75,9 +77,7 @@ function profileFor(role: Role): Profile {
 type KpiId =
   | "people" | "activeCases" | "urgentCases" | "pendingOrders" | "myTasks"
   | "staleCases" | "pendingDerivations" | "myCases" | "followUpsToday";
-type SectionId =
-  | "myCases" | "attention" | "budget" | "territorial" | "recentCases" | "tasks" | "vehicles"
-  | "areas" | "team" | "quietCases" | "followUps" | "activity" | "away" | "programs" | "convenioHoras";
+type SectionId = HomeSectionId;
 
 const LAYOUT: Record<Profile, { kpis: KpiId[]; sections: SectionId[] }> = {
   superadmin: {
@@ -105,6 +105,9 @@ const LAYOUT: Record<Profile, { kpis: KpiId[]; sections: SectionId[] }> = {
     sections: ["activity", "attention", "budget", "recentCases", "territorial"],
   },
 };
+
+/** Rojo solo para lo vencido (tareas, VTV, seguros). */
+const OVERDUE_TEXT = "font-semibold text-red-700 dark:text-red-300";
 
 /** Las tarjetas anchas ocupan dos columnas en la compu. */
 const WIDE: SectionId[] = ["areas", "team", "activity"];
@@ -180,7 +183,7 @@ export default async function DashboardPage({
   const wants = (id: KpiId | SectionId) => (layout.kpis as string[]).includes(id) || (layout.sections as string[]).includes(id);
   const userId = session?.user?.id;
 
-  const [stats, myTasks, area, derivationsToAnswer, myCases, staleCount, pendingDerivations, areaRows, team, quiet, followUps, activity, away, programs, convenioHoras] =
+  const [stats, myTasks, area, derivationsToAnswer, myCases, staleCount, pendingDerivations, areaRows, team, quiet, followUps, activity, away, programs, convenioHoras, savedLayoutRaw] =
     await Promise.all([
       getDashboardStats(scope),
       userId ? getTasks(userId).catch(() => []) : Promise.resolve([]),
@@ -198,7 +201,12 @@ export default async function DashboardPage({
       wants("programs") ? getProgramSummaries().catch(() => []) : [],
       // Personal, como "Mis expedientes a cargo": los convenios por horas donde el usuario carga.
       session?.user ? getConveniosParaCargar(session.user).catch(() => []) : [],
+      // El orden que eligió la persona ("Ordenar tarjetas"). Mirando como otro rol, el de siempre.
+      userId && !viewAs
+        ? prisma.user.findUnique({ where: { id: userId }, select: { homeLayout: true } }).then((u) => u?.homeLayout ?? null).catch(() => null)
+        : null,
     ]);
+  const savedLayout = parseHomeLayout(savedLayoutRaw);
   // Con un área: los programas que tiene a cargo. Sin área (Superadmin): los que tienen más personas.
   const homePrograms = areaId
     ? programs.filter((p) => p.owner?.areaId === areaId)
@@ -210,6 +218,10 @@ export default async function DashboardPage({
   const pendingTasks = myTasks.filter((t) => t.status !== "COMPLETADA");
   const listedTasks = pendingTasks.filter((t) => !followUpIds.has(t.id));
   const highPriorityTasksCount = pendingTasks.filter((t) => t.priority === "ALTA" || t.priority === "URGENTE").length;
+  // Vencidas: con fecha anterior a hoy (las de hoy todavía no).
+  const today = diaAR();
+  const isOverdue = (d: Date | null) => Boolean(d && diaDeVencimiento(d) < today);
+  const overdueTasksCount = pendingTasks.filter((t) => isOverdue(t.dueDate)).length;
 
   const casesQuery = (extra: Record<string, string>) =>
     `/cases?${new URLSearchParams({ ...(areaId ? { area: areaId } : {}), ...extra })}`;
@@ -272,10 +284,12 @@ export default async function DashboardPage({
       label: "Mis tareas pendientes",
       value: formatNumber(pendingTasks.length),
       icon: CheckCircle2,
-      tone: highPriorityTasksCount > 0 ? "attention" : "navy",
-      hint: highPriorityTasksCount > 0
-        ? <span className={ATTENTION_TEXT}>{plural(highPriorityTasksCount, "de alta prioridad", "de alta prioridad")}</span>
-        : "Ninguna de alta prioridad",
+      tone: overdueTasksCount > 0 || highPriorityTasksCount > 0 ? "attention" : "navy",
+      hint: overdueTasksCount > 0
+        ? <span className={OVERDUE_TEXT}>{plural(overdueTasksCount, "vencida", "vencidas")}</span>
+        : highPriorityTasksCount > 0
+          ? <span className={ATTENTION_TEXT}>{plural(highPriorityTasksCount, "de alta prioridad", "de alta prioridad")}</span>
+          : "Ninguna de alta prioridad",
     },
     myCases: {
       href: "/cases?assigned=mine",
@@ -303,7 +317,9 @@ export default async function DashboardPage({
   // El Superadmin la ve siempre (se usa para probar todo), aunque no tenga expedientes a cargo.
   const showMyCases = !layout.sections.includes("myCases") && (myCases.total > 0 || (isSuperadmin && !viewAs));
   const personal: SectionId[] = [...(showMyCases ? (["myCases"] as SectionId[]) : []), ...(convenioHoras.length > 0 ? (["convenioHoras"] as SectionId[]) : [])];
-  const sections: SectionId[] = [...personal, ...layout.sections];
+  const availableSections: SectionId[] = [...personal, ...layout.sections];
+  const sections = applyHomeLayout(availableSections, savedLayout);
+  const canSeeFleet = FLEET_ADMIN_ROLES.includes(role);
   const spans = gridSpans(sections);
   const canLoadData = profile !== "auditor" && profile !== "conduccion";
   const canSeeReports = hasPermission(role, PERMISSIONS.VIEW_REPORTS);
@@ -328,7 +344,7 @@ export default async function DashboardPage({
             {canLoadData && (
               <>
                 <Button asChild size="sm" className="h-9 rounded-xl gap-1.5">
-                  <Link href="/cases/new"><Plus className="h-4 w-4" /> Nuevo expediente</Link>
+                  <Link href="/cases/new" title="Nuevo expediente (tecla N)"><Plus className="h-4 w-4" /> Nuevo expediente</Link>
                 </Button>
                 <Button asChild variant="outline" size="sm" className="h-9 rounded-xl gap-1.5">
                   <Link href="/people/new"><UserPlus className="h-4 w-4" /> Cargar persona</Link>
@@ -336,6 +352,9 @@ export default async function DashboardPage({
               </>
             )}
             {canSeeReports && <ExecutiveReportButton />}
+            {!viewAs && availableSections.length > 1 && (
+              <HomeLayoutDialog rows={homeLayoutRows(availableSections, savedLayout)} customized={savedLayout !== null} />
+            )}
             {isSuperadmin && (
               <ViewAsSelector options={viewAsOptions} areas={allAreas} current={viewAs?.role ?? ""} currentArea={areaId} />
             )}
@@ -369,6 +388,21 @@ export default async function DashboardPage({
             {derivationsToAnswer === 1
               ? "Hay 1 expediente derivado esperando que lo aceptes o lo rechaces."
               : `Hay ${derivationsToAnswer} expedientes derivados esperando que los aceptes o los rechaces.`}
+          </span>
+          <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+        </Link>
+      )}
+
+      {canSeeFleet && stats.vehiclesOverdue > 0 && (
+        <Link
+          href="/admin/vehicles"
+          className="flex items-center justify-between gap-3 rounded-2xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-foreground transition-colors hover:border-red-500/70"
+        >
+          <span className="flex items-center gap-2 font-semibold text-red-800 dark:text-red-200">
+            <Car className="h-4 w-4 shrink-0" />
+            {stats.vehiclesOverdue === 1
+              ? "Hay 1 vehículo con la VTV o el seguro vencido."
+              : `Hay ${stats.vehiclesOverdue} vehículos con la VTV o el seguro vencido.`}
           </span>
           <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
         </Link>
@@ -417,7 +451,7 @@ export default async function DashboardPage({
             case "recentCases":
               return <div key={id} className={span}><RecentCasesCard cases={stats.recentCases} viewAllHref={casesQuery({})} /></div>;
             case "tasks":
-              return <div key={id} className={span}><TasksCard tasks={listedTasks} /></div>;
+              return <div key={id} className={span}><TasksCard tasks={listedTasks} today={today} overdue={overdueTasksCount} /></div>;
             case "vehicles":
               return <div key={id} className={span}><VehiclesCard vehicles={stats.vehiclesList} /></div>;
             case "areas":
@@ -635,18 +669,27 @@ function MyCasesCard({ total, cases }: { total: number; cases: MyAssignedCase[] 
   );
 }
 
-function TasksCard({ tasks }: { tasks: { id: string; title: string; priority: string | null; dueDate: Date | null; caseId?: string | null }[] }) {
+function TasksCard({ tasks, today, overdue }: {
+  tasks: { id: string; title: string; priority: string | null; dueDate: Date | null; caseId?: string | null }[];
+  today: string;
+  overdue: number;
+}) {
   const upcoming = tasks.slice(0, 5);
   return (
     <Card className="rounded-2xl border border-border/60 bg-card p-5 shadow-sm h-full">
       <CardHeaderRow icon={Calendar} iconClass="text-amber-700 dark:text-amber-400" title="Mis próximas tareas" href="/tasks" linkLabel="Ver todas" />
+      {overdue > 0 && (
+        <p className="mt-3 rounded-lg bg-red-500/10 px-3 py-2 text-xs font-semibold text-red-800 dark:text-red-200">
+          {overdue === 1 ? "Tenés 1 tarea vencida." : `Tenés ${overdue} tareas vencidas.`}
+        </p>
+      )}
       <div className="divide-y divide-border/20 mt-1">
         {upcoming.length === 0 && (
           <p className="py-6 text-center text-xs text-muted-foreground">No tenés tareas pendientes.</p>
         )}
         {upcoming.map((t) => {
           const priority = t.priority || "MEDIA";
-          const high = priority === "URGENTE" || priority === "ALTA";
+          const vencida = Boolean(t.dueDate && diaDeVencimiento(t.dueDate) < today);
           return (
             <Link
               key={t.id}
@@ -658,8 +701,8 @@ function TasksCard({ tasks }: { tasks: { id: string; title: string; priority: st
                 <StatusBadge tone={toneOf(PRIORITY_TONE, priority)}>
                   {textoNormal(priority)}
                 </StatusBadge>
-                <span className="text-muted-foreground tabular-nums text-xs">
-                  {t.dueDate ? formatVencimiento(t.dueDate) : "Sin fecha"}
+                <span className={`tabular-nums text-xs ${vencida ? OVERDUE_TEXT : "text-muted-foreground"}`}>
+                  {t.dueDate ? (vencida ? `Venció ${formatVencimiento(t.dueDate)}` : formatVencimiento(t.dueDate)) : "Sin fecha"}
                 </span>
               </div>
             </Link>
@@ -686,7 +729,9 @@ function VehiclesCard({ vehicles }: { vehicles: DashboardStats["vehiclesList"] }
           >
             <div className="min-w-0">
               <p className="text-xs font-medium text-foreground truncate group-hover:text-primary transition-colors">{v.name}</p>
-              <p className="text-xs text-muted-foreground tabular-nums">{v.nextExpiry}</p>
+              <p className={`text-xs tabular-nums ${v.expiryOverdue ? OVERDUE_TEXT : v.expirySoon ? "font-medium text-[#C2410C] dark:text-muni-orange" : "text-muted-foreground"}`}>
+                {v.nextExpiry}
+              </p>
             </div>
             <StatusBadge tone={v.statusTone}>
               {v.status}

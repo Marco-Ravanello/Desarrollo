@@ -5,6 +5,7 @@ import { CASE_STATUS_LABEL, staleCutoff, summarizeCase } from "@/lib/case-summar
 import { CASE_STATUS_TONE, VEHICLE_STATUS_TONE, toneOf } from "@/lib/status-tones";
 import { diaAR, diaDeVencimiento, diasEntre, formatFecha, formatFechaCorta } from "@/lib/fechas";
 import { formatPesos } from "@/lib/formato";
+import { vehicleExpiryInfo } from "@/lib/vencimientos";
 
 /**
  * Qué parte de la gestión ve quien abre el dashboard.
@@ -103,7 +104,10 @@ async function loadDashboardStats(scope: DashboardScope) {
       orderBy: { createdAt: "desc" },
       take: 2,
     }).catch(() => []),
-    prisma.vehicle.findMany({ take: 5, orderBy: { plate: "asc" } }).catch(() => []),
+    prisma.vehicle.findMany({
+      select: { id: true, brand: true, model: true, plate: true, status: true, vtvExpiry: true, insuranceExpiry: true },
+      orderBy: { plate: "asc" },
+    }).catch(() => []),
   ]);
 
   const peopleCount = peopleStats?.total && peopleStats.total > 0 ? peopleStats.total : legacyPeopleCount;
@@ -167,15 +171,32 @@ async function loadDashboardStats(scope: DashboardScope) {
     })),
   ];
 
-  const vehiclesList = vehiclesDb.map((v) => ({
-    id: v.id,
-    name: `${v.brand} ${v.model} (${v.plate})`,
-    status: v.status === "DISPONIBLE" ? "Disponible" : v.status === "EN_TALLER" ? "En taller" : "Fuera de servicio",
-    statusTone: toneOf(VEHICLE_STATUS_TONE, v.status),
-    nextExpiry: v.vtvExpiry
-      ? `VTV: ${new Date(v.vtvExpiry).toLocaleDateString("es-AR", { month: "2-digit", year: "2-digit", timeZone: "UTC" })}`
-      : "Al día",
-  }));
+  // Vehículos: primero los que tienen la VTV o el seguro vencidos, después los que vencen pronto.
+  // Los que están fuera de servicio no cuentan como vencidos (no se usan).
+  const today = diaAR();
+  const vehiclesAll = vehiclesDb.map((v) => {
+    const expiry = vehicleExpiryInfo(
+      v.vtvExpiry ? diaDeVencimiento(v.vtvExpiry) : null,
+      v.insuranceExpiry ? diaDeVencimiento(v.insuranceExpiry) : null,
+      today
+    );
+    const inService = v.status !== "FUERA_DE_SERVICIO";
+    return {
+      id: v.id,
+      name: `${v.brand} ${v.model} (${v.plate})`,
+      status: v.status === "DISPONIBLE" ? "Disponible" : v.status === "EN_TALLER" ? "En taller" : "Fuera de servicio",
+      statusTone: toneOf(VEHICLE_STATUS_TONE, v.status),
+      nextExpiry: expiry.text,
+      expiryOverdue: inService && expiry.overdue,
+      expirySoon: inService && expiry.soon,
+      nearest: expiry.nearest,
+    };
+  });
+  const rank = (v: (typeof vehiclesAll)[number]) => (v.expiryOverdue ? 0 : v.expirySoon ? 1 : 2);
+  const vehiclesList = [...vehiclesAll]
+    .sort((a, b) => rank(a) - rank(b) || (rank(a) < 2 ? (a.nearest ?? "").localeCompare(b.nearest ?? "") : 0))
+    .slice(0, 5);
+  const vehiclesOverdue = vehiclesAll.filter((v) => v.expiryOverdue).length;
 
   return {
     peopleCount,
@@ -192,6 +213,7 @@ async function loadDashboardStats(scope: DashboardScope) {
     recentCases,
     attentionItems,
     vehiclesList,
+    vehiclesOverdue,
   };
 }
 

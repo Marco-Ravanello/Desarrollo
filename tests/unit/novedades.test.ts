@@ -1,12 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { NOVEDADES, ULTIMA_NOVEDAD, fechaNovedad } from "@/lib/novedades";
+import { NOVEDADES, ULTIMA_NOVEDAD, claveNovedad, fechaNovedad } from "@/lib/novedades";
 
 describe("novedades", () => {
-  it("van de la más nueva a la más vieja, sin fechas repetidas", () => {
-    const fechas = NOVEDADES.map((n) => n.fecha);
-    expect(new Set(fechas).size).toBe(fechas.length);
-    expect([...fechas].sort().reverse()).toEqual(fechas);
-    expect(ULTIMA_NOVEDAD?.fecha).toBe(fechas[0]);
+  it("van de la más nueva a la más vieja, sin repetirse", () => {
+    const claves = NOVEDADES.map(claveNovedad);
+    expect(new Set(claves).size).toBe(claves.length);
+    const orden = NOVEDADES.map((n) => `${n.fecha}-${String(n.parte ?? 1).padStart(2, "0")}`);
+    expect([...orden].sort().reverse()).toEqual(orden);
+    expect(ULTIMA_NOVEDAD).toBe(NOVEDADES[0]);
   });
 
   it("cada entrada tiene fecha válida, título y al menos un cambio", () => {

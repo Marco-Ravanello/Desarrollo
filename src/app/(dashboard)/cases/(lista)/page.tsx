@@ -170,7 +170,7 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
               </Button>
             )}
             <Button asChild className="rounded-xl font-bold text-xs gap-1.5 shadow-sm">
-              <Link href="/cases/new">
+              <Link href="/cases/new" title="Nuevo expediente (tecla N)">
                 <Plus className="h-4 w-4" /> Nuevo expediente
               </Link>
             </Button>
