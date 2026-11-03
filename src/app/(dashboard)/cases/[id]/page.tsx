@@ -23,7 +23,9 @@ import { todayInArgentina } from "@/lib/follow-up-dates";
 import { PageHeader } from "@/components/layout/page-header";
 import { EmptyMessage } from "@/components/ui/empty-message";
 import { getAreaDashboardUrl, getAreaShortName } from "@/lib/area-theme";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { CaseTabs } from "@/components/cases/case-tabs";
+import { NewInterventionButton, PrintCaseButton } from "@/components/cases/case-header-actions";
 import { CaseSummaryHeader } from "@/components/cases/case-summary-header";
 import { fechaCorta, isProvisionalDni, splitCaseTitle, summarizeCase } from "@/lib/case-summary";
 import { AssignCaseControl } from "@/components/cases/assign-case";
@@ -135,7 +137,9 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
         icon={ClipboardList}
         actions={
           <>
+            {!isClosed && <NewInterventionButton />}
             <MobileActions>
+            <PrintCaseButton caseId={caseData.id} />
             {canScheduleFollowUp && <ScheduleFollowUpButton caseId={caseData.id} today={today} />}
             {canCloseOrReopen && <CloseReopenCaseButton caseId={caseData.id} mode={isClosed ? "reopen" : "close"} />}
             {canDerive && (
@@ -188,7 +192,7 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
         <DerivationCard d={pendingDerivation} canRespond={canRespondDerivation(session.user, pendingDerivation.toAreaId)} />
       )}
 
-      <Tabs defaultValue="historia" className="space-y-4">
+      <CaseTabs className="space-y-4">
         <TabsList className="h-auto flex-wrap justify-start gap-1">
           <TabsTrigger value="historia" className={tabClass}>
             <History className="h-3.5 w-3.5" /> Historia ({historyCount})
@@ -319,7 +323,7 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
             )}
           </Card>
         </TabsContent>
-      </Tabs>
+      </CaseTabs>
     </div>
   );
 }

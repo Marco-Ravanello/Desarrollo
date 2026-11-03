@@ -1,7 +1,7 @@
 "use client";
 
-import { InitialsAvatar } from "@/components/ui/initials-avatar";
-import { useState, useEffect } from "react";
+import { SharePicker, type ShareableUser } from "@/components/tasks/share-picker";
+import { useState, useEffect, useMemo } from "react";
 import {
   ChevronLeft, ChevronRight, Calendar, CalendarDays, User, Briefcase,
   Clock, CheckSquare, ShoppingBag, Plus, X, Eye, Search,
@@ -400,13 +400,12 @@ export function UnifiedCalendar({ reservations = [], purchaseOrders = [], tasks 
     }
   };
 
-  const handleViewerToggle = (userId: string) => {
-    if (newTaskViewerIds.includes(userId)) {
-      setNewTaskViewerIds(newTaskViewerIds.filter((id) => id !== userId));
-    } else {
-      setNewTaskViewerIds([...newTaskViewerIds, userId]);
-    }
-  };
+  // Con quién se puede compartir: todos menos quien carga la tarea.
+  const shareableUsers = useMemo<ShareableUser[]>(
+    () => users.filter((u) => u.id !== currentUserId).map((u) => ({ id: u.id, name: u.name || "Sin nombre", areaName: u.area?.name ?? null })),
+    [users, currentUserId]
+  );
+  const userNames = useMemo(() => new Map(users.map((u) => [u.id, u.name || "Sin nombre"])), [users]);
 
   const formatTime = (date: Date) => {
     return formatHora(date);
@@ -1160,7 +1159,12 @@ export function UnifiedCalendar({ reservations = [], purchaseOrders = [], tasks 
                   )}
                   {selectedEvent.raw?.viewerIds && (
                     <div className="pt-2 border-t border-border/20 flex items-center gap-1.5 text-xs text-muted-foreground font-bold">
-                      <Eye className="h-3 w-3 text-amber-500" /> Compartida con {selectedEvent.raw.viewerIds.split(",").length} agentes
+                      <Eye className="h-3 w-3 shrink-0 text-amber-500" /> Compartida con{" "}
+                      {selectedEvent.raw.viewerIds
+                        .split(",")
+                        .filter(Boolean)
+                        .map((id: string) => userNames.get(id) ?? "alguien dado de baja")
+                        .join(", ")}
                     </div>
                   )}
                 </>
@@ -1350,27 +1354,11 @@ export function UnifiedCalendar({ reservations = [], purchaseOrders = [], tasks 
                 {newTaskRepeat && <p className="text-xs text-muted-foreground">Al marcarla como hecha, se crea sola la próxima.</p>}
               </div>
 
-              <div className="space-y-3.5 pt-2">
-                <Label className="text-xs font-bold text-muted-foreground flex items-center gap-1">
-                  <Eye className="h-4 w-4 text-amber-500" /> Invitar agentes a ver esta tarea
+              <div className="space-y-2 pt-2">
+                <Label htmlFor="agenda-compartir" className="text-xs font-bold text-muted-foreground flex items-center gap-1">
+                  <Eye className="h-4 w-4 text-amber-500" /> Compartir con (opcional)
                 </Label>
-
-                <div className="border border-border/40 rounded-xl p-3.5 max-h-40 overflow-y-auto bg-muted/30 space-y-2">
-                  {users.map((u) => (
-                    <label key={u.id} className="flex items-center gap-3 cursor-pointer text-xs font-bold select-none group text-foreground">
-                      <input
-                        type="checkbox"
-                        checked={newTaskViewerIds.includes(u.id)}
-                        onChange={() => handleViewerToggle(u.id)}
-                        className="rounded text-amber-600 focus:ring-amber-500 h-4.5 w-4.5 border-border"
-                      />
-                      <span className="group-hover:text-primary transition-colors flex items-center gap-2">
-                        <InitialsAvatar name={u.name} seed={u.id} size="xs" />
-                        {u.name} <span className="text-xs text-muted-foreground font-medium italic">({u.area?.name || "Sin área"})</span>
-                      </span>
-                    </label>
-                  ))}
-                </div>
+                <SharePicker users={shareableUsers} value={newTaskViewerIds} onChange={setNewTaskViewerIds} inputId="agenda-compartir" />
               </div>
 
               <div className="flex gap-2 justify-end pt-4 border-t border-border/20">

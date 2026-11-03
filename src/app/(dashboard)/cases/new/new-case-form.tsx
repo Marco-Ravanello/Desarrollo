@@ -10,11 +10,14 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import {
-  Search, User, Check, X, ShieldAlert, Sparkles, FolderPlus,
-  RefreshCw, ArrowRight, ArrowLeft, Plus, MapPin, Phone, Mail, Home
+  Search, User, X, ShieldAlert, Sparkles, FolderPlus,
+  RefreshCw, Plus, AlertTriangle
 } from "lucide-react";
 import Link from "next/link";
-import { searchCitizensAction, createCentralizedCaseAction } from "../actions/case-actions";
+import { searchCitizensAction, createCentralizedCaseAction, openCasesInAreaAction } from "../actions/case-actions";
+import { formatFecha } from "@/lib/fechas";
+import { getAreaShortName } from "@/lib/area-theme";
+import type { OpenCaseInArea } from "@/services/cases";
 import { barrioLabel } from "@/lib/person-display";
 import { CaseLabelPicker } from "@/components/cases/case-labels-editor";
 import { RequiredMark } from "@/components/ui/form-section";
@@ -47,35 +50,42 @@ interface NewCaseFormProps {
 
 const SUGGESTIONS_BY_AREA: Record<string, string[]> = {
   social: [
-    "Asistencia Alimentaria de Emergencia",
-    "Módulo Extraordinario por Contingencia Climática",
-    "Subsidio de Integración Social Vulnerabilidad",
-    "Solicitud de Exención de Tasa por Razones Sociales"
+    "Asistencia alimentaria",
+    "Ayuda por la tormenta",
+    "Subsidio por vulnerabilidad social",
+    "Exención de tasas por razones sociales"
   ],
   habitat: [
-    "Relevamiento Dominial y Regularización Dominial",
-    "Mejoramiento Habitacional Urgente",
-    "Informe Técnico de Habitabilidad de Vivienda",
-    "Acompañamiento en Proceso de Escrituración Social"
+    "Regularización dominial",
+    "Mejoramiento de la vivienda",
+    "Informe de habitabilidad de la vivienda",
+    "Acompañamiento en la escrituración"
   ],
   ninez: [
-    "Medida de Protección Integral de Derechos (SLPPD)",
-    "Intervención por Vulneración de Derechos en Niñez",
-    "Ingreso a Programa Envión / Apoyo Comunitario",
-    "Asistencia Social a Grupo Familiar con Menores a Cargo"
+    "Medida de protección de derechos",
+    "Vulneración de derechos de niñez",
+    "Ingreso a Envión o apoyo comunitario",
+    "Acompañamiento a familia con chicos a cargo"
   ],
   violence: [
-    "Intervención Integral por Violencia de Género (Ley 26.485)",
-    "Solicitud de Alojamiento Protegido de Emergencia",
-    "Acompañamiento Psicosocial y Asesoramiento Legal",
-    "Medidas Urgentes de Restricción y Protección"
+    "Intervención por violencia de género",
+    "Alojamiento protegido de emergencia",
+    "Acompañamiento psicosocial y legal",
+    "Medidas de restricción y protección"
   ],
   default: [
-    "Solicitud asistencial",
-    "Informe de Evaluación Social Territorial",
+    "Pedido de asistencia",
+    "Informe social",
     "Derivación a otra institución"
   ]
 };
+
+const PRIORITIES: { value: PriorityType; label: string; dot: string }[] = [
+  { value: "BAJA", label: "Baja", dot: "bg-slate-400" },
+  { value: "MEDIA", label: "Media", dot: "bg-sky-500" },
+  { value: "ALTA", label: "Alta", dot: "bg-amber-500" },
+  { value: "URGENTE", label: "Urgente", dot: "bg-rose-600" },
+];
 
 export function NewCaseForm({
   areas,
@@ -95,6 +105,20 @@ export function NewCaseForm({
   const [labels, setLabels] = useState<string[]>([]);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [abiertos, setAbiertos] = useState<{ total: number; cases: OpenCaseInArea[] } | null>(null);
+
+  // Si la persona ya tiene un expediente abierto en esa área, se avisa (igual se puede abrir otro).
+  useEffect(() => {
+    setAbiertos(null);
+    if (!selectedPerson?.dni || !areaId) return;
+    let vigente = true;
+    openCasesInAreaAction(selectedPerson.dni, areaId)
+      .then((r) => vigente && setAbiertos(r))
+      .catch(() => null);
+    return () => {
+      vigente = false;
+    };
+  }, [selectedPerson?.dni, areaId]);
 
   useEffect(() => {
     if (!searchQuery.trim() || searchQuery.trim().length < 2) {
@@ -184,7 +208,7 @@ export function NewCaseForm({
               Paso 1
             </Badge>
             <h3 className="text-sm font-bold text-foreground">
-              Titular del expediente (buscalo en el padrón)
+              Para quién es
             </h3>
           </div>
 
@@ -233,7 +257,7 @@ export function NewCaseForm({
                         </div>
                       </div>
                       <Badge variant="outline" className="text-xs font-bold border-border/60">
-                        Seleccionar
+                        Elegir
                       </Badge>
                     </button>
                   ))}
@@ -291,13 +315,13 @@ export function NewCaseForm({
               Paso 2
             </Badge>
             <h3 className="text-sm font-bold text-foreground">
-              Área responsable y prioridad operativa
+              Área y prioridad
             </h3>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <div className="space-y-1.5">
-              <Label className="text-xs font-bold text-foreground">Área municipal competente</Label>
+              <Label className="text-xs font-bold text-foreground">Área que lo lleva <RequiredMark /></Label>
               <select
                 value={areaId}
                 onChange={(e) => setAreaId(e.target.value)}
@@ -316,35 +340,61 @@ export function NewCaseForm({
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-xs font-bold text-foreground">Nivel de prioridad / severidad</Label>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                {(["BAJA", "MEDIA", "ALTA", "URGENTE"] as PriorityType[]).map((p) => {
-                  const isSel = priority === p;
-                  const config: Record<PriorityType, { label: string; activeClass: string }> = {
-                    BAJA: { label: "🟢 BAJA", activeClass: "bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border-emerald-500/40" },
-                    MEDIA: { label: "🟡 MEDIA", activeClass: "bg-blue-500/20 text-blue-700 dark:text-blue-400 border-blue-500/40" },
-                    ALTA: { label: "🟠 ALTA", activeClass: "bg-amber-500/20 text-amber-800 dark:text-amber-400 border-amber-500/40" },
-                    URGENTE: { label: "🔴 URGENTE", activeClass: "bg-rose-500/20 text-rose-700 dark:text-rose-400 border-rose-500/40 animate-pulse" }
-                  };
-
+              <Label className="text-xs font-bold text-foreground">Prioridad</Label>
+              <div role="radiogroup" aria-label="Prioridad" className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                {PRIORITIES.map((p) => {
+                  const isSel = priority === p.value;
                   return (
                     <button
-                      key={p}
+                      key={p.value}
                       type="button"
-                      onClick={() => setPriority(p)}
-                      className={`h-11 rounded-2xl border text-xs font-bold transition-all flex items-center justify-center ${
+                      role="radio"
+                      aria-checked={isSel}
+                      onClick={() => setPriority(p.value)}
+                      className={`h-11 rounded-2xl border text-xs font-bold transition-colors flex items-center justify-center gap-2 ${
                         isSel
-                          ? `${config[p].activeClass} shadow-xs`
-                          : "bg-muted/20 border-border/40 text-muted-foreground hover:text-foreground"
+                          ? "border-primary bg-primary text-primary-foreground shadow-xs"
+                          : "border-border/60 bg-muted/20 text-foreground hover:border-primary/40"
                       }`}
                     >
-                      {config[p].label}
+                      <span className={`h-2.5 w-2.5 rounded-full ${p.dot} ${isSel ? "ring-2 ring-white/70" : ""}`} aria-hidden />
+                      {p.label}
                     </button>
                   );
                 })}
               </div>
             </div>
           </div>
+
+          {abiertos && abiertos.total > 0 && selectedPerson && (
+            <div role="status" className="flex items-start gap-3 rounded-2xl border border-amber-500/40 bg-amber-500/10 p-4 text-xs text-amber-900 dark:text-amber-200">
+              <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" aria-hidden />
+              <div className="space-y-1.5">
+                <p className="font-bold">
+                  {selectedPerson.firstName} ya tiene {abiertos.total === 1 ? "un expediente abierto" : `${abiertos.total} expedientes abiertos`} en{" "}
+                  {getAreaShortName(selectedAreaObj?.name ?? "esta área")}.
+                </p>
+                {abiertos.cases.length > 0 ? (
+                  <ul className="space-y-1">
+                    {abiertos.cases.map((c) => (
+                      <li key={c.id}>
+                        <Link href={`/cases/${c.id}`} className="font-semibold underline underline-offset-2 hover:no-underline">
+                          {c.title}
+                        </Link>{" "}
+                        <span className="opacity-80">
+                          · abierto el {formatFecha(c.createdAt)}
+                          {c.assigneeName ? ` · a cargo de ${c.assigneeName}` : ""}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p>Es un expediente reservado: no lo podés ver.</p>
+                )}
+                <p className="opacity-90">Si es por lo mismo, sumá una intervención ahí en lugar de abrir otro. Si es por otra cosa, podés seguir.</p>
+              </div>
+            </div>
+          )}
 
           <div className="space-y-1.5">
             <Label className="text-xs font-bold text-foreground">Etiquetas (opcional)</Label>
@@ -356,9 +406,9 @@ export function NewCaseForm({
             <div className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-700 dark:text-rose-400 flex items-start gap-3 text-xs">
               <ShieldAlert className="h-5 w-5 shrink-0 mt-0.5" />
               <div>
-                <p className="font-bold">Manejo confidencial de expediente</p>
+                <p className="font-bold">Expediente reservado</p>
                 <p className="text-rose-700 dark:text-rose-300 leading-relaxed mt-0.5">
-                  Este expediente quedará restringido a agentes autorizados de Violencia de Género y Dirección General, bajo leyes 26.485 y 25.326.
+                  Solo lo van a ver las personas autorizadas para Violencia de Género (leyes 26.485 y 25.326).
                 </p>
               </div>
             </div>
@@ -373,23 +423,24 @@ export function NewCaseForm({
               Paso 3
             </Badge>
             <h3 className="text-sm font-bold text-foreground">
-              Carátula y nota inicial de intervención
+              Carátula y primera nota
             </h3>
           </div>
 
           <div className="space-y-4">
             <div className="space-y-1.5">
-              <Label className="text-xs font-bold text-foreground">Asunto / carátula del expediente <RequiredMark /></Label>
+              <Label className="text-xs font-bold text-foreground">Carátula <RequiredMark /></Label>
+              <p className="text-xs text-muted-foreground">En pocas palabras, por qué se abre. Es lo que se ve en las listas.</p>
               <Input
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="Ej: Asistencia Alimentaria por Contingencia Climatológica..."
+                placeholder="Por ejemplo: asistencia alimentaria"
                 className="h-11 rounded-2xl bg-muted/30 border-border/60 text-xs sm:text-sm text-foreground font-medium"
               />
 
               <div className="pt-2">
                 <p className="text-xs font-bold text-muted-foreground mb-1.5 flex items-center gap-1">
-                  <Sparkles className="h-3.5 w-3.5 text-primary" /> Sugerencias rápidas para el área elegida:
+                  <Sparkles className="h-3.5 w-3.5 text-primary" /> Ideas para esta área:
                 </p>
                 <div className="flex flex-wrap gap-1.5">
                   {getQuickSuggestions().map((sugg, idx) => (
@@ -399,7 +450,7 @@ export function NewCaseForm({
                       onClick={() => setTitle(sugg)}
                       className="text-xs font-bold px-2.5 py-1 rounded-xl bg-muted/40 hover:bg-primary/10 text-muted-foreground hover:text-primary border border-border/40 transition-colors"
                     >
-                      + {sugg}
+                      {sugg}
                     </button>
                   ))}
                 </div>

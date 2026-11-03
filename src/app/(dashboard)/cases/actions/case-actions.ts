@@ -5,10 +5,11 @@ import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
 import { getPeople, ensurePersonInPrisma } from "@/services/people";
 import { actionErrorMessage } from "@/lib/action-error";
-import { canEditSocialRecords } from "@/lib/permissions";
+import { canEditSocialRecords, hasPermission, PERMISSIONS } from "@/lib/permissions";
+import { getOpenCasesInArea } from "@/services/cases";
 import { createDerivation, respondDerivation } from "@/services/derivations";
 import { editIntervention } from "@/services/interventions";
-import { assignCase } from "@/services/case-assignment";
+import { assignCase, assignCases } from "@/services/case-assignment";
 import { completeFollowUp, scheduleFollowUp } from "@/services/follow-ups";
 import { isInterventionType } from "@/lib/intervention-types";
 import { normalizeCaseLabels } from "@/lib/case-labels";
@@ -339,5 +340,34 @@ export async function updateCaseLabelsAction(caseId: string, labels: string[]) {
     return result;
   } catch (error: any) {
     return { success: false, error: actionErrorMessage(error, "No se pudieron guardar las etiquetas") };
+  }
+}
+
+/** Para el formulario de nuevo expediente: si la persona ya tiene uno abierto en esa área. */
+export async function openCasesInAreaAction(dni: string, areaId: string) {
+  const session = await auth();
+  if (!session?.user?.id) return { total: 0, cases: [] };
+  try {
+    return await getOpenCasesInArea(dni, areaId, { canViewSensitive: hasPermission(session.user.role, PERMISSIONS.VIEW_SENSITIVE_CASES) });
+  } catch {
+    // Si no se pudo revisar, no se avisa: abrir el expediente sigue igual.
+    return { total: 0, cases: [] };
+  }
+}
+
+/** Deja a una persona a cargo de varios expedientes elegidos en la lista. */
+export async function assignCasesAction(caseIds: string[], assigneeId: string) {
+  const session = await auth();
+  if (!session?.user?.id) return { success: false as const, error: "No tenés permiso para hacer esto o tu sesión expiró. Si sigue pasando, volvé a iniciar sesión." };
+  try {
+    const result = await assignCases(session.user, { caseIds: Array.isArray(caseIds) ? caseIds.map(String) : [], assigneeId: String(assigneeId || "") });
+    if (result.success) {
+      revalidatePath("/cases");
+      revalidatePath("/cases/equipo");
+      revalidatePath("/dashboard");
+    }
+    return result;
+  } catch (error: any) {
+    return { success: false as const, error: actionErrorMessage(error, "No se pudieron asignar los expedientes") };
   }
 }
