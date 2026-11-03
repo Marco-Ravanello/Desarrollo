@@ -43,7 +43,7 @@ export const metadata = { title: "Recursos Humanos" };
 export default async function HRPage({
   searchParams
 }: {
-  searchParams: Promise<{ q?: string, area?: string, status?: string }>
+  searchParams: Promise<{ q?: string, area?: string, status?: string, ingreso?: string }>
 }) {
   const session = await auth();
   if (!session?.user?.id) redirect("/login");
@@ -58,9 +58,10 @@ export default async function HRPage({
     redirect("/dashboard");
   }
 
-  const { q, area, status } = await searchParams;
+  const { q, area, status, ingreso } = await searchParams;
+  const startedThisMonth = ingreso === "mes";
 
-  const records = await getHRRecords({ query: q, areaId: area, status });
+  const records = await getHRRecords({ query: q, areaId: area, status, startedThisMonth });
   const stats = await getHRStats();
   const areasRaw = await prisma.area.findMany({
     orderBy: { name: 'asc' }
@@ -72,9 +73,10 @@ export default async function HRPage({
     color: a.color
   }));
 
+  const filtered = Boolean(q || (area && area !== "all") || (status && status !== "all") || startedThisMonth);
   const noSalaries = stats.withSalary === 0;
   const kpis = [
-    { title: "Personal", value: formatNumber(stats.total), icon: Users, tone: "blue" as const, sub: plural(stats.active, "activo", "activos") + " hoy" },
+    { title: "Personal", value: formatNumber(stats.total), icon: Users, tone: "blue" as const, sub: plural(stats.active, "activo", "activos") + " hoy", href: "/admin/hr" as string | undefined },
     {
       title: "Sueldos del mes",
       value: noSalaries ? "Sin cargar" : formatPesos(stats.totalBudget),
@@ -85,9 +87,10 @@ export default async function HRPage({
         : stats.withSalary < stats.inPayroll
           ? `Con sueldo cargado: ${formatNumber(stats.withSalary)} de ${formatNumber(stats.inPayroll)}`
           : "Suma de los sueldos cargados",
+      href: undefined,
     },
-    { title: "Ingresaron este mes", value: formatNumber(stats.newThisMonth), icon: UserPlus, tone: "purple" as const, sub: "Según la fecha de ingreso" },
-    { title: "Áreas con personal", value: formatNumber(stats.areaCount), icon: BarChart2, tone: "orange" as const, sub: `De ${plural(stats.areasTotal, "área")}` },
+    { title: "Ingresaron este mes", value: formatNumber(stats.newThisMonth), icon: UserPlus, tone: "purple" as const, sub: "Según la fecha de ingreso", href: stats.newThisMonth > 0 ? "/admin/hr?ingreso=mes" : undefined },
+    { title: "Áreas con personal", value: formatNumber(stats.areaCount), icon: BarChart2, tone: "orange" as const, sub: `De ${plural(stats.areasTotal, "área")}`, href: undefined },
   ];
   const areasWithSalary = sanitizedAreas.filter((a) => (stats.budgetByArea[a.id] || 0) > 0);
 
@@ -172,6 +175,7 @@ export default async function HRPage({
             hint={kpi.sub}
             icon={kpi.icon}
             tone={kpi.tone}
+            href={kpi.href}
           />
         ))}
       </StatRow>
@@ -219,10 +223,10 @@ export default async function HRPage({
               <TableRow>
                 <TableCell colSpan={5}>
                   <EmptyMessage
-                    kind={q || (area && area !== "all") || (status && status !== "all") ? "search" : "empty"}
-                    title={q || (area && area !== "all") || (status && status !== "all") ? "Nadie del personal coincide con la búsqueda" : "Todavía no hay personal cargado"}
+                    kind={filtered ? "search" : "empty"}
+                    title={filtered ? "Nadie del personal coincide con la búsqueda" : "Todavía no hay personal cargado"}
                     action={
-                      q || (area && area !== "all") || (status && status !== "all") ? (
+                      filtered ? (
                         <Button asChild variant="outline" size="sm" className="rounded-xl text-xs">
                           <Link href="/admin/hr">Quitar filtros</Link>
                         </Button>

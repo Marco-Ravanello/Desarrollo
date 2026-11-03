@@ -8,22 +8,23 @@ import { isEmergencySurveyor } from "@/lib/permissions";
 import { Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ULTIMA_NOVEDAD, claveNovedad, fechaNovedad } from "@/lib/novedades";
+import { NOVEDADES_VISTAS_KEY, ULTIMA_NOVEDAD, claveNovedad, fechaNovedad } from "@/lib/novedades";
 
-const STORAGE_KEY = "muni-novedades-vistas";
+const STORAGE_KEY = NOVEDADES_VISTAS_KEY;
 
 /**
  * Después de una actualización, muestra una vez las novedades más nuevas. Lo que ya se vio queda
  * anotado en este navegador; si no se puede anotar (ventana privada), no se muestra para no repetirlo.
  */
-export function NovedadesAviso() {
+/** `hold`: mientras se muestra la bienvenida de la primera vez, las novedades esperan. */
+export function NovedadesAviso({ hold = false }: { hold?: boolean }) {
   const [open, setOpen] = useState(false);
   const novedad = ULTIMA_NOVEDAD;
   const pathname = usePathname();
   const { data: session, status } = useSession();
   // Quien solo releva la emergencia no usa el resto de la app; en la Sala de Situación
   // (que puede estar en una tele) tampoco se interrumpe.
-  const skip = status !== "authenticated" || isEmergencySurveyor(session?.user?.role) || pathname.startsWith("/admin/war-room");
+  const skip = hold || status !== "authenticated" || isEmergencySurveyor(session?.user?.role) || pathname.startsWith("/admin/war-room");
 
   useEffect(() => {
     if (!novedad || skip) return;

@@ -2,12 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
-import { ChevronDown, CircleHelp, Keyboard, Phone } from "lucide-react";
+import { ChevronDown, CircleHelp, Hand, Keyboard, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useMunicipalSettings } from "@/components/providers/municipal-settings";
 import { guiaPara } from "@/lib/ayuda";
-import { ABRIR_ATAJOS, ABRIR_GUIA } from "@/lib/atajos";
+import { ABRIR_ATAJOS, ABRIR_BIENVENIDA, ABRIR_GUIA } from "@/lib/atajos";
 
 /**
  * Botón "?" del encabezado: abre al costado la guía "¿Cómo hago para…?" de la pantalla en la que se está.
@@ -62,16 +62,28 @@ export function HelpPanel() {
           </div>
 
           <div className="space-y-2 border-t border-border/60 px-4 py-3 text-xs text-muted-foreground">
-            <button
-              type="button"
-              className="hidden items-center gap-1.5 font-semibold text-primary hover:underline md:inline-flex"
-              onClick={() => {
-                setOpen(false);
-                window.dispatchEvent(new Event(ABRIR_ATAJOS));
-              }}
-            >
-              <Keyboard className="h-3.5 w-3.5" /> Atajos de teclado
-            </button>
+            <div className="flex flex-wrap gap-x-4 gap-y-1">
+              <button
+                type="button"
+                className="hidden items-center gap-1.5 font-semibold text-primary hover:underline md:inline-flex"
+                onClick={() => {
+                  setOpen(false);
+                  window.dispatchEvent(new Event(ABRIR_ATAJOS));
+                }}
+              >
+                <Keyboard className="h-3.5 w-3.5" /> Atajos de teclado
+              </button>
+              <button
+                type="button"
+                className="inline-flex items-center gap-1.5 font-semibold text-primary hover:underline"
+                onClick={() => {
+                  setOpen(false);
+                  window.dispatchEvent(new Event(ABRIR_BIENVENIDA));
+                }}
+              >
+                <Hand className="h-3.5 w-3.5" /> Ver la bienvenida otra vez
+              </button>
+            </div>
             {settings.helpdeskPhone.trim() && (
               <p className="flex items-center gap-1.5">
                 <Phone className="h-3.5 w-3.5 shrink-0" /> ¿No encontrás lo que buscás? Mesa de ayuda:{" "}

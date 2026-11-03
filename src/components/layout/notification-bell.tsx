@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Bell, Check, Info } from "lucide-react";
 import {
   getNotifications,
+  countUnreadNotifications,
   markAsRead,
   markAllAsRead
 } from "@/app/(dashboard)/actions/notifications";
@@ -18,6 +19,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { formatFechaHora } from "@/lib/fechas";
+import { tituloConAvisos } from "@/lib/titulo-avisos";
 
 export function NotificationBell() {
   const [notifications, setNotifications] = useState<any[]>([]);
@@ -26,7 +28,10 @@ export function NotificationBell() {
   const fetchNotifications = async () => {
     const data = await getNotifications();
     setNotifications(data);
-    setUnreadCount(data.filter((n: any) => !n.read).length);
+    const listed = data.filter((n: any) => !n.read).length;
+    // La lista trae los últimos 10; el número cuenta todos los sin leer.
+    const total = await countUnreadNotifications().catch(() => listed);
+    setUnreadCount(Math.max(listed, total));
   };
 
   useEffect(() => {
@@ -34,6 +39,22 @@ export function NotificationBell() {
     const interval = setInterval(fetchNotifications, 30000);
     return () => clearInterval(interval);
   }, []);
+
+  // Los avisos sin leer también se ven en la pestaña del navegador: "(3) Inicio · MuniGestión 3F".
+  // Al cambiar de pantalla la app pone otro título, así que se vuelve a agregar cada vez que cambia.
+  useEffect(() => {
+    const apply = () => {
+      const next = tituloConAvisos(document.title, unreadCount);
+      if (document.title !== next) document.title = next;
+    };
+    apply();
+    const observer = new MutationObserver(apply);
+    observer.observe(document.head, { subtree: true, childList: true, characterData: true });
+    return () => {
+      observer.disconnect();
+      document.title = tituloConAvisos(document.title, 0);
+    };
+  }, [unreadCount]);
 
   const handleMarkRead = async (id: string) => {
     await markAsRead(id);
@@ -56,8 +77,8 @@ export function NotificationBell() {
         >
           <Bell className="h-5 w-5" />
           {unreadCount > 0 && (
-            <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 bg-muni-orange hover:bg-muni-orange border-2 border-[#163C68] text-muni-navy font-bold text-xs">
-              {unreadCount}
+            <Badge className="absolute -top-1 -right-1 h-5 min-w-[1.25rem] flex items-center justify-center px-1 py-0 bg-muni-orange hover:bg-muni-orange border-2 border-[#163C68] text-muni-navy font-bold text-xs">
+              {unreadCount > 99 ? "99+" : unreadCount}
             </Badge>
           )}
         </Button>
