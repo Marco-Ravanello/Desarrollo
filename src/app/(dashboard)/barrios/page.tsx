@@ -7,6 +7,8 @@ import { auth } from "@/auth";
 import { MANAGEMENT_ROLES, hasPermission, PERMISSIONS } from "@/lib/permissions";
 import { formatNumber, plural } from "@/lib/formato";
 import { getBarrioSummaries } from "@/services/barrios";
+import { getLimites } from "@/services/barrio-limites";
+import { BarriosMapaPintadoLoader } from "@/components/barrios/barrio-map-loader";
 import { fechaDeRecorrida, getRecorridaStatsByBarrio, getReferentes } from "@/services/recorridas";
 import { PageHeader } from "@/components/layout/page-header";
 import { PageBreadcrumbs } from "@/components/layout/breadcrumbs-context";
@@ -16,7 +18,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 
 export const metadata = { title: "Barrios" };
 
-const zero = (n: number) => (n ? formatNumber(n) : <span className="text-muted-foreground">0</span>);
+// En cero va una raya: así se ven de un vistazo los barrios que sí tienen algo.
+const zero = (n: number) => (n ? formatNumber(n) : <span className="text-muted-foreground/60" aria-label="Ninguno">—</span>);
 
 export default async function BarriosPage() {
   const session = await auth();
@@ -24,10 +27,11 @@ export default async function BarriosPage() {
   const role = session.user.role;
   const isManagement = MANAGEMENT_ROLES.includes(role);
 
-  const [data, referentes, recorridas] = await Promise.all([
+  const [data, referentes, recorridas, limites] = await Promise.all([
     getBarrioSummaries({ canViewSensitive: hasPermission(role, PERMISSIONS.VIEW_SENSITIVE_CASES) }),
     getReferentes(),
     getRecorridaStatsByBarrio(),
+    getLimites(),
   ]);
   const mine = data.barrios.filter((b) => referentes.get(b.barrio)?.userId === session.user.id);
   const recorridaText = (barrio: string) => {
@@ -60,6 +64,18 @@ export default async function BarriosPage() {
           .
         </div>
       )}
+
+      <Card className="rounded-2xl border border-border/60 bg-card p-3 shadow-sm sm:p-4">
+        <BarriosMapaPintadoLoader
+          barrios={data.barrios.map((b) => ({
+            barrio: b.barrio,
+            slug: b.slug,
+            people: b.people,
+            openCases: b.openCases,
+            limite: limites.get(b.barrio)?.puntos ?? null,
+          }))}
+        />
+      </Card>
 
       <Card className="rounded-2xl border border-border/60 bg-card p-2 shadow-sm sm:p-4">
         <p className="px-2 pb-2 text-sm text-muted-foreground sm:px-0">
