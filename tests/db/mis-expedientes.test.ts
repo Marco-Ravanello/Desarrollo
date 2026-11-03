@@ -21,10 +21,12 @@ describe("Mis expedientes a cargo (inicio)", () => {
 
     const res = await getMyAssignedCases(yo.id);
     expect(res.total).toBe(2);
+    // Para la frase de hoy en el Inicio: cuántos de los propios están sin movimiento.
+    expect(res.stale).toBe(1);
     expect(res.cases.map((c) => c.title)).toEqual(["Quieto", "Reciente"]);
     expect(res.cases[0]).toMatchObject({ stale: true, quietDays: 40, titular: null, status: "Abierto" });
     expect(res.cases[1]).toMatchObject({ stale: false, quietDays: 2, titular: "Prueba, Ana" });
 
-    expect(await getMyAssignedCases((await createUser("DIRECCION_GENERAL")).id)).toEqual({ total: 0, cases: [] });
+    expect(await getMyAssignedCases((await createUser("DIRECCION_GENERAL")).id)).toEqual({ total: 0, stale: 0, cases: [] });
   });
 });
