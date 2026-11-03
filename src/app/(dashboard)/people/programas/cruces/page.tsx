@@ -1,5 +1,6 @@
 "use client";
 
+import { chartPalette } from "@/lib/chart-colors";
 import { useState, useEffect, useTransition } from "react";
 import {
   getProgramCatalog,
@@ -29,11 +30,11 @@ import { PageHeader } from "@/components/layout/page-header";
 import { StatCard } from "@/components/ui/stat-card";
 import { EmptyMessage } from "@/components/ui/empty-message";
 
-const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6', '#06b6d4'];
 
 export default function CrucesSocialesPage() {
-  const { theme } = useTheme();
-  const isDark = theme === "dark";
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === "dark";
+  const COLORS = chartPalette(isDark);
 
   const [catalog, setCatalog] = useState<ProgramaCatalogoItem[]>([]);
   const [selectedPrograms, setSelectedPrograms] = useState<string[]>([

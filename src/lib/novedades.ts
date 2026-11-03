@@ -13,6 +13,14 @@ export interface Novedad {
 
 export const NOVEDADES: Novedad[] = [
   {
+    fecha: "2026-11-03",
+    titulo: "Gráficos e iniciales con los colores de la Municipalidad",
+    cambios: [
+      "Los gráficos usan primero el azul y el naranja de la Municipalidad, y después celeste, verde azulado, violeta y gris, para que se distingan bien.",
+      "Los círculos con las iniciales de cada persona tienen tonos más suaves y parejos.",
+    ],
+  },
+  {
     fecha: "2026-11-02",
     titulo: "Más claro y con los colores de la Municipalidad",
     cambios: [
