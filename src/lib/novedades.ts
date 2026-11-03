@@ -16,6 +16,18 @@ export interface Novedad {
 export const NOVEDADES: Novedad[] = [
   {
     fecha: "2026-11-03",
+    parte: 4,
+    titulo: "Cruces de programas, mapa de barrios y cursos más claros",
+    cambios: [
+      "En Cruces de programas elegís los programas como etiquetas y el resultado se actualiza solo, con una frase que dice qué se está contando.",
+      "Hay tres tipos de cruce: Coincidencia (en todos los programas), Cobertura (en al menos uno) y Exclusión (en el programa base y en ninguno de los demás).",
+      "En la lista de personas del cruce, cada una muestra sus programas con el nombre completo. El número grande no cambia al buscar en la lista.",
+      "En Barrios hay un mapa del distrito con cada barrio pintado según su gente o sus expedientes abiertos. Tocá un barrio para abrirlo. En la tabla, los ceros ahora son una raya.",
+      "En los cursos, la asistencia de cada inscripto dice \"3 presentes · 1 ausente\" en lugar de abreviaturas, y el aviso de que el curso no terminó aparece una sola vez.",
+    ],
+  },
+  {
+    fecha: "2026-11-03",
     parte: 3,
     titulo: "Lo de hoy bajo el saludo y números que llevan a su lista",
     cambios: [

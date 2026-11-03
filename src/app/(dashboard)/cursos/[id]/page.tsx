@@ -212,7 +212,9 @@ export default async function CursoPage({ params }: Params) {
               {curso.programaLabel
                 ? `Al inscribir a alguien queda de alta en ${curso.programaLabel} (si ya estaba, no cambia nada).`
                 : "Personas del padrón o del Registro Único."}
-              {terminado && " El certificado sale para quien sigue inscripto y llegó a la asistencia mínima."}
+              {terminado
+                ? " El certificado sale para quien sigue inscripto y llegó a la asistencia mínima."
+                : " Los certificados se imprimen cuando el curso termine."}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -229,7 +231,8 @@ export default async function CursoPage({ params }: Params) {
                         <TableHead>Teléfono</TableHead>
                         <TableHead>Desde</TableHead>
                         <TableHead className="text-right">Asistencia</TableHead>
-                        <TableHead>Certificado</TableHead>
+                        {/* Mientras no terminó, nadie tiene certificado: se avisa una sola vez arriba. */}
+                        {terminado && <TableHead>Certificado</TableHead>}
                         {canManage && <TableHead className="w-24" />}
                       </TableRow>
                     </TableHeader>
@@ -248,12 +251,21 @@ export default async function CursoPage({ params }: Params) {
                             <TableCell className="text-sm">{i.telefono || <span className="text-muted-foreground">Sin teléfono</span>}</TableCell>
                             <TableCell className="text-sm whitespace-nowrap">{dia(i.fecha)}</TableCell>
                             <TableCell className="text-right tabular-nums">
-                              <span className="font-semibold tabular-nums">{i.asistencia.porcentaje === null ? "—" : `${i.asistencia.porcentaje} %`}</span>
-                              <p className="text-xs text-muted-foreground tabular-nums">
-                                {i.asistencia.presentes} P · {i.asistencia.ausentes} A{i.asistencia.avisos ? ` · ${i.asistencia.avisos} CA` : ""}
-                              </p>
+                              {i.asistencia.porcentaje === null ? (
+                                <span className="text-xs text-muted-foreground">
+                                  {i.asistencia.avisos ? `${i.asistencia.avisos} con aviso` : "Sin asistencia anotada"}
+                                </span>
+                              ) : (
+                                <>
+                                  <span className="font-semibold tabular-nums">{i.asistencia.porcentaje} %</span>
+                                  <p className="text-xs text-muted-foreground tabular-nums">
+                                    {plural(i.asistencia.presentes, "presente")} · {plural(i.asistencia.ausentes, "ausente")}
+                                    {i.asistencia.avisos ? ` · ${i.asistencia.avisos} con aviso` : ""}
+                                  </p>
+                                </>
+                              )}
                             </TableCell>
-                            <TableCell className="text-sm">
+                            {terminado && <TableCell className="text-sm">
                               {i.certificado ? (
                                 <Link href={`/cursos/${curso.id}/certificados?inscripto=${i.id}`} className="inline-flex items-center gap-1 font-semibold text-primary hover:underline">
                                   <Award className="h-4 w-4" /> Imprimir
@@ -261,7 +273,7 @@ export default async function CursoPage({ params }: Params) {
                               ) : (
                                 <span className="text-muted-foreground">{sin}</span>
                               )}
-                            </TableCell>
+                            </TableCell>}
                             {canManage && (
                               <TableCell className="text-right tabular-nums">
                                 {!terminado && (
