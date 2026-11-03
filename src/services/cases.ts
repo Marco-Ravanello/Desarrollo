@@ -329,3 +329,35 @@ export async function getMyAssignedCases(userId: string, limit = 5): Promise<{ t
     .sort((a, b) => b.quietDays - a.quietDays || a.title.localeCompare(b.title, "es"));
   return { total: cases.length, stale: cases.filter((c) => c.stale).length, cases: cases.slice(0, limit) };
 }
+
+export type OpenCaseInArea = { id: string; title: string; createdAt: string; assigneeName: string | null };
+
+/**
+ * Expedientes abiertos (no cerrados) de una persona en un área, para avisar antes de abrir otro.
+ * En Violencia de Género, quien no puede ver esos expedientes solo recibe cuántos hay.
+ */
+export async function getOpenCasesInArea(
+  dni: string,
+  areaId: string,
+  opts: { canViewSensitive: boolean }
+): Promise<{ total: number; cases: OpenCaseInArea[] }> {
+  const clean = String(dni || "").trim();
+  if (!clean || !areaId) return { total: 0, cases: [] };
+  const rows = await prisma.case.findMany({
+    where: { areaId, status: { not: "CERRADO" }, person: { dni: clean } },
+    select: { id: true, title: true, createdAt: true, area: { select: { name: true } }, assignedTo: { select: { name: true, email: true } } },
+    orderBy: { createdAt: "desc" },
+    take: 5,
+  });
+  const sensitive = rows.some((r) => (r.area?.name ?? "").toLowerCase().includes("violencia"));
+  if (sensitive && !opts.canViewSensitive) return { total: rows.length, cases: [] };
+  return {
+    total: rows.length,
+    cases: rows.map((r) => ({
+      id: r.id,
+      title: r.title,
+      createdAt: r.createdAt.toISOString(),
+      assigneeName: r.assignedTo ? r.assignedTo.name || r.assignedTo.email || null : null,
+    })),
+  };
+}

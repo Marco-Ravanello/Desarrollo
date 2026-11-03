@@ -27,7 +27,10 @@ import { CaseLabelChips } from "@/components/cases/case-label-chips";
 import { caseLabelName, isCaseLabel } from "@/lib/case-labels";
 import { getCaseLabelCounts } from "@/services/case-labels";
 import { CASE_PRIORITY_LABEL, CASE_STATUS_LABEL, STALE_DAYS, agoText, daysText, fechaCorta, isProvisionalDni, splitCaseTitle, summarizeCase } from "@/lib/case-summary";
-import { countMyOpenCases } from "@/services/case-assignment";
+import { canAssignCase, countMyOpenCases, getAssignableUsers } from "@/services/case-assignment";
+import { SavedFilters } from "@/components/cases/saved-filters";
+import { consultaDeFiltros, parseFiltros } from "@/lib/filtros-guardados";
+import { BulkAssignBar, BulkAssignProvider, BulkCheckbox, BulkSelectAll } from "@/components/cases/bulk-assign";
 import prisma from "@/lib/prisma";
 import {
   FileText, ShieldAlert, CheckCircle2, Clock, Plus, Search,
@@ -80,7 +83,7 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
   const canViewSensitive = hasPermission(session.user.role as any, PERMISSIONS.VIEW_SENSITIVE_CASES);
   const canSeeTeam = MANAGEMENT_ROLES.includes(session.user.role) || session.user.role === "DIRECTOR_AREA";
 
-  const [data, areasList, derivationsToAnswer, myOpenCases, labelCounts] = await Promise.all([
+  const [data, areasList, derivationsToAnswer, myOpenCases, labelCounts, me] = await Promise.all([
     getAllCases({
       query: q,
       areaId: area,
@@ -98,7 +101,10 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
     countDerivationsToAnswer(session.user),
     countMyOpenCases(session.user.id),
     getCaseLabelCounts({ canViewSensitive }),
+    prisma.user.findUnique({ where: { id: session.user.id }, select: { caseFilters: true } }).catch(() => null),
   ]);
+  const filtrosGuardados = parseFiltros(me?.caseFilters);
+  const consultaActual = consultaDeFiltros(await searchParams);
   const assignedUser =
     assigned && assigned !== "mine" && assigned !== "none"
       ? await prisma.user.findUnique({ where: { id: assigned }, select: { name: true, username: true } }).catch(() => null)
@@ -107,6 +113,16 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
     ? ASSIGNED_LABELS[assigned] ?? `A cargo de ${assignedUser?.name || assignedUser?.username || "otra persona"}`
     : null;
   const now = new Date();
+
+  // Asignar varios juntos: con un área elegida y si la persona puede asignar en esa área.
+  const bulkAreaObj = area && area !== "all" ? areasList.find((a) => a.id === area) : undefined;
+  const bulkEnabled = Boolean(bulkAreaObj && canAssignCase(session.user, bulkAreaObj.id));
+  const bulkPeople = bulkEnabled && bulkAreaObj ? await getAssignableUsers({ areaId: bulkAreaObj.id, areaName: bulkAreaObj.name }) : [];
+  const canAssignSomewhere = MANAGEMENT_ROLES.includes(session.user.role) || session.user.role === "DIRECTOR_AREA";
+  const isRestrictedCase = (c: { area: { name: string } }) => !canViewSensitive && c.area.name.toLowerCase().includes("violencia");
+  const selectableIds = bulkEnabled ? data.cases.filter((c) => c.status !== "CERRADO" && !isRestrictedCase(c)).map((c) => c.id) : [];
+  const bulkHintHref =
+    session.user.role === "DIRECTOR_AREA" && session.user.areaId ? `/cases?area=${encodeURIComponent(session.user.areaId)}&status=ACTIVOS&assigned=none` : null;
 
   // Solo se marcan las prioridades que piden atención.
   const getPriorityBadge = (p: string) =>
@@ -298,6 +314,9 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
           </label>
           </MobileFilters>
         </FilterForm>
+        <div className="mt-3">
+          <SavedFilters filtros={filtrosGuardados} consultaActual={consultaActual} />
+        </div>
         <ActiveFilters
           clearHref="/cases"
           items={[
@@ -310,9 +329,29 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
             label && `Etiqueta: ${caseLabelName(label)}`,
           ]}
         />
+        {!bulkEnabled && canAssignSomewhere && data.cases.length > 0 && (
+          <p className="mt-3 hidden text-xs text-muted-foreground md:block">
+            Para asignar varios expedientes juntos, elegí un área en los filtros
+            {bulkHintHref ? (
+              <>
+                {" "}o{" "}
+                <Link href={bulkHintHref} className="font-semibold text-primary hover:underline">
+                  mirá los de tu área sin profesional
+                </Link>
+              </>
+            ) : null}
+            .
+          </p>
+        )}
+        {bulkEnabled && selectableIds.length > 0 && (
+          <p className="mt-3 hidden text-xs text-muted-foreground md:block">
+            Tildá los expedientes de la lista para dejar a una persona a cargo de todos juntos.
+          </p>
+        )}
       </Card>
 
       {/* Cases Table */}
+      <MaybeBulk enabled={bulkEnabled}>
       <Card className="rounded-2xl border-border/60 bg-card shadow-xs overflow-hidden">
         {data.cases.length === 0 ? (
           <EmptyMessage
@@ -375,6 +414,11 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
           <Table mobileCards={false} stickyHeader>
               <TableHeader>
                 <TableRow className="border-border/60 bg-muted/30">
+                  {bulkEnabled && (
+                    <TableHead className="w-10">
+                      <BulkSelectAll ids={selectableIds} />
+                    </TableHead>
+                  )}
                   <TableHead>Expediente</TableHead>
                   <TableHead>A cargo</TableHead>
                   <TableHead>Estado</TableHead>
@@ -401,6 +445,11 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
                   const assigneeName = c.assignedTo ? c.assignedTo.name || c.assignedTo.email || "Usuario" : null;
                   return (
                     <TableRow key={c.id} className={`border-border/60 hover:bg-muted/30 transition-colors ${summary.stale ? "bg-amber-500/[0.04]" : ""}`}>
+                      {bulkEnabled && (
+                        <TableCell className="w-10 align-top">
+                          {selectableIds.includes(c.id) && <BulkCheckbox id={c.id} label={c.person ? `${c.person.lastName}, ${c.person.firstName}` : shown.title} />}
+                        </TableCell>
+                      )}
                       <TableCell className="font-medium max-w-xs align-top">
                         {isRestricted ? (
                           <span className="italic text-muted-foreground text-xs font-semibold">Expediente reservado</span>
@@ -488,6 +537,13 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
           </>
         )}
       </Card>
+      {bulkEnabled && bulkAreaObj && (
+        <BulkAssignBar
+          areaLabel={getAreaShortName(bulkAreaObj.name)}
+          people={bulkPeople.map((p) => ({ id: p.id, name: p.name, open: p.open }))}
+        />
+      )}
+      </MaybeBulk>
 
       {/* Pagination */}
       {data.totalPages > 1 && (
@@ -513,4 +569,9 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
       )}
     </div>
   );
+}
+
+/** Con la asignación de a varios encendida, la lista y la barra comparten lo elegido. */
+function MaybeBulk({ enabled, children }: { enabled: boolean; children: React.ReactNode }) {
+  return enabled ? <BulkAssignProvider>{children}</BulkAssignProvider> : <>{children}</>;
 }

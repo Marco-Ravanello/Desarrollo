@@ -29,6 +29,8 @@ model User {
   assignedCases      Case[]
   /// Orden y tarjetas escondidas del Inicio que eligió la persona ({ order, hidden }); null = el de siempre.
   homeLayout         Json?
+  /// Filtros guardados de la lista de Expedientes: [{ nombre, consulta }]. Ver src/lib/filtros-guardados.ts.
+  caseFilters        Json?
   /// Cuándo cerró la bienvenida que se muestra la primera vez que entra; null = todavía no la vio.
   welcomeSeenAt      DateTime?
   createdAt          DateTime             @default(now())

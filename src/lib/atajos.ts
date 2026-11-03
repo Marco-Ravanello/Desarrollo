@@ -6,6 +6,7 @@ export const ABRIR_BUSCADOR = "muni:abrir-buscador";
 export const ABRIR_ATAJOS = "muni:abrir-atajos";
 export const ABRIR_GUIA = "muni:abrir-guia";
 export const ABRIR_BIENVENIDA = "muni:abrir-bienvenida";
+export const ABRIR_NUEVA_INTERVENCION = "muni:abrir-nueva-intervencion";
 
 export interface Atajo {
   /** Teclas como se muestran, una por recuadro. */

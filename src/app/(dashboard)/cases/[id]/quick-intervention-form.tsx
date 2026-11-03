@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { ABRIR_NUEVA_INTERVENCION } from "@/lib/atajos";
+import { pedidoDeIntervencion } from "@/components/cases/new-intervention-signal";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { PlusCircle, Loader2, Send } from "lucide-react";
@@ -18,6 +20,31 @@ export function QuickInterventionForm({ caseId, caseTitle }: QuickInterventionFo
   const [description, setDescription] = useState("");
   const [type, setType] = useState("");
   const [loading, setLoading] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
+  const textRef = useRef<HTMLTextAreaElement>(null);
+  const [focusNext, setFocusNext] = useState(false);
+
+  // El botón "Nueva intervención" del encabezado abre el formulario y lleva hasta él.
+  useEffect(() => {
+    const open = () => {
+      pedidoDeIntervencion.pendiente = false;
+      setExpanded(true);
+      setFocusNext(true);
+    };
+    // Si se pidió desde otra pestaña, el formulario aparece recién ahora.
+    if (pedidoDeIntervencion.pendiente) open();
+    window.addEventListener(ABRIR_NUEVA_INTERVENCION, open);
+    return () => window.removeEventListener(ABRIR_NUEVA_INTERVENCION, open);
+  }, []);
+  useEffect(() => {
+    if (!expanded || !focusNext) return;
+    setFocusNext(false);
+    const t = setTimeout(() => {
+      formRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      textRef.current?.focus({ preventScroll: true });
+    }, 50);
+    return () => clearTimeout(t);
+  }, [expanded, focusNext]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,12 +61,12 @@ export function QuickInterventionForm({ caseId, caseTitle }: QuickInterventionFo
     try {
       const result = await addCaseInterventionAction(caseId, description, type);
       if (result.success) {
-        toast.success("Intervención registrada correctamente");
+        toast.success("Intervención guardada.");
         setDescription("");
         setType("");
         setExpanded(false);
       } else {
-        toast.error(result.error || "Error al registrar intervención");
+        toast.error(result.error || "No se pudo guardar la intervención. Probá de nuevo.");
       }
     } catch (error) {
       toast.error("No se pudo registrar la intervención. Revisá la conexión y probá de nuevo.");
@@ -51,7 +78,10 @@ export function QuickInterventionForm({ caseId, caseTitle }: QuickInterventionFo
   if (!expanded) {
     return (
       <Button
-        onClick={() => setExpanded(true)}
+        onClick={() => {
+          setExpanded(true);
+          setFocusNext(true);
+        }}
         className="w-full rounded-2xl bg-primary/10 hover:bg-primary/10 text-primary border border-primary/20 font-bold gap-2 h-11"
       >
         <PlusCircle className="h-4 w-4" /> Nueva intervención
@@ -60,10 +90,10 @@ export function QuickInterventionForm({ caseId, caseTitle }: QuickInterventionFo
   }
 
   return (
-    <form onSubmit={handleSubmit} className="p-4 rounded-2xl bg-card border border-primary/30 shadow-md space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
+    <form ref={formRef} id="nueva-intervencion" onSubmit={handleSubmit} className="p-4 rounded-2xl bg-card border border-primary/30 shadow-md space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
       <div className="flex justify-between items-center">
         <label className="text-xs font-bold text-muted-foreground">
-          Cargar nota de evolución en expediente
+          Nueva intervención
         </label>
         <span className="text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
           {caseTitle}
@@ -90,6 +120,8 @@ export function QuickInterventionForm({ caseId, caseTitle }: QuickInterventionFo
       </div>
 
       <Textarea
+        ref={textRef}
+        aria-label="Qué se hizo"
         value={description}
         onChange={(e) => setDescription(e.target.value)}
         placeholder="Contá cómo fue la atención, el informe social o la derivación"

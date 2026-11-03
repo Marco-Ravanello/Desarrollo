@@ -16,6 +16,18 @@ export interface Novedad {
 export const NOVEDADES: Novedad[] = [
   {
     fecha: "2026-11-03",
+    parte: 5,
+    titulo: "Expedientes más ágiles y tareas más fáciles de compartir",
+    cambios: [
+      "En cada expediente hay un botón \"Nueva intervención\" arriba y otro para imprimirlo con el membrete de la Municipalidad.",
+      "Al abrir un expediente nuevo, te avisa si la persona ya tiene uno abierto en esa área.",
+      "En la lista de Expedientes, con un área elegida, podés tildar varios y dejar a una persona a cargo de todos juntos.",
+      "Podés guardar los filtros que usás seguido con un nombre y volver a ellos con un toque.",
+      "Al compartir una tarea desde la Agenda, buscás a la persona por su nombre o su área.",
+    ],
+  },
+  {
+    fecha: "2026-11-03",
     parte: 4,
     titulo: "Cruces de programas, mapa de barrios y cursos más claros",
     cambios: [

@@ -34,6 +34,52 @@ export async function getAssignableUsers(caseItem: { areaId: string; areaName: s
 
 /** Asigna (o quita, con assigneeId null) el profesional a cargo. */
 export async function assignCase(user: AssignUser, input: { caseId: string; assigneeId: string | null }): Promise<Result> {
+  return assignOne(user, input, { notify: true });
+}
+
+/** Lo máximo que se asigna de una vez desde la lista. */
+export const BULK_ASSIGN_MAX = 50;
+
+/**
+ * Deja a una persona a cargo de varios expedientes juntos (desde la lista). Cada uno pasa por las mismas
+ * reglas que de a uno y queda en su historia; a quien queda a cargo le llega un solo aviso con el total.
+ */
+export async function assignCases(
+  user: AssignUser,
+  input: { caseIds: string[]; assigneeId: string }
+): Promise<{ success: true; assigned: number; skipped: number } | { success: false; error: string }> {
+  const ids = Array.from(new Set(input.caseIds.filter((id) => typeof id === "string" && id.length > 0)));
+  if (ids.length === 0) return { success: false, error: "Elegí al menos un expediente." };
+  if (ids.length > BULK_ASSIGN_MAX) return { success: false, error: `Se pueden asignar hasta ${BULK_ASSIGN_MAX} expedientes por vez.` };
+  if (!input.assigneeId) return { success: false, error: "Elegí quién queda a cargo." };
+
+  let assigned = 0;
+  let skipped = 0;
+  let lastError: string | null = null;
+  for (const caseId of ids) {
+    const res = await assignOne(user, { caseId, assigneeId: input.assigneeId }, { notify: false });
+    if (res.success) assigned++;
+    else {
+      skipped++;
+      lastError = res.error;
+    }
+  }
+  if (assigned === 0) return { success: false, error: lastError ?? "No se pudo asignar ninguno." };
+
+  if (input.assigneeId !== user.id) {
+    await prisma.notification.create({
+      data: {
+        userId: input.assigneeId,
+        title: assigned === 1 ? "Te asignaron un expediente" : `Te asignaron ${assigned} expedientes`,
+        message: `${user.name || "Alguien"} te dejó a cargo de ${assigned === 1 ? "un expediente" : `${assigned} expedientes`}. Están en "Mis expedientes".`,
+        link: "/cases?assigned=mine",
+      },
+    });
+  }
+  return { success: true, assigned, skipped };
+}
+
+async function assignOne(user: AssignUser, input: { caseId: string; assigneeId: string | null }, opts: { notify: boolean }): Promise<Result> {
   const caseItem = await prisma.case.findUnique({
     where: { id: input.caseId },
     select: { id: true, title: true, areaId: true, status: true, assignedToId: true, area: { select: { name: true } }, assignedTo: { select: { name: true } } },
@@ -66,7 +112,7 @@ export async function assignCase(user: AssignUser, input: { caseId: string; assi
   });
   if (updated.count === 0) return fail("Alguien cambió el profesional a cargo recién. Recargá la página.");
 
-  if (assignee && assignee.id !== user.id) {
+  if (opts.notify && assignee && assignee.id !== user.id) {
     await prisma.notification.create({
       data: {
         userId: assignee.id,

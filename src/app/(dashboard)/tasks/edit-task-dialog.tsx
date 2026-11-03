@@ -1,9 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Loader2, Pencil, Search, X } from "lucide-react";
+import { Loader2, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,14 +11,14 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
-import { InitialsAvatar } from "@/components/ui/initials-avatar";
 import {
   parseViewerIds, taskDueParts, TASK_NOTES_MAX, TASK_PRIORITIES, TASK_REPEATS, TASK_TITLE_MAX, type TaskPriority,
 } from "@/lib/tasks";
 import { updateTaskAction } from "./actions";
 import { RequiredMark } from "@/components/ui/form-section";
+import { SharePicker, type ShareableUser } from "@/components/tasks/share-picker";
 
-export type ShareableUser = { id: string; name: string; areaName: string | null };
+export type { ShareableUser };
 
 type EditableTask = {
   id: string;
@@ -29,8 +29,6 @@ type EditableTask = {
   viewerIds?: string | null;
   repeat?: string | null;
 };
-
-const normal = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 
 /** Botón con lápiz que abre el formulario para cambiar una tarea. */
 export function EditTaskDialog({ task, users }: { task: EditableTask; users: ShareableUser[] }) {
@@ -44,7 +42,6 @@ export function EditTaskDialog({ task, users }: { task: EditableTask; users: Sha
   const [priority, setPriority] = useState<TaskPriority>("MEDIA");
   const [repeat, setRepeat] = useState("");
   const [shared, setShared] = useState<string[]>([]);
-  const [search, setSearch] = useState("");
 
   const reset = () => {
     const due = taskDueParts(task.dueDate);
@@ -55,17 +52,7 @@ export function EditTaskDialog({ task, users }: { task: EditableTask; users: Sha
     setPriority((TASK_PRIORITIES.find((p) => p.value === task.priority)?.value ?? "MEDIA") as TaskPriority);
     setShared(parseViewerIds(task.viewerIds));
     setRepeat(task.repeat ?? "");
-    setSearch("");
   };
-
-  const byId = useMemo(() => new Map(users.map((u) => [u.id, u])), [users]);
-  const matches = useMemo(() => {
-    const q = normal(search.trim());
-    const list = q ? users.filter((u) => normal(`${u.name} ${u.areaName ?? ""}`).includes(q)) : users;
-    return list.slice(0, 50);
-  }, [search, users]);
-
-  const toggle = (id: string) => setShared((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]));
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -172,50 +159,7 @@ export function EditTaskDialog({ task, users }: { task: EditableTask; users: Sha
 
           <div className="space-y-2">
             <Label htmlFor="tarea-compartir">Compartida con</Label>
-            {shared.length > 0 ? (
-              <ul className="flex flex-wrap gap-1.5">
-                {shared.map((id) => (
-                  <li key={id} className="flex items-center gap-1 rounded-full border border-border/60 bg-muted/30 py-0.5 pl-1 pr-1 text-xs font-medium">
-                    <InitialsAvatar name={byId.get(id)?.name ?? "?"} seed={id} size="xs" />
-                    {byId.get(id)?.name ?? "Usuario dado de baja"}
-                    <button type="button" onClick={() => toggle(id)} className="rounded-full p-0.5 text-muted-foreground hover:text-foreground">
-                      <X className="h-3 w-3" />
-                      <span className="sr-only">Dejar de compartir con {byId.get(id)?.name ?? "este usuario"}</span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-xs text-muted-foreground">Solo la ves vos.</p>
-            )}
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                id="tarea-compartir"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Buscar por nombre o área"
-                className="rounded-xl pl-9"
-              />
-            </div>
-            <ul className="max-h-44 divide-y divide-border/30 overflow-y-auto rounded-xl border border-border/50">
-              {matches.length === 0 ? (
-                <li className="px-3 py-2 text-xs text-muted-foreground">Nadie coincide con la búsqueda.</li>
-              ) : (
-                matches.map((u) => (
-                  <li key={u.id}>
-                    <label className="flex cursor-pointer items-center gap-2.5 px-3 py-2 text-sm hover:bg-muted/30">
-                      <input type="checkbox" checked={shared.includes(u.id)} onChange={() => toggle(u.id)} className="h-4 w-4 accent-primary" />
-                      <InitialsAvatar name={u.name} seed={u.id} size="sm" />
-                      <span className="min-w-0">
-                        <span className="block truncate font-medium text-foreground">{u.name}</span>
-                        {u.areaName && <span className="block truncate text-xs text-muted-foreground">{u.areaName}</span>}
-                      </span>
-                    </label>
-                  </li>
-                ))
-              )}
-            </ul>
+            <SharePicker users={users} value={shared} onChange={setShared} inputId="tarea-compartir" />
           </div>
 
           <DialogFooter>
