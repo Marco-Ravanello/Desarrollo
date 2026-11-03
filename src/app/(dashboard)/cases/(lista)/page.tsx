@@ -355,7 +355,7 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
             })}
           </MobileList>
           <div className="hidden md:block">
-          <Table mobileCards={false}>
+          <Table mobileCards={false} stickyHeader>
               <TableHeader>
                 <TableRow className="border-border/60 bg-muted/30">
                   <TableHead>Expediente</TableHead>

@@ -536,7 +536,7 @@ export default async function BarrioPage({
           ) : (
             <>
               <div className="hidden md:block">
-                <Table>
+                <Table stickyHeader>
                   <TableHeader>
                     <TableRow>
                       <TableHead>Persona</TableHead>

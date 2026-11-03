@@ -14,6 +14,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Menu } from "lucide-react";
 import { OfflineSupport, SituationRoomButton } from "@/components/layout/header-extras";
 import { InactivityLogout } from "@/components/layout/inactivity-logout";
+import { NovedadesAviso } from "@/components/layout/novedades-aviso";
 import { MunicipalSettingsProvider } from "@/components/providers/municipal-settings";
 import type { PublicMunicipalSettings } from "@/types/settings";
 import type { Session } from "next-auth";
@@ -34,6 +35,7 @@ export function DashboardShell({
       <MunicipalSettingsProvider settings={settings}>
         <OfflineSupport />
         <InactivityLogout />
+        <NovedadesAviso />
         <div className="flex min-h-screen bg-background relative transition-colors duration-300 print:bg-white print:text-black">
           {/* Sidebar escritorio */}
           <aside className="hidden md:block sticky top-0 h-screen shrink-0 self-start print:hidden z-30">

@@ -105,7 +105,7 @@ export default async function ProgramCandidatesPage({
               description={list.q ? "Probá con el DNI, una parte del nombre o el barrio." : "Todas las personas que los cumplen ya están en el programa."}
             />
           ) : (
-            <Table>
+            <Table stickyHeader>
               <TableHeader>
                 <TableRow>
                   <TableHead>Persona</TableHead>

@@ -164,7 +164,7 @@ export default async function AuditPage({ searchParams }: { searchParams: Promis
               ))}
             </MobileList>
             <div className="hidden md:block">
-              <Table mobileCards={false} className="table-fixed">
+              <Table mobileCards={false} stickyHeader className="table-fixed">
                 <TableHeader>
                   <TableRow className="border-border/40">
                     <TableHead className="w-36">Fecha y hora</TableHead>

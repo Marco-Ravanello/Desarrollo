@@ -13,9 +13,9 @@ import {
 import { Button } from "@/components/ui/button";
 import { InitialsAvatar } from "@/components/ui/initials-avatar";
 import { Badge } from "@/components/ui/badge";
-import { UserCog, UserPlus, Settings, LogOut, ChevronDown, KeyRound } from "lucide-react";
+import { UserCog, UserPlus, Settings, LogOut, ChevronDown, KeyRound, Sparkles } from "lucide-react";
 import Link from "next/link";
-import { canCreateUsersAndResetPasswords, hasPermission, PERMISSIONS } from "@/lib/permissions";
+import { canCreateUsersAndResetPasswords, hasPermission, isEmergencySurveyor, PERMISSIONS } from "@/lib/permissions";
 import { roleLabel } from "@/lib/roles";
 
 interface UserNavProps {
@@ -99,6 +99,14 @@ export function UserNav({ variant = "header", isCollapsed = false }: UserNavProp
             <span>Cambiar mi contraseña</span>
           </Link>
         </DropdownMenuItem>
+        {!isEmergencySurveyor(session?.user?.role) && (
+          <DropdownMenuItem asChild className="rounded-xl text-xs font-semibold cursor-pointer py-2 focus:bg-primary/10 focus:text-primary">
+            <Link href="/novedades" className="flex items-center gap-2.5 w-full">
+              <Sparkles className="h-4 w-4 text-primary" />
+              <span>Novedades</span>
+            </Link>
+          </DropdownMenuItem>
+        )}
         <DropdownMenuSeparator className="my-1 bg-border/60" />
 
         {canManageUsers && (

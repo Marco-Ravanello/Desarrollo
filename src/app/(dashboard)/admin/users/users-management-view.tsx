@@ -339,7 +339,7 @@ export function UsersManagementView({
             })}
           </ul>
         )}
-        <TableCards className={filteredUsers.length > 0 ? "hidden md:block" : undefined}>
+        <TableCards stickyHeader className={filteredUsers.length > 0 ? "hidden md:block" : undefined}>
           <table className="w-full text-xs text-left">
             <thead className="bg-muted/40 border-b border-border/60">
               <tr>

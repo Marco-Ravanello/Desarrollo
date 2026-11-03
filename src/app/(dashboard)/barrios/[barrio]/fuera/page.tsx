@@ -77,7 +77,7 @@ export default async function PuntosFueraPage({ params }: Params) {
           </div>
           <Card className="rounded-2xl border border-border/60 bg-card p-2 shadow-sm sm:p-4">
             <div className="hidden md:block">
-              <Table>
+              <Table stickyHeader>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Persona</TableHead>

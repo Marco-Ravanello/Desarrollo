@@ -152,7 +152,7 @@ export default async function PurchaseOrdersPage({
       {orders.length > 0 ? (
         <div className="space-y-4">
           <Card className="overflow-hidden rounded-2xl border-border/60 shadow-sm">
-            <Table>
+            <Table stickyHeader>
               <TableHeader>
                 <TableRow className="hover:bg-transparent">
                   <TableHead>Orden</TableHead>

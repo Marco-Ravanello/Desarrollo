@@ -157,7 +157,7 @@ export default async function PeoplePage({
           </MobileList>
         )}
         <div className={people.length > 0 ? "hidden md:block" : undefined}>
-          <Table mobileCards={false}>
+          <Table mobileCards={false} stickyHeader>
             <TableHeader>
               <TableRow className="hover:bg-transparent">
                 <TableHead>Apellido y nombre</TableHead>

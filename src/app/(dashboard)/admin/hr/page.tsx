@@ -202,7 +202,7 @@ export default async function HRPage({
       <div className="overflow-hidden rounded-2xl border border-border/60 bg-card text-card-foreground shadow-sm">
         <HRFilters areas={sanitizedAreas} />
 
-        <Table>
+        <Table stickyHeader>
           <TableHeader>
             <TableRow className="hover:bg-transparent">
               <TableHead>Agente</TableHead>

@@ -68,7 +68,7 @@ export function StockList({ supplies: all, canEdit }: { supplies: any[]; canEdit
         </Button>
       </div>
 
-      <Table>
+      <Table stickyHeader>
         <TableHeader>
           <TableRow>
             <TableHead>Insumo</TableHead>

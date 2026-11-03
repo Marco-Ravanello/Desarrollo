@@ -296,7 +296,7 @@ export default async function ProgramPage({
               description={list.q ? "Probá con el DNI, una parte del nombre o el barrio." : "Cuando se dé de alta a alguien desde su ficha o se importe una planilla, aparece acá."}
             />
           ) : (
-            <Table>
+            <Table stickyHeader>
               <TableHeader>
                 <TableRow>
                   <TableHead>Persona</TableHead>
