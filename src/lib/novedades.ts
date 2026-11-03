@@ -5,13 +5,26 @@
  * Textos cortos, en voseo y sin nombres técnicos.
  */
 export interface Novedad {
-  /** Fecha en formato aaaa-mm-dd; también identifica la entrada. */
+  /** Fecha en formato aaaa-mm-dd. */
   fecha: string;
+  /** Si hay más de una actualización el mismo día: 2, 3… (la primera no lo lleva). */
+  parte?: number;
   titulo: string;
   cambios: string[];
 }
 
 export const NOVEDADES: Novedad[] = [
+  {
+    fecha: "2026-11-03",
+    parte: 2,
+    titulo: "Un Inicio a tu medida, atajos y una guía en cada pantalla",
+    cambios: [
+      "Con \"Ordenar tarjetas\" elegís el orden de las tarjetas del Inicio y podés esconder las que no usás.",
+      "Las tareas vencidas se ven en rojo en el Inicio. Quien administra la flota también ve ahí los vehículos con la VTV o el seguro vencido.",
+      "El botón \"?\" de arriba abre la guía \"¿Cómo hago para…?\" de la pantalla en la que estás.",
+      "Atajos de teclado: / para buscar, N para un expediente nuevo, G para la guía y ? para ver todos.",
+    ],
+  },
   {
     fecha: "2026-11-03",
     titulo: "Gráficos e iniciales con los colores de la Municipalidad",
@@ -54,4 +67,9 @@ export function fechaNovedad(fecha: string): string {
   const [y, m, d] = fecha.split("-").map(Number);
   if (!y || !m || !d) return fecha;
   return new Date(Date.UTC(y, m - 1, d)).toLocaleDateString("es-AR", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" });
+}
+
+/** Identifica cada entrada (lo que se guarda como "ya vista"): la fecha, y la parte si hubo más de una ese día. */
+export function claveNovedad(n: Novedad): string {
+  return n.parte && n.parte > 1 ? `${n.fecha}-${n.parte}` : n.fecha;
 }

@@ -52,3 +52,37 @@ export function expiryNotice(kind: ExpiryKind, label: string, day: string, today
     message: `${vence === "termina" ? "Termina" : "Vence"} el ${fecha(day)} (${cuando}).`,
   };
 }
+
+/** Qué se muestra de un vehículo en el Inicio: lo que venció primero, o lo próximo a vencer. */
+export interface VehicleExpiryInfo {
+  /** "VTV vencida el 10/10", "El seguro vence el 05/12", "VTV hasta 11/26" o "Sin vencimientos cargados". */
+  text: string;
+  /** La VTV o el seguro ya vencieron (va en rojo). */
+  overdue: boolean;
+  /** Vence en el próximo mes (va en naranja). */
+  soon: boolean;
+  /** El vencimiento más cercano ("AAAA-MM-DD"), o null si no hay ninguno cargado. */
+  nearest: string | null;
+}
+
+const diaMes = (day: string) => `${day.slice(8, 10)}/${day.slice(5, 7)}`;
+const mesAnio = (day: string) => `${day.slice(5, 7)}/${day.slice(2, 4)}`;
+
+/** `vtv` y `seguro` en "AAAA-MM-DD" (o null si no están cargados). */
+export function vehicleExpiryInfo(vtv: string | null, seguro: string | null, today: string): VehicleExpiryInfo {
+  const vtvVencida = Boolean(vtv && diasEntre(today, vtv) < 0);
+  const seguroVencido = Boolean(seguro && diasEntre(today, seguro) < 0);
+  const fechas = [vtv, seguro].filter((d): d is string => Boolean(d)).sort();
+  const nearest = fechas[0] ?? null;
+
+  if (vtvVencida && seguroVencido) return { text: "VTV y seguro vencidos", overdue: true, soon: false, nearest };
+  if (vtvVencida) return { text: `VTV vencida el ${diaMes(vtv!)}`, overdue: true, soon: false, nearest };
+  if (seguroVencido) return { text: `Seguro vencido el ${diaMes(seguro!)}`, overdue: true, soon: false, nearest };
+  if (!nearest) return { text: "Sin vencimientos cargados", overdue: false, soon: false, nearest };
+
+  const esVtv = nearest === vtv;
+  if (diasEntre(today, nearest) <= EXPIRY_NOTICE_DAYS) {
+    return { text: `${esVtv ? "La VTV" : "El seguro"} vence el ${diaMes(nearest)}`, overdue: false, soon: true, nearest };
+  }
+  return { text: vtv ? `VTV hasta ${mesAnio(vtv)}` : `Seguro hasta ${mesAnio(seguro!)}`, overdue: false, soon: false, nearest };
+}

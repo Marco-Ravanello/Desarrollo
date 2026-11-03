@@ -27,6 +27,8 @@ model User {
   reservations       VehicleReservation[]
   /// Expedientes de los que es profesional a cargo.
   assignedCases      Case[]
+  /// Orden y tarjetas escondidas del Inicio que eligió la persona ({ order, hidden }); null = el de siempre.
+  homeLayout         Json?
   createdAt          DateTime             @default(now())
   updatedAt          DateTime             @updatedAt
 }

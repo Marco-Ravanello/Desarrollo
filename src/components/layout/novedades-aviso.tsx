@@ -8,7 +8,7 @@ import { isEmergencySurveyor } from "@/lib/permissions";
 import { Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ULTIMA_NOVEDAD, fechaNovedad } from "@/lib/novedades";
+import { ULTIMA_NOVEDAD, claveNovedad, fechaNovedad } from "@/lib/novedades";
 
 const STORAGE_KEY = "muni-novedades-vistas";
 
@@ -28,7 +28,7 @@ export function NovedadesAviso() {
   useEffect(() => {
     if (!novedad || skip) return;
     try {
-      if (window.localStorage.getItem(STORAGE_KEY) !== novedad.fecha) setOpen(true);
+      if (window.localStorage.getItem(STORAGE_KEY) !== claveNovedad(novedad)) setOpen(true);
     } catch {
       // Sin acceso a la memoria del navegador: no se muestra.
     }
@@ -37,7 +37,7 @@ export function NovedadesAviso() {
   const close = () => {
     setOpen(false);
     try {
-      if (novedad) window.localStorage.setItem(STORAGE_KEY, novedad.fecha);
+      if (novedad) window.localStorage.setItem(STORAGE_KEY, claveNovedad(novedad));
     } catch {
       // Nada que hacer: la próxima vez se vuelve a mostrar.
     }

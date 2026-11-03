@@ -13,7 +13,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { InitialsAvatar } from "@/components/ui/initials-avatar";
 import { Badge } from "@/components/ui/badge";
-import { UserCog, UserPlus, Settings, LogOut, ChevronDown, KeyRound, Sparkles } from "lucide-react";
+import { UserCog, UserPlus, Settings, LogOut, ChevronDown, KeyRound, Sparkles, CircleHelp, Keyboard } from "lucide-react";
+import { ABRIR_ATAJOS, ABRIR_GUIA } from "@/lib/atajos";
 import Link from "next/link";
 import { canCreateUsersAndResetPasswords, hasPermission, isEmergencySurveyor, PERMISSIONS } from "@/lib/permissions";
 import { roleLabel } from "@/lib/roles";
@@ -105,6 +106,26 @@ export function UserNav({ variant = "header", isCollapsed = false }: UserNavProp
               <Sparkles className="h-4 w-4 text-primary" />
               <span>Novedades</span>
             </Link>
+          </DropdownMenuItem>
+        )}
+        {!isEmergencySurveyor(session?.user?.role) && (
+          <DropdownMenuItem
+            onSelect={() => window.dispatchEvent(new Event(ABRIR_GUIA))}
+            className="rounded-xl text-xs font-semibold cursor-pointer py-2 focus:bg-primary/10 focus:text-primary gap-2.5"
+          >
+            <CircleHelp className="h-4 w-4 text-primary" />
+            <span>Guía de esta pantalla</span>
+          </DropdownMenuItem>
+        )}
+        {!isEmergencySurveyor(session?.user?.role) && (
+          // En el celular no hay teclado: los atajos solo se ofrecen en la compu.
+          <DropdownMenuItem
+            onSelect={() => window.dispatchEvent(new Event(ABRIR_ATAJOS))}
+            className="hidden md:flex rounded-xl text-xs font-semibold cursor-pointer py-2 focus:bg-primary/10 focus:text-primary gap-2.5"
+          >
+            <Keyboard className="h-4 w-4 text-primary" />
+            <span className="flex-1">Atajos de teclado</span>
+            <kbd className="rounded border border-border bg-muted px-1.5 text-[0.65rem] font-bold text-muted-foreground">?</kbd>
           </DropdownMenuItem>
         )}
         <DropdownMenuSeparator className="my-1 bg-border/60" />

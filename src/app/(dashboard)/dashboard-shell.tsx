@@ -15,6 +15,8 @@ import { Menu } from "lucide-react";
 import { OfflineSupport, SituationRoomButton } from "@/components/layout/header-extras";
 import { InactivityLogout } from "@/components/layout/inactivity-logout";
 import { NovedadesAviso } from "@/components/layout/novedades-aviso";
+import { KeyboardShortcuts } from "@/components/layout/keyboard-shortcuts";
+import { HelpPanel } from "@/components/layout/help-panel";
 import { MunicipalSettingsProvider } from "@/components/providers/municipal-settings";
 import type { PublicMunicipalSettings } from "@/types/settings";
 import type { Session } from "next-auth";
@@ -36,6 +38,7 @@ export function DashboardShell({
         <OfflineSupport />
         <InactivityLogout />
         <NovedadesAviso />
+        <KeyboardShortcuts />
         <div className="flex min-h-screen bg-background relative transition-colors duration-300 print:bg-white print:text-black">
           {/* Sidebar escritorio */}
           <aside className="hidden md:block sticky top-0 h-screen shrink-0 self-start print:hidden z-30">
@@ -82,6 +85,7 @@ export function DashboardShell({
                 <SituationRoomButton />
 
                 <EmergencyHeaderWidget />
+                <HelpPanel />
                 <NotificationBell />
                 <div className="h-6 w-px bg-white/20 mx-1 hidden sm:block" />
                 <UserNav variant="header" />
