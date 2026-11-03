@@ -134,7 +134,7 @@ export interface ProgramaCatalogoItem {
 export interface CruceProgramasResultado {
   total_coincidencias: number;
   programas_consultados: string[];
-  modo: "interseccion" | "union";
+  modo: "interseccion" | "union" | "diferencia";
   limite: number;
   offset: number;
   resultados: {
@@ -228,7 +228,7 @@ export async function getProgramCatalog(): Promise<ProgramaCatalogoItem[]> {
 
 export async function calculateCrossPrograms(
   programas: string[],
-  modo: "interseccion" | "union" = "interseccion",
+  modo: "interseccion" | "union" | "diferencia" = "interseccion",
   options?: { offset?: number; limit?: number; q?: string }
 ): Promise<CruceProgramasResultado> {
   const { offset = 0, limit = 50, q = "" } = options || {};
@@ -256,7 +256,7 @@ export async function calculateCrossPrograms(
   };
 }
 
-export function getExportCsvUrl(programas: string[], modo: "interseccion" | "union" = "interseccion"): string {
+export function getExportCsvUrl(programas: string[], modo: "interseccion" | "union" | "diferencia" = "interseccion"): string {
   const progsParam = encodeURIComponent(programas.join("||"));
   return `${API_BASE_URL}/exportar_csv?programas=${progsParam}&modo=${modo}`;
 }

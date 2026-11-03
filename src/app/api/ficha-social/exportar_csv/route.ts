@@ -1,12 +1,10 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
-import { PADRON_PROGRAMS } from "@/lib/padron-programs";
+import { columnasDelCruce, condicionDelCruce, parseModoCruce } from "@/lib/cruces";
 import { hasPermission, PERMISSIONS } from "@/lib/permissions";
 
 export const dynamic = "force-dynamic";
-
-const PROGRAM_TO_COLUMN: Record<string, string> = Object.fromEntries(PADRON_PROGRAMS.map((p) => [p.label, p.column]));
 
 export async function GET(request: Request) {
   const session = await auth();
@@ -20,24 +18,13 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const programasParam = searchParams.get("programas") || "";
-    const modo = (searchParams.get("modo") || "interseccion").toLowerCase();
+    const modo = parseModoCruce(searchParams.get("modo"));
 
     const requestedProgs = programasParam.split("||").map((p) => p.trim()).filter(Boolean);
 
-    const columns: string[] = [];
-    requestedProgs.forEach((p) => {
-      const col = PROGRAM_TO_COLUMN[p] || (Object.values(PROGRAM_TO_COLUMN).includes(p) ? p : null);
-      if (col && /^[a-zA-Z0-9_]+$/.test(col)) columns.push(col);
-    });
-
-    let whereClause = "1=1";
-    if (columns.length > 0) {
-      if (modo === "union") {
-        whereClause = `(${columns.map((c) => `"${c}" = 1`).join(" OR ")})`;
-      } else {
-        whereClause = `(${columns.map((c) => `"${c}" = 1`).join(" AND ")})`;
-      }
-    }
+    // Columnas de la lista fija de programas; en "Exclusión" la primera es el programa base.
+    const columns = columnasDelCruce(requestedProgs);
+    const whereClause = condicionDelCruce(columns, modo);
 
     const rows: any[] = await prisma.$queryRawUnsafe(
       `SELECT dni, nombre_completo, cantidad_programas, programas_activos, roles, barrio, localidad, telefono, direccion, email

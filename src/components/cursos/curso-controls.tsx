@@ -364,7 +364,7 @@ export function InscribirForm({ cursoId, today, compact = false }: { cursoId: st
             autoComplete="off"
             value={dni}
             onChange={(e) => setDni(e.target.value)}
-            placeholder="Sin puntos"
+            placeholder="DNI, sin puntos"
             className="h-11 rounded-xl"
           />
         </div>
