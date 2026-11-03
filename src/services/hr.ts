@@ -3,8 +3,14 @@ import { canEditHR, currentMonthRange } from "@/lib/hr-labels";
 import { ContractType, HRStatus } from "@prisma/client";
 import { diaAR, diaDeVencimiento } from "@/lib/fechas";
 
-export async function getHRRecords(filters?: { query?: string, areaId?: string, status?: string }) {
+export async function getHRRecords(filters?: { query?: string, areaId?: string, status?: string, startedThisMonth?: boolean }) {
   const where: any = {};
+
+  // "Ingresaron este mes": lo mismo que cuenta la tarjeta de RRHH (por la fecha de ingreso).
+  if (filters?.startedThisMonth) {
+    const month = currentMonthRange();
+    where.startDate = { gte: month.from, lt: month.to };
+  }
 
   if (filters?.query) {
     where.OR = [

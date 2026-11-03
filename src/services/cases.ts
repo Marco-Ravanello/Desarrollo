@@ -302,7 +302,7 @@ export interface MyAssignedCase {
 }
 
 /** Expedientes sin cerrar a cargo de este usuario: primero los que llevan más tiempo quietos. */
-export async function getMyAssignedCases(userId: string, limit = 5): Promise<{ total: number; cases: MyAssignedCase[] }> {
+export async function getMyAssignedCases(userId: string, limit = 5): Promise<{ total: number; stale: number; cases: MyAssignedCase[] }> {
   const rows = await prisma.case.findMany({
     where: { assignedToId: userId, status: { not: "CERRADO" } },
     select: {
@@ -327,5 +327,5 @@ export async function getMyAssignedCases(userId: string, limit = 5): Promise<{ t
       };
     })
     .sort((a, b) => b.quietDays - a.quietDays || a.title.localeCompare(b.title, "es"));
-  return { total: cases.length, cases: cases.slice(0, limit) };
+  return { total: cases.length, stale: cases.filter((c) => c.stale).length, cases: cases.slice(0, limit) };
 }

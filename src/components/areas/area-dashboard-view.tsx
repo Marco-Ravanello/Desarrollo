@@ -121,6 +121,10 @@ export function AreaDashboardView({
     startTransition(() => router.push(`${pathname}${areaCaseListQuery(merged)}`, { scroll: false }));
   };
 
+  // Tarjetas de números: la lista de abajo en "Abiertos", con o sin la prioridad urgente.
+  const statHref = (priority: AreaCaseFilters["priority"]) =>
+    `${pathname}${areaCaseListQuery({ ...filters, tab: "ACTIVOS", priority, q: "", page: 1 })}#lista`;
+
   // La búsqueda se manda sola un momento después de dejar de escribir.
   useEffect(() => {
     const q = searchQuery.trim();
@@ -230,12 +234,14 @@ export function AreaDashboardView({
       )}
 
       <StatRow>
+        {/* Estos dos abren la lista de abajo con ese filtro. */}
         <StatCard
           label="Expedientes abiertos"
           value={stats.activeCases}
           hint="En proceso o abiertos"
           icon={Clock}
           tone={statTone}
+          href={statHref(null)}
         />
         <StatCard
           label="Urgentes"
@@ -243,6 +249,7 @@ export function AreaDashboardView({
           hint={<span className="font-bold text-amber-700 dark:text-amber-400">Abiertos con prioridad urgente</span>}
           icon={AlertTriangle}
           tone="orange"
+          href={statHref("URGENTE")}
         />
         <StatCard
           label="Intervenciones del mes"
@@ -261,8 +268,9 @@ export function AreaDashboardView({
       </StatRow>
 
       <Card
+        id="lista"
         aria-busy={isPending}
-        className={`bg-card text-card-foreground border border-border/60 shadow-xs rounded-2xl overflow-hidden transition-opacity ${isPending ? "opacity-60" : ""}`}
+        className={`scroll-mt-24 bg-card text-card-foreground border border-border/60 shadow-xs rounded-2xl overflow-hidden transition-opacity ${isPending ? "opacity-60" : ""}`}
       >
         <div className="p-4 sm:p-5 border-b border-border/40 bg-muted/20 flex flex-col xl:flex-row xl:items-center justify-between gap-4">
           <div

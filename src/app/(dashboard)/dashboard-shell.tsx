@@ -15,6 +15,7 @@ import { Menu } from "lucide-react";
 import { OfflineSupport, SituationRoomButton } from "@/components/layout/header-extras";
 import { InactivityLogout } from "@/components/layout/inactivity-logout";
 import { NovedadesAviso } from "@/components/layout/novedades-aviso";
+import { BienvenidaAviso } from "@/components/layout/bienvenida-aviso";
 import { KeyboardShortcuts } from "@/components/layout/keyboard-shortcuts";
 import { HelpPanel } from "@/components/layout/help-panel";
 import { MunicipalSettingsProvider } from "@/components/providers/municipal-settings";
@@ -25,19 +26,25 @@ export function DashboardShell({
   children,
   settings,
   session,
+  showWelcome = false,
 }: {
   children: React.ReactNode;
   settings: PublicMunicipalSettings;
   session?: Session | null;
+  /** La persona todavía no vio la bienvenida de la primera vez. */
+  showWelcome?: boolean;
 }) {
   const [mobileOpen, setMobileOpen] = React.useState(false);
+  // Primero la bienvenida; las novedades esperan a que se cierre.
+  const [welcomePending, setWelcomePending] = React.useState(showWelcome);
 
   return (
     <Providers session={session}>
       <MunicipalSettingsProvider settings={settings}>
         <OfflineSupport />
         <InactivityLogout />
-        <NovedadesAviso />
+        <BienvenidaAviso firstTime={showWelcome} onDone={() => setWelcomePending(false)} />
+        <NovedadesAviso hold={welcomePending} />
         <KeyboardShortcuts />
         <div className="flex min-h-screen bg-background relative transition-colors duration-300 print:bg-white print:text-black">
           {/* Sidebar escritorio */}

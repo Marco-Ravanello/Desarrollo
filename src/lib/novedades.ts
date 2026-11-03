@@ -16,6 +16,17 @@ export interface Novedad {
 export const NOVEDADES: Novedad[] = [
   {
     fecha: "2026-11-03",
+    parte: 3,
+    titulo: "Lo de hoy bajo el saludo y números que llevan a su lista",
+    cambios: [
+      "Debajo del saludo del Inicio, una frase con lo que tenés para hoy: tareas, expedientes sin movimiento y derivaciones por responder. Cada parte lleva a su lista.",
+      "Las tarjetas de números de Expedientes, de las páginas de cada área, de Stock y de Recursos Humanos abren la lista con ese filtro: tocar \"Urgentes\" muestra esos expedientes.",
+      "La pestaña del navegador muestra cuántos avisos sin leer tenés, por ejemplo \"(3) Inicio\".",
+      "Quien entra por primera vez ve una bienvenida con lo básico de su rol. Se puede volver a ver desde el botón \"?\" de arriba.",
+    ],
+  },
+  {
+    fecha: "2026-11-03",
     parte: 2,
     titulo: "Un Inicio a tu medida, atajos y una guía en cada pantalla",
     cambios: [
@@ -60,6 +71,9 @@ export const NOVEDADES: Novedad[] = [
 ];
 
 /** La entrada más nueva (la que se muestra una vez al entrar). */
+/** Dónde guarda cada navegador la última novedad que ya se vio. */
+export const NOVEDADES_VISTAS_KEY = "muni-novedades-vistas";
+
 export const ULTIMA_NOVEDAD: Novedad | null = NOVEDADES[0] ?? null;
 
 /** "2 de noviembre de 2026" a partir de "2026-11-02". */

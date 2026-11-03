@@ -1,5 +1,7 @@
 export const dynamic = "force-dynamic";
 
+import * as React from "react";
+import { cn } from "@/lib/utils";
 import { PRIORITY_TONE, toneOf } from "@/lib/status-tones";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { InitialsAvatar } from "@/components/ui/initials-avatar";
@@ -45,6 +47,7 @@ import { STALE_DAYS } from "@/lib/case-summary";
 import { auditLink, describeAuditAction, formatAuditDetails } from "@/lib/audit-labels";
 import { applyHomeLayout, homeLayoutRows, parseHomeLayout, type HomeSectionId } from "@/lib/home-layout";
 import { HomeLayoutDialog } from "@/components/dashboard/home-layout-dialog";
+import { RESUMEN_INICIO, RESUMEN_VACIO, partesDelResumen, separadorAntes, type ClaveResumen } from "@/lib/resumen-del-dia";
 
 /**
  * Cada rol ve primero lo suyo:
@@ -189,8 +192,9 @@ export default async function DashboardPage({
       userId ? getTasks(userId).catch(() => []) : Promise.resolve([]),
       areaId ? prisma.area.findUnique({ where: { id: areaId }, select: { name: true } }).catch(() => null) : null,
       session?.user && !viewAs ? countDerivationsToAnswer(session.user).catch(() => 0) : 0,
-      userId ? getMyAssignedCases(userId).catch(() => ({ total: 0, cases: [] })) : { total: 0, cases: [] },
-      wants("staleCases") ? countStaleCases(scope) : 0,
+      userId ? getMyAssignedCases(userId).catch(() => ({ total: 0, stale: 0, cases: [] })) : { total: 0, stale: 0, cases: [] },
+      // También para la frase de hoy bajo el saludo (quien trabaja en territorio ve los suyos a cargo).
+      wants("staleCases") || profile !== "operativo" ? countStaleCases(scope).catch(() => 0) : 0,
       wants("pendingDerivations") ? countPendingDerivations(scope) : 0,
       wants("areas") ? getAreaOverview(scope).catch(() => []) : [],
       wants("team") && areaId ? getAreaTeam({ ...scope, areaId }).catch(() => []) : [],
@@ -222,6 +226,7 @@ export default async function DashboardPage({
   const today = diaAR();
   const isOverdue = (d: Date | null) => Boolean(d && diaDeVencimiento(d) < today);
   const overdueTasksCount = pendingTasks.filter((t) => isOverdue(t.dueDate)).length;
+  const tasksForToday = pendingTasks.filter((t) => t.dueDate && diaDeVencimiento(t.dueDate) <= today).length;
 
   const casesQuery = (extra: Record<string, string>) =>
     `/cases?${new URLSearchParams({ ...(areaId ? { area: areaId } : {}), ...extra })}`;
@@ -331,6 +336,20 @@ export default async function DashboardPage({
   const todayLabel = now.toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long", timeZone: "America/Argentina/Buenos_Aires" });
   const scopeLabel = area ? `Resumen de ${area.name}` : "Resumen de la gestión";
 
+  // La frase de hoy bajo el saludo: tareas, expedientes quietos y derivaciones por responder.
+  const ownQuiet = profile === "operativo";
+  const resumen = partesDelResumen({
+    tareas: tasksForToday,
+    vencidas: overdueTasksCount,
+    quietos: ownQuiet ? myCases.stale : staleCount,
+    derivaciones: derivationsToAnswer,
+  });
+  const resumenHref: Record<ClaveResumen, string> = {
+    tareas: "/tasks",
+    quietos: ownQuiet ? "/cases?assigned=mine&quiet=1" : casesQuery({ quiet: "1" }),
+    derivaciones: "/cases/derivaciones",
+  };
+
   const viewAsOptions: ViewAsOption[] = VIEW_AS.map((v) => ({ value: v.role, label: roleLabel(v.role), needsArea: v.needsArea }));
 
   return (
@@ -338,7 +357,35 @@ export default async function DashboardPage({
       <PageHeader
         icon={LayoutDashboard}
         title={firstName ? `${greeting}, ${firstName}` : greeting}
-        description={<span className="first-letter:uppercase inline-block">{todayLabel} · {scopeLabel}</span>}
+        description={
+          <>
+            <span className="first-letter:uppercase inline-block">{todayLabel} · {scopeLabel}</span>
+            <span className="mt-1 block text-sm text-foreground/80" data-testid="resumen-del-dia">
+              {resumen.length === 0 ? (
+                RESUMEN_VACIO
+              ) : (
+                <>
+                  {RESUMEN_INICIO}
+                  {resumen.map((p, i) => (
+                    <React.Fragment key={p.clave}>
+                      {separadorAntes(i, resumen.length)}
+                      <Link
+                        href={resumenHref[p.clave]}
+                        className={cn(
+                          "font-semibold underline-offset-2 hover:underline",
+                          p.clave === "tareas" && overdueTasksCount > 0 ? "text-red-700 dark:text-red-300" : "text-primary dark:text-blue-200"
+                        )}
+                      >
+                        {p.texto}
+                      </Link>
+                    </React.Fragment>
+                  ))}
+                  .
+                </>
+              )}
+            </span>
+          </>
+        }
         actions={
           <>
             {canLoadData && (

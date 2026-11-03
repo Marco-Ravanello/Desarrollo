@@ -19,6 +19,8 @@ export function HRFilters({ areas }: { areas: { id: string; name: string }[] }) 
   const q = searchParams.get("q") || "";
   const area = searchParams.get("area") || "";
   const status = searchParams.get("status") || "";
+  // Viene de la tarjeta "Ingresaron este mes": se mantiene al buscar.
+  const ingreso = searchParams.get("ingreso") === "mes" ? "mes" : "";
 
   return (
     <div className="border-b border-border/50 p-4 sm:p-5">
@@ -51,6 +53,7 @@ export function HRFilters({ areas }: { areas: { id: string; name: string }[] }) 
             ))}
           </select>
         </MobileFilters>
+        {ingreso && <input type="hidden" name="ingreso" value={ingreso} />}
         <Button type="submit" size="sm" className="h-10 rounded-xl text-xs font-bold">
           Buscar
         </Button>
@@ -61,6 +64,7 @@ export function HRFilters({ areas }: { areas: { id: string; name: string }[] }) 
           q && `Texto: ${q}`,
           area && `Área: ${areas.find((a) => a.id === area)?.name ?? area}`,
           status && `Situación: ${hrStatusLabel(status)}`,
+          ingreso && "Ingresaron este mes",
         ]}
       />
     </div>

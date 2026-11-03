@@ -1,4 +1,5 @@
 import * as React from "react";
+import Link from "next/link";
 import { cn } from "@/lib/utils";
 
 const tones = {
@@ -29,12 +30,20 @@ interface StatCardProps {
   icon?: React.ComponentType<{ className?: string }>;
   tone?: StatTone;
   className?: string;
+  /** Si se pasa, la tarjeta entera lleva al listado que cuenta (tocar "Urgentes 2" abre esos dos). */
+  href?: string;
 }
 
 /** Tarjeta de indicador (número grande con su etiqueta), igual en todas las pantallas. */
-export function StatCard({ label, value, hint, icon: Icon, tone = "blue", className }: StatCardProps) {
-  return (
-    <div className={cn("min-w-0 rounded-2xl border border-border/60 bg-card p-3.5 shadow-sm sm:p-5", className)}>
+export function StatCard({ label, value, hint, icon: Icon, tone = "blue", className, href }: StatCardProps) {
+  const card = (
+    <div
+      className={cn(
+        "min-w-0 rounded-2xl border border-border/60 bg-card p-3.5 shadow-sm sm:p-5",
+        href && "h-full transition-colors group-hover:border-primary/40",
+        className
+      )}
+    >
       <div className="flex items-start justify-between gap-2 sm:gap-3">
         <p className="text-xs font-medium text-muted-foreground sm:text-sm">{label}</p>
         {Icon && (
@@ -53,5 +62,18 @@ export function StatCard({ label, value, hint, icon: Icon, tone = "blue", classN
       </div>
       {hint && <div className="mt-1.5 text-xs text-muted-foreground">{hint}</div>}
     </div>
+  );
+  if (!href) return card;
+  const accessible = typeof label === "string" && (typeof value === "string" || typeof value === "number")
+    ? `${label}: ${value}. Ver listado`
+    : undefined;
+  return (
+    <Link
+      href={href}
+      aria-label={accessible}
+      className="group block min-w-0 rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+    >
+      {card}
+    </Link>
   );
 }

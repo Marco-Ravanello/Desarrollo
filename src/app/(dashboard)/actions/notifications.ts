@@ -30,6 +30,13 @@ export async function getNotifications() {
   });
 }
 
+/** Cuántos avisos sin leer hay en total (la lista de la campana trae solo los últimos 10). */
+export async function countUnreadNotifications(): Promise<number> {
+  const session = await auth();
+  if (!session?.user?.id) return 0;
+  return prisma.notification.count({ where: { userId: session.user.id, read: false } });
+}
+
 export async function markAsRead(id: string) {
   const session = await auth();
   if (!session?.user?.id) return;

@@ -131,6 +131,22 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
     return `/cases?${params.toString()}`;
   };
 
+  // Lo que cuenta cada tarjeta de números: los filtros puestos, con el estado (y la prioridad) de esa tarjeta.
+  const statHref = (over: { status?: string; priority?: string }) => {
+    const params = new URLSearchParams();
+    if (q) params.set("q", q);
+    if (area) params.set("area", area);
+    const st = "status" in over ? over.status : status;
+    if (st) params.set("status", st);
+    const pr = over.priority ?? priority;
+    if (pr) params.set("priority", pr);
+    if (assigned) params.set("assigned", assigned);
+    if (quiet) params.set("quiet", "1");
+    if (label) params.set("label", label);
+    const qs = params.toString();
+    return qs ? `/cases?${qs}` : "/cases";
+  };
+
   const breadcrumbs = [
     { label: "Inicio", href: "/dashboard" },
     { label: "Expedientes", active: true }
@@ -180,10 +196,11 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
 
       {/* KPI Cards */}
       <StatRow>
-        <StatCard label="Todos" value={data.stats.totalAll} hint="Expedientes cargados" icon={FileText} tone="blue" />
-        <StatCard label="En curso" value={data.stats.active} hint="Abiertos o en proceso" icon={Clock} tone="green" />
-        <StatCard label="Urgentes" value={data.stats.urgent} hint="Prioridad urgente" icon={ShieldAlert} tone="red" />
-        <StatCard label="Cerrados" value={data.stats.closed} hint="Ya resueltos" icon={CheckCircle2} tone="slate" />
+        {/* Cada número abre la lista con ese filtro (sumado a los que ya están puestos). */}
+        <StatCard label="Todos" value={data.stats.totalAll} hint="Expedientes cargados" icon={FileText} tone="blue" href={statHref({})} />
+        <StatCard label="En curso" value={data.stats.active} hint="Abiertos o en proceso" icon={Clock} tone="green" href={statHref({ status: "ACTIVOS" })} />
+        <StatCard label="Urgentes" value={data.stats.urgent} hint="Prioridad urgente" icon={ShieldAlert} tone="red" href={statHref({ status: "ACTIVOS", priority: "URGENTE" })} />
+        <StatCard label="Cerrados" value={data.stats.closed} hint="Ya resueltos" icon={CheckCircle2} tone="slate" href={statHref({ status: "CERRADO" })} />
       </StatRow>
 
       {/* Filters Form */}
