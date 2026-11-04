@@ -15,6 +15,15 @@ export interface Novedad {
 
 export const NOVEDADES: Novedad[] = [
   {
+    fecha: "2026-11-04",
+    titulo: "Reservar un vehículo, ahora con calendario",
+    cambios: [
+      "Al reservar ves la semana del vehículo con los horarios ocupados pintados: aprobados, pendientes y en uso.",
+      "Elegís el horario arrastrando en la grilla (en el celular, tocás la salida y después la vuelta).",
+      "En \"¿Cuál está libre?\" ves todos los vehículos de un día y elegís el que está libre a la hora que necesitás.",
+    ],
+  },
+  {
     fecha: "2026-11-03",
     parte: 5,
     titulo: "Expedientes más ágiles y tareas más fáciles de compartir",

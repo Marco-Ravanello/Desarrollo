@@ -14,7 +14,7 @@ export default async function ReserveVehiclePage({ searchParams }: { searchParam
     <div className="space-y-6">
       <PageHeader
         title="Reservar vehículo"
-        description="Elegí el vehículo y desde cuándo hasta cuándo lo necesitás."
+        description="Mirá qué horarios están ocupados, elegí el tuyo en la grilla y mandá el pedido."
         icon={Calendar}
       />
 
