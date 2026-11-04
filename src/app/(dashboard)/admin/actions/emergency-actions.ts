@@ -17,7 +17,7 @@ import { lookupStormDni } from "@/services/emergency-padron";
 import { getCategoryLinks, getEmergencyExtraItems, linkCategorySupply, saveEmergencyExtraItems } from "@/services/emergency-stock-links";
 import { EmergencyStockItem, StormVictimItem } from "@/types/emergency";
 import { actionErrorMessage } from "@/lib/action-error";
-import { MANAGEMENT_ROLES, canEditSocialRecords, canManageEmergencyStock, isEmergencySurveyor } from "@/lib/permissions";
+import { canEditSocialRecords, canManageEmergencyStock, isEmergencySurveyor } from "@/lib/permissions";
 
 const STOCK_DENIED = "Tu usuario no puede modificar el stock de contingencia.";
 
@@ -448,47 +448,6 @@ export async function dispatchEmergencyStockAction(
   } catch (error: any) {
     console.error("Error dispatching emergency stock:", error);
     return { success: false, error: actionErrorMessage(error, "No se pudo despachar insumo") };
-  }
-}
-
-export async function getEmergencyStatusAction() {
-  try {
-    const setting = await prisma.systemSetting.findUnique({
-      where: { key: "muni-emergency-mode" }
-    });
-    return { success: true, active: setting?.value === "true" };
-  } catch (err) {
-    return { success: true, active: false };
-  }
-}
-
-export async function toggleEmergencyStatusAction(active: boolean) {
-  const session = await auth();
-  if (session?.user && !MANAGEMENT_ROLES.includes(session.user.role)) {
-    return { success: false, error: "No se pudo cambiar el modo emergencia: solo la conducción puede activarlo o desactivarlo." };
-  }
-  if (!session?.user?.id) return { success: false, error: "No tenés permiso para hacer esto o tu sesión expiró. Si sigue pasando, volvé a iniciar sesión." };
-  try {
-    await prisma.systemSetting.upsert({
-      where: { key: "muni-emergency-mode" },
-      update: { value: String(active) },
-      create: { key: "muni-emergency-mode", value: String(active) }
-    });
-
-    await prisma.auditLog.create({
-      data: {
-        userId: session.user.id,
-        action: active ? "EMERGENCY_MODE_ACTIVATED" : "EMERGENCY_MODE_DEACTIVATED",
-        entity: "SystemSetting",
-        entityId: "muni-emergency-mode",
-        details: `Protocolo de emergencia climática ${active ? "ACTIVADO" : "DESACTIVADO"} por ${session.user.name || session.user.email}`
-      }
-    });
-
-    revalidatePath("/", "layout");
-    return { success: true, active };
-  } catch (err: any) {
-    return { success: false, error: actionErrorMessage(err, "No se pudo actualizar estado de emergencia") };
   }
 }
 

@@ -17,14 +17,12 @@ export function WarRoomTv({
   time,
   date,
   countdown,
-  emergency,
   onExit,
 }: {
   data: WarRoomData;
   time: string;
   date: string;
   countdown: number;
-  emergency: boolean;
   onExit: () => void;
 }) {
   const [idle, setIdle] = useState(false);
@@ -122,13 +120,6 @@ export function WarRoomTv({
           </p>
         </div>
       </header>
-
-      {emergency && (
-        <div className="flex items-center gap-4 rounded-2xl bg-muni-orange px-6 py-4 text-[#0E2A49]">
-          <ShieldAlert className="h-8 w-8 shrink-0" />
-          <p className="text-xl font-bold xl:text-2xl">Emergencia climática activa: protocolo de contingencia vigente</p>
-        </div>
-      )}
 
       {/* Cifras */}
       <div className="grid grid-cols-5 gap-4 xl:gap-6">

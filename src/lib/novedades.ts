@@ -16,6 +16,26 @@ export interface Novedad {
 export const NOVEDADES: Novedad[] = [
   {
     fecha: "2026-11-04",
+    parte: 3,
+    titulo: "Nuevo agente, más fácil de cargar",
+    cambios: [
+      "Nuevo agente tiene su propia página, en dos columnas y con \"Crear legajo\" siempre a la vista.",
+      "Podés cargar teléfono, correo, domicilio, fecha de nacimiento y a quién avisar si le pasa algo.",
+      "El horario se elige con los días y las horas de entrada y salida.",
+      "Lo que no hace falta siempre (foto, tareas, salud, estudios y licencia de conducir) queda en \"Agregar más datos\".",
+    ],
+  },
+  {
+    fecha: "2026-11-04",
+    parte: 2,
+    titulo: "Sin el aviso de emergencia climática",
+    cambios: [
+      "Sacamos el botón para prender la emergencia climática y la franja roja que aparecía arriba: no cambiaban nada más en la app.",
+      "Las fichas de tormenta, las entregas y el stock de contingencia siguen igual en Emergencia climática.",
+    ],
+  },
+  {
+    fecha: "2026-11-04",
     titulo: "Reservar un vehículo, ahora con calendario",
     cambios: [
       "Al reservar ves la semana del vehículo con los horarios ocupados pintados: aprobados, pendientes y en uso.",

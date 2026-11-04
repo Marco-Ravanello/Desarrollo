@@ -9,7 +9,7 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { Button } from "@/components/ui/button";
 import {
   Briefcase, Calendar, CreditCard, FileText, Info, Clock, Hash,
-  HeartPulse, GraduationCap, Car, ShieldCheck, Sparkles, User
+  HeartPulse, GraduationCap, Car, ShieldCheck, Sparkles, User, Phone
 } from "lucide-react";
 
 export function ViewHRDetail({ agent }: { agent: any }) {
@@ -136,7 +136,7 @@ export function ViewHRDetail({ agent }: { agent: any }) {
                   <Clock className="h-4 w-4" />
                 </div>
                 <div>
-                  <p className="text-xs font-bold text-muted-foreground">Horario cumplido</p>
+                  <p className="text-xs font-bold text-muted-foreground">Horario</p>
                   <p className="text-sm font-bold text-foreground">{agent.schedule || "Sin registrar"}</p>
                 </div>
               </div>
@@ -169,6 +169,49 @@ export function ViewHRDetail({ agent }: { agent: any }) {
                 <p className="text-xs font-bold text-muted-foreground">Haber mensual</p>
                 <p className="text-base font-bold text-emerald-700 dark:text-emerald-400">{formatCurrency(agent.salary)}</p>
               </div>
+            </div>
+          </div>
+
+          <div className="bg-card/50 rounded-2xl p-4 space-y-3 border border-border/50">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-sky-500/10 text-sky-700 dark:text-sky-400 rounded-xl">
+                <Phone className="h-4 w-4" />
+              </div>
+              <p className="text-xs font-bold text-muted-foreground">Contacto</p>
+            </div>
+            <dl className="grid gap-x-6 gap-y-2 text-sm sm:grid-cols-2">
+              <div>
+                <dt className="text-xs text-muted-foreground">Teléfono</dt>
+                <dd className="font-semibold text-foreground">
+                  {agent.phone ? <a href={`tel:${String(agent.phone).replace(/[^\d+]/g, "")}`} className="hover:underline">{agent.phone}</a> : "Sin cargar"}
+                </dd>
+              </div>
+              <div className="min-w-0">
+                <dt className="text-xs text-muted-foreground">Correo</dt>
+                <dd className="truncate font-semibold text-foreground">
+                  {agent.email ? <a href={`mailto:${agent.email}`} className="hover:underline">{agent.email}</a> : "Sin cargar"}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-xs text-muted-foreground">Domicilio</dt>
+                <dd className="font-semibold text-foreground">{agent.address || "Sin cargar"}</dd>
+              </div>
+              <div>
+                <dt className="text-xs text-muted-foreground">Fecha de nacimiento</dt>
+                <dd className="font-semibold text-foreground">{agent.birthDate ? formatDate(agent.birthDate) : "Sin cargar"}</dd>
+              </div>
+            </dl>
+            <div className="rounded-xl bg-rose-500/5 px-3 py-2 text-sm">
+              <p className="text-xs font-bold text-rose-700 dark:text-rose-300">Si le pasa algo, avisar a</p>
+              <p className="font-semibold text-foreground">
+                {agent.emergencyContactName || "Sin cargar"}
+                {agent.emergencyContactPhone && (
+                  <>
+                    {" · "}
+                    <a href={`tel:${String(agent.emergencyContactPhone).replace(/[^\d+]/g, "")}`} className="hover:underline">{agent.emergencyContactPhone}</a>
+                  </>
+                )}
+              </p>
             </div>
           </div>
 

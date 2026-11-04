@@ -14,15 +14,6 @@ import {
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { initialsColor, initialsOf } from "@/lib/initials";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
-import { CreateHRForm } from "./create-hr-form";
 import { AgentActionsMenu } from "./agent-actions-menu";
 import { HRFilters } from "./hr-filters";
 import { UniversalExportMenu } from "@/components/ui/universal-export-menu";
@@ -36,7 +27,7 @@ import { redirect } from "next/navigation";
 import { getAreaShortName } from "@/lib/area-theme";
 import { formatFechaCalendario } from "@/lib/fechas";
 import { formatNumber, formatPesos, plural } from "@/lib/formato";
-import { contractTypeLabel, hrStatusLabel } from "@/lib/hr-labels";
+import { canEditHR, contractTypeLabel, hrStatusLabel } from "@/lib/hr-labels";
 
 export const metadata = { title: "Recursos Humanos" };
 
@@ -99,6 +90,7 @@ export default async function HRPage({
     salary: r.salary ? Number(r.salary) : 0,
     startDate: r.startDate ? r.startDate.toISOString() : null,
     statusUntil: r.statusUntil ? r.statusUntil.toISOString() : null,
+    birthDate: r.birthDate ? r.birthDate.toISOString() : null,
     createdAt: r.createdAt.toISOString(),
     area: r.area ? {
       id: r.area.id,
@@ -148,20 +140,13 @@ export default async function HRPage({
               label="Exportar nómina"
               orientation="landscape"
            />
-           <Sheet>
-              <SheetTrigger asChild>
-                <Button className="gap-2">
-                    <Plus className="h-4 w-4" /> Nuevo agente
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="right" className="w-full overflow-y-auto sm:max-w-xl">
-                <SheetHeader className="mb-6">
-                  <SheetTitle>Nuevo agente</SheetTitle>
-                  <SheetDescription>Completá los datos para crear el legajo.</SheetDescription>
-                </SheetHeader>
-                <CreateHRForm areas={sanitizedAreas} />
-              </SheetContent>
-           </Sheet>
+           {canEditHR(userRole) && (
+             <Button className="gap-2" asChild>
+               <Link href="/admin/hr/nuevo">
+                 <Plus className="h-4 w-4" /> Nuevo agente
+               </Link>
+             </Button>
+           )}
           </>
         }
       />

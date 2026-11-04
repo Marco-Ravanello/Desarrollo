@@ -13,6 +13,7 @@ const NEW_LABELS: Record<string, string> = {
   vehicles: "Nuevo vehículo",
   "purchase-orders": "Nueva orden",
   agreements: "Nuevo convenio",
+  hr: "Nuevo agente",
 };
 
 const PATH_DICTIONARY: Record<string, string> = {
@@ -113,7 +114,7 @@ export function DashboardBreadcrumbs() {
       currentHref += `/${segment}`;
       const isLast = idx === segments.length - 1;
       const dictLabel =
-        segment === "new"
+        segment === "new" || segment === "nuevo"
           ? NEW_LABELS[segments[idx - 1]] || "Nuevo"
           : segment === "admin"
             ? ADMIN_MENU_GROUP[segments[idx + 1]] || PATH_DICTIONARY[segment]
