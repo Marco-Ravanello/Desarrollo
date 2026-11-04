@@ -21,6 +21,8 @@ describe("nuevo agente", () => {
       fd({ ...base, firstName: "Uno", dni: "40111222", phone: "11 5555 0001", emergencyContactName: "Persona de prueba", schedule: "Lunes a viernes, de 8 a 14 h", birthDate: "1990-01-15" })
     );
     expect(errorOf(a)).toBeNull();
+    // Al navegador vuelven solo datos simples (el sueldo es Decimal y Next no lo puede mandar).
+    expect(a.success && a.data).toEqual({ id: expect.any(String), firstName: "Uno", lastName: "Prueba" });
     // Antes, dos legajos sin número chocaban (texto vacío repetido en un campo único).
     const b = await createHRRecordAction(fd({ ...base, firstName: "Dos", dni: "40111333" }));
     expect(errorOf(b)).toBeNull();

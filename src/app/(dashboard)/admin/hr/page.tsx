@@ -27,7 +27,7 @@ import { redirect } from "next/navigation";
 import { getAreaShortName } from "@/lib/area-theme";
 import { formatFechaCalendario } from "@/lib/fechas";
 import { formatNumber, formatPesos, plural } from "@/lib/formato";
-import { canEditHR, contractTypeLabel, hrStatusLabel } from "@/lib/hr-labels";
+import { canEditHR, canViewHR, contractTypeLabel, hrStatusLabel } from "@/lib/hr-labels";
 
 export const metadata = { title: "Recursos Humanos" };
 
@@ -40,12 +40,7 @@ export default async function HRPage({
   if (!session?.user?.id) redirect("/login");
 
   const userRole = session.user.role;
-  const canAccess =
-    userRole === "SUPERADMIN" ||
-    userRole === "ADMIN_GENERAL" ||
-    userRole === "DIRECCION_GENERAL";
-
-  if (!canAccess) {
+  if (!canViewHR(userRole)) {
     redirect("/dashboard");
   }
 
@@ -232,7 +227,7 @@ export default async function HRPage({
                         </AvatarFallback>
                       </Avatar>
                       <div>
-                        <p className="font-semibold text-foreground">{r.firstName} {r.lastName}</p>
+                        <Link href={`/admin/hr/${r.id}`} className="font-semibold text-foreground hover:text-primary hover:underline">{r.firstName} {r.lastName}</Link>
                         <p className="text-xs text-muted-foreground flex items-center gap-2">
                            {r.fileNumber ? `Legajo ${r.fileNumber}` : "Sin legajo"} <span className="text-border">•</span> DNI {r.dni}
                         </p>
@@ -261,7 +256,7 @@ export default async function HRPage({
                     </div>
                   </TableCell>
                   <TableCell className="pr-4 text-right tabular-nums">
-                    <AgentActionsMenu agent={r} areas={sanitizedAreas} />
+                    <AgentActionsMenu agentId={r.id} canEdit={canEditHR(userRole)} />
                   </TableCell>
                 </TableRow>
               ))

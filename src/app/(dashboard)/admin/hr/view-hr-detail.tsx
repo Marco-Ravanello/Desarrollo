@@ -1,315 +1,142 @@
-"use client";
-
-import { useState } from "react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { initialsColor, initialsOf } from "@/lib/initials";
+import type { ReactNode } from "react";
+import { BriefcaseBusiness, CalendarCheck, FileText, HeartPulse, Phone, UserRound, Wallet } from "lucide-react";
+import { FormSection } from "@/components/ui/form-section";
 import { contractTypeLabel, hrStatusLabel } from "@/lib/hr-labels";
-import { HR_STATUS_TONE, toneOf } from "@/lib/status-tones";
-import { StatusBadge } from "@/components/ui/status-badge";
-import { Button } from "@/components/ui/button";
-import {
-  Briefcase, Calendar, CreditCard, FileText, Info, Clock, Hash,
-  HeartPulse, GraduationCap, Car, ShieldCheck, Sparkles, User, Phone
-} from "lucide-react";
+import { formatFechaCalendario } from "@/lib/fechas";
+import { formatPesos } from "@/lib/formato";
+import { parseLegajo } from "@/lib/hr-form";
 
-export function ViewHRDetail({ agent }: { agent: any }) {
-  const [activeTab, setActiveTab] = useState<"general" | "health" | "education" | "driving">("general");
+type Agent = {
+  firstName: string;
+  lastName: string;
+  dni: string;
+  fileNumber?: string | null;
+  birthDate?: Date | null;
+  phone?: string | null;
+  email?: string | null;
+  address?: string | null;
+  emergencyContactName?: string | null;
+  emergencyContactPhone?: string | null;
+  area?: { name: string } | null;
+  position?: string | null;
+  startDate?: Date | null;
+  schedule?: string | null;
+  contractType?: string | null;
+  category?: number | null;
+  salary?: number | null;
+  status?: string | null;
+  statusUntil?: Date | null;
+  tasks?: string | null;
+};
 
-  if (!agent) return null;
+const EMPTY = <span className="font-normal text-muted-foreground">Sin cargar</span>;
+const tel = (v: string) => `tel:${v.replace(/[^\d+]/g, "")}`;
 
-  let legajoData = { tasksText: agent.tasks || "", healthNotes: "", education: "", drivingLicense: "" };
-  try {
-    if (agent.tasks?.startsWith("{")) {
-      const parsed = JSON.parse(agent.tasks);
-      legajoData = {
-        tasksText: parsed.tasksText || "",
-        healthNotes: parsed.healthNotes || "",
-        education: parsed.education || "",
-        drivingLicense: parsed.drivingLicense || ""
-      };
-    }
-  } catch (e) {}
+/** Años cumplidos desde una fecha guardada a medianoche UTC (nacimiento, ingreso). */
+export function yearsSince(d: Date, now = new Date()): number {
+  let years = now.getUTCFullYear() - d.getUTCFullYear();
+  const m = now.getUTCMonth() - d.getUTCMonth();
+  if (m < 0 || (m === 0 && now.getUTCDate() < d.getUTCDate())) years--;
+  return Math.max(0, years);
+}
 
-  const formatCurrency = (val?: number | string) => {
-    if (!val || Number(val) === 0) return "$0";
-    return new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(Number(val));
-  };
+function Item({ label, children, wide }: { label: string; children: ReactNode; wide?: boolean }) {
+  return (
+    <div className={`min-w-0 ${wide ? "sm:col-span-2" : ""}`}>
+      <dt className="text-xs font-medium text-muted-foreground">{label}</dt>
+      <dd className="mt-0.5 break-words text-sm font-semibold text-foreground">{children}</dd>
+    </div>
+  );
+}
 
-  const formatDate = (dateStr?: string | Date) => {
-    if (!dateStr) return "No registrada";
-    return new Date(dateStr).toLocaleDateString("es-AR", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
-  };
+const grid = "grid gap-x-6 gap-y-4 sm:grid-cols-2";
+
+/** El legajo para leer: las mismas partes y los mismos nombres que el formulario. */
+export function HRRecordView({ agent }: { agent: Agent }) {
+  const legajo = parseLegajo(agent.tasks);
+  const away = agent.status === "LICENCIA" || agent.status === "VACACIONES";
+  const years = agent.startDate ? yearsSince(agent.startDate) : null;
 
   return (
-    <div className="space-y-6 py-2">
-      <div className="flex flex-col items-center text-center space-y-3 bg-muted/20 p-6 rounded-2xl border border-border/50">
-        <Avatar className="h-28 w-24 border-4 border-background shadow-xl rounded-2xl">
-          <AvatarImage src={agent.imageUrl || ""} alt={agent.firstName} className="object-cover" />
-          <AvatarFallback className={`rounded-2xl font-bold text-3xl ${initialsColor(agent.dni || agent.id)}`}>
-            {initialsOf(agent.firstName, agent.lastName)}
-          </AvatarFallback>
-        </Avatar>
-        <div>
-          <h3 className="text-2xl font-bold text-foreground">{agent.firstName} {agent.lastName}</h3>
-          <p className="text-xs font-bold text-muted-foreground mt-0.5">
-            DNI {agent.dni} • {agent.fileNumber ? `Legajo ${agent.fileNumber}` : "Sin legajo"}
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <StatusBadge tone={toneOf(HR_STATUS_TONE, agent.status || "ACTIVO")}>{hrStatusLabel(agent.status)}</StatusBadge>
-          {agent.statusUntil && (
-            <span className="text-xs font-semibold text-muted-foreground flex items-center gap-1">
-              <Info className="h-3 w-3 text-amber-400" /> Hasta el {formatDate(agent.statusUntil)}
-            </span>
-          )}
-        </div>
-      </div>
-
-      <div className="grid grid-cols-4 gap-1 p-1 bg-muted/40 rounded-2xl border border-border/50">
-        <button
-          onClick={() => setActiveTab("general")}
-          className={`flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-xl text-xs font-bold transition-all ${
-            activeTab === "general" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          <User className="h-3.5 w-3.5" />
-          <span className="hidden sm:inline">General</span>
-        </button>
-        <button
-          onClick={() => setActiveTab("health")}
-          className={`flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-xl text-xs font-bold transition-all ${
-            activeTab === "health" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          <HeartPulse className="h-3.5 w-3.5 text-rose-400" />
-          <span className="hidden sm:inline">Salud</span>
-        </button>
-        <button
-          onClick={() => setActiveTab("education")}
-          className={`flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-xl text-xs font-bold transition-all ${
-            activeTab === "education" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          <GraduationCap className="h-3.5 w-3.5 text-purple-400" />
-          <span className="hidden sm:inline">Títulos</span>
-        </button>
-        <button
-          onClick={() => setActiveTab("driving")}
-          className={`flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-xl text-xs font-bold transition-all ${
-            activeTab === "driving" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          <Car className="h-3.5 w-3.5 text-teal-400" />
-          <span className="hidden sm:inline">Conducción</span>
-        </button>
-      </div>
-
-      {activeTab === "general" && (
-        <div className="space-y-4 animate-in fade-in duration-300">
-          <div className="grid gap-3 md:grid-cols-2">
-            <div className="bg-card/50 rounded-2xl p-4 space-y-3 border border-border/50">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-blue-500/10 text-blue-700 dark:text-blue-400 rounded-xl">
-                  <Briefcase className="h-4 w-4" />
-                </div>
-                <div>
-                  <p className="text-xs font-bold text-muted-foreground">Cargo y área</p>
-                  <p className="text-sm font-bold text-foreground">{agent.position || "Operativo"} en {agent.area?.name || "Sin Área"}</p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 rounded-xl">
-                  <Calendar className="h-4 w-4" />
-                </div>
-                <div>
-                  <p className="text-xs font-bold text-muted-foreground">Fecha de ingreso</p>
-                  <p className="text-sm font-bold text-foreground">{formatDate(agent.startDate)}</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-card/50 rounded-2xl p-4 space-y-3 border border-border/50">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-amber-500/10 text-amber-700 dark:text-amber-400 rounded-xl">
-                  <Clock className="h-4 w-4" />
-                </div>
-                <div>
-                  <p className="text-xs font-bold text-muted-foreground">Horario</p>
-                  <p className="text-sm font-bold text-foreground">{agent.schedule || "Sin registrar"}</p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-purple-500/10 text-purple-700 dark:text-purple-400 rounded-xl">
-                  <Hash className="h-4 w-4" />
-                </div>
-                <div>
-                  <p className="text-xs font-bold text-muted-foreground">Categoría</p>
-                  <p className="text-sm font-bold text-foreground">{agent.category ? `Categoría ${agent.category}` : 'Sin categoría asignada'}</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-card/50 rounded-2xl p-4 space-y-3 border border-border/50">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 rounded-xl">
-                  <FileText className="h-4 w-4" />
-                </div>
-                <div>
-                  <p className="text-xs font-bold text-muted-foreground">Tipo de contrato</p>
-                  <p className="text-sm font-bold text-foreground">{contractTypeLabel(agent.contractType)}</p>
-                </div>
-              </div>
-
-              <div className="text-right">
-                <p className="text-xs font-bold text-muted-foreground">Haber mensual</p>
-                <p className="text-base font-bold text-emerald-700 dark:text-emerald-400">{formatCurrency(agent.salary)}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-card/50 rounded-2xl p-4 space-y-3 border border-border/50">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-sky-500/10 text-sky-700 dark:text-sky-400 rounded-xl">
-                <Phone className="h-4 w-4" />
-              </div>
-              <p className="text-xs font-bold text-muted-foreground">Contacto</p>
-            </div>
-            <dl className="grid gap-x-6 gap-y-2 text-sm sm:grid-cols-2">
-              <div>
-                <dt className="text-xs text-muted-foreground">Teléfono</dt>
-                <dd className="font-semibold text-foreground">
-                  {agent.phone ? <a href={`tel:${String(agent.phone).replace(/[^\d+]/g, "")}`} className="hover:underline">{agent.phone}</a> : "Sin cargar"}
-                </dd>
-              </div>
-              <div className="min-w-0">
-                <dt className="text-xs text-muted-foreground">Correo</dt>
-                <dd className="truncate font-semibold text-foreground">
-                  {agent.email ? <a href={`mailto:${agent.email}`} className="hover:underline">{agent.email}</a> : "Sin cargar"}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-xs text-muted-foreground">Domicilio</dt>
-                <dd className="font-semibold text-foreground">{agent.address || "Sin cargar"}</dd>
-              </div>
-              <div>
-                <dt className="text-xs text-muted-foreground">Fecha de nacimiento</dt>
-                <dd className="font-semibold text-foreground">{agent.birthDate ? formatDate(agent.birthDate) : "Sin cargar"}</dd>
-              </div>
+    <div className="space-y-5">
+      <div className="grid items-start gap-5 lg:grid-cols-2">
+        <div className="space-y-5">
+          <FormSection icon={UserRound} title="Datos personales">
+            <dl className={grid}>
+              <Item label="Nombre y apellido">{agent.firstName} {agent.lastName}</Item>
+              <Item label="DNI"><span className="tabular-nums">{agent.dni}</span></Item>
+              <Item label="Fecha de nacimiento">
+                {agent.birthDate ? `${formatFechaCalendario(agent.birthDate)} (${yearsSince(agent.birthDate)} años)` : EMPTY}
+              </Item>
+              <Item label="N° de legajo">{agent.fileNumber || EMPTY}</Item>
             </dl>
-            <div className="rounded-xl bg-rose-500/5 px-3 py-2 text-sm">
-              <p className="text-xs font-bold text-rose-700 dark:text-rose-300">Si le pasa algo, avisar a</p>
-              <p className="font-semibold text-foreground">
-                {agent.emergencyContactName || "Sin cargar"}
-                {agent.emergencyContactPhone && (
-                  <>
-                    {" · "}
-                    <a href={`tel:${String(agent.emergencyContactPhone).replace(/[^\d+]/g, "")}`} className="hover:underline">{agent.emergencyContactPhone}</a>
-                  </>
+          </FormSection>
+
+          <FormSection icon={Phone} title="Datos de contacto">
+            <dl className={grid}>
+              <Item label="Teléfono">
+                {agent.phone ? <a href={tel(agent.phone)} className="text-primary hover:underline">{agent.phone}</a> : EMPTY}
+              </Item>
+              <Item label="Correo">
+                {agent.email ? <a href={`mailto:${agent.email}`} className="text-primary hover:underline">{agent.email}</a> : EMPTY}
+              </Item>
+              <Item label="Domicilio" wide>{agent.address || EMPTY}</Item>
+            </dl>
+          </FormSection>
+
+          <FormSection icon={HeartPulse} title="Contacto de emergencia" description="Persona a la que se avisa ante una emergencia.">
+            <dl className={grid}>
+              <Item label="Nombre y vínculo">{agent.emergencyContactName || EMPTY}</Item>
+              <Item label="Teléfono">
+                {agent.emergencyContactPhone ? (
+                  <a href={tel(agent.emergencyContactPhone)} className="text-primary hover:underline">{agent.emergencyContactPhone}</a>
+                ) : (
+                  EMPTY
                 )}
-              </p>
-            </div>
-          </div>
-
-          <div className="bg-card/50 rounded-2xl p-4 space-y-2 border border-border/50">
-            <p className="text-xs font-bold text-muted-foreground flex items-center gap-1.5">
-              <Sparkles className="h-3.5 w-3.5 text-primary" /> Funciones y tareas del puesto
-            </p>
-            <p className="text-xs text-muted-foreground leading-relaxed italic">
-              {legajoData.tasksText || "No se detallaron funciones específicas para este legajo."}
-            </p>
-          </div>
+              </Item>
+            </dl>
+          </FormSection>
         </div>
-      )}
 
-      {activeTab === "health" && (
-        <div className="space-y-3 animate-in fade-in duration-300">
-          <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <ShieldCheck className="h-5 w-5 text-emerald-400" />
-              <div>
-                <p className="text-xs font-bold text-foreground">Aptitud física del agente</p>
-                <p className="text-xs text-muted-foreground">Examen pre-ocupacional / periódico municipal</p>
-              </div>
-            </div>
-            <StatusBadge tone={agent.status === "LICENCIA" ? "amber" : "green"}>
-              {agent.status === 'LICENCIA' ? 'De licencia' : 'Apto'}
-            </StatusBadge>
-          </div>
+        <div className="space-y-5">
+          <FormSection icon={BriefcaseBusiness} title="Área de trabajo">
+            <dl className={grid}>
+              <Item label="Área" wide>{agent.area?.name || EMPTY}</Item>
+              <Item label="Cargo o función">{agent.position || EMPTY}</Item>
+              <Item label="Fecha de ingreso">
+                {agent.startDate ? `${formatFechaCalendario(agent.startDate)}${years ? ` (${years} ${years === 1 ? "año" : "años"})` : ""}` : EMPTY}
+              </Item>
+              <Item label="Horario" wide>{agent.schedule || EMPTY}</Item>
+            </dl>
+          </FormSection>
 
-          <div className="p-4 rounded-2xl bg-card/40 border border-border/40 space-y-2">
-            <p className="text-xs font-bold text-muted-foreground">Detalle de salud y carpetas médicas</p>
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              {legajoData.healthNotes || (agent.status === 'LICENCIA'
-                ? `Agente en licencia médica ${agent.statusUntil ? `hasta el ${formatDate(agent.statusUntil)}` : ''}.`
-                : "Sin observaciones médicas registradas en este legajo.")}
-            </p>
-          </div>
+          <FormSection icon={Wallet} title="Contrato y remuneración" description="La remuneración solo la ve quien gestiona Recursos Humanos.">
+            <dl className={grid}>
+              <Item label="Contrato">{contractTypeLabel(agent.contractType)}</Item>
+              {agent.contractType !== "MONOTRIBUTISTA" && <Item label="Categoría">{agent.category ?? EMPTY}</Item>}
+              <Item label="Remuneración mensual">
+                {agent.salary ? <span className="tabular-nums">{formatPesos(agent.salary)}</span> : EMPTY}
+              </Item>
+            </dl>
+          </FormSection>
+
+          <FormSection icon={CalendarCheck} title="Situación de revista">
+            <dl className={grid}>
+              <Item label="Situación">{hrStatusLabel(agent.status)}</Item>
+              {away && <Item label="Hasta">{agent.statusUntil ? formatFechaCalendario(agent.statusUntil) : EMPTY}</Item>}
+            </dl>
+          </FormSection>
         </div>
-      )}
-
-      {activeTab === "education" && (
-        <div className="space-y-3 animate-in fade-in duration-300">
-          <div className="p-4 rounded-2xl bg-card/40 border border-border/40 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <GraduationCap className="h-5 w-5 text-purple-400" />
-              <div>
-                <p className="text-xs font-bold text-foreground">Nivel académico y formación</p>
-                <p className="text-xs text-muted-foreground">Documentación y certificaciones registradas</p>
-              </div>
-            </div>
-            <StatusBadge tone={legajoData.education ? "green" : "slate"}>
-              {legajoData.education ? "Acreditado" : "Regular"}
-            </StatusBadge>
-          </div>
-
-          <div className="p-4 rounded-2xl bg-card/40 border border-border/40 space-y-2">
-            <p className="text-xs font-bold text-muted-foreground">Acreditaciones y capacitaciones</p>
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              {legajoData.education || "Sin títulos o cursos específicos acreditados en el legajo."}
-            </p>
-          </div>
-        </div>
-      )}
-
-      {activeTab === "driving" && (
-        <div className="space-y-3 animate-in fade-in duration-300">
-          <div className="p-4 rounded-2xl bg-teal-500/10 border border-teal-500/20 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Car className="h-5 w-5 text-teal-400" />
-              <div>
-                <p className="text-xs font-bold text-foreground">Habilitación de conducción de vehículos</p>
-                <p className="text-xs text-muted-foreground">Permiso para uso de unidades de la flota logística</p>
-              </div>
-            </div>
-            <StatusBadge tone={legajoData.drivingLicense ? "green" : "slate"}>
-              {legajoData.drivingLicense ? "Habilitado" : "No asignado"}
-            </StatusBadge>
-          </div>
-
-          <div className="p-4 rounded-2xl bg-card/40 border border-border/40 space-y-2">
-            <p className="text-xs font-bold text-muted-foreground">Observaciones de conducción</p>
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              {legajoData.drivingLicense || "Sin registros de licencia de conducir o habilitación especial asignada."}
-            </p>
-          </div>
-        </div>
-      )}
-
-      <div className="pt-2 pb-6">
-        <Button
-          variant="outline"
-          onClick={() => window.print()}
-          className="w-full rounded-xl h-11 border-border font-bold hover:bg-accent text-xs flex items-center justify-center gap-2"
-        >
-          <FileText className="h-4 w-4" />
-          Imprimir legajo
-        </Button>
       </div>
+
+      <FormSection icon={FileText} title="Información adicional">
+        <dl className="grid gap-x-6 gap-y-4 lg:grid-cols-2">
+          <Item label="Funciones del puesto">{legajo.tasksText || EMPTY}</Item>
+          <Item label="Observaciones de salud">{legajo.healthNotes || EMPTY}</Item>
+          <Item label="Formación">{legajo.education || EMPTY}</Item>
+          <Item label="Licencia de conducir">{legajo.drivingLicense || EMPTY}</Item>
+        </dl>
+      </FormSection>
     </div>
   );
 }

@@ -63,6 +63,23 @@ export function parseSchedule(text: string | null | undefined): Schedule | null 
   return scheduleText(s) === String(text).trim() ? s : null;
 }
 
+/** Lo que guarda el legajo en `tasks`: texto solo o JSON con salud, estudios y licencia de conducir. */
+export function parseLegajo(tasks: string | null | undefined) {
+  const legajo = { tasksText: tasks || "", healthNotes: "", education: "", drivingLicense: "" };
+  try {
+    if (tasks?.startsWith("{")) {
+      const parsed = JSON.parse(tasks);
+      legajo.tasksText = parsed.tasksText || "";
+      legajo.healthNotes = parsed.healthNotes || "";
+      legajo.education = parsed.education || "";
+      legajo.drivingLicense = parsed.drivingLicense || "";
+    }
+  } catch {
+    // Texto viejo que no es JSON: queda como funciones del puesto.
+  }
+  return legajo;
+}
+
 export type HRFormData = {
   firstName: string;
   lastName: string;

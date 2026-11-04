@@ -6,49 +6,24 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Field, FormSection, RequiredNote, fieldSelectClass } from "@/components/ui/form-section";
 import { SchedulePicker } from "@/components/hr/schedule-picker";
-
-/** Lo que guarda el legajo en `tasks`: texto solo o JSON con salud, estudios y licencia de conducir. */
-export function parseLegajo(tasks: string | null | undefined) {
-  const legajo = { tasksText: tasks || "", healthNotes: "", education: "", drivingLicense: "" };
-  try {
-    if (tasks?.startsWith("{")) {
-      const parsed = JSON.parse(tasks);
-      legajo.tasksText = parsed.tasksText || "";
-      legajo.healthNotes = parsed.healthNotes || "";
-      legajo.education = parsed.education || "";
-      legajo.drivingLicense = parsed.drivingLicense || "";
-    }
-  } catch {
-    // Texto viejo que no es JSON: queda como funciones del puesto.
-  }
-  return legajo;
-}
+import { parseLegajo } from "@/lib/hr-form";
 
 const dateOnly = (value: string | Date | null | undefined) => (value ? new Date(value).toISOString().split("T")[0] : "");
 
 /**
- * Los campos del legajo, iguales para Nuevo agente (página, en dos columnas) y Editar legajo (panel lateral).
- * Sin `agent` arranca vacío; con `agent` muestra sus datos. Lo que no hace falta siempre queda en "Agregar más datos".
+ * Los campos del legajo, iguales en Nuevo agente y Editar legajo (las dos son páginas, en dos columnas).
+ * Sin `agent` arranca vacío; con `agent` muestra sus datos. Lo opcional queda en "Información adicional".
  */
-export function HRFormFields({
-  areas,
-  agent,
-  layout = "sheet",
-}: {
-  areas: { id: string; name: string }[];
-  agent?: any;
-  layout?: "page" | "sheet";
-}) {
+export function HRFormFields({ areas, agent }: { areas: { id: string; name: string }[]; agent?: any }) {
   const legajo = parseLegajo(agent?.tasks);
   const [status, setStatus] = useState<string>(agent?.status || "ACTIVO");
   const [contractType, setContractType] = useState<string>(agent?.contractType || "MENSUALIZADO");
   const hasExtras = Boolean(agent?.imageUrl || legajo.tasksText || legajo.healthNotes || legajo.education || legajo.drivingLicense);
   const [moreOpen, setMoreOpen] = useState(hasExtras);
-  const variant = layout === "page" ? "card" : "plain";
   const two = "grid gap-4 sm:grid-cols-2";
 
   const who = (
-    <FormSection variant={variant} icon={layout === "page" ? UserRound : undefined} title="Quién es">
+    <FormSection icon={UserRound} title="Datos personales">
       <div className={two}>
         <Field label="Nombre" htmlFor="firstName" required>
           <Input id="firstName" name="firstName" defaultValue={agent?.firstName} autoComplete="off" required />
@@ -56,7 +31,7 @@ export function HRFormFields({
         <Field label="Apellido" htmlFor="lastName" required>
           <Input id="lastName" name="lastName" defaultValue={agent?.lastName} autoComplete="off" required />
         </Field>
-        <Field label="DNI" htmlFor="dni" required hint="Solo los números, sin puntos.">
+        <Field label="DNI" htmlFor="dni" required hint="Sin puntos ni espacios.">
           <Input
             id="dni"
             name="dni"
@@ -70,7 +45,7 @@ export function HRFormFields({
         <Field label="Fecha de nacimiento" htmlFor="birthDate">
           <Input id="birthDate" name="birthDate" type="date" defaultValue={dateOnly(agent?.birthDate)} />
         </Field>
-        <Field label="N° de legajo" htmlFor="fileNumber" hint="El número que le da la Municipalidad, si ya lo tiene." className="sm:col-span-2">
+        <Field label="N° de legajo" htmlFor="fileNumber" hint="Número asignado por la Municipalidad, si ya lo tiene." className="sm:col-span-2">
           <Input id="fileNumber" name="fileNumber" defaultValue={agent?.fileNumber || ""} />
         </Field>
       </div>
@@ -78,7 +53,7 @@ export function HRFormFields({
   );
 
   const contact = (
-    <FormSection variant={variant} icon={layout === "page" ? Phone : undefined} title="Cómo ubicarlo">
+    <FormSection icon={Phone} title="Datos de contacto">
       <div className={two}>
         <Field label="Teléfono" htmlFor="phone">
           <Input id="phone" name="phone" type="tel" inputMode="tel" defaultValue={agent?.phone || ""} placeholder="Por ejemplo: 11 5555 1234" />
@@ -95,13 +70,12 @@ export function HRFormFields({
 
   const emergency = (
     <FormSection
-      variant={variant}
-      icon={layout === "page" ? HeartPulse : undefined}
-      title="A quién avisar si le pasa algo"
-      description="Una persona de confianza para llamar en una emergencia."
+      icon={HeartPulse}
+      title="Contacto de emergencia"
+      description="Persona a la que se avisa ante una emergencia."
     >
       <div className={two}>
-        <Field label="Nombre y relación" htmlFor="emergencyContactName">
+        <Field label="Nombre y vínculo" htmlFor="emergencyContactName">
           <Input id="emergencyContactName" name="emergencyContactName" defaultValue={agent?.emergencyContactName || ""} placeholder="Por ejemplo: Ana Gómez, hermana" />
         </Field>
         <Field label="Teléfono" htmlFor="emergencyContactPhone">
@@ -112,7 +86,7 @@ export function HRFormFields({
   );
 
   const job = (
-    <FormSection variant={variant} icon={layout === "page" ? BriefcaseBusiness : undefined} title="Dónde trabaja">
+    <FormSection icon={BriefcaseBusiness} title="Área de trabajo">
       <div className={two}>
         <Field label="Área" htmlFor="areaId" required className="sm:col-span-2">
           <select id="areaId" name="areaId" defaultValue={agent?.area?.id || agent?.areaId || ""} required className={fieldSelectClass}>
@@ -141,10 +115,9 @@ export function HRFormFields({
 
   const contract = (
     <FormSection
-      variant={variant}
-      icon={layout === "page" ? Wallet : undefined}
-      title="Contrato y sueldo"
-      description="El sueldo lo ve solo quien maneja Recursos Humanos."
+      icon={Wallet}
+      title="Contrato y remuneración"
+      description="La remuneración solo la ve quien gestiona Recursos Humanos."
     >
       <div className={two}>
         <Field label="Contrato" htmlFor="contractType" required>
@@ -166,7 +139,7 @@ export function HRFormFields({
             <Input id="category" name="category" type="number" min="0" inputMode="numeric" defaultValue={agent?.category || ""} placeholder="Por ejemplo: 12" />
           </Field>
         )}
-        <Field label="Sueldo por mes ($)" htmlFor="salary" className={contractType === "MONOTRIBUTISTA" ? "" : "sm:col-span-2"}>
+        <Field label="Remuneración mensual ($)" htmlFor="salary" className={contractType === "MONOTRIBUTISTA" ? "" : "sm:col-span-2"}>
           <Input
             id="salary"
             name="salary"
@@ -183,18 +156,18 @@ export function HRFormFields({
   );
 
   const today = (
-    <FormSection variant={variant} icon={layout === "page" ? CalendarCheck : undefined} title="Cómo está hoy">
+    <FormSection icon={CalendarCheck} title="Situación de revista">
       <div className={two}>
         <Field label="Situación" htmlFor="status" required>
           <select id="status" name="status" value={status} onChange={(e) => setStatus(e.target.value)} className={fieldSelectClass} required>
-            <option value="ACTIVO">Trabajando</option>
-            <option value="LICENCIA">De licencia médica</option>
-            <option value="VACACIONES">De vacaciones</option>
-            <option value="BAJA">De baja</option>
+            <option value="ACTIVO">Activo</option>
+            <option value="LICENCIA">Licencia médica</option>
+            <option value="VACACIONES">Vacaciones</option>
+            <option value="BAJA">Baja</option>
           </select>
         </Field>
         {(status === "LICENCIA" || status === "VACACIONES") && (
-          <Field label="Hasta" htmlFor="statusUntil" hint="El último día que no viene.">
+          <Field label="Hasta" htmlFor="statusUntil" hint="Último día de ausencia.">
             <Input id="statusUntil" name="statusUntil" type="date" defaultValue={dateOnly(agent?.statusUntil)} />
           </Field>
         )}
@@ -203,70 +176,55 @@ export function HRFormFields({
   );
 
   const more = (
-    <section className={layout === "page" ? "rounded-2xl border border-dashed border-border/80 bg-card/60" : "border-t border-border/60 pt-4"}>
+    <section className="rounded-2xl border border-dashed border-border/80 bg-card/60">
       <button
         type="button"
         onClick={() => setMoreOpen((o) => !o)}
         aria-expanded={moreOpen}
-        className={`flex w-full items-center justify-between gap-3 text-left ${layout === "page" ? "p-4 sm:p-5" : ""}`}
+        className="flex w-full items-center justify-between gap-3 p-4 text-left sm:p-5"
       >
         <span>
-          <span className="block font-heading text-base font-semibold text-foreground">Agregar más datos</span>
-          <span className="block text-xs text-muted-foreground">Foto, tareas, salud, estudios y licencia de conducir. Todo opcional.</span>
+          <span className="block font-heading text-base font-semibold text-foreground">Información adicional</span>
+          <span className="block text-xs text-muted-foreground">Foto, funciones del puesto, salud, formación y licencia de conducir. Opcional.</span>
         </span>
         <ChevronDown className={`h-5 w-5 shrink-0 text-muted-foreground transition-transform ${moreOpen ? "rotate-180" : ""}`} />
       </button>
       {/* Siempre en la página (oculto si está cerrado), así lo que ya tenía se guarda igual. */}
-      <div className={`${moreOpen ? "" : "hidden"} grid gap-4 ${layout === "page" ? "px-4 pb-5 sm:px-5 lg:grid-cols-2" : "pt-4"}`}>
-        <Field label="Qué tareas hace" htmlFor="tasks">
+      <div className={`${moreOpen ? "" : "hidden"} grid gap-4 px-4 pb-5 sm:px-5 lg:grid-cols-2`}>
+        <Field label="Funciones del puesto" htmlFor="tasks">
           <Textarea id="tasks" name="tasks" defaultValue={legajo.tasksText} placeholder="Por ejemplo: recorridas en los barrios y atención al público." rows={2} />
         </Field>
-        <Field label="Salud" htmlFor="healthNotes" hint="Solo lo necesario para cuidarlo en el trabajo.">
+        <Field label="Observaciones de salud" htmlFor="healthNotes" hint="Solo lo necesario para el trabajo.">
           <Textarea id="healthNotes" name="healthNotes" defaultValue={legajo.healthNotes} placeholder="Por ejemplo: examen preocupacional aprobado." rows={2} />
         </Field>
-        <Field label="Estudios" htmlFor="education">
+        <Field label="Formación" htmlFor="education">
           <Input id="education" name="education" defaultValue={legajo.education} placeholder="Por ejemplo: Trabajo Social, 3.er año" />
         </Field>
-        <Field label="Licencia de conducir" htmlFor="drivingLicense" hint="Si puede manejar los vehículos municipales.">
+        <Field label="Licencia de conducir" htmlFor="drivingLicense" hint="Si está habilitado para conducir vehículos municipales.">
           <Input id="drivingLicense" name="drivingLicense" defaultValue={legajo.drivingLicense} placeholder="Por ejemplo: profesional B2" />
         </Field>
-        <Field label="Foto (dirección web)" htmlFor="imageUrl" className="lg:col-span-2">
+        <Field label="Foto (enlace)" htmlFor="imageUrl" className="lg:col-span-2">
           <Input id="imageUrl" name="imageUrl" type="url" defaultValue={agent?.imageUrl || ""} placeholder="https://…" />
         </Field>
       </div>
     </section>
   );
 
-  if (layout === "page") {
-    return (
-      <div className="space-y-5">
-        <RequiredNote />
-        <div className="grid items-start gap-5 lg:grid-cols-2">
-          <div className="space-y-5">
-            {who}
-            {contact}
-            {emergency}
-          </div>
-          <div className="space-y-5">
-            {job}
-            {contract}
-            {today}
-          </div>
-        </div>
-        {more}
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-5">
       <RequiredNote />
-      {who}
-      {job}
-      {contract}
-      {today}
-      {contact}
-      {emergency}
+      <div className="grid items-start gap-5 lg:grid-cols-2">
+        <div className="space-y-5">
+          {who}
+          {contact}
+          {emergency}
+        </div>
+        <div className="space-y-5">
+          {job}
+          {contract}
+          {today}
+        </div>
+      </div>
       {more}
     </div>
   );
