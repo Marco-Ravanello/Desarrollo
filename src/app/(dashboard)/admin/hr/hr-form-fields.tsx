@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Field, FormSection, RequiredNote, fieldSelectClass } from "@/components/ui/form-section";
 import { SchedulePicker } from "@/components/hr/schedule-picker";
+import { MoneyInput } from "@/components/ui/money-input";
 import { parseLegajo } from "@/lib/hr-form";
 
 const dateOnly = (value: string | Date | null | undefined) => (value ? new Date(value).toISOString().split("T")[0] : "");
@@ -139,17 +140,8 @@ export function HRFormFields({ areas, agent }: { areas: { id: string; name: stri
             <Input id="category" name="category" type="number" min="0" inputMode="numeric" defaultValue={agent?.category || ""} placeholder="Por ejemplo: 12" />
           </Field>
         )}
-        <Field label="Remuneración mensual ($)" htmlFor="salary" className={contractType === "MONOTRIBUTISTA" ? "" : "sm:col-span-2"}>
-          <Input
-            id="salary"
-            name="salary"
-            type="number"
-            step="0.01"
-            min="0"
-            inputMode="decimal"
-            defaultValue={agent?.salary || ""}
-            placeholder="Por ejemplo: 450000"
-          />
+        <Field label="Remuneración mensual" htmlFor="salary" className={contractType === "MONOTRIBUTISTA" ? "" : "sm:col-span-2"}>
+          <MoneyInput id="salary" name="salary" defaultValue={agent?.salary} placeholder="Por ejemplo: 450.000" />
         </Field>
       </div>
     </FormSection>

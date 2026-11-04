@@ -52,7 +52,7 @@ function Item({ label, children, wide }: { label: string; children: ReactNode; w
 const grid = "grid gap-x-6 gap-y-4 sm:grid-cols-2";
 
 /** El legajo para leer: las mismas partes y los mismos nombres que el formulario. */
-export function HRRecordView({ agent }: { agent: Agent }) {
+export function HRRecordView({ agent, leaves }: { agent: Agent; leaves?: ReactNode }) {
   const legajo = parseLegajo(agent.tasks);
   const away = agent.status === "LICENCIA" || agent.status === "VACACIONES";
   const years = agent.startDate ? yearsSince(agent.startDate) : null;
@@ -128,6 +128,8 @@ export function HRRecordView({ agent }: { agent: Agent }) {
           </FormSection>
         </div>
       </div>
+
+      {leaves}
 
       <FormSection icon={FileText} title="Información adicional">
         <dl className="grid gap-x-6 gap-y-4 lg:grid-cols-2">

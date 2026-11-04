@@ -16,6 +16,16 @@ export interface Novedad {
 export const NOVEDADES: Novedad[] = [
   {
     fecha: "2026-11-04",
+    parte: 5,
+    titulo: "Licencias y ausencias del personal",
+    cambios: [
+      "Cada legajo tiene su historial de licencias y vacaciones, con fechas, tipo y cuántos días tomó en el año. Se cargan con \"Registrar licencia\".",
+      "Nueva pantalla \"Ausencias del mes\" en Recursos Humanos: quién falta cada día, por área.",
+      "La remuneración muestra los puntos de miles mientras la escribís.",
+    ],
+  },
+  {
+    fecha: "2026-11-04",
     parte: 4,
     titulo: "Cada legajo en su propia página",
     cambios: [

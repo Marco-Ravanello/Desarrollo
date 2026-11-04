@@ -15,6 +15,10 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { PrintButton } from "@/components/ui/print-layout";
 import { PageBreadcrumbs } from "@/components/layout/breadcrumbs-context";
 import { HRRecordView } from "../view-hr-detail";
+import { LeavesSection } from "./leaves-section";
+import { getLeavesFor } from "@/services/hr-leaves";
+import { dateToDay, yearSummary } from "@/lib/hr-leaves";
+import { diaAR } from "@/lib/fechas";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -27,8 +31,11 @@ export default async function AgentPage({ params }: { params: Promise<{ id: stri
   if (!session?.user?.id) redirect("/login");
   if (!canViewHR(session.user.role)) redirect("/dashboard");
   const { id } = await params;
-  const agent = await getHRRecordById(id);
+  const [agent, leaves] = await Promise.all([getHRRecordById(id), getLeavesFor(id)]);
   if (!agent) notFound();
+  const today = diaAR();
+  const year = Number(today.slice(0, 4));
+  const canEdit = canEditHR(session.user.role);
 
   return (
     <div className="space-y-6">
@@ -54,7 +61,7 @@ export default async function AgentPage({ params }: { params: Promise<{ id: stri
         actions={
           <>
             <PrintButton label="Imprimir legajo" />
-            {canEditHR(session.user.role) && (
+            {canEdit && (
               <Button asChild className="gap-1.5 print:hidden">
                 <Link href={`/admin/hr/${agent.id}/editar`}>
                   <Edit className="h-4 w-4" /> Editar legajo
@@ -64,7 +71,19 @@ export default async function AgentPage({ params }: { params: Promise<{ id: stri
           </>
         }
       />
-      <HRRecordView agent={{ ...agent, salary: agent.salary ? Number(agent.salary) : null }} />
+      <HRRecordView
+        agent={{ ...agent, salary: agent.salary ? Number(agent.salary) : null }}
+        leaves={
+          <LeavesSection
+            agentId={agent.id}
+            leaves={leaves.map((l) => ({ id: l.id, kind: l.kind, notes: l.notes, startDate: dateToDay(l.startDate), endDate: dateToDay(l.endDate) }))}
+            today={today}
+            year={year}
+            summary={yearSummary(leaves, year)}
+            canEdit={canEdit}
+          />
+        }
+      />
     </div>
   );
 }
