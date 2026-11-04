@@ -1,271 +1,267 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import { AlertTriangle, CalendarRange, Car, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-import { toast } from "sonner";
-import { reservationStatusLabel } from "@/lib/vehicle-reservations";
-import { createVehicleReservationAction } from "../../actions/vehicle-actions";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Combobox } from "@/components/ui/combobox";
-import { Info, Calendar, Clock, User, AlertTriangle, CheckCircle2 } from "lucide-react";
-import { format } from "date-fns";
-import { es } from "date-fns/locale";
-import { RequiredMark } from "@/components/ui/form-section";
-import { FormActions } from "@/components/ui/form-section";
+import { RequiredMark, FormActions } from "@/components/ui/form-section";
+import { formatReservationRange, reservationStatusLabel } from "@/lib/vehicle-reservations";
+import { startOfWeekMonday } from "@/lib/agenda";
+import { dayStart, durationLabel, firstConflict, fromLocalInput, toLocalInput, type BusyReservation } from "@/lib/vehicle-grid";
+import { ReservationWeek } from "@/components/vehicles/reservation-week";
+import { FreeVehiclesDay, type VehicleRow } from "@/components/vehicles/free-vehicles-day";
+import { createVehicleReservationAction } from "../../actions/vehicle-actions";
 
-export function ReserveVehicleForm({ vehicleId, vehicles }: { vehicleId: string, vehicles: any[] }) {
+type Vehicle = VehicleRow & { reservations: (BusyReservation & { user?: { name?: string | null } | null })[] };
+
+const LEGEND = [
+  { label: "Aprobada", cls: "border-blue-500/50 bg-blue-500/15" },
+  { label: "Pendiente", cls: "border-dashed border-amber-500/60 bg-amber-500/15" },
+  { label: "En uso", cls: "border-violet-500/50 bg-violet-500/15" },
+  { label: "Tu pedido", cls: "border-emerald-600 bg-emerald-500/25" },
+];
+
+export function ReserveVehicleForm({ vehicleId, vehicles }: { vehicleId: string; vehicles: Vehicle[] }) {
   const router = useRouter();
+  const available = useMemo(() => vehicles.filter((v) => v.status === "DISPONIBLE"), [vehicles]);
   const [loading, setLoading] = useState(false);
-  const [selectedVehicleId, setSelectedVehicleId] = useState<string>(vehicleId || (vehicles[0]?.id || ""));
-  const [startDateStr, setStartDateStr] = useState<string>("");
-  const [endDateStr, setEndDateStr] = useState<string>("");
+  const [selectedVehicleId, setSelectedVehicleId] = useState<string>(
+    available.some((v) => v.id === vehicleId) ? vehicleId : available[0]?.id || vehicles[0]?.id || ""
+  );
+  const [startStr, setStartStr] = useState("");
+  const [endStr, setEndStr] = useState("");
+  const [view, setView] = useState<"semana" | "libres">("semana");
+  const [weekStart, setWeekStart] = useState(() => startOfWeekMonday(new Date()));
+  const [freeDay, setFreeDay] = useState(() => dayStart(new Date()));
+  // La grilla depende de la hora del navegador: se dibuja recién en el navegador (igual que la Agenda).
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
-  const selectedVehicle = useMemo(() => {
-    return vehicles.find(v => v.id === selectedVehicleId);
-  }, [vehicles, selectedVehicleId]);
+  const vehicle = vehicles.find((v) => v.id === selectedVehicleId);
+  const reservations = vehicle?.reservations ?? [];
+  const start = fromLocalInput(startStr);
+  const end = fromLocalInput(endStr);
+  const selection = start && end && end > start ? { start, end } : null;
+  const conflict = selection ? firstConflict(reservations, selection.start, selection.end) : null;
+  const unavailable =
+    vehicle && vehicle.status !== "DISPONIBLE"
+      ? `El ${vehicle.plate} está ${vehicle.status === "EN_TALLER" ? "en el taller" : "fuera de servicio"}: no se puede reservar. Elegí otro.`
+      : !vehicle
+        ? "No hay vehículos para reservar."
+        : null;
 
-  const existingReservations = useMemo(() => {
-    if (!selectedVehicle?.reservations) return [];
-    return selectedVehicle.reservations;
-  }, [selectedVehicle]);
+  const setRange = (s: Date, e: Date) => {
+    setStartStr(toLocalInput(s));
+    setEndStr(toLocalInput(e));
+  };
 
-  const conflictReservation = useMemo(() => {
-    if (!startDateStr || !endDateStr || !existingReservations.length) return null;
-    const start = new Date(startDateStr);
-    const end = new Date(endDateStr);
-    if (isNaN(start.getTime()) || isNaN(end.getTime())) return null;
-
-    return existingReservations.find((r: any) => {
-      const rStart = new Date(r.startDate);
-      const rEnd = new Date(r.endDate);
-      return start < rEnd && end > rStart;
-    });
-  }, [startDateStr, endDateStr, existingReservations]);
+  /** Al escribir una fecha a mano, la grilla va a esa semana y a ese día. */
+  const jumpTo = (v: string) => {
+    const d = fromLocalInput(v);
+    if (!d) return;
+    setWeekStart(startOfWeekMonday(d));
+    setFreeDay(dayStart(d));
+  };
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-
-    if (startDateStr && endDateStr && new Date(endDateStr) <= new Date(startDateStr)) {
-      toast.error("La devolución tiene que ser después de la salida.");
-      return;
+    if (unavailable) return toast.error(unavailable);
+    if (!selection) {
+      return toast.error(start && end ? "La vuelta tiene que ser después de la salida." : "Elegí el horario en la grilla o escribí la salida y la vuelta.");
     }
-
-    if (conflictReservation) {
-      toast.error("Ese horario choca con otra reserva. Elegí otro horario u otro vehículo.");
-      return;
-    }
+    if (selection.start.getTime() < Date.now() - 5 * 60_000) return toast.error("La salida ya pasó. Elegí un horario que venga.");
+    if (conflict) return toast.error("Ese horario se pisa con otra reserva. Elegí otro horario u otro vehículo.");
 
     setLoading(true);
     const formData = new FormData(e.currentTarget);
     formData.set("vehicleId", selectedVehicleId);
-
-    const res = await createVehicleReservationAction(formData);
-
-    if (res.success) {
+    formData.set("startDate", startStr);
+    formData.set("endDate", endStr);
+    const res = await createVehicleReservationAction(formData).catch(() => null);
+    setLoading(false);
+    if (res?.success) {
       toast.success("Listo, se mandó el pedido de reserva.");
       router.push("/admin/vehicles");
     } else {
-      toast.error(res.error || "No se pudo mandar el pedido. Probá de nuevo.");
+      toast.error(res?.error || "No se pudo mandar el pedido. Probá de nuevo.");
     }
-    setLoading(false);
   }
 
-  const formatRange = (start: Date | string, end: Date | string) => {
-    const s = new Date(start);
-    const e = new Date(end);
-    return `${format(s, "dd/MM/yyyy HH:mm 'hs'", { locale: es })} a ${format(e, "dd/MM/yyyy HH:mm 'hs'", { locale: es })}`;
-  };
-
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-      <div className="lg:col-span-2">
-        <Card className="bg-card text-card-foreground shadow-xs border border-border/60 rounded-2xl overflow-hidden">
-          <CardHeader className="bg-muted/20 border-b border-border/40 p-6">
-            <CardTitle className="text-2xl font-bold text-foreground">Solicitar vehículo</CardTitle>
-            <CardDescription className="text-muted-foreground text-xs font-medium">
-              Completá los datos para que Logística apruebe tu pedido de traslado.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="pt-6 space-y-6">
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="space-y-2">
-                <Label htmlFor="vehicleId" className="text-xs font-bold text-muted-foreground">
-                  Seleccionar unidad municipal
-                </Label>
-                <Combobox
-                  name="vehicleId"
-                  defaultValue={selectedVehicleId}
-                  placeholder="Buscar por patente, marca o modelo..."
-                  options={vehicles
-                    .filter(v => v.status === 'DISPONIBLE')
-                    .map(v => ({ value: v.id, label: `${v.plate} - ${v.brand} ${v.model}` }))
-                  }
-                  onValueChange={(val: string) => setSelectedVehicleId(val)}
-                  required
-                />
-                <p className="text-xs text-muted-foreground italic">Solo se muestran unidades disponibles y fuera de taller.</p>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <Label htmlFor="startDate" className="text-xs font-bold text-muted-foreground">
-                    Fecha y hora de inicio <RequiredMark />
-                  </Label>
-                  <Input
-                    id="startDate"
-                    name="startDate"
-                    type="datetime-local"
-                    value={startDateStr}
-                    onChange={e => setStartDateStr(e.target.value)}
-                    required
-                    className={`rounded-xl bg-background text-foreground border-border/60 text-xs ${
-                      conflictReservation ? "border-rose-500 focus-visible:ring-rose-500" : ""
-                    }`}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="endDate" className="text-xs font-bold text-muted-foreground">
-                    Fecha y hora de devolución <RequiredMark />
-                  </Label>
-                  <Input
-                    id="endDate"
-                    name="endDate"
-                    type="datetime-local"
-                    value={endDateStr}
-                    onChange={e => setEndDateStr(e.target.value)}
-                    required
-                    className={`rounded-xl bg-background text-foreground border-border/60 text-xs ${
-                      conflictReservation ? "border-rose-500 focus-visible:ring-rose-500" : ""
-                    }`}
-                  />
-                </div>
-              </div>
-
-              {conflictReservation && (
-                <div className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-600 dark:text-rose-400 space-y-2 animate-in fade-in duration-300">
-                  <div className="flex items-center gap-2 font-bold text-xs">
-                    <AlertTriangle className="h-4 w-4 shrink-0 text-rose-500" />
-                    ¡Conflicto de horario detectado!
-                  </div>
-                  <p className="text-xs leading-relaxed">
-                    Este vehículo ya tiene una reserva de <b>{conflictReservation.user?.name || "otro agente"}</b> en ese horario:
-                  </p>
-                  <div className="p-2.5 rounded-xl bg-rose-500/15 tabular-nums text-xs font-bold">
-                    📅 {formatRange(conflictReservation.startDate, conflictReservation.endDate)} ({reservationStatusLabel(conflictReservation.status).toLowerCase()})
-                  </div>
-                  <p className="text-xs italic">Cambiá la fecha u hora, o elegí otro vehículo.</p>
-                </div>
-              )}
-
-              <div className="space-y-2">
-                <Label htmlFor="reason" className="text-xs font-bold text-muted-foreground">
-                  Motivo del uso y destino <RequiredMark />
-                </Label>
-                <Input
-                  id="reason"
-                  name="reason"
-                  placeholder="Ej: Traslado de insumos de emergencia a B° San Martín"
-                  required
-                  className="rounded-xl bg-background text-foreground border-border/60 text-xs"
-                />
-              </div>
-
-              <div className="bg-primary/10 border border-primary/20 rounded-2xl p-4 flex gap-3 items-start text-xs text-foreground">
-                 <Info className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-                 <div className="leading-relaxed">
-                   <strong>Nota de logística:</strong> Esto manda un pedido de reserva. Te avisamos en la campana cuando el área de flota lo apruebe o lo rechace.
-                 </div>
-              </div>
-
-              <FormActions>
-                <Button type="button" variant="outline" onClick={() => router.back()}>
-                  Cancelar
-                </Button>
-                <Button type="submit" disabled={loading || Boolean(conflictReservation)}>
-                  {loading ? "Enviando pedido…" : "Pedir reserva"}
-                </Button>
-              </FormActions>
-            </form>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="lg:col-span-1 space-y-4">
-        <Card className="bg-card text-card-foreground shadow-xs border border-border/60 rounded-2xl p-6 space-y-4">
-          <div className="flex items-center gap-2 border-b border-border/40 pb-3">
-            <div className="p-2 bg-primary/10 text-primary rounded-xl">
-              <Calendar className="h-5 w-5" />
-            </div>
-            <div>
-              <h3 className="text-xs font-bold text-foreground">Horarios ocupados</h3>
-              <p className="text-xs text-muted-foreground">Reservas activas para la unidad elegida</p>
-            </div>
+    <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]">
+      <section className="min-w-0 space-y-4 rounded-2xl border border-border/60 bg-card p-4 shadow-xs sm:p-5">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-end">
+          <div className="min-w-0 flex-1 space-y-1.5">
+            <Label htmlFor="vehicleId" className="text-xs font-bold text-muted-foreground">
+              Vehículo
+            </Label>
+            <Combobox
+              name="vehicleId"
+              value={selectedVehicleId}
+              placeholder="Buscar por patente, marca o modelo…"
+              options={available.map((v) => ({ value: v.id, label: `${v.plate} · ${v.brand ?? ""} ${v.model ?? ""}`.trim() }))}
+              onValueChange={(val: string) => setSelectedVehicleId(val)}
+              required
+            />
           </div>
+          <div className="grid grid-cols-2 gap-1 rounded-xl border border-border/60 bg-muted/30 p-1" role="tablist" aria-label="Cómo ver los horarios">
+            {(
+              [
+                ["semana", "Semana del vehículo", CalendarRange],
+                ["libres", "¿Cuál está libre?", Car],
+              ] as const
+            ).map(([key, label, Icon]) => (
+              <button
+                key={key}
+                type="button"
+                role="tab"
+                aria-selected={view === key}
+                onClick={() => {
+                  setView(key);
+                  if (key === "libres" && selection) setFreeDay(dayStart(selection.start));
+                }}
+                className={`flex items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-bold transition-colors ${
+                  view === key ? "bg-primary text-primary-foreground shadow-xs" : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <Icon className="h-3.5 w-3.5" /> {label}
+              </button>
+            ))}
+          </div>
+        </div>
 
-          {selectedVehicle ? (
-            <div className="space-y-3">
-              <div className="p-3 rounded-2xl bg-muted/40 border border-border/40 space-y-1">
-                <p className="text-xs font-bold text-foreground">{selectedVehicle.brand} {selectedVehicle.model}</p>
-                <Badge variant="outline" className="tabular-nums text-xs font-bold text-foreground border-border">{selectedVehicle.plate}</Badge>
-              </div>
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-muted-foreground">
+          {LEGEND.map((l) => (
+            <span key={l.label} className="flex items-center gap-1.5">
+              <span className={`h-3 w-5 rounded border-2 ${l.cls}`} /> {l.label}
+            </span>
+          ))}
+        </div>
+        <p className="-mt-2 text-xs text-muted-foreground">
+          <span className="hidden md:inline">Arrastrá en la grilla desde la hora de salida hasta la de vuelta. Para varios días, escribí las fechas en Tu pedido.</span>
+          <span className="md:hidden">Tocá la hora de salida y después la de vuelta. Para varios días, escribí las fechas abajo.</span>
+        </p>
 
-              {existingReservations.length === 0 ? (
-                <div className="p-6 text-center text-muted-foreground space-y-2">
-                  <CheckCircle2 className="h-8 w-8 text-emerald-700 dark:text-emerald-400 mx-auto" />
-                  <p className="text-xs font-bold">Unidad sin reservas próximas</p>
-                  <p className="text-xs italic">Está completamente disponible en todos los horarios.</p>
-                </div>
-              ) : (
-                <div className="space-y-3 max-h-[400px] overflow-y-auto pr-1">
-                  {existingReservations.map((r: any) => {
-                    const isPending = r.status === 'PENDIENTE';
-                    const isApproved = r.status === 'APROBADA';
-                    const isOngoing = r.status === 'EN_CURSO';
+        {!mounted ? (
+          <div className="h-[640px] animate-pulse rounded-2xl border border-border/60 bg-muted/30" aria-label="Cargando los horarios" />
+        ) : view === "semana" ? (
+          <ReservationWeek
+            reservations={reservations}
+            selection={selection}
+            conflict={Boolean(conflict)}
+            onSelect={setRange}
+            weekStart={weekStart}
+            onWeekChange={setWeekStart}
+            disabledMessage={unavailable}
+          />
+        ) : (
+          <FreeVehiclesDay
+            vehicles={vehicles}
+            selectedVehicleId={selectedVehicleId}
+            selection={selection}
+            day={freeDay}
+            onDayChange={setFreeDay}
+            onPick={(id, range) => {
+              setSelectedVehicleId(id);
+              if (range) setRange(range.start, range.end);
+            }}
+          />
+        )}
+      </section>
 
-                    return (
-                      <div
-                        key={r.id}
-                        className={`p-3.5 rounded-2xl border transition-all text-xs space-y-2 ${
-                          isOngoing ? "bg-amber-500/10 border-amber-500/30 text-amber-700 dark:text-amber-300" :
-                          isApproved ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-300" :
-                          "bg-blue-500/10 border-blue-500/30 text-blue-600 dark:text-blue-300"
-                        }`}
-                      >
-                        <div className="flex items-center justify-between">
-                          <span className="font-bold text-xs flex items-center gap-1">
-                            <Clock className="h-3 w-3" />
-                            {isOngoing ? "En uso" : isApproved ? "Aprobada" : "Pendiente"}
-                          </span>
-                          <Badge variant="secondary" className="text-xs font-bold">
-                            {reservationStatusLabel(r.status)}
-                          </Badge>
-                        </div>
+      <form onSubmit={handleSubmit} className="space-y-5 self-start rounded-2xl border border-border/60 bg-card p-5 shadow-xs xl:sticky xl:top-24">
+        <div>
+          <h2 className="text-lg font-bold text-foreground">Tu pedido</h2>
+          <p className="text-xs text-muted-foreground">
+            {vehicle ? (
+              <>
+                <span className="font-bold tabular-nums text-foreground">{vehicle.plate}</span> · {[vehicle.brand, vehicle.model].filter(Boolean).join(" ")}
+              </>
+            ) : (
+              "Elegí un vehículo."
+            )}
+          </p>
+        </div>
 
-                        <div className="space-y-1 tabular-nums text-xs font-bold">
-                          <p>Inicio: {format(new Date(r.startDate), "dd/MM/yyyy HH:mm", { locale: es })} hs</p>
-                          <p>Fin: {format(new Date(r.endDate), "dd/MM/yyyy HH:mm", { locale: es })} hs</p>
-                        </div>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-1">
+          <div className="space-y-1.5">
+            <Label htmlFor="startDate" className="text-xs font-bold text-muted-foreground">
+              Salida <RequiredMark />
+            </Label>
+            <Input
+              id="startDate"
+              name="startDate"
+              type="datetime-local"
+              step={1800}
+              value={startStr}
+              onChange={(e) => {
+                setStartStr(e.target.value);
+                jumpTo(e.target.value);
+              }}
+              required
+              className={`rounded-xl text-sm ${conflict ? "border-rose-500 focus-visible:ring-rose-500" : ""}`}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="endDate" className="text-xs font-bold text-muted-foreground">
+              Vuelta <RequiredMark />
+            </Label>
+            <Input
+              id="endDate"
+              name="endDate"
+              type="datetime-local"
+              step={1800}
+              value={endStr}
+              onChange={(e) => setEndStr(e.target.value)}
+              required
+              className={`rounded-xl text-sm ${conflict ? "border-rose-500 focus-visible:ring-rose-500" : ""}`}
+            />
+          </div>
+        </div>
 
-                        <div className="pt-2 border-t border-border/20 flex items-center gap-1.5 text-xs font-medium opacity-90">
-                          <User className="h-3 w-3 shrink-0" />
-                          <span className="truncate">Reservado por: <b>{r.user?.name || "Agente municipal"}</b></span>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          ) : (
-            <p className="text-xs text-muted-foreground italic p-4 text-center">Elegí un vehículo para ver sus reservas.</p>
-          )}
-        </Card>
-      </div>
+        {selection && !conflict && (
+          <p className="rounded-xl border border-emerald-600/30 bg-emerald-500/10 px-3 py-2 text-xs font-semibold text-emerald-800 dark:text-emerald-200">
+            {formatReservationRange(selection.start, selection.end)} · {durationLabel(selection.start, selection.end)}
+          </p>
+        )}
+
+        {conflict && (
+          <div className="space-y-1 rounded-xl border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-xs text-rose-700 dark:text-rose-300">
+            <p className="flex items-center gap-1.5 font-bold">
+              <AlertTriangle className="h-4 w-4 shrink-0" /> Se pisa con otra reserva
+            </p>
+            <p>
+              {conflict.user?.name || "Otra persona"} lo tiene {formatReservationRange(conflict.startDate, conflict.endDate)} (
+              {reservationStatusLabel(conflict.status).toLowerCase()}). Cambiá el horario o probá en &quot;¿Cuál está libre?&quot;.
+            </p>
+          </div>
+        )}
+
+        <div className="space-y-1.5">
+          <Label htmlFor="reason" className="text-xs font-bold text-muted-foreground">
+            Para qué y adónde <RequiredMark />
+          </Label>
+          <Input id="reason" name="reason" placeholder="Por ejemplo: llevar insumos al barrio San Martín" required className="rounded-xl text-sm" />
+        </div>
+
+        <p className="flex items-start gap-2 rounded-xl bg-primary/10 p-3 text-xs leading-relaxed text-foreground">
+          <Info className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+          Esto manda un pedido. Te avisamos en la campana cuando quien maneja la flota lo apruebe o lo rechace.
+        </p>
+
+        <FormActions>
+          <Button type="button" variant="outline" onClick={() => router.back()}>
+            Cancelar
+          </Button>
+          <Button type="submit" disabled={loading || Boolean(conflict) || Boolean(unavailable)}>
+            {loading ? "Mandando…" : "Pedir reserva"}
+          </Button>
+        </FormActions>
+      </form>
     </div>
   );
 }
