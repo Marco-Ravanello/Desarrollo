@@ -3,6 +3,7 @@ import prisma from "@/lib/prisma";
 import { canEditHR, currentMonthRange } from "@/lib/hr-labels";
 import { ContractType, HRStatus } from "@prisma/client";
 import { diaAR, diaDeVencimiento } from "@/lib/fechas";
+import { cutLeaveCoveringToday } from "@/services/hr-leaves";
 
 export async function getHRRecords(filters?: { query?: string, areaId?: string, status?: string, startedThisMonth?: boolean }) {
   const where: any = {};
@@ -168,9 +169,14 @@ export async function markBackFromLeave(user: { id?: string | null; role?: strin
   if (record.status !== "LICENCIA" && record.status !== "VACACIONES") {
     return { success: false as const, error: "Esa persona ya no figura de licencia. Recargá la página." };
   }
-  const { count } = await prisma.hRRecord.updateMany({
-    where: { id, status: record.status },
-    data: { status: "ACTIVO", statusUntil: null },
+  const count = await prisma.$transaction(async (tx) => {
+    const { count } = await tx.hRRecord.updateMany({
+      where: { id, status: record.status },
+      data: { status: "ACTIVO", statusUntil: null },
+    });
+    // La licencia de hoy termina ayer en el historial (si empezó hoy, se borra).
+    if (count > 0) await cutLeaveCoveringToday(tx, id);
+    return count;
   });
   if (count === 0) return { success: false as const, error: "Otra persona cambió el estado recién. Recargá la página." };
   await prisma.auditLog.create({

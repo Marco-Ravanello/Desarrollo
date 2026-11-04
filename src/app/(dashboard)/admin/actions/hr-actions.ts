@@ -1,6 +1,7 @@
 "use server";
 
 import { createHRRecord, markBackFromLeave } from "@/services/hr";
+import { deleteLeave, ensureLeaveForStatus, registerLeave } from "@/services/hr-leaves";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import prisma from "@/lib/prisma";
@@ -34,6 +35,7 @@ export async function createHRRecordAction(formData: FormData): Promise<ActionRe
     const taken = await dniTaken(data.dni);
     if (taken) return { success: false, error: `Ya hay un legajo con ese DNI: ${taken.lastName}, ${taken.firstName}.` };
     const newRecord = await createHRRecord(data);
+    await ensureLeaveForStatus(newRecord.id, data.status, data.statusUntil, session.user.id ?? null);
     revalidatePath("/admin/hr");
     return { success: true, data: saved(newRecord) };
   } catch (error) {
@@ -59,6 +61,7 @@ export async function updateHRRecordAction(id: string, formData: FormData): Prom
       where: { id },
       data: { ...rest, contractType: contractType as ContractType, status: status as HRStatus },
     });
+    await ensureLeaveForStatus(id, status, rest.statusUntil, session.user.id ?? null);
     revalidatePath("/admin/hr");
     revalidatePath(`/admin/hr/${id}`);
     return { success: true, data: saved(updatedRecord) };
@@ -97,5 +100,42 @@ export async function markBackFromLeaveAction(id: string): Promise<ActionResult<
   } catch (error) {
     console.error(error);
     return { success: false, error: actionErrorMessage(error, "No se pudo marcar la vuelta") };
+  }
+}
+
+export async function registerLeaveAction(hrRecordId: string, formData: FormData): Promise<ActionResult<void>> {
+  const session = await auth();
+  if (!session?.user) return { success: false, error: "Tu sesión expiró. Volvé a iniciar sesión." };
+  try {
+    const res = await registerLeave(session.user, hrRecordId, {
+      kind: formData.get("kind") as string | null,
+      startDate: formData.get("startDate") as string | null,
+      endDate: formData.get("endDate") as string | null,
+      notes: formData.get("notes") as string | null,
+    });
+    if (!res.success) return res;
+    revalidatePath("/admin/hr");
+    revalidatePath(`/admin/hr/${hrRecordId}`);
+    revalidatePath("/admin/hr/ausencias");
+    revalidatePath("/dashboard");
+    return { success: true };
+  } catch (error) {
+    console.error(error);
+    return { success: false, error: actionErrorMessage(error, "No se pudo guardar la licencia") };
+  }
+}
+
+export async function deleteLeaveAction(leaveId: string): Promise<ActionResult<void>> {
+  const session = await auth();
+  if (!session?.user) return { success: false, error: "Tu sesión expiró. Volvé a iniciar sesión." };
+  try {
+    const res = await deleteLeave(session.user, leaveId);
+    if (!res.success) return res;
+    revalidatePath("/admin/hr", "layout");
+    revalidatePath("/dashboard");
+    return { success: true };
+  } catch (error) {
+    console.error(error);
+    return { success: false, error: actionErrorMessage(error, "No se pudo borrar la licencia") };
   }
 }

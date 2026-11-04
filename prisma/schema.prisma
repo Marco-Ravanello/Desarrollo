@@ -569,7 +569,25 @@ model HRRecord {
   birthDate             DateTime?
   emergencyContactName  String?
   emergencyContactPhone String?
+  leaves       HRLeave[]
   createdAt    DateTime     @default(now())
+}
+
+/// Cada licencia o período de vacaciones de un agente, con sus fechas (a la medianoche UTC de cada día, ambos incluidos).
+model HRLeave {
+  id          String   @id @default(cuid())
+  hrRecordId  String
+  hrRecord    HRRecord @relation(fields: [hrRecordId], references: [id], onDelete: Cascade)
+  /// Tipo, de la lista fija de src/lib/hr-leaves.ts (VACACIONES, ENFERMEDAD, …).
+  kind        String
+  startDate   DateTime
+  endDate     DateTime
+  notes       String?
+  createdById String?
+  createdAt   DateTime @default(now())
+
+  @@index([hrRecordId, startDate])
+  @@index([startDate, endDate])
 }
 
 model Document {

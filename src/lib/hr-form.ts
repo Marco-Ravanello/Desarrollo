@@ -145,7 +145,10 @@ export function readHRForm(get: (key: string) => string | null): { ok: true; dat
   const contractType = CONTRACTS.includes(get("contractType") ?? "") ? (get("contractType") as string) : "MENSUALIZADO";
   const status = STATUSES.includes(get("status") ?? "") ? (get("status") as string) : "ACTIVO";
   const category = contractType === "MONOTRIBUTISTA" ? null : parseInt(get("category") ?? "", 10) || null;
-  const salary = Math.max(0, parseFloat((get("salary") ?? "").replace(",", ".")) || 0);
+  // Llega sin puntos ("450000.5"); si alguien lo manda como se ve ("450.000,50"), se lee igual.
+  const salaryRaw = (get("salary") ?? "").trim();
+  const salaryText = /^\d{1,3}(\.\d{3})+(,\d+)?$/.test(salaryRaw) || salaryRaw.includes(",") ? salaryRaw.replace(/\./g, "").replace(",", ".") : salaryRaw;
+  const salary = Math.max(0, parseFloat(salaryText) || 0);
 
   const tasksText = (get("tasks") ?? "").trim();
   const healthNotes = (get("healthNotes") ?? "").trim();

@@ -132,6 +132,8 @@ const ACTIONS: Record<string, { label: string; group: AuditGroup }> = {
   RESET_SYSTEM_SETTINGS: { label: "Volvió la Configuración a la de fábrica", group: "configuracion" },
   UPDATE_BUDGET: { label: "Cambió el presupuesto de un área", group: "configuracion" },
   HR_VOLVIO: { label: "Marcó que alguien volvió de su licencia", group: "configuracion" },
+  HR_LICENCIA: { label: "Cargó una licencia o vacaciones", group: "configuracion" },
+  HR_LICENCIA_BORRADA: { label: "Borró una licencia o vacaciones", group: "configuracion" },
   // Descargas
   EXPORT_CSV: { label: "Descargó datos del padrón", group: "descargas" },
   EXPORT_MAP_PEOPLE: { label: "Descargó personas del Mapa Social", group: "descargas" },

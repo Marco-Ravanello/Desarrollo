@@ -10,7 +10,7 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { Button } from "@/components/ui/button";
 import {
   Users, UserPlus, BarChart2,
-  Plus, Calendar, Wallet, PieChart, UserCog
+  Plus, Calendar, CalendarRange, Wallet, PieChart, UserCog
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { initialsColor, initialsOf } from "@/lib/initials";
@@ -135,6 +135,11 @@ export default async function HRPage({
               label="Exportar nómina"
               orientation="landscape"
            />
+           <Button variant="outline" className="gap-2" asChild>
+             <Link href="/admin/hr/ausencias">
+               <CalendarRange className="h-4 w-4" /> Ausencias del mes
+             </Link>
+           </Button>
            {canEditHR(userRole) && (
              <Button className="gap-2" asChild>
                <Link href="/admin/hr/nuevo">
