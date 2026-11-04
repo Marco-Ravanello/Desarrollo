@@ -105,7 +105,7 @@ export type HRFormData = {
 };
 
 const CONTRACTS = ["MENSUALIZADO", "PLANTA_PERMANENTE", "MONOTRIBUTISTA"];
-const STATUSES = ["ACTIVO", "LICENCIA", "VACACIONES", "BAJA"];
+const STATUSES = ["ACTIVO", "LICENCIA", "LICENCIA_SIN_GOCE", "VACACIONES", "BAJA"];
 
 /**
  * Lo que manda el formulario del legajo, limpio: lo vacío queda en null (el N° de legajo es único, así que
@@ -173,7 +173,7 @@ export function readHRForm(get: (key: string) => string | null): { ok: true; dat
       imageUrl: text("imageUrl", 500),
       tasks,
       status,
-      statusUntil: status === "LICENCIA" || status === "VACACIONES" ? day("statusUntil") : null,
+      statusUntil: status === "LICENCIA" || status === "LICENCIA_SIN_GOCE" || status === "VACACIONES" ? day("statusUntil") : null,
       phone,
       email: email ? email.toLowerCase() : null,
       address: text("address", 200),

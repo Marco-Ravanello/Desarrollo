@@ -534,6 +534,7 @@ enum RequestStatus {
 enum HRStatus {
   ACTIVO
   LICENCIA
+  LICENCIA_SIN_GOCE
   VACACIONES
   BAJA
 }

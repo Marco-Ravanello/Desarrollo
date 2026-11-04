@@ -16,8 +16,10 @@ import { PrintButton } from "@/components/ui/print-layout";
 import { PageBreadcrumbs } from "@/components/layout/breadcrumbs-context";
 import { HRRecordView } from "../view-hr-detail";
 import { LeavesSection } from "./leaves-section";
-import { getLeavesFor } from "@/services/hr-leaves";
-import { dateToDay, yearSummary } from "@/lib/hr-leaves";
+import { getCurrentLeave, getLeavesFor, syncLeaveStatuses } from "@/services/hr-leaves";
+import { isAwayStatus } from "@/lib/hr-labels";
+import { BackFromLeaveButton } from "@/components/dashboard/back-from-leave-button";
+import { dateToDay, leaveKindLabel, yearSummary } from "@/lib/hr-leaves";
 import { diaAR } from "@/lib/fechas";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
@@ -31,11 +33,14 @@ export default async function AgentPage({ params }: { params: Promise<{ id: stri
   if (!session?.user?.id) redirect("/login");
   if (!canViewHR(session.user.role)) redirect("/dashboard");
   const { id } = await params;
-  const [agent, leaves] = await Promise.all([getHRRecordById(id), getLeavesFor(id)]);
+  await syncLeaveStatuses().catch(() => 0);
+  const [agent, leaves, currentLeave] = await Promise.all([getHRRecordById(id), getLeavesFor(id), getCurrentLeave(id)]);
   if (!agent) notFound();
   const today = diaAR();
   const year = Number(today.slice(0, 4));
   const canEdit = canEditHR(session.user.role);
+  // Terminó la licencia y todavía figura ausente: falta confirmar que volvió.
+  const pendingReturn = Boolean(isAwayStatus(agent.status) && agent.statusUntil && dateToDay(agent.statusUntil) < today);
 
   return (
     <div className="space-y-6">
@@ -71,8 +76,20 @@ export default async function AgentPage({ params }: { params: Promise<{ id: stri
           </>
         }
       />
+      {pendingReturn && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-900 dark:text-amber-200 print:hidden">
+          <p>
+            <span className="font-semibold">Su {agent.status === "VACACIONES" ? "período de vacaciones" : "licencia"} terminó el {dateToDay(agent.statusUntil!).split("-").reverse().join("/")}.</span>{" "}
+            Confirmá si ya volvió a trabajar. Si sigue ausente, registrá los días nuevos en Licencias y vacaciones.
+          </p>
+          {canEdit && <BackFromLeaveButton id={agent.id} name={`${agent.firstName} ${agent.lastName}`} />}
+        </div>
+      )}
+
       <HRRecordView
         agent={{ ...agent, salary: agent.salary ? Number(agent.salary) : null }}
+        leaveKind={isAwayStatus(agent.status) && currentLeave ? leaveKindLabel(currentLeave.kind) : null}
+        pendingReturn={pendingReturn}
         leaves={
           <LeavesSection
             agentId={agent.id}

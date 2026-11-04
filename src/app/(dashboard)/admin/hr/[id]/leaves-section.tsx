@@ -157,7 +157,7 @@ export function LeavesSection({
         <DialogContent className="rounded-2xl sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Registrar licencia</DialogTitle>
-            <DialogDescription>Si incluye el día de hoy, la situación del legajo cambia sola hasta el último día.</DialogDescription>
+            <DialogDescription>La situación del legajo cambia sola el primer día. Cuando termina, hay que confirmar que la persona volvió.</DialogDescription>
           </DialogHeader>
           <form onSubmit={submit} className="space-y-4">
             <Field label="Tipo" htmlFor="leave-kind" required>

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import prisma from "@/lib/prisma";
-import { registerLeave, deleteLeave, ensureLeaveForStatus, getAbsencesForMonth, getLeavesFor } from "@/services/hr-leaves";
-import { markBackFromLeave } from "@/services/hr";
+import { registerLeave, deleteLeave, ensureLeaveForStatus, getAbsencesForMonth, getLeavesFor, syncLeaveStatuses, pendingReturnWhere } from "@/services/hr-leaves";
+import { getHRRecords, markBackFromLeave } from "@/services/hr";
 import { createArea, createUser } from "./helpers";
 import { diaAR } from "@/lib/fechas";
 
@@ -87,5 +87,43 @@ describe("licencias y vacaciones", () => {
     const only1 = await getAbsencesForMonth(2026, 11, area1.id, NOW);
     expect(only1.map((r) => r.name)).toEqual(["Prueba, Dani", "Prueba, Fede"]);
     expect(await getAbsencesForMonth(2026, 9, null, NOW)).toEqual([]);
+  });
+
+  it("cuando arranca una licencia cambia la situación sola, pero la vuelta a Activo hay que confirmarla", async () => {
+    const admin = await createUser("ADMIN_GENERAL");
+    const h = await prisma.hRRecord.create({ data: { ...base, dni: "91000008", firstName: "Hugo" } });
+    const i = await prisma.hRRecord.create({ data: { ...base, dni: "91000009", firstName: "Iris", status: "BAJA" } });
+    // Cargadas el 4/11 para más adelante: no cambian nada todavía.
+    await registerLeave(admin, h.id, { kind: "SIN_GOCE", startDate: "2026-11-09", endDate: "2026-11-13" }, NOW);
+    await registerLeave(admin, i.id, { kind: "VACACIONES", startDate: "2026-11-09", endDate: "2026-11-13" }, NOW);
+    await syncLeaveStatuses(NOW);
+    expect(await prisma.hRRecord.findUniqueOrThrow({ where: { id: h.id } })).toMatchObject({ status: "ACTIVO" });
+
+    // El 9/11 arrancan: Hugo pasa a Licencia sin goce; Iris, de baja, sigue igual.
+    const monday = new Date("2026-11-09T12:00:00Z");
+    expect(await syncLeaveStatuses(monday)).toBeGreaterThanOrEqual(1);
+    expect(await prisma.hRRecord.findUniqueOrThrow({ where: { id: h.id } })).toMatchObject({ status: "LICENCIA_SIN_GOCE", statusUntil: day("2026-11-13") });
+    expect(await prisma.hRRecord.findUniqueOrThrow({ where: { id: i.id } })).toMatchObject({ status: "BAJA" });
+    expect(await syncLeaveStatuses(monday)).toBe(0);
+
+    // El 16/11 ya terminó: sigue figurando de licencia hasta que alguien confirme la vuelta.
+    const after = new Date("2026-11-16T12:00:00Z");
+    await syncLeaveStatuses(after);
+    expect(await prisma.hRRecord.findUniqueOrThrow({ where: { id: h.id } })).toMatchObject({ status: "LICENCIA_SIN_GOCE" });
+    const pending = await prisma.hRRecord.findMany({ where: pendingReturnWhere(after), select: { id: true } });
+    expect(pending.map((p) => p.id)).toContain(h.id);
+
+    // Si después arranca otra licencia, la situación se pone al día con la nueva.
+    await registerLeave(admin, h.id, { kind: "VACACIONES", startDate: "2026-11-16", endDate: "2026-11-20" }, after);
+    expect(await prisma.hRRecord.findUniqueOrThrow({ where: { id: h.id } })).toMatchObject({ status: "VACACIONES", statusUntil: day("2026-11-20") });
+  });
+
+  it("la lista filtra a quienes falta confirmar la vuelta", async () => {
+    await prisma.hRRecord.create({ data: { ...base, dni: "91000010", firstName: "Juan", status: "LICENCIA", statusUntil: day("2020-01-10") } });
+    const rows = await getHRRecords({ status: "volver" });
+    expect(rows.map((r) => r.firstName)).toContain("Juan");
+    expect(rows.every((r) => r.statusUntil && r.statusUntil < new Date())).toBe(true);
+    // Un estado que no existe no rompe la lista.
+    expect(Array.isArray(await getHRRecords({ status: "CUALQUIERA" }))).toBe(true);
   });
 });

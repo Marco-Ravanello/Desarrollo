@@ -5,6 +5,7 @@ import { diaAR } from "@/lib/fechas";
 export const HR_STATUS_LABEL: Record<string, string> = {
   ACTIVO: "Activo",
   LICENCIA: "De licencia",
+  LICENCIA_SIN_GOCE: "De licencia sin goce",
   VACACIONES: "De vacaciones",
   BAJA: "De baja",
 };
@@ -14,6 +15,19 @@ export const CONTRACT_TYPE_LABEL: Record<string, string> = {
   PLANTA_PERMANENTE: "Planta permanente",
   MONOTRIBUTISTA: "Monotributista / contratado",
 };
+
+/** Las situaciones de revista, en el orden en que se eligen en el formulario. */
+export const HR_STATUS_OPTIONS = [
+  { value: "ACTIVO", label: "Activo" },
+  { value: "LICENCIA", label: "Licencia" },
+  { value: "LICENCIA_SIN_GOCE", label: "Licencia sin goce" },
+  { value: "VACACIONES", label: "Vacaciones" },
+  { value: "BAJA", label: "Baja" },
+] as const;
+
+/** Las situaciones en las que la persona no viene a trabajar (y tienen fecha "hasta"). */
+export const AWAY_STATUSES = ["LICENCIA", "LICENCIA_SIN_GOCE", "VACACIONES"] as const;
+export const isAwayStatus = (s?: string | null) => (AWAY_STATUSES as readonly string[]).includes(s ?? "");
 
 export const hrStatusLabel = (status?: string | null) => HR_STATUS_LABEL[status || "ACTIVO"] ?? status ?? "Activo";
 export const contractTypeLabel = (type?: string | null) => CONTRACT_TYPE_LABEL[type || "MENSUALIZADO"] ?? type ?? "Mensualizado";

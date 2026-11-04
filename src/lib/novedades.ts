@@ -16,6 +16,16 @@ export interface Novedad {
 export const NOVEDADES: Novedad[] = [
   {
     fecha: "2026-11-04",
+    parte: 6,
+    titulo: "La situación de revista sigue a las licencias",
+    cambios: [
+      "Cuando arranca una licencia o unas vacaciones cargadas, la situación del legajo cambia sola.",
+      "Al terminar no vuelve sola a Activo: Recursos Humanos avisa quién terminó y hay que confirmar con \"Ya volvió\".",
+      "La situación de revista ahora es Activo, Licencia, Licencia sin goce, Vacaciones o Baja. El tipo de licencia se ve en el legajo.",
+    ],
+  },
+  {
+    fecha: "2026-11-04",
     parte: 5,
     titulo: "Licencias y ausencias del personal",
     cambios: [

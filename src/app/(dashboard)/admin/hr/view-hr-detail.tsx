@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { BriefcaseBusiness, CalendarCheck, FileText, HeartPulse, Phone, UserRound, Wallet } from "lucide-react";
 import { FormSection } from "@/components/ui/form-section";
-import { contractTypeLabel, hrStatusLabel } from "@/lib/hr-labels";
+import { contractTypeLabel, hrStatusLabel, isAwayStatus } from "@/lib/hr-labels";
 import { formatFechaCalendario } from "@/lib/fechas";
 import { formatPesos } from "@/lib/formato";
 import { parseLegajo } from "@/lib/hr-form";
@@ -52,9 +52,20 @@ function Item({ label, children, wide }: { label: string; children: ReactNode; w
 const grid = "grid gap-x-6 gap-y-4 sm:grid-cols-2";
 
 /** El legajo para leer: las mismas partes y los mismos nombres que el formulario. */
-export function HRRecordView({ agent, leaves }: { agent: Agent; leaves?: ReactNode }) {
+export function HRRecordView({
+  agent,
+  leaves,
+  leaveKind,
+  pendingReturn,
+}: {
+  agent: Agent;
+  leaves?: ReactNode;
+  /** El tipo de la licencia que explica la situación de hoy ("Duelo", "Vacaciones"…). */
+  leaveKind?: string | null;
+  pendingReturn?: boolean;
+}) {
   const legajo = parseLegajo(agent.tasks);
-  const away = agent.status === "LICENCIA" || agent.status === "VACACIONES";
+  const away = isAwayStatus(agent.status);
   const years = agent.startDate ? yearsSince(agent.startDate) : null;
 
   return (
@@ -123,7 +134,13 @@ export function HRRecordView({ agent, leaves }: { agent: Agent; leaves?: ReactNo
           <FormSection icon={CalendarCheck} title="Situación de revista">
             <dl className={grid}>
               <Item label="Situación">{hrStatusLabel(agent.status)}</Item>
-              {away && <Item label="Hasta">{agent.statusUntil ? formatFechaCalendario(agent.statusUntil) : EMPTY}</Item>}
+              {away && (
+                <Item label="Hasta">
+                  {agent.statusUntil ? formatFechaCalendario(agent.statusUntil) : EMPTY}
+                  {pendingReturn && <span className="block text-xs font-medium text-amber-700 dark:text-amber-300">Falta confirmar la vuelta</span>}
+                </Item>
+              )}
+              {away && leaveKind && <Item label="Tipo de licencia">{leaveKind}</Item>}
             </dl>
           </FormSection>
         </div>

@@ -27,7 +27,10 @@ import { redirect } from "next/navigation";
 import { getAreaShortName } from "@/lib/area-theme";
 import { formatFechaCalendario } from "@/lib/fechas";
 import { formatNumber, formatPesos, plural } from "@/lib/formato";
-import { canEditHR, canViewHR, contractTypeLabel, hrStatusLabel } from "@/lib/hr-labels";
+import { canEditHR, canViewHR, contractTypeLabel, hrStatusLabel, isAwayStatus } from "@/lib/hr-labels";
+import { pendingReturnWhere, syncLeaveStatuses } from "@/services/hr-leaves";
+import { BackFromLeaveButton } from "@/components/dashboard/back-from-leave-button";
+import { diaAR } from "@/lib/fechas";
 
 export const metadata = { title: "Recursos Humanos" };
 
@@ -47,7 +50,13 @@ export default async function HRPage({
   const { q, area, status, ingreso } = await searchParams;
   const startedThisMonth = ingreso === "mes";
 
-  const records = await getHRRecords({ query: q, areaId: area, status, startedThisMonth });
+  // Las licencias que arrancan hoy cambian la situación antes de mostrar la lista.
+  await syncLeaveStatuses().catch(() => 0);
+  const [records, pendingReturn] = await Promise.all([
+    getHRRecords({ query: q, areaId: area, status, startedThisMonth }),
+    prisma.hRRecord.count({ where: pendingReturnWhere() }),
+  ]);
+  const todayIso = `${diaAR()}T00:00:00.000Z`;
   const stats = await getHRStats();
   const areasRaw = await prisma.area.findMany({
     orderBy: { name: 'asc' }
@@ -188,6 +197,20 @@ export default async function HRPage({
         </CardContent>
       </Card>
 
+      {pendingReturn > 0 && status !== "volver" && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-900 dark:text-amber-200">
+          <p>
+            <span className="font-semibold">{plural(pendingReturn, "persona terminó", "personas terminaron")} su licencia</span>{" "}
+            {pendingReturn === 1
+              ? "y falta confirmar que volvió. Hasta que alguien lo confirme, sigue figurando de licencia."
+              : "y falta confirmar que volvieron. Hasta que alguien lo confirme, siguen figurando de licencia."}
+          </p>
+          <Button variant="outline" size="sm" asChild>
+            <Link href="/admin/hr?status=volver">Revisar</Link>
+          </Button>
+        </div>
+      )}
+
       <div className="overflow-hidden rounded-2xl border border-border/60 bg-card text-card-foreground shadow-sm">
         <HRFilters areas={sanitizedAreas} />
 
@@ -253,7 +276,12 @@ export default async function HRPage({
                   <TableCell>
                     <div className="flex flex-col gap-1">
                       <StatusBadge tone={toneOf(HR_STATUS_TONE, r.status || "ACTIVO")}>{hrStatusLabel(r.status)}</StatusBadge>
-                      {r.statusUntil && (
+                      {r.statusUntil && isAwayStatus(r.status) && r.statusUntil < todayIso ? (
+                        <span className="flex flex-wrap items-center gap-1.5 text-xs font-medium text-amber-700 dark:text-amber-300">
+                          Terminó el {formatFechaCalendario(r.statusUntil)}. ¿Volvió?
+                          {canEditHR(userRole) && <BackFromLeaveButton id={r.id} name={`${r.firstName} ${r.lastName}`} />}
+                        </span>
+                      ) : r.statusUntil && (
                         <span className="text-xs text-muted-foreground flex items-center gap-1">
                            <Calendar className="h-2.5 w-2.5" /> Hasta {formatFechaCalendario(r.statusUntil)}
                         </span>

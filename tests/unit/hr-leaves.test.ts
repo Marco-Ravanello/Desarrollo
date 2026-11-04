@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  dayToDate, leaveDays, leavesOverlap, monthDays, monthFromParam, readLeaveInput, shiftMonth, spansInMonth, statusForLeave, yearSummary,
+  dayToDate, kindForStatus, leaveDays, leavesOverlap, monthDays, monthFromParam, readLeaveInput, shiftMonth, spansInMonth, statusForLeave, yearSummary,
 } from "@/lib/hr-leaves";
 import { formatMoneyTyping, moneyFromNumber, moneyToPlain } from "@/lib/money-input";
 import { readHRForm } from "@/lib/hr-form";
@@ -42,6 +42,9 @@ describe("licencias del personal", () => {
   it("las vacaciones dejan el legajo en Vacaciones y lo demás en Licencia", () => {
     expect(statusForLeave("VACACIONES")).toBe("VACACIONES");
     expect(statusForLeave("DUELO")).toBe("LICENCIA");
+    expect(statusForLeave("SIN_GOCE")).toBe("LICENCIA_SIN_GOCE");
+    expect(kindForStatus("LICENCIA_SIN_GOCE")).toBe("SIN_GOCE");
+    expect(kindForStatus("LICENCIA")).toBe("OTRA");
   });
 
   it("del 1 al 5 y del 5 al 8 se pisan; del 1 al 4 y del 5 al 8, no", () => {

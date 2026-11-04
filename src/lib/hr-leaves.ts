@@ -33,8 +33,13 @@ export const leaveKindLabel = (v: string) => KIND_BY_VALUE.get(v as LeaveKind)?.
 export const leaveKindShort = (v: string) => KIND_BY_VALUE.get(v as LeaveKind)?.short ?? "Licencia";
 export const leaveKindTone = (v: string) => KIND_BY_VALUE.get(v as LeaveKind)?.tone ?? "indigo";
 
-/** La situación del legajo mientras dura: las vacaciones son "Vacaciones"; todo lo demás, "Licencia". */
-export const statusForLeave = (kind: string): "VACACIONES" | "LICENCIA" => (kind === "VACACIONES" ? "VACACIONES" : "LICENCIA");
+/** La situación del legajo mientras dura: Vacaciones, Licencia sin goce o, para todo lo demás, Licencia. */
+export const statusForLeave = (kind: string): "VACACIONES" | "LICENCIA" | "LICENCIA_SIN_GOCE" =>
+  kind === "VACACIONES" ? "VACACIONES" : kind === "SIN_GOCE" ? "LICENCIA_SIN_GOCE" : "LICENCIA";
+
+/** Al revés: el tipo de licencia que corresponde a una situación cargada a mano en el legajo. */
+export const kindForStatus = (status: string): LeaveKind =>
+  status === "VACACIONES" ? "VACACIONES" : status === "LICENCIA_SIN_GOCE" ? "SIN_GOCE" : "OTRA";
 
 /** Las clases de cada color (fondo del bloque, punto de la leyenda). Completas, para que Tailwind las vea. */
 export const LEAVE_TONE_CLASS: Record<string, { cell: string; dot: string }> = {
