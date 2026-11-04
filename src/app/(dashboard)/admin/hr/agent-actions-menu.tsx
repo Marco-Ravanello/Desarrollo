@@ -1,116 +1,48 @@
 "use client";
 
-import { useState } from "react";
-import {
-  MoreHorizontal, Eye, Edit, UserMinus
-} from "lucide-react";
+import Link from "next/link";
+import { MoreHorizontal, Eye, Edit } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
-  DropdownMenuTrigger
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { ViewHRDetail } from "./view-hr-detail";
 import { DeleteHRAction } from "./actions-client";
-import { EditHRForm } from "./edit-hr-form";
 
-interface AgentActionsMenuProps {
-  agent: any;
-  areas: any[];
-}
-
-export function AgentActionsMenu({ agent, areas }: AgentActionsMenuProps) {
-  const [open, setOpen] = useState(false);
-  const [mode, setMode] = useState<'view' | 'edit'>('view');
-
-  const handleOpenChange = (isOpen: boolean) => {
-    setOpen(isOpen);
-    if (!isOpen) {
-      // Force cleanup of Radix/Shadcn pointer events lock
-      // We use a multi-stage approach to ensure it's cleared even after animations
-      const cleanup = () => {
-        document.body.style.pointerEvents = 'auto';
-        document.body.style.overflow = 'auto';
-        document.body.removeAttribute('data-radix-scroll-lock');
-      };
-
-      cleanup();
-      setTimeout(cleanup, 100);
-      setTimeout(cleanup, 500);
-    }
-  };
-
+/** El menú de cada fila de Recursos Humanos: ver el legajo y editarlo (cada uno en su página) y dar de baja. */
+export function AgentActionsMenu({ agentId, canEdit }: { agentId: string; canEdit: boolean }) {
+  const item = "rounded-xl px-3 py-2.5 gap-3 font-bold focus:bg-primary focus:text-white transition-all cursor-pointer";
   return (
-    <>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon" aria-label="Acciones del agente" className="rounded-xl hover:bg-primary hover:text-white transition-all">
-             <MoreHorizontal className="h-5 w-5" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-56 rounded-2xl p-2 shadow-2xl border-border/50">
-          <DropdownMenuLabel className="px-3 py-2 text-xs font-bold text-muted-foreground">Opciones de legajo</DropdownMenuLabel>
-          <DropdownMenuSeparator className="bg-border/50" />
-
-          <DropdownMenuItem
-            className="rounded-xl px-3 py-2.5 gap-3 font-bold focus:bg-primary focus:text-white transition-all cursor-pointer"
-            onSelect={(e) => {
-              e.preventDefault();
-              setMode('view');
-              setOpen(true);
-            }}
-          >
-            <Eye className="h-4 w-4" /> Ver detalles
-          </DropdownMenuItem>
-
-          <DropdownMenuItem
-            className="rounded-xl px-3 py-2.5 gap-3 font-bold focus:bg-primary focus:text-white transition-all cursor-pointer"
-            onSelect={(e) => {
-              e.preventDefault();
-              setMode('edit');
-              setOpen(true);
-            }}
-          >
-            <Edit className="h-4 w-4" /> Editar legajo
-          </DropdownMenuItem>
-
-          <DropdownMenuSeparator className="bg-border/50" />
-
-          <DeleteHRAction agentId={agent.id} />
-        </DropdownMenuContent>
-      </DropdownMenu>
-
-      <Sheet open={open} onOpenChange={handleOpenChange}>
-        <SheetContent side="right" className="sm:max-w-lg w-full border-l border-border bg-background rounded-l-[2rem] shadow-2xl p-8 overflow-y-auto">
-        <SheetHeader className="mb-8">
-          <SheetTitle className="text-2xl font-bold">
-            {mode === 'view' ? 'Detalle del agente' : 'Editar legajo'}
-          </SheetTitle>
-          <SheetDescription className="text-base">
-            {mode === 'view'
-              ? 'Información completa y situación de revista.'
-              : 'Actualizá los datos del agente.'}
-          </SheetDescription>
-        </SheetHeader>
-
-        {mode === 'view' ? (
-          <ViewHRDetail agent={agent} />
-        ) : (
-          <EditHRForm agent={agent} areas={areas} onComplete={() => setOpen(false)} />
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="icon" aria-label="Acciones del agente" className="rounded-xl hover:bg-primary hover:text-white transition-all">
+          <MoreHorizontal className="h-5 w-5" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-56 rounded-2xl p-2 shadow-2xl border-border/50">
+        <DropdownMenuLabel className="px-3 py-2 text-xs font-bold text-muted-foreground">Opciones de legajo</DropdownMenuLabel>
+        <DropdownMenuSeparator className="bg-border/50" />
+        <DropdownMenuItem asChild className={item}>
+          <Link href={`/admin/hr/${agentId}`}>
+            <Eye className="h-4 w-4" /> Ver legajo
+          </Link>
+        </DropdownMenuItem>
+        {canEdit && (
+          <>
+            <DropdownMenuItem asChild className={item}>
+              <Link href={`/admin/hr/${agentId}/editar`}>
+                <Edit className="h-4 w-4" /> Editar legajo
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator className="bg-border/50" />
+            <DeleteHRAction agentId={agentId} />
+          </>
         )}
-      </SheetContent>
-      </Sheet>
-    </>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }

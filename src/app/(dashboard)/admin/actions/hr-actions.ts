@@ -16,7 +16,11 @@ async function dniTaken(dni: string, exceptId?: string) {
   return other && other.id !== exceptId ? other : null;
 }
 
-export async function createHRRecordAction(formData: FormData): Promise<ActionResult<HRRecord>> {
+/** Lo que vuelve al navegador al guardar: datos simples (el sueldo es Decimal y no se puede mandar). */
+type SavedHR = { id: string; firstName: string; lastName: string };
+const saved = (r: HRRecord): SavedHR => ({ id: r.id, firstName: r.firstName, lastName: r.lastName });
+
+export async function createHRRecordAction(formData: FormData): Promise<ActionResult<SavedHR>> {
   const session = await auth();
   if (!session?.user || !canEditHR(session.user.role)) {
     return { success: false, error: "No tenés permiso para hacer esto o tu sesión expiró. Si sigue pasando, volvé a iniciar sesión." };
@@ -31,14 +35,14 @@ export async function createHRRecordAction(formData: FormData): Promise<ActionRe
     if (taken) return { success: false, error: `Ya hay un legajo con ese DNI: ${taken.lastName}, ${taken.firstName}.` };
     const newRecord = await createHRRecord(data);
     revalidatePath("/admin/hr");
-    return { success: true, data: newRecord };
+    return { success: true, data: saved(newRecord) };
   } catch (error) {
     console.error(error);
     return { success: false, error: actionErrorMessage(error, "No se pudo crear el legajo") };
   }
 }
 
-export async function updateHRRecordAction(id: string, formData: FormData): Promise<ActionResult<HRRecord>> {
+export async function updateHRRecordAction(id: string, formData: FormData): Promise<ActionResult<SavedHR>> {
   const session = await auth();
   if (!session?.user || !canEditHR(session.user.role)) {
     return { success: false, error: "No tenés permiso para hacer esto o tu sesión expiró. Si sigue pasando, volvé a iniciar sesión." };
@@ -56,7 +60,8 @@ export async function updateHRRecordAction(id: string, formData: FormData): Prom
       data: { ...rest, contractType: contractType as ContractType, status: status as HRStatus },
     });
     revalidatePath("/admin/hr");
-    return { success: true, data: updatedRecord };
+    revalidatePath(`/admin/hr/${id}`);
+    return { success: true, data: saved(updatedRecord) };
   } catch (error) {
     console.error(error);
     return { success: false, error: actionErrorMessage(error, "No se pudo actualizar el legajo") };

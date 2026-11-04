@@ -27,6 +27,11 @@ export function currentMonthRange(now = new Date()): { from: Date; to: Date } {
   return { from: new Date(Date.UTC(y, m - 1, 1)), to: new Date(Date.UTC(y, m, 1)) };
 }
 
+/** Quién ve Recursos Humanos (la lista y cada legajo): Superadmin, Administración General y Dirección General. */
+export function canViewHR(role?: string | null): boolean {
+  return role === "SUPERADMIN" || role === "ADMIN_GENERAL" || role === "DIRECCION_GENERAL";
+}
+
 /** Quién edita los legajos (y marca que alguien volvió de una licencia): Superadmin y Administración General. */
 export function canEditHR(role?: string | null): boolean {
   return role === "SUPERADMIN" || role === "ADMIN_GENERAL";

@@ -16,6 +16,15 @@ export interface Novedad {
 export const NOVEDADES: Novedad[] = [
   {
     fecha: "2026-11-04",
+    parte: 4,
+    titulo: "Cada legajo en su propia página",
+    cambios: [
+      "Ver legajo y Editar legajo se abren en su propia página, con el mismo diseño que Nuevo agente. También podés tocar el nombre en la lista.",
+      "Las partes del legajo tienen nombres más formales: Datos personales, Datos de contacto, Contacto de emergencia, Área de trabajo, Contrato y remuneración, Situación de revista e Información adicional.",
+    ],
+  },
+  {
+    fecha: "2026-11-04",
     parte: 3,
     titulo: "Nuevo agente, más fácil de cargar",
     cambios: [

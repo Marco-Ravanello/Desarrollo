@@ -64,12 +64,12 @@ export function SchedulePicker({ defaultValue }: { defaultValue?: string | null 
             </label>
           </div>
           <p className={`text-xs ${built ? "text-muted-foreground" : "text-amber-700 dark:text-amber-300"}`}>
-            {built ? `Queda: ${built}.` : days.length === 0 ? "Elegí al menos un día." : "La salida tiene que ser después de la entrada."}
+            {built ? `Horario: ${built}.` : days.length === 0 ? "Elegí al menos un día." : "La salida tiene que ser después de la entrada."}
           </p>
         </>
       )}
       <button type="button" onClick={() => setFree((f) => !f)} className="text-xs font-semibold text-primary hover:underline">
-        {free ? "Elegir días y horas" : "Es otro tipo de horario: escribirlo"}
+        {free ? "Elegir días y horas" : "Otro tipo de horario (escribirlo a mano)"}
       </button>
     </div>
   );
