@@ -16,6 +16,15 @@ export interface Novedad {
 export const NOVEDADES: Novedad[] = [
   {
     fecha: "2026-11-04",
+    parte: 2,
+    titulo: "Encabezado más limpio",
+    cambios: [
+      "El botón de la emergencia climática ya no está arriba: para prenderla o apagarla, entrá a Emergencia climática en el menú.",
+      "Cuando la emergencia está activa, el aviso rojo sigue apareciendo arriba de todas las pantallas.",
+    ],
+  },
+  {
+    fecha: "2026-11-04",
     titulo: "Reservar un vehículo, ahora con calendario",
     cambios: [
       "Al reservar ves la semana del vehículo con los horarios ocupados pintados: aprobados, pendientes y en uso.",
