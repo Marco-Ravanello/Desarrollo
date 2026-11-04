@@ -398,7 +398,7 @@ export async function handleHRQuery(query: string): Promise<AIResponse> {
 
   const totalPersonnel = records.length;
   const activePersonnel = records.filter(r => r.status === "ACTIVO").length;
-  const leavePersonnel = records.filter(r => r.status === "LICENCIA" || r.status === "VACACIONES").length;
+  const leavePersonnel = records.filter(r => r.status === "LICENCIA" || r.status === "LICENCIA_SIN_GOCE" || r.status === "VACACIONES").length;
   const inactivePersonnel = records.filter(r => r.status === "BAJA").length;
 
   const totalSalary = records

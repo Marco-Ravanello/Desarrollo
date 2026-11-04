@@ -8,6 +8,7 @@ import { Field, FormSection, RequiredNote, fieldSelectClass } from "@/components
 import { SchedulePicker } from "@/components/hr/schedule-picker";
 import { MoneyInput } from "@/components/ui/money-input";
 import { parseLegajo } from "@/lib/hr-form";
+import { HR_STATUS_OPTIONS, isAwayStatus } from "@/lib/hr-labels";
 
 const dateOnly = (value: string | Date | null | undefined) => (value ? new Date(value).toISOString().split("T")[0] : "");
 
@@ -152,13 +153,14 @@ export function HRFormFields({ areas, agent }: { areas: { id: string; name: stri
       <div className={two}>
         <Field label="Situación" htmlFor="status" required>
           <select id="status" name="status" value={status} onChange={(e) => setStatus(e.target.value)} className={fieldSelectClass} required>
-            <option value="ACTIVO">Activo</option>
-            <option value="LICENCIA">Licencia médica</option>
-            <option value="VACACIONES">Vacaciones</option>
-            <option value="BAJA">Baja</option>
+            {HR_STATUS_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
           </select>
         </Field>
-        {(status === "LICENCIA" || status === "VACACIONES") && (
+        {isAwayStatus(status) && (
           <Field label="Hasta" htmlFor="statusUntil" hint="Último día de ausencia.">
             <Input id="statusUntil" name="statusUntil" type="date" defaultValue={dateOnly(agent?.statusUntil)} />
           </Field>

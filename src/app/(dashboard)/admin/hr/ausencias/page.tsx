@@ -12,7 +12,7 @@ import {
   LEAVE_KINDS, LEAVE_TONE_CLASS, leaveDays, leaveKindLabel, leaveKindShort, leaveKindTone, monthDays, monthFromParam, monthParam, shiftMonth, dateToDay,
 } from "@/lib/hr-leaves";
 import { WEEK_LETTERS } from "@/lib/hr-form";
-import { getAbsencesForMonth } from "@/services/hr-leaves";
+import { getAbsencesForMonth, syncLeaveStatuses } from "@/services/hr-leaves";
 import { PageHeader } from "@/components/layout/page-header";
 import { PageBreadcrumbs } from "@/components/layout/breadcrumbs-context";
 import { Button } from "@/components/ui/button";
@@ -36,6 +36,7 @@ export default async function AbsencesPage({ searchParams }: { searchParams: Pro
   const today = diaAR();
   const { year, month } = monthFromParam(mes, today);
   const areaId = area && area !== "all" ? area : null;
+  await syncLeaveStatuses().catch(() => 0);
   const [areas, rows] = await Promise.all([
     prisma.area.findMany({ select: { id: true, name: true }, orderBy: { name: "asc" } }),
     getAbsencesForMonth(year, month, areaId),

@@ -1011,7 +1011,7 @@ function AwayCard({ away, expired, canMarkBack }: { away: StaffAway[]; expired: 
               <div className="min-w-0">
                 <p className="text-xs font-medium text-foreground truncate">{p.name}</p>
                 <p className="text-xs text-muted-foreground truncate">
-                  {[p.status === "VACACIONES" ? "Vacaciones" : "Licencia", p.area ? getAreaShortName(p.area) : null].filter(Boolean).join(" · ")}
+                  {[p.status === "VACACIONES" ? "Vacaciones" : p.status === "LICENCIA_SIN_GOCE" ? "Licencia sin goce" : "Licencia", p.area ? getAreaShortName(p.area) : null].filter(Boolean).join(" · ")}
                 </p>
               </div>
               <div className="flex shrink-0 items-center gap-2">
@@ -1031,8 +1031,8 @@ function AwayCard({ away, expired, canMarkBack }: { away: StaffAway[]; expired: 
       )}
       {expired > 0 && (
         <p className="mt-3 rounded-lg bg-amber-500/10 px-3 py-2 text-xs text-amber-800 dark:text-amber-300">
-          {plural(expired, "persona sigue", "personas siguen")} de licencia con la fecha de vuelta ya pasada.{" "}
-          <Link href="/admin/hr?status=LICENCIA" className="font-semibold underline">Revisar</Link>
+          {plural(expired, "persona terminó", "personas terminaron")} su licencia y falta confirmar que {expired === 1 ? "volvió" : "volvieron"}.{" "}
+          <Link href="/admin/hr?status=volver" className="font-semibold underline">Revisar</Link>
         </p>
       )}
     </Card>

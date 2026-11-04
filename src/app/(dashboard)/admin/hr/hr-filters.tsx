@@ -12,7 +12,7 @@ import { hrStatusLabel } from "@/lib/hr-labels";
 const selectClass =
   "h-10 w-full min-w-0 truncate rounded-xl border border-border/60 bg-muted/30 px-3 text-xs font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-primary";
 
-const STATUSES = ["ACTIVO", "LICENCIA", "VACACIONES", "BAJA"];
+const STATUSES = ["ACTIVO", "LICENCIA", "LICENCIA_SIN_GOCE", "VACACIONES", "BAJA"];
 
 export function HRFilters({ areas }: { areas: { id: string; name: string }[] }) {
   const searchParams = useSearchParams();
@@ -51,6 +51,7 @@ export function HRFilters({ areas }: { areas: { id: string; name: string }[] }) 
                 {hrStatusLabel(s)}
               </option>
             ))}
+            <option value="volver">Falta confirmar la vuelta</option>
           </select>
         </MobileFilters>
         {ingreso && <input type="hidden" name="ingreso" value={ingreso} />}
@@ -63,7 +64,7 @@ export function HRFilters({ areas }: { areas: { id: string; name: string }[] }) 
         items={[
           q && `Texto: ${q}`,
           area && `Área: ${areas.find((a) => a.id === area)?.name ?? area}`,
-          status && `Situación: ${hrStatusLabel(status)}`,
+          status && (status === "volver" ? "Falta confirmar la vuelta" : `Situación: ${hrStatusLabel(status)}`),
           ingreso && "Ingresaron este mes",
         ]}
       />

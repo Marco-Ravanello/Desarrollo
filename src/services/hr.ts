@@ -1,9 +1,9 @@
 import type { HRFormData } from "@/lib/hr-form";
 import prisma from "@/lib/prisma";
-import { canEditHR, currentMonthRange } from "@/lib/hr-labels";
+import { AWAY_STATUSES, canEditHR, currentMonthRange, isAwayStatus } from "@/lib/hr-labels";
 import { ContractType, HRStatus } from "@prisma/client";
 import { diaAR, diaDeVencimiento } from "@/lib/fechas";
-import { cutLeaveCoveringToday } from "@/services/hr-leaves";
+import { cutLeaveCoveringToday, pendingReturnWhere, syncLeaveStatuses } from "@/services/hr-leaves";
 
 export async function getHRRecords(filters?: { query?: string, areaId?: string, status?: string, startedThisMonth?: boolean }) {
   const where: any = {};
@@ -27,7 +27,10 @@ export async function getHRRecords(filters?: { query?: string, areaId?: string, 
     where.areaId = filters.areaId;
   }
 
-  if (filters?.status && filters.status !== 'all') {
+  // "volver": terminó su licencia y falta confirmar que volvió.
+  if (filters?.status === "volver") {
+    Object.assign(where, pendingReturnWhere());
+  } else if (filters?.status && Object.values(HRStatus).includes(filters.status as HRStatus)) {
     where.status = filters.status as HRStatus;
   }
 
@@ -122,7 +125,7 @@ export async function createHRRecord(data: HRFormData) {
 export interface StaffAway {
   id: string;
   name: string;
-  status: "LICENCIA" | "VACACIONES";
+  status: "LICENCIA" | "LICENCIA_SIN_GOCE" | "VACACIONES";
   /** Último día de la licencia ("AAAA-MM-DD"), si se cargó. */
   until: string | null;
   area: string | null;
@@ -135,7 +138,8 @@ export interface StaffAway {
  */
 export async function getStaffAwayToday(now = new Date()): Promise<{ away: StaffAway[]; expired: number }> {
   const today = new Date(`${diaAR(now)}T00:00:00Z`);
-  const status = { in: ["LICENCIA", "VACACIONES"] as HRStatus[] };
+  await syncLeaveStatuses(now).catch(() => 0);
+  const status = { in: [...AWAY_STATUSES] as HRStatus[] };
   const [rows, expired] = await Promise.all([
     prisma.hRRecord.findMany({
       where: { status, OR: [{ statusUntil: null }, { statusUntil: { gte: today } }] },
@@ -166,7 +170,7 @@ export async function markBackFromLeave(user: { id?: string | null; role?: strin
   }
   const record = await prisma.hRRecord.findUnique({ where: { id }, select: { firstName: true, lastName: true, status: true } });
   if (!record) return { success: false as const, error: "No se encontró a esa persona en Recursos Humanos." };
-  if (record.status !== "LICENCIA" && record.status !== "VACACIONES") {
+  if (!isAwayStatus(record.status)) {
     return { success: false as const, error: "Esa persona ya no figura de licencia. Recargá la página." };
   }
   const count = await prisma.$transaction(async (tx) => {

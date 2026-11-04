@@ -1,9 +1,9 @@
 import prisma from "@/lib/prisma";
 import type { Prisma } from "@prisma/client";
-import { canEditHR } from "@/lib/hr-labels";
+import { AWAY_STATUSES, canEditHR, isAwayStatus } from "@/lib/hr-labels";
 import { diaAR } from "@/lib/fechas";
 import {
-  dateToDay, dayToDate, leaveDays, leaveKindLabel, leavesOverlap, readLeaveInput, spansInMonth, statusForLeave,
+  dateToDay, dayToDate, kindForStatus, leaveDays, leaveKindLabel, leavesOverlap, readLeaveInput, spansInMonth, statusForLeave,
   type AbsenceSpan,
 } from "@/lib/hr-leaves";
 
@@ -85,7 +85,7 @@ export async function deleteLeave(user: Actor, leaveId: string, now = new Date()
   const wasToday =
     leave.startDate <= today &&
     leave.endDate >= today &&
-    (r.status === "LICENCIA" || r.status === "VACACIONES") &&
+    isAwayStatus(r.status) &&
     r.statusUntil?.getTime() === leave.endDate.getTime();
   await prisma.$transaction(async (tx) => {
     await tx.hRLeave.delete({ where: { id: leaveId } });
@@ -115,7 +115,7 @@ export async function ensureLeaveForStatus(
   now = new Date(),
   db: Prisma.TransactionClient | typeof prisma = prisma
 ): Promise<boolean> {
-  if ((status !== "LICENCIA" && status !== "VACACIONES") || !statusUntil) return false;
+  if (!isAwayStatus(status) || !statusUntil) return false;
   const today = todayUTC(now);
   if (statusUntil < today) return false;
   const existing = await db.hRLeave.findFirst({
@@ -126,7 +126,7 @@ export async function ensureLeaveForStatus(
   await db.hRLeave.create({
     data: {
       hrRecordId,
-      kind: status === "VACACIONES" ? "VACACIONES" : "ENFERMEDAD",
+      kind: kindForStatus(status),
       startDate: today,
       endDate: statusUntil,
       notes: "Cargada desde la situación del legajo.",
@@ -172,7 +172,7 @@ export async function getAbsencesForMonth(year: number, month: number, areaId?: 
       ...areaWhere,
       OR: [
         { leaves: { some: { startDate: { lte: last }, endDate: { gte: first } } } },
-        { status: { in: ["LICENCIA", "VACACIONES"] } },
+        { status: { in: [...AWAY_STATUSES] } },
       ],
     },
     select: {
@@ -192,11 +192,11 @@ export async function getAbsencesForMonth(year: number, month: number, areaId?: 
   for (const r of records) {
     const spans = spansInMonth(r.leaves, year, month);
     let fromStatus = false;
-    if ((r.status === "LICENCIA" || r.status === "VACACIONES") && today >= first && today <= last) {
+    if (isAwayStatus(r.status) && today >= first && today <= last) {
       const until = r.statusUntil && r.statusUntil >= today ? r.statusUntil : r.statusUntil ? null : last;
       const covered = r.leaves.some((l) => leavesOverlap(l, { startDate: today, endDate: today }));
       if (until && !covered) {
-        spans.push(...spansInMonth([{ id: `estado-${r.id}`, kind: r.status === "VACACIONES" ? "VACACIONES" : "ENFERMEDAD", notes: null, startDate: today, endDate: until }], year, month));
+        spans.push(...spansInMonth([{ id: `estado-${r.id}`, kind: kindForStatus(r.status), notes: null, startDate: today, endDate: until }], year, month));
         fromStatus = true;
       }
     }
@@ -204,4 +204,46 @@ export async function getAbsencesForMonth(year: number, month: number, areaId?: 
     rows.push({ id: r.id, name: `${r.lastName}, ${r.firstName}`, area: r.area?.name ?? null, spans: spans.sort((a, b) => a.from - b.from), fromStatus });
   }
   return rows;
+}
+
+/**
+ * La situación sale sola del historial cuando arranca una licencia: el legajo que está Activo (o de licencia
+ * con la fecha de vuelta ya pasada) pasa a Licencia, Licencia sin goce o Vacaciones hasta el último día.
+ * La vuelta a Activo no es automática: hay que confirmar que la persona volvió ("Ya volvió").
+ * Se llama al abrir Recursos Humanos, un legajo, Ausencias del mes o el Inicio. Devuelve cuántos cambió.
+ */
+export async function syncLeaveStatuses(now = new Date()): Promise<number> {
+  const today = todayUTC(now);
+  const current = await prisma.hRLeave.findMany({
+    where: { startDate: { lte: today }, endDate: { gte: today }, hrRecord: { status: { not: "BAJA" } } },
+    select: { kind: true, endDate: true, hrRecord: { select: { id: true, status: true, statusUntil: true } } },
+    orderBy: { endDate: "desc" },
+  });
+  let changed = 0;
+  const seen = new Set<string>();
+  for (const l of current) {
+    const r = l.hrRecord;
+    if (seen.has(r.id)) continue;
+    seen.add(r.id);
+    const stale = r.status === "ACTIVO" || (isAwayStatus(r.status) && (!r.statusUntil || r.statusUntil < today));
+    if (!stale) continue;
+    const { count } = await prisma.hRRecord.updateMany({
+      where: { id: r.id, status: r.status },
+      data: { status: statusForLeave(l.kind), statusUntil: l.endDate },
+    });
+    changed += count;
+  }
+  return changed;
+}
+
+/** Los que figuran de licencia o vacaciones con la fecha de vuelta ya pasada: falta confirmar que volvieron. */
+export const pendingReturnWhere = (now = new Date()) => ({ status: { in: [...AWAY_STATUSES] }, statusUntil: { lt: todayUTC(now) } });
+
+/** La licencia más reciente que ya empezó (la que explica la situación de hoy). */
+export async function getCurrentLeave(hrRecordId: string, now = new Date()) {
+  return prisma.hRLeave.findFirst({
+    where: { hrRecordId, startDate: { lte: todayUTC(now) } },
+    orderBy: { endDate: "desc" },
+    select: { kind: true, startDate: true, endDate: true },
+  });
 }

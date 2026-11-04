@@ -77,6 +77,7 @@ export const RESERVATION_STATUS_TONE: Record<string, StatusTone> = {
 export const HR_STATUS_TONE: Record<string, StatusTone> = {
   ACTIVO: "green",
   LICENCIA: "amber",
+  LICENCIA_SIN_GOCE: "orange",
   VACACIONES: "blue",
   BAJA: "slate",
 };
