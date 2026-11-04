@@ -67,7 +67,6 @@ export function WarRoomView({ initialData }: WarRoomViewProps) {
   const [currentTime, setCurrentTime] = useState("");
   const [currentDate, setCurrentDate] = useState("");
   const [countdown, setCountdown] = useState(30);
-  const [isEmergencyActive, setIsEmergencyActive] = useState(false);
 
   useEffect(() => {
     const updateTime = () => {
@@ -82,25 +81,6 @@ export function WarRoomView({ initialData }: WarRoomViewProps) {
     updateTime();
     const interval = setInterval(updateTime, 1000);
     return () => clearInterval(interval);
-  }, []);
-
-  useEffect(() => {
-    const saved = localStorage.getItem("muni-emergency-mode") || localStorage.getItem("emergency-mode-active");
-    if (saved) setIsEmergencyActive(JSON.parse(saved));
-
-    const handleStorage = () => {
-      const updated = localStorage.getItem("muni-emergency-mode") || localStorage.getItem("emergency-mode-active");
-      if (updated !== null) setIsEmergencyActive(JSON.parse(updated));
-    };
-
-    window.addEventListener("storage", handleStorage);
-    window.addEventListener("muni-emergency-toggle", handleStorage);
-    window.addEventListener("emergency-toggle", handleStorage);
-    return () => {
-      window.removeEventListener("storage", handleStorage);
-      window.removeEventListener("muni-emergency-toggle", handleStorage);
-      window.removeEventListener("emergency-toggle", handleStorage);
-    };
   }, []);
 
   useEffect(() => {
@@ -157,7 +137,6 @@ export function WarRoomView({ initialData }: WarRoomViewProps) {
         time={currentTime}
         date={currentDate}
         countdown={countdown}
-        emergency={isEmergencyActive}
         onExit={exitFullscreen}
       />
     );
@@ -205,23 +184,6 @@ export function WarRoomView({ initialData }: WarRoomViewProps) {
           </>
         }
       />
-      {/* Alerta COE si está activa */}
-      {isEmergencyActive && (
-        <div className="p-4 rounded-2xl bg-amber-500/10 border-2 border-amber-500/40 text-amber-800 dark:text-amber-300 flex items-center justify-between animate-pulse">
-          <div className="flex items-center gap-3">
-            <ShieldAlert className="h-6 w-6 text-amber-500 shrink-0" />
-            <div>
-              <p className="font-bold text-sm text-amber-900 dark:text-amber-200">
-                Centro de Operaciones de Emergencia (COE) activado
-              </p>
-              <p className="text-xs opacity-90 text-amber-800 dark:text-amber-300">
-                Protocolo de contingencia vigente para cuadrillas de guardia y centros de evacuación.
-              </p>
-            </div>
-          </div>
-          <Badge className="bg-amber-500 text-black font-bold text-xs">Alerta máxima</Badge>
-        </div>
-      )}
       {/* 5 Tarjetas KPI Principales */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         <Card className="rounded-2xl border-border/60 bg-card text-card-foreground shadow-sm hover:shadow-md transition-all p-5 relative overflow-hidden">

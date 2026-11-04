@@ -13,7 +13,6 @@ import {
   Download, RefreshCw, UserCheck, ShieldAlert, Users, Baby, CloudRain, BarChart3, PackageCheck
 } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
-import { EmergencyToggle } from "@/components/emergency/emergency-header-widget";
 import { StatCard } from "@/components/ui/stat-card";
 import { StormSheetTable } from "@/components/emergency/storm-sheet-table";
 import { StormFichaDialog } from "@/components/emergency/storm-ficha-dialog";
@@ -117,7 +116,6 @@ export function EmergencyView({ initialData, deniedAccess }: EmergencyViewProps)
         icon={CloudRain}
         actions={
           <>
-            <EmergencyToggle />
             <Button
               onClick={handleExportExcel}
               variant="outline"

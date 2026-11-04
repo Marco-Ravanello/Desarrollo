@@ -3,7 +3,6 @@ import type { Role } from "@prisma/client";
 import prisma from "@/lib/prisma";
 import { createUserAction, updateUserAction } from "@/app/(dashboard)/admin/actions/user-actions";
 import { queryAssistantAction } from "@/app/(dashboard)/admin/actions/assistant-actions";
-import { toggleEmergencyStatusAction } from "@/app/(dashboard)/admin/actions/emergency-actions";
 import { POST as assistantStream } from "@/app/api/assistant/stream/route";
 import { queryAIAssistant, queryAIAssistantStream } from "@/services/ai-assistant";
 import { getAllCases } from "@/services/cases";
@@ -104,14 +103,5 @@ describe("casos de Violencia de Género", () => {
   it("sí aparecen para quien tiene permiso", async () => {
     const { cases } = await getAllCases({ canViewSensitive: true });
     expect(cases.map((c) => c.title).sort()).toEqual(["Caso común de prueba", "Caso sensible de prueba"]);
-  });
-});
-
-describe("modo emergencia", () => {
-  it("solo la conducción lo activa", async () => {
-    loginAs(await createUser("OPERATIVO"));
-    expect((await toggleEmergencyStatusAction(true)).success).toBe(false);
-    loginAs(await createUser("DIRECCION_GENERAL"));
-    expect((await toggleEmergencyStatusAction(true)).success).toBe(true);
   });
 });

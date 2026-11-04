@@ -4,7 +4,6 @@ import * as React from "react";
 import { AppSidebar } from "@/components/layout/app-sidebar";
 import { Providers } from "@/components/providers/session-provider";
 import { NotificationBell } from "@/components/layout/notification-bell";
-import { EmergencyHeaderWidget } from "@/components/emergency/emergency-header-widget";
 import { UserNav } from "@/components/layout/user-nav";
 import { MunicipalCrest } from "@/components/ui/municipal-crest";
 import { PrintHeader, PrintFooter } from "@/components/ui/print-layout";
@@ -91,7 +90,6 @@ export function DashboardShell({
               <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
                 <SituationRoomButton />
 
-                <EmergencyHeaderWidget />
                 <HelpPanel />
                 <NotificationBell />
                 <div className="h-6 w-px bg-white/20 mx-1 hidden sm:block" />

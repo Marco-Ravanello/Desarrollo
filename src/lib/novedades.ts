@@ -17,10 +17,10 @@ export const NOVEDADES: Novedad[] = [
   {
     fecha: "2026-11-04",
     parte: 2,
-    titulo: "Encabezado más limpio",
+    titulo: "Sin el aviso de emergencia climática",
     cambios: [
-      "El botón de la emergencia climática ya no está arriba: para prenderla o apagarla, entrá a Emergencia climática en el menú.",
-      "Cuando la emergencia está activa, el aviso rojo sigue apareciendo arriba de todas las pantallas.",
+      "Sacamos el botón para prender la emergencia climática y la franja roja que aparecía arriba: no cambiaban nada más en la app.",
+      "Las fichas de tormenta, las entregas y el stock de contingencia siguen igual en Emergencia climática.",
     ],
   },
   {
