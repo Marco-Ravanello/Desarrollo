@@ -23,28 +23,30 @@ export async function POST(req: NextRequest) {
     const encoder = new TextEncoder();
     const stream = new ReadableStream({
       async start(controller) {
+        // Si la persona frena la respuesta, el navegador corta la conexión: se deja de mandar sin romper nada.
+        const send = (event: string | null, payload: unknown) => {
+          if (req.signal.aborted) return;
+          try {
+            controller.enqueue(encoder.encode(`${event ? `event: ${event}\n` : ""}data: ${JSON.stringify(payload)}\n\n`));
+          } catch {
+            // La conexión ya se cerró.
+          }
+        };
         try {
-          const result = await queryAIAssistantStream(
-            query,
-            history,
-            session.user.id,
-            (chunk: string) => {
-              const data = JSON.stringify({ chunk });
-              controller.enqueue(encoder.encode(`data: ${data}\n\n`));
-            }
-          );
-          const metaData = JSON.stringify({
-            done: true,
-            intent: result.intent,
-            dataSummary: result.dataSummary
+          const result = await queryAIAssistantStream(query, history, session.user.id, (chunk: string) => send(null, { chunk }), {
+            role: session.user.role,
+            onStatus: (status) => send(null, { status }),
           });
-          controller.enqueue(encoder.encode(`event: metadata\ndata: ${metaData}\n\n`));
-          controller.close();
+          send("metadata", { done: true, intent: result.intent, dataSummary: result.dataSummary });
         } catch (err: any) {
           console.error("Streaming error in /api/assistant/stream:", err);
-          const errorMsg = JSON.stringify({ error: err?.message || "Error en el servidor de IA local" });
-          controller.enqueue(encoder.encode(`event: error\ndata: ${errorMsg}\n\n`));
-          controller.close();
+          send("error", { error: "No se pudo responder la consulta. Probá de nuevo." });
+        } finally {
+          try {
+            controller.close();
+          } catch {
+            // Ya estaba cerrada.
+          }
         }
       }
     });

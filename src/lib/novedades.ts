@@ -16,6 +16,17 @@ export interface Novedad {
 export const NOVEDADES: Novedad[] = [
   {
     fecha: "2026-11-04",
+    parte: 7,
+    titulo: "Un Asistente de IA más cómodo",
+    cambios: [
+      "La conversación va al centro, con letra más grande, y tus preguntas se ven en azul.",
+      "Al entrar te muestra preguntas de ejemplo por tema, y ahora también contesta sobre licencias, programas, barrios, cursos y tus tareas.",
+      "Mientras busca te dice dónde está buscando, y podés frenar la respuesta.",
+      "Las respuestas usan palabras más simples.",
+    ],
+  },
+  {
+    fecha: "2026-11-04",
     parte: 6,
     titulo: "La situación de revista sigue a las licencias",
     cambios: [

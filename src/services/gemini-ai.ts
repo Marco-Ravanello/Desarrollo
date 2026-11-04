@@ -1,5 +1,8 @@
 import { sanitizeText } from "@/lib/pii-sanitizer";
 
+// La misma frase que usa el asistente cuando no encuentra nada (services/ai-assistant.ts, NO_DATA).
+const NO_DATA_TEXT = "No encontré datos en la app para esa pregunta. Probá con otras palabras o con una de las preguntas de ejemplo.";
+
 // Modelos vigentes de la API de Gemini (gemini-2.0-flash y 1.5-flash fueron dados de baja).
 // GEMINI_MODEL permite elegir otro modelo sin tocar el código.
 export function getGeminiModelCandidates(): string[] {
@@ -31,11 +34,14 @@ export async function callGeminiAnonymized(
 
   // 3. Reconstruir historial conversacional continuo para Gemini
   const contentsPayload: any[] = [];
-  const systemPrompt = `Eres el Asistente Inteligente Municipal de MuniGestión.
-REGLAS ABSOLUTAS DE VERACIDAD:
-1. Responde utilizando EXCLUSIVAMENTE la información provista en el [CONTEXTO REAL DE LA BASE DE DATOS MUNICIPAL].
-2. Si el contexto está vacío o indica que no hay registros, responde: "No se encontraron registros en la base de datos municipal para esta consulta."
-3. Conserva las máscaras como [CIUDADANO_1], [DNI_1], [DIRECCION_1] tal cual aparecen en el contexto.`;
+  const systemPrompt = `Sos el asistente de MuniGestión 3F, la app de la Secretaría de Desarrollo Humano y Hábitat de Tres de Febrero.
+REGLAS:
+1. Respondé usando SOLO la información del [CONTEXTO REAL DE LA BASE DE DATOS MUNICIPAL]. No inventes números ni nombres.
+2. Si el contexto está vacío o dice que no hay datos, respondé exactamente: "${NO_DATA_TEXT}"
+3. Conservá las máscaras como [CIUDADANO_1], [DNI_1] o [DIRECCION_1] tal cual aparecen.
+4. Escribí en español rioplatense, tratando de vos ("podés", "fijate"), nunca de usted.
+5. Usá frases cortas y palabras de todos los días: "expedientes" (no "casos sociales"), "personas" (no "ciudadanos"), "vehículos" (no "flota logística"). Nada de jerga administrativa.
+6. Empezá por la respuesta. Usá títulos, listas o tablas en markdown solo si ayudan a leer.`;
 
   if (history && history.length > 0) {
     // Agregar hasta los últimos 6 mensajes del historial conversacional

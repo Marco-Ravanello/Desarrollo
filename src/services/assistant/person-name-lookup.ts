@@ -85,7 +85,7 @@ export async function lookupPersonByName(query: string): Promise<AIResponse | nu
 
       let answer = ficha.answer;
       if (person && person.cases.length > 0) {
-        answer += `\n#### Expedientes Sociales (${person.cases.length}):\n`;
+        answer += `\n#### Expedientes (${person.cases.length}):\n`;
         person.cases.forEach((c, idx) => {
           answer += `${idx + 1}. **${c.title}** — Estado: \`${c.status}\`, Prioridad: \`${c.priority}\`, Área: ${c.area?.name || "General"}\n`;
         });
@@ -94,7 +94,7 @@ export async function lookupPersonByName(query: string): Promise<AIResponse | nu
     }
   }
 
-  let answer = `### Personas encontradas en el Padrón Social Unificado\n\n`;
+  let answer = `### Personas encontradas\n\n`;
   answer += `Hay **${result.total} personas** cuyo nombre coincide con la búsqueda. Decime el DNI para ver la ficha completa:\n\n`;
   answer += `| Ciudadano | DNI | Barrio / Localidad | Programas |\n| :--- | :---: | :--- | :---: |\n`;
   result.matches.forEach((p) => {
