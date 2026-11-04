@@ -562,6 +562,13 @@ model HRRecord {
   schedule     String?
   imageUrl     String?
   tasks        String?      @db.Text
+  // Contacto y a quién avisar en una emergencia.
+  phone                 String?
+  email                 String?
+  address               String?
+  birthDate             DateTime?
+  emergencyContactName  String?
+  emergencyContactPhone String?
   createdAt    DateTime     @default(now())
 }
 

@@ -4,49 +4,31 @@ import { createHRRecord, markBackFromLeave } from "@/services/hr";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import prisma from "@/lib/prisma";
-import { HRStatus, HRRecord } from "@prisma/client";
+import { ContractType, HRStatus, HRRecord } from "@prisma/client";
+import { readHRForm } from "@/lib/hr-form";
+import { canEditHR } from "@/lib/hr-labels";
 import { ActionResult } from "@/types/actions";
 import { actionErrorMessage } from "@/lib/action-error";
 
-function buildTasksPayload(formData: FormData) {
-  const tasksRaw = formData.get("tasks") as string || "";
-  const healthNotes = formData.get("healthNotes") as string || "";
-  const education = formData.get("education") as string || "";
-  const drivingLicense = formData.get("drivingLicense") as string || "";
-
-  if (healthNotes || education || drivingLicense) {
-    return JSON.stringify({ tasksText: tasksRaw, healthNotes, education, drivingLicense });
-  }
-  return tasksRaw;
+/** El DNI ya está en otro legajo: mensaje claro en vez del error de la base. */
+async function dniTaken(dni: string, exceptId?: string) {
+  const other = await prisma.hRRecord.findUnique({ where: { dni }, select: { id: true, firstName: true, lastName: true } });
+  return other && other.id !== exceptId ? other : null;
 }
 
 export async function createHRRecordAction(formData: FormData): Promise<ActionResult<HRRecord>> {
   const session = await auth();
-  if (!session?.user || (session.user.role !== 'SUPERADMIN' && session.user.role !== 'ADMIN_GENERAL')) {
+  if (!session?.user || !canEditHR(session.user.role)) {
     return { success: false, error: "No tenés permiso para hacer esto o tu sesión expiró. Si sigue pasando, volvé a iniciar sesión." };
   }
 
-  const tasksPayload = buildTasksPayload(formData);
-
-  const data = {
-    firstName: formData.get("firstName") as string,
-    lastName: formData.get("lastName") as string,
-    dni: formData.get("dni") as string,
-    fileNumber: formData.get("fileNumber") as string,
-    startDate: formData.get("startDate") as string,
-    position: formData.get("position") as string,
-    status: formData.get("status") as string,
-    statusUntil: formData.get("statusUntil") as string,
-    areaId: formData.get("areaId") as string || undefined,
-    contractType: formData.get("contractType") as string,
-    category: parseInt(formData.get("category") as string) || null,
-    salary: parseFloat(formData.get("salary") as string) || 0,
-    schedule: formData.get("schedule") as string,
-    imageUrl: formData.get("imageUrl") as string,
-    tasks: tasksPayload,
-  };
+  const parsed = readHRForm((k) => formData.get(k) as string | null);
+  if (!parsed.ok) return { success: false, error: parsed.error };
+  const data = parsed.data;
 
   try {
+    const taken = await dniTaken(data.dni);
+    if (taken) return { success: false, error: `Ya hay un legajo con ese DNI: ${taken.lastName}, ${taken.firstName}.` };
     const newRecord = await createHRRecord(data);
     revalidatePath("/admin/hr");
     return { success: true, data: newRecord };
@@ -58,32 +40,21 @@ export async function createHRRecordAction(formData: FormData): Promise<ActionRe
 
 export async function updateHRRecordAction(id: string, formData: FormData): Promise<ActionResult<HRRecord>> {
   const session = await auth();
-  if (!session?.user || (session.user.role !== 'SUPERADMIN' && session.user.role !== 'ADMIN_GENERAL')) {
+  if (!session?.user || !canEditHR(session.user.role)) {
     return { success: false, error: "No tenés permiso para hacer esto o tu sesión expiró. Si sigue pasando, volvé a iniciar sesión." };
   }
 
-  const tasksPayload = buildTasksPayload(formData);
-
-  const data = {
-    firstName: formData.get("firstName") as string,
-    lastName: formData.get("lastName") as string,
-    dni: formData.get("dni") as string,
-    fileNumber: formData.get("fileNumber") as string,
-    startDate: formData.get("startDate") as string ? new Date(formData.get("startDate") as string) : null,
-    position: formData.get("position") as string,
-    areaId: formData.get("areaId") as string || null,
-    contractType: formData.get("contractType") as any,
-    category: parseInt(formData.get("category") as string) || null,
-    salary: parseFloat(formData.get("salary") as string) || 0,
-    schedule: formData.get("schedule") as string,
-    imageUrl: formData.get("imageUrl") as string,
-    tasks: tasksPayload,
-    status: formData.get("status") as any,
-    statusUntil: formData.get("statusUntil") as string ? new Date(formData.get("statusUntil") as string) : null,
-  };
+  const parsed = readHRForm((k) => formData.get(k) as string | null);
+  if (!parsed.ok) return { success: false, error: parsed.error };
+  const { contractType, status, ...rest } = parsed.data;
 
   try {
-    const updatedRecord = await prisma.hRRecord.update({ where: { id }, data });
+    const taken = await dniTaken(rest.dni, id);
+    if (taken) return { success: false, error: `Ya hay otro legajo con ese DNI: ${taken.lastName}, ${taken.firstName}.` };
+    const updatedRecord = await prisma.hRRecord.update({
+      where: { id },
+      data: { ...rest, contractType: contractType as ContractType, status: status as HRStatus },
+    });
     revalidatePath("/admin/hr");
     return { success: true, data: updatedRecord };
   } catch (error) {
@@ -94,7 +65,7 @@ export async function updateHRRecordAction(id: string, formData: FormData): Prom
 
 export async function deleteHRRecordAction(id: string): Promise<ActionResult<void>> {
   const session = await auth();
-  if (!session?.user || (session.user.role !== 'SUPERADMIN' && session.user.role !== 'ADMIN_GENERAL')) {
+  if (!session?.user || !canEditHR(session.user.role)) {
     return { success: false, error: "No tenés permiso para hacer esto o tu sesión expiró. Si sigue pasando, volvé a iniciar sesión." };
   }
 

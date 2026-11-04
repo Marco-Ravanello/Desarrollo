@@ -1,3 +1,4 @@
+import type { HRFormData } from "@/lib/hr-form";
 import prisma from "@/lib/prisma";
 import { canEditHR, currentMonthRange } from "@/lib/hr-labels";
 import { ContractType, HRStatus } from "@prisma/client";
@@ -109,25 +110,11 @@ export async function getHRStats() {
   };
 }
 
-export async function createHRRecord(data: any) {
+/** Un legajo nuevo con lo que ya leyó y revisó readHRForm. */
+export async function createHRRecord(data: HRFormData) {
+  const { contractType, status, ...rest } = data;
   return await prisma.hRRecord.create({
-    data: {
-      firstName: data.firstName,
-      lastName: data.lastName,
-      dni: data.dni,
-      fileNumber: data.fileNumber,
-      startDate: data.startDate ? new Date(data.startDate) : null,
-      position: data.position,
-      areaId: data.areaId || null,
-      status: (data.status as HRStatus) || 'ACTIVO',
-      statusUntil: data.statusUntil ? new Date(data.statusUntil) : null,
-      contractType: (data.contractType as ContractType) || 'MENSUALIZADO',
-      category: data.category || null,
-      salary: data.salary || 0,
-      schedule: data.schedule,
-      imageUrl: data.imageUrl,
-      tasks: data.tasks
-    }
+    data: { ...rest, contractType: contractType as ContractType, status: status as HRStatus },
   });
 }
 
