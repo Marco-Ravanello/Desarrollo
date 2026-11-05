@@ -1,10 +1,11 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { Calendar, FolderOpen, Layers, Map as MapIcon, MapPin, Phone, Plus, Tag } from "lucide-react";
+import { Calendar, FolderOpen, Layers, Map as MapIcon, MapPin, MessageCircle, Phone, Plus, Tag } from "lucide-react";
 import { InitialsAvatar } from "@/components/ui/initials-avatar";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { plural } from "@/lib/formato";
+import { whatsappHref, whatsappNumbers } from "@/lib/whatsapp";
 
 /**
  * Encabezado de la ficha de la persona, como una credencial: banda azul institucional con las
@@ -26,6 +27,8 @@ export interface PersonIdCardProps {
   enPadron: boolean;
   /** Botón "Editar datos" (ya armado, porque es un diálogo con su propio estado). */
   editButton?: ReactNode;
+  /** Otros botones de la banda (por ejemplo, "Unir con otra ficha" para la conducción). */
+  extraButtons?: ReactNode;
   /** Enlace a "Nuevo expediente" con la persona elegida; null si quien mira no puede cargar. */
   newCaseHref: string | null;
 }
@@ -82,9 +85,12 @@ export function PersonIdCard({
   etiquetas,
   enPadron,
   editButton,
+  extraButtons,
   newCaseHref,
 }: PersonIdCardProps) {
   const llamar = telefono ? telHref(telefono) : null;
+  // WhatsApp con el número ya pasado a +54 9…: se muestra abajo tal como lo va a usar, para revisarlo.
+  const whatsapp = whatsappNumbers(telefono);
 
   return (
     <section
@@ -143,7 +149,15 @@ export function PersonIdCard({
                 </a>
               </Button>
             )}
+            {whatsapp.length > 0 && (
+              <Button asChild variant="outline" size="sm" className={ON_BAND_BUTTON}>
+                <a href={whatsappHref(whatsapp[0])} target="_blank" rel="noopener noreferrer" title={`Abrir WhatsApp con ${whatsapp[0].display}`}>
+                  <MessageCircle className="h-3.5 w-3.5" /> WhatsApp
+                </a>
+              </Button>
+            )}
             {editButton}
+            {extraButtons}
             {newCaseHref && (
               <Button asChild size="sm" className="h-9 gap-1.5 rounded-xl bg-white text-xs font-bold text-[#163C68] hover:bg-[#E0EEFF]">
                 <Link href={newCaseHref}>
@@ -186,6 +200,20 @@ export function PersonIdCard({
             ) : (
               "Sin teléfono"
             )}
+            {whatsapp.map((w) => (
+              <a
+                key={w.wa}
+                href={whatsappHref(w)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-0.5 flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-primary hover:underline print:hidden"
+              >
+                <MessageCircle className="h-3 w-3 shrink-0" aria-hidden />
+                <span>
+                  WhatsApp: <span className="whitespace-nowrap tabular-nums">{w.display}</span>
+                </span>
+              </a>
+            ))}
           </Dato>
           <Dato icon={Calendar} label="Nacimiento">
             {nacimiento || "Sin dato"}

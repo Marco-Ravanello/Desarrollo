@@ -16,6 +16,15 @@ export interface Novedad {
 export const NOVEDADES: Novedad[] = [
   {
     fecha: "2026-11-05",
+    parte: 5,
+    titulo: "WhatsApp en la ficha y unir fichas repetidas",
+    cambios: [
+      "La ficha de la persona tiene un botón de WhatsApp que abre el chat con su teléfono. Debajo del teléfono se ve el número tal como lo usa (+54 9…), para revisarlo antes de escribir.",
+      "La conducción puede unir dos fichas de la misma persona con \"Unir con otra ficha\" (por ejemplo, una cargada sin DNI). Se elige cuál queda y pasan a esa sus expedientes, intervenciones, documentos, programas, cursos, recorridas y convenios.",
+    ],
+  },
+  {
+    fecha: "2026-11-05",
     parte: 4,
     titulo: "El Asistente de IA anota lo que todavía no sabe responder",
     cambios: [
