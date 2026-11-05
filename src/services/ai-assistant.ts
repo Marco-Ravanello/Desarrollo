@@ -22,9 +22,35 @@ import {
   handleSpatialProximityQuery
 } from "./assistant/intent-handlers";
 import { lookupPersonByName } from "./assistant/person-name-lookup";
+import {
+  handleBarriosQuery,
+  handleCasesSummary,
+  handleCoursesQuery,
+  handleLeavesQuery,
+  handleMyTasksQuery,
+  handleProgramsQuery,
+} from "./assistant/module-handlers";
+import { needsPersonLookup, pickRoute, routingText, ROUTE_STATUS, WRITING_STATUS } from "@/lib/assistant-routing";
 
 export type { Message, AIResponse, UniversalSearchResult };
 export { handleFichaSocialAIQuery };
+
+/** Lo que contesta cuando no encuentra nada. La IA usa la misma frase, así se reconoce. */
+export const NO_DATA = "No encontré datos en la app para esa pregunta. Probá con otras palabras o con una de las preguntas de ejemplo.";
+const NO_DATA_MARK = "no encontré datos en la app";
+
+const DIRECT_INTENTS = new Set([
+  "chart_render",
+  "social_count_query",
+  "social_letter_filter",
+  "social_dni_filter",
+  "cases_summary",
+  "leaves_query",
+  "programs_query",
+  "barrios_query",
+  "courses_query",
+  "tasks_query",
+]);
 
 export function isGreetingOrGeneralQuery(queryText: string): boolean {
   const clean = queryText.toLowerCase().trim();
@@ -42,13 +68,26 @@ export function handleGreetingQuery(queryText: string): AIResponse {
   let intent = "greeting";
 
   if (clean.includes("gracias")) {
-    answer = `De nada. Si necesitás algo más sobre recursos humanos, presupuesto, vehículos, expedientes o insumos, preguntame.`;
+    answer = `De nada. Si necesitás algo más, preguntame.`;
     intent = "thanks";
   } else if (clean.includes("chau") || clean.includes("adios") || clean.includes("adiós")) {
-    answer = `¡Hasta luego! Acá voy a estar para la próxima consulta.`;
+    answer = `¡Hasta luego! Acá voy a estar para la próxima.`;
     intent = "goodbye";
   } else {
-    answer = `### Asistente de IA\n\nTe ayudo a consultar la información de la app.\n\n#### Qué podés consultar:\n*   **Recursos Humanos (RRHH):** Auditoría de nómina de personal activo, licencias, régimen contractual y cálculo consolidado del gasto salarial mensual por dirección.\n*   **Presupuesto y Compras:** Análisis del estado administrativo de Órdenes de Compra, saldos pendientes, montos de ejecución real y legajos de proveedores.\n*   **Vehículos y Logística:** Monitoreo del consumo de combustible, kilometraje, control de alertas por vencimiento de VTV o pólizas de seguro, y reserva de unidades de flota municipal.\n*   **Convenios Institucionales:** Consulta de convenios vigentes, montos devengados, partes intervinientes y plazos según la dirección solicitante.\n*   **Acción Social:** Consulta integrada del Registro Único de personas, grupos familiares, expedientes, con búsqueda por DNI o apellido, y lectura inteligente de informes PDF adjuntos.\n*   **Control de Insumos (Depósito):** Reportes automáticos sobre stock mínimo, faltantes y alertas de abastecimiento.\n*   **Agenda Unificada:** Programación y asignación de tareas, eventos administrativos y coordinación horaria de recursos municipales.\n\nEscribí qué querés saber, por ejemplo: "¿qué vehículos tienen la VTV vencida?".`;
+    answer = [
+      "### Asistente de IA",
+      "",
+      "Te ayudo a consultar los datos de la app. Podés preguntarme por:",
+      "",
+      "- **Expedientes:** cuántos hay abiertos, urgentes o sin movimiento, por área.",
+      "- **Personas, programas y barrios:** cuántas personas hay en cada programa o barrio, o los datos de alguien por DNI o apellido.",
+      "- **Recursos Humanos:** quién está de licencia, el personal y los sueldos.",
+      "- **Compras y stock:** las órdenes de compra, el presupuesto y los insumos que faltan.",
+      "- **Vehículos:** el estado de cada uno, la VTV, el seguro y el combustible.",
+      "- **Cursos y tareas:** los cursos abiertos y tus tareas pendientes.",
+      "",
+      "Por ejemplo: \"¿Qué vehículos tienen la VTV vencida?\".",
+    ].join("\n");
   }
 
   return {
@@ -242,8 +281,10 @@ export async function queryAIAssistantStream(
   queryText: string,
   history?: { role: "user" | "assistant"; content: string }[],
   userId?: string,
-  onChunk?: (chunk: string) => void
+  onChunk?: (chunk: string) => void,
+  options: { role?: string | null; onStatus?: (status: string) => void } = {}
 ): Promise<AIResponse> {
+  const onStatus = options.onStatus;
   if (isGreetingOrGeneralQuery(queryText)) {
     const greetingResponse = handleGreetingQuery(queryText);
     if (onChunk) {
@@ -262,74 +303,51 @@ export async function queryAIAssistantStream(
   try {
     let dbResponse: AIResponse;
 
-    // Texto para detectar la intención: incluye una versión sin tildes ("órdenes" también activa "orden").
-    const routing = `${query} ${query.normalize("NFD").replace(/[\u0300-\u036f]/g, "")}`;
-
-    const isCommand = routing.includes("tarea") || routing.includes("recordatorio") || routing.includes("agendar") || routing.includes("reservar") || routing.includes("reserva") || routing.includes("evento") || routing.includes("reunion") || routing.includes("reunión") || routing.includes("cita") || routing.includes("turno");
-    const isCreationCommand = isCommand && (routing.includes("crear") || routing.includes("agend") || routing.includes("program") || routing.includes("añadir") || routing.includes("agregar") || routing.includes("hacer") || routing.includes("reserv") || routing.includes("pon"));
-    const wantsChart = routing.includes("gráfico") || routing.includes("grafico") || routing.includes("chart") || routing.includes("dibujar") || routing.includes("mostrar gráfico");
-    const isDocRagQuery = routing.includes("pdf") || routing.includes("documento") || routing.includes("archivo") || routing.includes("leé") || routing.includes("lee") || routing.includes("informe") || routing.includes("adjunto") || routing.includes("ordenanza") || routing.includes("decreto") || routing.includes("pliego") || routing.includes("resolución") || routing.includes("resolucion");
-
+    const routing = routingText(query);
     let sources: any[] = [];
     let actions: any[] = [];
 
     // Si la consulta nombra a una persona del padrón, se responde con su ficha antes que con la búsqueda social genérica.
-    const personByName = (!wantsChart && !isCreationCommand && !isDocRagQuery)
-      ? await lookupPersonByName(queryText)
-      : null;
+    const personByName = needsPersonLookup(routing) ? await lookupPersonByName(queryText) : null;
+    const route = pickRoute(routing, Boolean(personByName));
+    onStatus?.(ROUTE_STATUS[route]);
+    const user = { id: userId, role: options.role };
 
-    if (wantsChart) {
+    if (route === "chart") {
       dbResponse = await handleChartRequest(query);
-    } else if (isCreationCommand) {
+    } else if (route === "command") {
       dbResponse = await handleAgentCommandQuery(queryText, userId);
-    } else if (isDocRagQuery) {
+    } else if (route === "documents") {
       dbResponse = await handleDocumentRAGQuery(queryText);
-    } else if (
-      routing.includes("sueldo") || routing.includes("salario") || routing.includes("rrhh") || routing.includes("recursos humanos") ||
-      routing.includes("personal") || routing.includes("empleado") || routing.includes("agente") || routing.includes("contrato") ||
-      routing.includes("nómina") || routing.includes("nomina")
-    ) {
+    } else if (route === "leaves") {
+      dbResponse = await handleLeavesQuery();
+    } else if (route === "tasks") {
+      dbResponse = await handleMyTasksQuery(user);
+    } else if (route === "courses") {
+      dbResponse = await handleCoursesQuery();
+    } else if (route === "programs") {
+      dbResponse = await handleProgramsQuery();
+    } else if (route === "barrios") {
+      dbResponse = await handleBarriosQuery(user);
+    } else if (route === "hr") {
       dbResponse = await handleHRQuery(query);
-    } else if (
-      routing.includes("orden") || routing.includes("compras") || routing.includes("gasto") || routing.includes("presupuesto") ||
-      routing.includes("comprar") || routing.includes("monto") || routing.includes("factura")
-    ) {
+    } else if (route === "budget") {
       dbResponse = await handleBudgetQuery(query);
-    } else if (
-      routing.includes("vehiculo") || routing.includes("vehículo") || routing.includes("auto") || routing.includes("camioneta") ||
-      routing.includes("flota") || routing.includes("taller") || routing.includes("reserva") || routing.includes("combustible") ||
-      routing.includes("nafta") || routing.includes("litro")
-    ) {
+    } else if (route === "vehicles") {
       dbResponse = await handleVehicleQuery(query);
-    } else if (
-      routing.includes("convenio") || routing.includes("acuerdo") || routing.includes("parties") || routing.includes("institucional")
-    ) {
+    } else if (route === "agreements") {
       dbResponse = await handleAgreementQuery(query);
-    } else if (personByName) {
+    } else if (route === "person" && personByName) {
       dbResponse = personByName;
-    } else if (
-      routing.includes("caso") || routing.includes("urgente") || routing.includes("critico") || routing.includes("crítico") ||
-      routing.includes("social") || routing.includes("familia") || routing.includes("persona") || routing.includes("ciudadano") ||
-      routing.includes("deriva") || routing.includes("abierto") || routing.includes("registro") || routing.includes("apellido") ||
-      routing.includes("nombre") || routing.includes("letra") || routing.includes("buscar") || routing.includes("consultar") ||
-      routing.includes("acevedo") || routing.includes("aylen") || routing.includes("victoria")
-    ) {
+    } else if (route === "cases") {
+      dbResponse = await handleCasesSummary(user);
+    } else if (route === "social") {
       dbResponse = await handleSocialQuery(query);
-    } else if (
-      routing.includes("ficha social") || routing.includes("ficha 360") || routing.includes("cruce de datos") ||
-      routing.includes("cruce de programas") || routing.includes("programas sociales") || routing.includes("matriz de cruce")
-    ) {
+    } else if (route === "crossing") {
       dbResponse = await handleFichaSocialAIQuery(queryText);
-    } else if (
-      routing.includes("insumo") || routing.includes("stock") || routing.includes("inventario") ||
-      routing.includes("deposito") || routing.includes("depósito")
-    ) {
+    } else if (route === "supplies") {
       dbResponse = await handleSupplyQuery(query);
-    } else if (
-      routing.includes("metro") || routing.includes("metros") || routing.includes("cerca") ||
-      routing.includes("radio") || routing.includes("proximidad") || routing.includes("cuadra") ||
-      routing.includes("cuadras") || routing.includes("distancia")
-    ) {
+    } else if (route === "nearby") {
       dbResponse = await handleSpatialProximityQuery(query);
     } else {
       const search = await performUniversalDBSearch(queryText, history);
@@ -345,7 +363,7 @@ export async function queryAIAssistantStream(
       } else {
         dbResponse = {
           intent: "fallback",
-          answer: "No se encontraron registros en la base de datos municipal para esta consulta.",
+          answer: NO_DATA,
           dataSummary: { hasResults: false, sources, actions }
         };
       }
@@ -358,12 +376,8 @@ export async function queryAIAssistantStream(
       actions = dbResponse.dataSummary.actions;
     }
 
-    if (
-      dbResponse.intent === "chart_render" ||
-      dbResponse.intent === "social_count_query" ||
-      dbResponse.intent === "social_letter_filter" ||
-      dbResponse.intent === "social_dni_filter"
-    ) {
+    // Estas respuestas ya salen armadas con los números de la app: van tal cual, sin pasar por la IA.
+    if (DIRECT_INTENTS.has(dbResponse.intent)) {
       if (onChunk) {
         onChunk(dbResponse.answer);
       }
@@ -375,6 +389,7 @@ export async function queryAIAssistantStream(
     }
 
     if (process.env.GEMINI_API_KEY) {
+      onStatus?.(WRITING_STATUS);
       try {
         const namesToSanitize: string[] = [];
         const addressesToSanitize: string[] = [];
@@ -391,9 +406,9 @@ export async function queryAIAssistantStream(
         );
         if (geminiResult.answer) {
           if (
-            geminiResult.answer.toLowerCase().includes("no se encontraron registros") &&
+            geminiResult.answer.toLowerCase().includes(NO_DATA_MARK) &&
             dbResponse.answer &&
-            !dbResponse.answer.toLowerCase().includes("no se encontraron registros")
+            !dbResponse.answer.toLowerCase().includes(NO_DATA_MARK)
           ) {
             if (onChunk) onChunk(dbResponse.answer);
             return {
@@ -434,7 +449,7 @@ export async function queryAIAssistantStream(
       if (dbResponse.intent !== "fallback") {
         userPrompt = `[CONTEXTO REAL DE LA BASE DE DATOS MUNICIPAL]:\n${dbResponse.answer}\n\n[PREGUNTA DEL USUARIO]:\n${queryText}\n\nPor favor, responde a la pregunta del usuario utilizando EXCLUSIVAMENTE la información del contexto real anterior. Sigue de forma estricta las REGLAS DE CERO ALUCINACIÓN.`;
       } else {
-        userPrompt = `[CONTEXTO REAL DE LA BASE DE DATOS MUNICIPAL]:\nNo se encontraron registros en la base de datos municipal para esta consulta.\n\n[PREGUNTA DEL USUARIO]:\n${queryText}\n\nResponde de forma estricta siguiendo las REGLAS DE CERO ALUCINACIÓN.`;
+        userPrompt = `[CONTEXTO REAL DE LA BASE DE DATOS MUNICIPAL]:\nNo hay datos para esta consulta.\n\n[PREGUNTA DEL USUARIO]:\n${queryText}\n\nResponde de forma estricta siguiendo las REGLAS DE CERO ALUCINACIÓN.`;
       }
 
       ollamaMessages.push({ role: "user", content: userPrompt });

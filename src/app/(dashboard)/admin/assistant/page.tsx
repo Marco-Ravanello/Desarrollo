@@ -1,688 +1,362 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  Sparkles, Send, Bot, User, TrendingUp, Users, Car, FileText,
-  RefreshCw, Package, Volume2, VolumeX, Mic, MicOff, MapPin,
-  FileSpreadsheet, CheckCircle2, ArrowUpRight, Copy, Download
-} from "lucide-react";
 import { toast } from "sonner";
+import { ArrowUp, ArrowUpRight, Copy, Loader2, Mic, MicOff, RefreshCw, Sparkles, Square, Volume2, VolumeX } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/layout/page-header";
-import { useTheme } from "next-themes";
-import { chartPalette } from "@/lib/chart-colors";
-import {
-  Bar, BarChart, ResponsiveContainer, XAxis, YAxis,
-  Tooltip as RechartsTooltip, Cell, Pie, PieChart,
-  Line, LineChart, Area, AreaChart
-} from "recharts";
+import { AssistantAnswer } from "@/components/assistant/assistant-answer";
+import { AssistantChart } from "@/components/assistant/assistant-chart";
+import { AssistantWelcome } from "@/components/assistant/assistant-welcome";
+import { plainAnswer } from "@/lib/assistant-text";
 
-interface Message {
+type Source = { type?: string; name: string; url?: string };
+type Action = { label: string; actionType: string; payload?: { path?: string } };
+type Message = {
   id: string;
   sender: "user" | "assistant";
   text: string;
-  timestamp: Date;
-  dataSummary?: any;
-}
+  /** Lo que está haciendo mientras responde ("Buscando en Expedientes…"). */
+  status?: string;
+  stopped?: boolean;
+  failed?: boolean;
+  dataSummary?: { sources?: Source[]; actions?: Action[]; chart?: any };
+};
 
+const newId = () => Math.random().toString(36).slice(2);
 
 export default function AssistantPage() {
   const router = useRouter();
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
-  const COLORS = chartPalette(isDark);
-
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: "welcome",
-      sender: "assistant",
-      text: "### Asistente de IA\n\nPreguntame lo que necesites sobre **recursos humanos, presupuesto, vehículos, expedientes, convenios e insumos**, o pedime un gráfico.",
-      timestamp: new Date()
-    }
-  ]);
-
+  const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
-  const [currentlySpeakingId, setCurrentlySpeakingId] = useState<string | null>(null);
-  const [isListening, setIsListening] = useState(false);
-
+  const [speakingId, setSpeakingId] = useState<string | null>(null);
+  const [listening, setListening] = useState(false);
   const recognitionRef = useRef<any>(null);
-  const chatContainerRef = useRef<HTMLDivElement>(null);
+  const abortRef = useRef<AbortController | null>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  // Baja hasta lo último a medida que llega la respuesta. La bienvenida se ve desde arriba.
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    if (messages.length === 0) el.scrollTo({ top: 0 });
+    else el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+  }, [messages]);
+
+  // El campo crece con el texto, hasta unos 6 renglones.
+  useEffect(() => {
+    const el = inputRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${Math.min(el.scrollHeight, 160)}px`;
+  }, [input]);
 
   useEffect(() => {
-    if (chatContainerRef.current) {
-      chatContainerRef.current.scrollTo({
-        top: chatContainerRef.current.scrollHeight,
-        behavior: "smooth"
-      });
-    }
-  }, [messages, loading]);
-
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-      if (SpeechRecognition) {
-        const recognition = new SpeechRecognition();
-        recognition.continuous = false;
-        recognition.interimResults = false;
-        recognition.lang = "es-AR";
-
-        recognition.onstart = () => setIsListening(true);
-        recognition.onresult = (event: any) => {
-          const transcript = event.results[0][0].transcript;
-          if (transcript) {
-            setInput(prev => {
-              const cleanedPrev = prev.trim();
-              return cleanedPrev ? `${cleanedPrev} ${transcript}` : transcript;
-            });
-          }
-        };
-        recognition.onerror = () => setIsListening(false);
-        recognition.onend = () => setIsListening(false);
-
-        recognitionRef.current = recognition;
-      }
-    }
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) return;
+    const recognition = new SpeechRecognition();
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.lang = "es-AR";
+    recognition.onstart = () => setListening(true);
+    recognition.onresult = (event: any) => {
+      const transcript = event.results[0][0].transcript;
+      if (transcript) setInput((prev) => (prev.trim() ? `${prev.trim()} ${transcript}` : transcript));
+    };
+    recognition.onerror = () => setListening(false);
+    recognition.onend = () => setListening(false);
+    recognitionRef.current = recognition;
+    return () => window.speechSynthesis?.cancel();
   }, []);
 
-  const toggleVoiceInput = () => {
+  const update = (id: string, change: Partial<Message> | ((m: Message) => Partial<Message>)) =>
+    setMessages((prev) => prev.map((m) => (m.id === id ? { ...m, ...(typeof change === "function" ? change(m) : change) } : m)));
+
+  function toggleVoice() {
     if (!recognitionRef.current) {
-      toast.error("El reconocimiento de voz no está soportado en este navegador.");
+      toast.error("Este navegador no permite dictar por voz.");
       return;
     }
-
-    if (isListening) {
+    if (listening) {
       recognitionRef.current.stop();
-      setIsListening(false);
+      setListening(false);
     } else {
       try {
         recognitionRef.current.start();
-      } catch (err) {
-        setIsListening(false);
+      } catch {
+        setListening(false);
       }
     }
-  };
+  }
 
-  const handleSpeakText = (msgId: string, text: string) => {
-    if (typeof window === "undefined" || !("speechSynthesis" in window)) {
-      toast.error("La síntesis de voz no está soportada en este navegador.");
+  function speak(m: Message) {
+    if (!("speechSynthesis" in window)) {
+      toast.error("Este navegador no puede leer en voz alta.");
       return;
     }
-
-    if (currentlySpeakingId === msgId) {
-      window.speechSynthesis.cancel();
-      setCurrentlySpeakingId(null);
-      return;
-    }
-
     window.speechSynthesis.cancel();
-    const cleanText = text
-      .replace(/###/g, "")
-      .replace(/####/g, "")
-      .replace(/\*\*/g, "")
-      .replace(/\*/g, "")
-      .replace(/`/g, "")
-      .replace(/\[([^\]]+)\]\((.*?)\)/g, "$1")
-      .replace(/\s+/g, " ")
-      .trim();
-
-    const utterance = new SpeechSynthesisUtterance(cleanText);
-    utterance.lang = "es-AR";
-    utterance.rate = 1.0;
-
-    utterance.onend = () => setCurrentlySpeakingId(null);
-    utterance.onerror = () => setCurrentlySpeakingId(null);
-
-    setCurrentlySpeakingId(msgId);
-    window.speechSynthesis.speak(utterance);
-  };
-
-  const copyToClipboard = (text: string) => {
-    const cleanText = text
-      .replace(/###/g, "")
-      .replace(/####/g, "")
-      .replace(/\*\*/g, "")
-      .replace(/\*/g, "")
-      .replace(/`/g, "")
-      .replace(/\[([^\]]+)\]\((.*?)\)/g, "$1")
-      .trim();
-
-    navigator.clipboard.writeText(cleanText);
-    toast.success("Respuesta copiada al portapapeles");
-  };
-
-  const exportToCSV = (title: string, data: any[]) => {
-    if (!data || data.length === 0) return;
-    const keys = Object.keys(data[0]);
-    const csvContent = "data:text/csv;charset=utf-8,"
-      + keys.join(",") + "\n"
-      + data.map(row => keys.map(k => `"${row[k]}"`).join(",")).join("\n");
-
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `${title.replace(/\s+/g, "_")}_datos.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    toast.success("Datos exportados a CSV correctamente");
-  };
-
-  const handleActionButton = (act: { label: string; actionType: string; payload?: any }) => {
-    if (act.actionType === "NAVIGATE" && act.payload?.path) {
-      router.push(act.payload.path);
-      toast.success(`Navegando a: ${act.label}`);
-    } else if (act.actionType === "OPEN_DIALOG") {
-      router.push("/tasks");
-      toast.info("Creá una tarea nueva para asignar este expediente.");
+    if (speakingId === m.id) {
+      setSpeakingId(null);
+      return;
     }
-  };
+    const utterance = new SpeechSynthesisUtterance(plainAnswer(m.text));
+    utterance.lang = "es-AR";
+    utterance.onend = () => setSpeakingId(null);
+    utterance.onerror = () => setSpeakingId(null);
+    setSpeakingId(m.id);
+    window.speechSynthesis.speak(utterance);
+  }
 
-  const handleQuery = async (text: string) => {
-    if (!text.trim() || loading) return;
+  async function copy(m: Message) {
+    try {
+      await navigator.clipboard.writeText(plainAnswer(m.text));
+      toast.success("Se copió la respuesta.");
+    } catch {
+      toast.error("No se pudo copiar. Probá seleccionando el texto.");
+    }
+  }
 
-    const userMsgId = Math.random().toString();
-    const assistantMsgId = Math.random().toString();
+  function runAction(act: Action) {
+    if (act.actionType === "NAVIGATE" && act.payload?.path) router.push(act.payload.path);
+    else if (act.actionType === "OPEN_DIALOG") router.push("/tasks");
+  }
 
-    const userMessage: Message = { id: userMsgId, sender: "user", text, timestamp: new Date() };
-    const historyToSend = messages
-      .filter(m => m.id !== "welcome")
-      .map(m => ({ role: m.sender, content: m.text }));
-
-    setMessages(prev => [...prev, userMessage]);
+  async function ask(raw: string) {
+    const text = raw.trim();
+    if (!text || loading) return;
+    const history = messages.filter((m) => m.text).map((m) => ({ role: m.sender, content: m.text }));
+    const answerId = newId();
+    setMessages((prev) => [
+      ...prev,
+      { id: newId(), sender: "user", text },
+      { id: answerId, sender: "assistant", text: "", status: "Leyendo tu pregunta…" },
+    ]);
     setInput("");
     setLoading(true);
-
-    const assistantMessage: Message = {
-      id: assistantMsgId,
-      sender: "assistant",
-      text: "",
-      timestamp: new Date(),
-      dataSummary: { sources: [], actions: [] }
-    };
-
-    setMessages(prev => [...prev, assistantMessage]);
+    const controller = new AbortController();
+    abortRef.current = controller;
 
     try {
       const response = await fetch("/api/assistant/stream", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query: text, history: historyToSend }),
+        body: JSON.stringify({ query: text, history }),
+        signal: controller.signal,
       });
-
-      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-
-      const reader = response.body?.getReader();
+      if (!response.ok || !response.body) {
+        const body = await response.json().catch(() => null);
+        throw new Error(body?.error || "No se pudo responder la consulta. Probá de nuevo.");
+      }
+      const reader = response.body.getReader();
       const decoder = new TextDecoder();
-      if (!reader) throw new Error("ReadableStream not supported");
-
-      let currentText = "";
-      let dataSummary: any = { sources: [], actions: [] };
-
+      let buffer = "";
+      let answer = "";
       while (true) {
         const { value, done } = await reader.read();
         if (done) break;
-
-        const chunkText = decoder.decode(value);
-        const lines = chunkText.split("\n");
-
-        for (const line of lines) {
-          const trimmed = line.trim();
-          if (trimmed === "") continue;
-
-          if (trimmed.startsWith("data: ")) {
-            try {
-              const payloadStr = trimmed.substring(6);
-              if (payloadStr.startsWith("{")) {
-                const parsed = JSON.parse(payloadStr);
-                if (parsed.chunk) {
-                  currentText += parsed.chunk;
-                  setMessages(prev => prev.map(m => m.id === assistantMsgId ? { ...m, text: currentText } : m));
-                } else if (parsed.done) {
-                  dataSummary = parsed.dataSummary || { sources: [], actions: [] };
-                  setMessages(prev => prev.map(m => m.id === assistantMsgId ? { ...m, dataSummary } : m));
-                }
-              }
-            } catch (err) {}
+        buffer += decoder.decode(value, { stream: true });
+        const events = buffer.split("\n\n");
+        buffer = events.pop() ?? "";
+        for (const event of events) {
+          const line = event.split("\n").find((l) => l.startsWith("data: "));
+          if (!line) continue;
+          let payload: any;
+          try {
+            payload = JSON.parse(line.slice(6));
+          } catch {
+            continue;
           }
+          if (payload.status) update(answerId, { status: payload.status });
+          if (payload.chunk) {
+            answer += payload.chunk;
+            update(answerId, { text: answer, status: undefined });
+          }
+          if (payload.done) update(answerId, { dataSummary: payload.dataSummary, status: undefined });
+          if (payload.error) throw new Error(payload.error);
         }
       }
+      update(answerId, (m) => (m.text ? { status: undefined } : { text: "No encontré datos para esa pregunta. Probá con otras palabras.", status: undefined }));
     } catch (err: any) {
-      toast.error("Error al procesar la consulta");
-      setMessages(prev => prev.map(m => m.id === assistantMsgId ? { ...m, text: "⚠️ No se pudo responder la consulta. Probá de nuevo." } : m));
+      if (controller.signal.aborted) {
+        update(answerId, { stopped: true, status: undefined });
+      } else {
+        update(answerId, { failed: true, status: undefined, text: err?.message || "No se pudo responder la consulta. Probá de nuevo." });
+      }
     } finally {
+      abortRef.current = null;
       setLoading(false);
+      inputRef.current?.focus();
     }
-  };
+  }
 
-  const handleFormSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    handleQuery(input);
-  };
+  function stop() {
+    abortRef.current?.abort();
+  }
 
-  const clearChat = () => {
-    if (typeof window !== "undefined" && window.speechSynthesis) window.speechSynthesis.cancel();
-    setCurrentlySpeakingId(null);
-    setMessages([{
-      id: "welcome",
-      sender: "assistant",
-      text: "### Asistente de IA\n\nPreguntame lo que necesites sobre **recursos humanos, presupuesto, vehículos, expedientes, convenios e insumos**, o pedime un gráfico.",
-      timestamp: new Date()
-    }]);
-  };
+  function newConversation() {
+    stop();
+    window.speechSynthesis?.cancel();
+    setSpeakingId(null);
+    setMessages([]);
+    setInput("");
+  }
 
-  const suggestions = [
-    { label: "Personal y sueldos", query: "presupuesto total sueldos personal activo", icon: Users, color: "text-blue-500", bg: "bg-blue-500/10" },
-    { label: "Ejecución del presupuesto", query: "gasto total ordenes de compra presupuestos", icon: TrendingUp, color: "text-emerald-500", bg: "bg-emerald-500/10" },
-    { label: "Estado de la Flota Vehicular", query: "estado vehiculos taller nafta combustible", icon: Car, color: "text-amber-500", bg: "bg-amber-500/10" },
-    { label: "Expedientes por edad", query: "mostrar un gráfico de casos por edad", icon: TrendingUp, color: "text-rose-500", bg: "bg-rose-500/10" },
-    { label: "Expedientes por género", query: "dibujar gráfico de casos por género", icon: Users, color: "text-indigo-500", bg: "bg-indigo-500/10" },
-    { label: "Expedientes por prioridad", query: "mostrar gráfico de casos por prioridad", icon: FileText, color: "text-amber-500", bg: "bg-amber-500/10" },
-    { label: "Expedientes por área", query: "mostrar gráfico de casos por área municipal", icon: TrendingUp, color: "text-blue-500", bg: "bg-blue-500/10" },
-  ];
-
-  const parseMarkdown = (text: string) => {
-    const lines = text.split("\n");
-    let inTable = false;
-    let tableHeaders: string[] = [];
-    let tableRows: string[][] = [];
-    const elements: React.ReactNode[] = [];
-
-    lines.forEach((line, index) => {
-      const trimmed = line.trim();
-
-      if (trimmed.startsWith("|") && trimmed.endsWith("|")) {
-        const parts = trimmed.split("|").map(p => p.trim()).filter((_, i, arr) => i > 0 && i < arr.length - 1);
-        if (parts.every(p => p.startsWith(":") || p.startsWith("-") || p === "")) return;
-        if (!inTable) { inTable = true; tableHeaders = parts; } else { tableRows.push(parts); }
-        return;
-      } else if (inTable) {
-        elements.push(
-          <div key={`table-${index}`} className="my-4 overflow-x-auto rounded-2xl border border-border/40 shadow-sm bg-card/60 backdrop-blur-sm">
-            <table className="w-full text-xs text-left border-collapse">
-              <thead>
-                <tr className="bg-muted/70 text-muted-foreground font-bold border-b border-border/40">
-                  {tableHeaders.map((header, hIdx) => <th key={hIdx} className="px-4 py-3 font-bold">{header}</th>)}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border/40">
-                {tableRows.map((row, rIdx) => (
-                  <tr key={rIdx} className="hover:bg-muted/20 transition-colors">
-                    {row.map((cell, cIdx) => <td key={cIdx} className="px-4 py-3 font-medium" dangerouslySetInnerHTML={{ __html: inlineMarkdown(cell) }} />)}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        );
-        inTable = false; tableHeaders = []; tableRows = [];
-      }
-
-      if (trimmed.startsWith("###")) {
-        elements.push(<h3 key={index} className="text-lg font-bold tracking-tight mt-5 mb-2 text-foreground flex items-center gap-2">{trimmed.replace("###", "").trim()}</h3>);
-      } else if (trimmed.startsWith("####")) {
-        elements.push(<h4 key={index} className="text-xs font-bold text-muted-foreground mt-4 mb-2">{trimmed.replace("####", "").trim()}</h4>);
-      } else if (trimmed.startsWith("*   ") || trimmed.startsWith("-   ")) {
-        elements.push(<li key={index} className="ml-5 list-disc text-xs text-foreground/90 my-1 font-medium leading-relaxed" dangerouslySetInnerHTML={{ __html: inlineMarkdown(trimmed.substring(4)) }} />);
-      } else if (trimmed.startsWith("* ") || trimmed.startsWith("- ")) {
-        elements.push(<li key={index} className="ml-5 list-disc text-xs text-foreground/90 my-1 font-medium leading-relaxed" dangerouslySetInnerHTML={{ __html: inlineMarkdown(trimmed.substring(2)) }} />);
-      } else if (trimmed.match(/^\d+\.\s/)) {
-        elements.push(<li key={index} className="ml-5 list-decimal text-xs text-foreground/90 my-1 font-medium leading-relaxed" dangerouslySetInnerHTML={{ __html: inlineMarkdown(trimmed.replace(/^\d+\.\s/, "")) }} />);
-      } else if (trimmed !== "") {
-        elements.push(<p key={index} className="text-xs text-foreground/90 leading-relaxed my-2 font-medium" dangerouslySetInnerHTML={{ __html: inlineMarkdown(trimmed) }} />);
-      }
-    });
-
-    if (inTable && tableHeaders.length > 0) {
-      elements.push(
-        <div key="table-final" className="my-4 overflow-x-auto rounded-2xl border border-border/40 shadow-sm bg-card/60 backdrop-blur-sm">
-          <table className="w-full text-xs text-left border-collapse">
-            <thead>
-              <tr className="bg-muted/70 text-muted-foreground font-bold border-b border-border/40">
-                {tableHeaders.map((header, hIdx) => <th key={hIdx} className="px-4 py-3 font-bold">{header}</th>)}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border/40">
-              {tableRows.map((row, rIdx) => (
-                <tr key={rIdx} className="hover:bg-muted/20 transition-colors">
-                  {row.map((cell, cIdx) => <td key={cIdx} className="px-4 py-3 font-medium" dangerouslySetInnerHTML={{ __html: inlineMarkdown(cell) }} />)}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      );
-    }
-    return elements;
-  };
-
-  const inlineMarkdown = (text: string) => {
-    let html = text;
-    html = html.replace(/\*\*(.*?)\*\*/g, "<strong class='font-bold text-foreground'>$1</strong>");
-    html = html.replace(/\*(.*?)\*/g, "<em class='text-muted-foreground font-medium'>$1</em>");
-    html = html.replace(/`(.*?)`/g, "<code class='bg-muted px-1.5 py-0.5 rounded text-rose-500 font-bold tabular-nums text-xs'>$1</code>");
-    return html;
-  };
-
-  const renderChart = (chart: any) => {
-    if (!chart || !chart.data || chart.data.length === 0) return null;
-    const chartTitle = chart.title || "Gráfico";
-
-    return (
-      <div className="mt-4 p-5 rounded-2xl border border-border/40 shadow-sm bg-card/60 backdrop-blur-sm w-full min-h-[220px]">
-        <div className="flex items-center justify-between mb-4">
-          <p className="text-xs font-bold text-muted-foreground">{chartTitle}</p>
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => exportToCSV(chartTitle, chart.data)}
-            className="h-7 text-xs font-bold gap-1 text-primary hover:bg-primary/10 rounded-lg"
-            title="Exportar datos del gráfico a CSV / Excel"
-          >
-            <Download className="h-3 w-3" /> Exportar CSV
-          </Button>
-        </div>
-
-        {chart.type === "line" ? (
-          <ResponsiveContainer width="100%" height={200}>
-            <LineChart data={chart.data}>
-              <XAxis dataKey="name" stroke="#888888" fontSize={10} tickLine={false} axisLine={false} />
-              <YAxis stroke="#888888" fontSize={10} tickLine={false} axisLine={false} />
-              <RechartsTooltip
-                contentStyle={{
-                  backgroundColor: isDark ? '#0f172a' : '#ffffff',
-                  borderRadius: '12px',
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  color: isDark ? '#f8fafc' : '#0f172a',
-                  fontSize: '11px'
-                }}
-              />
-              <Line type="monotone" dataKey="value" stroke={COLORS[0]} strokeWidth={3} dot={{ r: 4, fill: COLORS[0] }} />
-            </LineChart>
-          </ResponsiveContainer>
-        ) : chart.type === "area" ? (
-          <ResponsiveContainer width="100%" height={200}>
-            <AreaChart data={chart.data}>
-              <XAxis dataKey="name" stroke="#888888" fontSize={10} tickLine={false} axisLine={false} />
-              <YAxis stroke="#888888" fontSize={10} tickLine={false} axisLine={false} />
-              <RechartsTooltip
-                contentStyle={{
-                  backgroundColor: isDark ? '#0f172a' : '#ffffff',
-                  borderRadius: '12px',
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  color: isDark ? '#f8fafc' : '#0f172a',
-                  fontSize: '11px'
-                }}
-              />
-              <Area type="monotone" dataKey="value" stroke="#10b981" fill="#10b981" fillOpacity={0.2} strokeWidth={2} />
-            </AreaChart>
-          </ResponsiveContainer>
-        ) : chart.type === "bar" ? (
-          <ResponsiveContainer width="100%" height={200}>
-            <BarChart data={chart.data}>
-              <XAxis dataKey="name" stroke="#888888" fontSize={10} tickLine={false} axisLine={false} />
-              <YAxis stroke="#888888" fontSize={10} tickLine={false} axisLine={false} />
-              <RechartsTooltip
-                contentStyle={{
-                  backgroundColor: isDark ? '#0f172a' : '#ffffff',
-                  borderRadius: '12px',
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  color: isDark ? '#f8fafc' : '#0f172a',
-                  fontSize: '11px'
-                }}
-              />
-              <Bar dataKey="value" fill={COLORS[0]} radius={[6, 6, 0, 0]}>
-                {chart.data.map((entry: any, index: number) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        ) : (
-          <div className="flex items-center justify-between">
-            <ResponsiveContainer width="60%" height={200}>
-              <PieChart>
-                <Pie data={chart.data} cx="50%" cy="50%" innerRadius={45} outerRadius={65} paddingAngle={5} dataKey="value" stroke="none">
-                  {chart.data.map((entry: any, index: number) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <RechartsTooltip
-                  contentStyle={{
-                    backgroundColor: isDark ? '#0f172a' : '#ffffff',
-                    borderRadius: '8px',
-                    border: '1px solid rgba(255,255,255,0.1)',
-                    color: isDark ? '#f8fafc' : '#0f172a',
-                    fontSize: '10px'
-                  }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-            <div className="hidden sm:flex flex-col gap-1.5 ml-4 shrink-0 text-xs text-muted-foreground font-semibold">
-              {chart.data.map((entry: any, index: number) => (
-                <div key={index} className="flex items-center gap-1.5">
-                  <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
-                  <span className="truncate max-w-[120px]">{entry.name}: <b>{entry.value}</b></span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-    );
-  };
+  const empty = messages.length === 0;
 
   return (
-    <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500 h-[calc(100vh-9rem)] max-h-[calc(100vh-9rem)] flex flex-col overflow-hidden">
+    <div className="flex h-[calc(100vh-9rem)] max-h-[calc(100vh-9rem)] flex-col gap-3 overflow-hidden">
       <PageHeader
         className="shrink-0"
         title="Asistente de IA"
         description="Preguntale por los datos de la Secretaría y te responde con números, tablas y gráficos."
         icon={Sparkles}
         actions={
-          <Button
-            variant="outline"
-            onClick={clearChat}
-            className="rounded-xl text-xs font-bold h-9 flex items-center gap-2 border-border/60 hover:bg-muted/50 text-foreground"
-          >
-            <RefreshCw className="h-3.5 w-3.5" />
-            Limpiar conversación
-          </Button>
+          !empty ? (
+            <Button variant="outline" onClick={newConversation} className="gap-2">
+              <RefreshCw className="h-4 w-4" /> Nueva conversación
+            </Button>
+          ) : undefined
         }
       />
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 flex-1 min-h-0 overflow-hidden">
-        <div className="hidden lg:flex lg:col-span-1 flex-col gap-4 min-h-0 overflow-hidden">
-          <Card className="bg-card text-card-foreground border border-border/60 shadow-sm h-full flex flex-col overflow-hidden rounded-2xl">
-            <CardHeader className="pb-3 shrink-0">
-              <CardTitle className="text-xs font-bold text-foreground">Consultas frecuentes</CardTitle>
-              <CardDescription className="text-xs text-muted-foreground">Elegí un tema para consultar los datos reales al instante.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-2.5 overflow-y-auto flex-1 min-h-0 pr-2 custom-scrollbar">
-              {suggestions.map((s, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => handleQuery(s.query)}
-                  disabled={loading}
-                  className="w-full text-left p-3 rounded-2xl border border-border/40 hover:border-primary/50 bg-muted/30 hover:bg-muted/60 transition-all duration-300 group flex items-start gap-3 disabled:opacity-50 disabled:pointer-events-none"
-                >
-                  <div className={`p-2 rounded-xl ${s.bg} ${s.color} shrink-0 group-hover:scale-110 transition-transform`}>
-                    <s.icon className="h-4 w-4" />
-                  </div>
-                  <div className="space-y-0.5 min-w-0 flex-1">
-                    <p className="text-xs font-bold text-foreground leading-tight">{s.label}</p>
-                    <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">Ej: &ldquo;{s.query.substring(0, 40)}...&rdquo;</p>
-                  </div>
-                </button>
-              ))}
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="lg:col-span-3 flex flex-col h-full min-h-0 overflow-hidden">
-          <Card className="bg-card text-card-foreground border border-border/60 shadow-sm flex-1 min-h-0 flex flex-col overflow-hidden rounded-2xl">
-            {/* En el celular las consultas frecuentes van como botones deslizables arriba del chat. */}
-            <div className="lg:hidden flex gap-2 overflow-x-auto shrink-0 px-3 pt-3 pb-1 custom-scrollbar">
-              {suggestions.map((s, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => handleQuery(s.query)}
-                  disabled={loading}
-                  className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-border/50 bg-muted/40 text-xs font-semibold text-foreground disabled:opacity-50"
-                >
-                  <s.icon className={`h-3.5 w-3.5 ${s.color}`} />
-                  {s.label}
-                </button>
-              ))}
-            </div>
-            <div ref={chatContainerRef} className="flex-1 min-h-0 overflow-y-auto p-3 sm:p-6 space-y-4 sm:space-y-6 custom-scrollbar">
-              {messages.map((m) => (
-                <div
-                  key={m.id}
-                  className={`flex gap-2 sm:gap-4 max-w-full sm:max-w-[85%] ${
-                    m.sender === "user" ? "ml-auto flex-row-reverse" : ""
-                  }`}
-                >
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 border ${
-                    m.sender === "user"
-                      ? "bg-primary border-primary text-primary-foreground"
-                      : "bg-muted border-border/60 text-primary"
-                  }`}>
-                    {m.sender === "user" ? <User className="h-4 w-4" /> : <Bot className="h-4 w-4" />}
-                  </div>
-                  <div className={`rounded-2xl p-3 sm:p-5 shadow-xs text-foreground relative min-w-0 ${
-                    m.sender === "user"
-                      ? "bg-primary/10 border border-primary/20 rounded-tr-none text-foreground font-semibold"
-                      : "bg-muted/40 border border-border/40 rounded-tl-none w-full sm:pr-16 text-foreground"
-                  }`}>
-                    {m.sender === "user" ? (
-                      <p className="text-xs font-semibold leading-relaxed">{m.text}</p>
-                    ) : (
-                      <div className="space-y-1 select-text">
-                        {parseMarkdown(m.text)}
-                        {m.dataSummary?.chart && renderChart(m.dataSummary.chart)}
-                        {m.dataSummary?.sources && m.dataSummary.sources.length > 0 && (
-                          <div className="mt-4 pt-3 border-t border-border/20 space-y-2">
-                            <p className="text-xs font-bold text-muted-foreground flex items-center gap-1 select-none">
-                              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
-                              Fuentes verificadas de la BD municipal
-                            </p>
-                            <div className="flex flex-wrap gap-2">
-                              {m.dataSummary.sources.map((src: any, idx: number) => (
-                                <button
-                                  key={idx}
-                                  onClick={() => src.url && router.push(src.url)}
-                                  className="text-xs bg-muted/65 hover:bg-muted/80 border border-border/30 rounded-xl px-2.5 py-1.5 font-bold transition-all text-foreground/85 hover:text-foreground flex items-center gap-1.5"
-                                  title={src.url ? "Ver ficha de origen" : undefined}
-                                >
-                                  {src.type === "Ciudadano" && <User className="h-3 w-3 text-blue-500" />}
-                                  {src.type === "Caso Social" && <FileText className="h-3 w-3 text-rose-500" />}
-                                  {src.type === "Orden de Compra" && <FileSpreadsheet className="h-3 w-3 text-emerald-500" />}
-                                  {src.type === "Vehículo" && <Car className="h-3 w-3 text-amber-500" />}
-                                  {src.type === "Recursos Humanos" && <Users className="h-3 w-3 text-indigo-500" />}
-                                  {src.name}
-                                  {src.url && <ArrowUpRight className="h-2.5 w-2.5 text-muted-foreground" />}
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                        {m.dataSummary?.actions && m.dataSummary.actions.length > 0 && (
-                          <div className="mt-3 flex flex-wrap gap-2 select-none">
-                            {m.dataSummary.actions.map((act: any, idx: number) => (
-                              <Button
-                                key={idx}
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleActionButton(act)}
-                                className="h-8 rounded-xl text-xs font-bold border-blue-500/20 bg-blue-500/5 hover:bg-blue-500/10 text-blue-600 dark:text-blue-400 hover:text-blue-700 flex items-center gap-1.5"
-                              >
-                                {act.label === "Ver en Mapa Social" && <MapPin className="h-3.5 w-3.5" />}
-                                {act.label === "Asignar tarea" && <CheckCircle2 className="h-3.5 w-3.5" />}
-                                {act.label}
-                              </Button>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    )}
-                    {m.sender === "assistant" && m.text && (
-                      <div className="flex items-center justify-end gap-1 mt-2 sm:mt-0 sm:absolute sm:top-4 sm:right-4">
-                        <button
-                          onClick={() => copyToClipboard(m.text)}
-                          className="p-1.5 rounded-xl bg-muted/40 hover:bg-muted text-muted-foreground hover:text-foreground transition-all"
-                          title="Copiar respuesta al portapapeles"
-                        >
-                          <Copy className="h-3.5 w-3.5" />
-                        </button>
-                        <button
-                          onClick={() => handleSpeakText(m.id, m.text)}
-                          className={`p-1.5 rounded-xl transition-all ${
-                            currentlySpeakingId === m.id
-                              ? "bg-rose-500/20 text-rose-700 dark:text-rose-400 animate-pulse"
-                              : "bg-muted/40 hover:bg-muted text-muted-foreground hover:text-foreground"
-                          }`}
-                          title={currentlySpeakingId === m.id ? "Detener lectura" : "Escuchar respuesta en voz alta"}
-                        >
-                          {currentlySpeakingId === m.id ? <VolumeX className="h-3.5 w-3.5" /> : <Volume2 className="h-3.5 w-3.5" />}
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))}
-              {loading && (
-                <div className="flex gap-4 max-w-[80%]">
-                  <div className="w-8 h-8 rounded-full bg-muted border border-border/40 text-primary flex items-center justify-center shrink-0">
-                    <Bot className="h-4 w-4 animate-spin" />
-                  </div>
-                  <div className="bg-muted/40 border border-border/40 rounded-2xl rounded-tl-none p-4 flex items-center gap-3">
-                    <span className="flex h-2 w-2 relative">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
-                    </span>
-                    <p className="text-xs font-semibold text-muted-foreground animate-pulse">
-                      Analizando datos municipales y generando visualizaciones...
+      <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto">
+        <div className="mx-auto w-full max-w-3xl px-1 sm:px-4">
+          {empty ? (
+            <AssistantWelcome onAsk={ask} disabled={loading} />
+          ) : (
+            <ol className="space-y-6 py-4" aria-live="polite">
+              {messages.map((m) =>
+                m.sender === "user" ? (
+                  <li key={m.id} className="flex justify-end">
+                    <p className="max-w-[85%] whitespace-pre-wrap rounded-2xl rounded-br-md bg-primary px-4 py-2.5 text-sm text-primary-foreground sm:text-[15px]">
+                      {m.text}
                     </p>
-                  </div>
-                </div>
-              )}
-            </div>
+                  </li>
+                ) : (
+                  <li key={m.id} className="flex gap-3">
+                    <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-orange-50 text-orange-500 dark:bg-orange-500/10" aria-hidden>
+                      <Sparkles className="h-4 w-4" />
+                    </span>
+                    <div className="min-w-0 flex-1 text-sm leading-relaxed text-foreground sm:text-[15px]">
+                      {m.status && (
+                        <p className="flex items-center gap-2 py-1.5 text-muted-foreground" role="status">
+                          <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                          {m.status}
+                        </p>
+                      )}
+                      {m.text && (m.failed ? <p className="text-rose-700 dark:text-rose-300">{m.text}</p> : <AssistantAnswer text={m.text} />)}
+                      {m.stopped && <p className="mt-1 text-xs text-muted-foreground">{m.text ? "Frenaste la respuesta acá." : "Frenaste la respuesta."}</p>}
+                      {m.dataSummary?.chart && <AssistantChart chart={m.dataSummary.chart} />}
 
-            <div className="p-4 border-t border-border/40 bg-muted/20 shrink-0">
-              <form onSubmit={handleFormSubmit} className="flex gap-2">
-                <Input
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  placeholder={isListening ? "Escuchando voz..." : "Formule una consulta de datos o pida un gráfico..."}
-                  className="rounded-2xl h-11 bg-background text-foreground border-border/60 text-xs shadow-xs focus-visible:ring-primary"
-                  disabled={loading}
-                />
-                <Button
-                  type="button"
-                  onClick={toggleVoiceInput}
-                  variant={isListening ? "destructive" : "outline"}
-                  size="icon"
-                  className={`rounded-2xl h-11 w-11 shrink-0 ${isListening ? "animate-pulse" : "border-border/60 text-foreground"}`}
-                  title={isListening ? "Detener dictado por voz" : "Dictar consulta por voz (Micrófono)"}
-                >
-                  {isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
-                </Button>
-                <Button
-                  type="submit"
-                  disabled={loading || !input.trim()}
-                  aria-label="Enviar consulta"
-                  className="rounded-2xl h-11 px-5 font-bold text-xs bg-primary text-primary-foreground shadow-md shrink-0"
-                >
-                  <Send className="h-4 w-4" />
-                </Button>
-              </form>
-            </div>
-          </Card>
+                      {!!m.dataSummary?.sources?.length && (
+                        <div className="mt-3">
+                          <p className="mb-1.5 text-xs font-medium text-muted-foreground">Sale de estos datos</p>
+                          <div className="flex flex-wrap gap-1.5">
+                            {m.dataSummary.sources.map((src, i) =>
+                              src.url ? (
+                                <button
+                                  key={i}
+                                  type="button"
+                                  onClick={() => router.push(src.url!)}
+                                  className="inline-flex items-center gap-1 rounded-full border border-border/70 bg-card px-2.5 py-1 text-xs font-medium text-foreground/85 hover:bg-muted hover:text-foreground"
+                                >
+                                  {src.name}
+                                  <ArrowUpRight className="h-3 w-3 text-muted-foreground" aria-hidden />
+                                </button>
+                              ) : (
+                                <span key={i} className="inline-flex items-center rounded-full border border-border/70 bg-card px-2.5 py-1 text-xs font-medium text-foreground/85">
+                                  {src.name}
+                                </span>
+                              )
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {!!m.dataSummary?.actions?.length && (
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          {m.dataSummary.actions.map((act, i) => (
+                            <Button key={i} size="sm" variant="outline" onClick={() => runAction(act)} className="h-8 gap-1.5">
+                              {act.label}
+                              <ArrowUpRight className="h-3.5 w-3.5" aria-hidden />
+                            </Button>
+                          ))}
+                        </div>
+                      )}
+
+                      {m.text && !m.status && !m.failed && (
+                        <div className="mt-2 flex gap-1 text-muted-foreground">
+                          <Button size="sm" variant="ghost" className="h-7 gap-1.5 px-2 text-xs" onClick={() => copy(m)}>
+                            <Copy className="h-3.5 w-3.5" /> Copiar
+                          </Button>
+                          <Button size="sm" variant="ghost" className="h-7 gap-1.5 px-2 text-xs" onClick={() => speak(m)} aria-pressed={speakingId === m.id}>
+                            {speakingId === m.id ? <VolumeX className="h-3.5 w-3.5" /> : <Volume2 className="h-3.5 w-3.5" />}
+                            {speakingId === m.id ? "Dejar de leer" : "Escuchar"}
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  </li>
+                )
+              )}
+            </ol>
+          )}
         </div>
+      </div>
+
+      <div className="mx-auto w-full max-w-3xl shrink-0 px-1 sm:px-4">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            ask(input);
+          }}
+          className="flex items-end gap-2 rounded-2xl border border-border/80 bg-card p-2 shadow-sm focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/15"
+        >
+          <label htmlFor="assistant-question" className="sr-only">
+            Tu pregunta
+          </label>
+          <textarea
+            id="assistant-question"
+            ref={inputRef}
+            rows={1}
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                ask(input);
+              }
+            }}
+            placeholder={listening ? "Te escucho…" : "Escribí tu pregunta"}
+            className="max-h-40 min-h-[40px] flex-1 resize-none bg-transparent px-2 py-2 text-sm text-foreground outline-none placeholder:text-muted-foreground sm:text-[15px]"
+          />
+          <Button
+            type="button"
+            variant={listening ? "destructive" : "ghost"}
+            size="icon"
+            onClick={toggleVoice}
+            className="h-10 w-10 shrink-0 rounded-xl"
+            aria-label={listening ? "Dejar de dictar" : "Dictar la pregunta"}
+            title={listening ? "Dejar de dictar" : "Dictar la pregunta"}
+          >
+            {listening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+          </Button>
+          {loading ? (
+            <Button type="button" onClick={stop} className="h-10 shrink-0 gap-1.5 rounded-xl px-3" aria-label="Frenar la respuesta">
+              <Square className="h-3.5 w-3.5 fill-current" /> Frenar
+            </Button>
+          ) : (
+            <Button type="submit" size="icon" disabled={!input.trim()} className="h-10 w-10 shrink-0 rounded-xl" aria-label="Enviar la pregunta">
+              <ArrowUp className="h-4 w-4" />
+            </Button>
+          )}
+        </form>
+        <p className="mt-1.5 text-center text-xs text-muted-foreground">
+          Responde con los datos de la app. Revisá los números importantes antes de usarlos en un informe.
+        </p>
       </div>
     </div>
   );
