@@ -46,6 +46,7 @@ export async function POST(req: NextRequest) {
             role: session.user.role,
             areaId: session.user.areaId,
             onStatus: (status) => send(null, { status }),
+            onReplace: (text) => send(null, { replace: text }),
             previousCall,
           });
           // Se guarda la pregunta con su respuesta, salvo que la persona la haya frenado.

@@ -27,7 +27,7 @@ import { formatFechaHora, formatFechaCalendario, formatHora, formatVencimiento }
 import { repeatLabel, TASK_REPEATS } from "@/lib/tasks";
 import {
   WEEKDAY_LETTER, WEEKDAY_SHORT, chipsThatFit, dateOnlyToLocal, isDateOnly, localDayKey, localTimeKey,
-  isTaskVisibleTo, monthCells, shortEventLabel, startOfWeekMonday, visibleHourRange, type AgendaEventType
+  groupByDay, isTaskVisibleTo, listDayTitle, monthCells, shortEventLabel, startOfWeekMonday, visibleHourRange, type AgendaEventType
 } from "@/lib/agenda";
 import { formatPesos } from "@/lib/formato";
 import { RequiredMark } from "@/components/ui/form-section";
@@ -468,6 +468,8 @@ export function UnifiedCalendar({ reservations = [], purchaseOrders = [], tasks 
   const sortedEvents = [...filteredEvents].sort((a, b) => a.startDate.getTime() - b.startDate.getTime());
   const pastEvents = sortedEvents.filter((e) => (e.type === "reservation" ? e.endDate : e.startDate) < todayStart);
   const listEvents = showPast ? sortedEvents : sortedEvents.filter((e) => !pastEvents.includes(e));
+  // Agrupada por día; una reserva que empezó antes y sigue aparece en hoy.
+  const listGroups = groupByDay(listEvents, showPast ? null : todayStart);
 
   // Una reserva larga ocupa varias filas: el nombre va en la primera y después sigue como una barrita.
   const continuesFrom = (e: AgendaEvent, slotStart: Date, hour: number, minute: number) =>
@@ -1029,40 +1031,59 @@ export function UnifiedCalendar({ reservations = [], purchaseOrders = [], tasks 
                   className="py-16"
                 />
               ) : (
-                <ul className="divide-y divide-border/30">
-                  {listEvents.map((e) => {
-                    const t = TYPES[e.type];
-                    const detail = e.raw?.description || e.raw?.reason;
+                <div className="space-y-4">
+                  {listGroups.map((g) => {
+                    const { title, relative } = listDayTitle(g.day, nowClock);
                     return (
-                      <li key={e.id}>
-                        <button
-                          type="button"
-                          onClick={() => openEvent(e)}
-                          className="w-full text-left py-3 px-2 sm:px-3 flex items-start gap-3 rounded-xl hover:bg-muted/30 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      <section key={g.key} aria-labelledby={`lista-${g.key}`}>
+                        <h3
+                          id={`lista-${g.key}`}
+                          className={`sticky top-0 z-10 flex items-baseline justify-between gap-2 border-b px-2 py-2 text-sm font-bold backdrop-blur-sm sm:px-3 ${
+                            relative === "hoy" ? "border-primary/40 bg-card/95 text-primary" : "border-border/40 bg-card/95 text-foreground"
+                          }`}
                         >
-                          <div className={`w-12 shrink-0 rounded-xl border border-border/40 py-1.5 text-center ${sameDay(e.startDate, nowClock) ? "bg-primary text-primary-foreground" : "bg-muted"}`}>
-                            <p className="text-[11px] font-bold leading-none opacity-80">
-                              {capitalize(e.startDate.toLocaleDateString("es-AR", { weekday: "short" }).replace(".", ""))}
-                            </p>
-                            <p className="text-lg font-bold leading-tight">{e.startDate.getDate()}</p>
-                            <p className="text-[11px] font-semibold leading-none opacity-80">{monthLower(e.startDate).slice(0, 3)}</p>
-                          </div>
-
-                          <div className="min-w-0 flex-1">
-                            <p className={`text-sm font-semibold break-words line-clamp-2 ${e.done ? "text-muted-foreground line-through" : "text-foreground"}`}>{e.title}</p>
-                            <p className="mt-0.5 flex flex-wrap items-center gap-x-1.5 text-xs text-muted-foreground">
-                              <span className={`h-2 w-2 shrink-0 rounded-full ${e.done ? "bg-muted-foreground/40" : t.dot}`} aria-hidden />
-                              <span>{e.done ? "Tarea hecha" : t.kind}</span>
-                              <span aria-hidden>·</span>
-                              <span className="tabular-nums">{whenLabel(e)}</span>
-                            </p>
-                            {detail && <p className="mt-0.5 text-xs text-muted-foreground line-clamp-1">{detail}</p>}
-                          </div>
-                        </button>
-                      </li>
+                          <span>{title}</span>
+                          <span className="shrink-0 text-xs font-medium text-muted-foreground tabular-nums">
+                            {g.items.length === 1 ? "1 cosa" : `${g.items.length} cosas`}
+                          </span>
+                        </h3>
+                        <ul className="divide-y divide-border/30">
+                          {g.items.map(({ event: e, ongoing }) => {
+                            const t = TYPES[e.type];
+                            const detail = e.raw?.description || e.raw?.reason;
+                            return (
+                              <li key={e.id}>
+                                <button
+                                  type="button"
+                                  onClick={() => openEvent(e)}
+                                  className="w-full text-left py-2.5 px-2 sm:px-3 flex items-start gap-3 rounded-xl hover:bg-muted/30 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                >
+                                  <span className="w-14 shrink-0 pt-0.5 text-xs font-bold tabular-nums text-muted-foreground">
+                                    {ongoing ? "Sigue" : e.allDay ? "Todo el día" : formatTime(e.startDate)}
+                                  </span>
+                                  <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${e.done ? "bg-muted-foreground/40" : t.dot}`} aria-hidden />
+                                  <span className="min-w-0 flex-1">
+                                    <span className={`block text-sm font-semibold break-words line-clamp-2 ${e.done ? "text-muted-foreground line-through" : "text-foreground"}`}>{e.title}</span>
+                                    <span className="mt-0.5 flex flex-wrap items-center gap-x-1.5 text-xs text-muted-foreground">
+                                      <span>{e.done ? "Tarea hecha" : t.kind}</span>
+                                      {(ongoing || e.type === "reservation") && !e.allDay && (
+                                        <>
+                                          <span aria-hidden>·</span>
+                                          <span className="tabular-nums">{whenLabel(e)}</span>
+                                        </>
+                                      )}
+                                    </span>
+                                    {detail && <span className="mt-0.5 block text-xs text-muted-foreground line-clamp-1">{detail}</span>}
+                                  </span>
+                                </button>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      </section>
                     );
                   })}
-                </ul>
+                </div>
               )}
             </div>
           )}

@@ -128,6 +128,7 @@ const ROUTE_ACCESS: { prefix: string; allowed: (role: Role) => boolean }[] = [
   { prefix: "/admin/assistant/sin-respuesta", allowed: (r) => r === "SUPERADMIN" },
   { prefix: "/admin/assistant", allowed: (r) => canUseAiAssistant(r) },
   { prefix: "/admin/settings", allowed: (r) => MANAGEMENT_ROLES.includes(r) },
+  { prefix: "/admin/users/permisos", allowed: (r) => r === "SUPERADMIN" },
   { prefix: "/admin/users", allowed: (r) => MANAGEMENT_ROLES.includes(r) || hasPermission(r, PERMISSIONS.MANAGE_USERS) },
   { prefix: "/admin/interventions", allowed: (r) => MANAGEMENT_ROLES.includes(r) },
   { prefix: "/admin/audit", allowed: (r) => hasPermission(r, PERMISSIONS.VIEW_AUDIT_LOGS) },

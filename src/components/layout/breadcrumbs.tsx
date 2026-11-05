@@ -22,6 +22,7 @@ const PATH_DICTIONARY: Record<string, string> = {
   assistant: "Asistente de IA",
   "sin-respuesta": "Preguntas sin respuesta",
   users: "Usuarios",
+  permisos: "Permisos por rol",
   settings: "Configuración",
   budget: "Presupuesto",
   reports: "Reportes",

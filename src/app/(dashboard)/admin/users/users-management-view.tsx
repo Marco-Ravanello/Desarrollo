@@ -1,6 +1,7 @@
 "use client";
 
 import { InitialsAvatar } from "@/components/ui/initials-avatar";
+import Link from "next/link";
 import { useState, useTransition } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -15,7 +16,7 @@ import { EmptyMessage } from "@/components/ui/empty-message";
 import { TableCards } from "@/components/ui/table";
 import {
   Users, UserCheck, UserX, Shield, Search, Plus, Edit2,
-  Building2, KeyRound
+  Building2, KeyRound, ShieldCheck
 } from "lucide-react";
 import {
   Sheet,
@@ -166,6 +167,12 @@ export function UsersManagementView({
         icon={KeyRound}
         actions={
           isSuperadmin && (
+          <div className="flex flex-wrap gap-2">
+          <Button asChild variant="outline" className="h-11 gap-2 rounded-2xl px-4 font-bold">
+            <Link href="/admin/users/permisos">
+              <ShieldCheck className="h-4 w-4" aria-hidden /> Permisos por rol
+            </Link>
+          </Button>
           <Sheet open={isCreateOpen} onOpenChange={setIsCreateOpen}>
             <SheetTrigger asChild>
               <Button className="rounded-2xl h-11 px-5 font-bold text-sm bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20 gap-2">
@@ -183,6 +190,7 @@ export function UsersManagementView({
               <CreateUserForm areas={areas} onSuccess={() => setIsCreateOpen(false)} />
             </SheetContent>
           </Sheet>
+          </div>
           )
         }
       />

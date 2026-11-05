@@ -16,6 +16,15 @@ export interface Novedad {
 export const NOVEDADES: Novedad[] = [
   {
     fecha: "2026-11-05",
+    parte: 6,
+    titulo: "La Agenda en lista por día y el asistente que escribe de a poco",
+    cambios: [
+      "En la Agenda, la vista Lista queda ordenada por día (\"Hoy\", \"Mañana\" y los que siguen), con la hora de cada cosa al costado.",
+      "El Asistente de IA va escribiendo la respuesta a medida que la arma, en lugar de mostrarla toda junta al final. El gráfico y los botones aparecen cuando termina.",
+    ],
+  },
+  {
+    fecha: "2026-11-05",
     parte: 5,
     titulo: "WhatsApp en la ficha y unir fichas repetidas",
     cambios: [
