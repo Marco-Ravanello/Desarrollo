@@ -26,6 +26,9 @@ import { UploadDocumentForm } from "./upload-document-form";
 import { CloseCaseButton } from "./close-case-button";
 import { AddFamilyMemberForm } from "./add-family-member-form";
 import { EditPersonDialog } from "./edit-person-dialog";
+import { MergePersonDialog } from "./merge-person-dialog";
+import { MergedRedirect } from "./merged-redirect";
+import { findMergedInto } from "@/services/person-merge";
 import { RemoveFamilyMemberButton } from "./remove-family-member-button";
 import { PageBreadcrumbs } from "@/components/layout/breadcrumbs-context";
 import { RememberVisit } from "@/components/search/remember-visit";
@@ -39,7 +42,7 @@ import { FichaHistorialView } from "@/components/people/ficha-historial";
 import { plural } from "@/lib/formato";
 import { getCaseStatusConfig } from "@/lib/status-styles";
 import { isSensitiveArea } from "@/lib/sensitive-areas";
-import { canEditSocialRecords, canManageProgramEnrollment, hasPermission, PERMISSIONS } from "@/lib/permissions";
+import { canEditSocialRecords, canManageProgramEnrollment, hasPermission, MANAGEMENT_ROLES, PERMISSIONS } from "@/lib/permissions";
 import { formatFecha, formatFechaHora } from "@/lib/fechas";
 import { barrioLabel } from "@/lib/person-display";
 import { barrioSlug, matchBarrio } from "@/lib/barrios";
@@ -81,23 +84,32 @@ function Dato({ icon: Icon, label, children }: { icon: React.ElementType; label:
  * La ficha de una persona: todo lo que hay de ella en un solo lugar (datos, programas,
  * expedientes, familia, historia y documentos). Reemplaza al legajo y a la Ficha 360° separados.
  */
+/** Si era una ficha que se unió con otra, a cuál pasó; si no, "no encontrada". */
+async function mergedOrNotFound(...ids: string[]): Promise<{ from: string; to: string }> {
+  for (const old of Array.from(new Set(ids.filter(Boolean)))) {
+    const to = await findMergedInto(old);
+    if (to && to !== old) return { from: old, to };
+  }
+  notFound();
+}
+
 export default async function PersonDetailPage({
   params,
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ tab?: string }>;
+  searchParams: Promise<{ tab?: string; unida?: string }>;
 }) {
   const session = await auth();
   const userRole = session?.user?.role;
   const canEdit = canEditSocialRecords(userRole);
   const canViewSensitive = hasPermission(userRole as any, PERMISSIONS.VIEW_SENSITIVE_CASES);
 
-  const [{ id: rawId }, { tab }] = await Promise.all([params, searchParams]);
+  const [{ id: rawId }, { tab, unida }] = await Promise.all([params, searchParams]);
   const id = decodeURIComponent(rawId);
   const person: any = await getPersonById(id);
   const dni = person?.dni || cleanDni(id);
-  if (!dni) notFound();
+  if (!dni) return <MergedRedirect {...await mergedOrNotFound(id)} />;
 
   const [ficha, historial, grupo, registroFamily, areas, cambiosDatos, editData, addressOptions, enrollment, programHistory, visitas, cursos] = await Promise.all([
     getFichaSocialByDniFromDb(dni),
@@ -116,7 +128,10 @@ export default async function PersonDetailPage({
   const canManagePrograms = canManageProgramEnrollment(userRole) && (Boolean(person) || enrollment.inPadron);
 
   // Sin legajo ni padrón, pero con fichas de emergencia: se muestra lo que hay.
-  if (!person && historial.fichasTormenta.length === 0) notFound();
+  if (!person && historial.fichasTormenta.length === 0) {
+    return <MergedRedirect {...await mergedOrNotFound(id, dni)} />;
+  }
+  const canMerge = Boolean(userRole && MANAGEMENT_ROLES.includes(userRole as any));
 
   const nombre = person ? `${person.lastName}, ${person.firstName}`.replace(/^,\s*|,\s*$/g, "") : historial.nombre || `DNI ${dni}`;
   const enPadron = ficha.encontrado;
@@ -151,6 +166,11 @@ export default async function PersonDetailPage({
     <div className="space-y-6">
       <PageBreadcrumbs items={[{ label: "Registro Único", href: "/people" }, { label: nombre, active: true }]} />
       {person && <RememberVisit kind="person" id={person.id} />}
+      {unida && /^[A-Za-z0-9-]{1,20}$/.test(unida) && (
+        <p className="rounded-xl border border-border/60 bg-muted/40 px-3 py-2 text-sm text-foreground" role="status">
+          La ficha del {unida.startsWith("TEMP-") ? "DNI provisorio" : `DNI ${unida}`} se unió con esta. Todo lo que tenía está acá.
+        </p>
+      )}
 
       <PersonIdCard
         nombre={nombre}
@@ -172,6 +192,7 @@ export default async function PersonDetailPage({
         etiquetas={etiquetas}
         enPadron={enPadron}
         editButton={editData && addressOptions ? <EditPersonDialog person={editData} options={addressOptions} triggerClassName={ON_BAND_BUTTON} /> : undefined}
+        extraButtons={canMerge ? <MergePersonDialog dni={dni} triggerClassName={ON_BAND_BUTTON} /> : undefined}
         newCaseHref={person && canEdit ? `/cases/new?dni=${encodeURIComponent(dni)}` : null}
       />
 

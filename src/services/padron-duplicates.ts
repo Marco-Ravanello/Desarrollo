@@ -1,6 +1,5 @@
 import prisma from "@/lib/prisma";
-import { Prisma } from "@prisma/client";
-import { PADRON_PROGRAMS } from "@/lib/padron-programs";
+import { mergePeople } from "@/services/person-merge";
 import { duplicateSignals, nameKey, pairKey, type DuplicateSignal } from "@/lib/padron-duplicates";
 import { nombrePropio } from "@/lib/nombres";
 
@@ -125,96 +124,10 @@ export async function dismissPadronDuplicate(userId: string, dniA: string, dniB:
   });
 }
 
-/** Datos del padrón que se completan con los de la persona que se une, si están vacíos. */
-const FILL_FIELDS = [
-  "nombre_completo", "roles", "dnis_familiares", "nombres_familiares", "localidad", "barrio", "direccion",
-  "telefono", "email", "fecha_nacimiento", "edad_aprox", "genero",
-] as const;
-
-const isEmpty = (v: unknown) => v === null || v === undefined || (typeof v === "string" && v.trim() === "");
-
 /**
- * Une dos registros del padrón en uno: queda el DNI `keepDni` y desaparece `removeDni`.
- * - Programas: queda en todos los de los dos.
- * - Datos: se completan los vacíos con los del otro; no se pisa nada.
- * - Expedientes, intervenciones, fichas de tormenta y documentos pasan a la persona que queda.
- * Todo queda en la auditoría, con una copia del registro que se borra.
+ * Une dos registros del padrón en uno: queda el DNI `keepDni` y desaparece `removeDni`. Lo hace
+ * `mergePeople` (services/person-merge.ts), igual que "Unir con otra ficha" en la ficha de la persona.
  */
 export async function mergePadronDuplicates(userId: string, keepDni: string, removeDni: string) {
-  if (!keepDni || !removeDni || keepDni === removeDni) throw new Error("Elegí dos DNI distintos.");
-
-  await prisma.$transaction(async (tx) => {
-    const [keep, remove] = await Promise.all([
-      tx.padronUnificado.findUnique({ where: { dni: keepDni } }),
-      tx.padronUnificado.findUnique({ where: { dni: removeDni } }),
-    ]);
-    if (!keep || !remove) throw new Error("Alguna de las dos personas ya no está en el padrón. Actualizá la página.");
-
-    const data: Record<string, unknown> = {};
-    for (const f of FILL_FIELDS) if (isEmpty(keep[f]) && !isEmpty(remove[f])) data[f] = remove[f];
-    if ((keep.latitude == null || keep.longitude == null) && remove.latitude != null && remove.longitude != null) {
-      Object.assign(data, {
-        latitude: remove.latitude,
-        longitude: remove.longitude,
-        geo_estado: remove.geo_estado,
-        geo_fuente: remove.geo_fuente,
-        geo_actualizado: remove.geo_actualizado,
-      });
-    }
-    let flags = 0;
-    for (const p of PADRON_PROGRAMS) {
-      const value = Math.max(keep[p.column] || 0, remove[p.column] || 0);
-      if (value !== keep[p.column]) data[p.column] = value;
-      if (value > 0) flags += 1;
-    }
-    const programs = Array.from(new Set([...splitPrograms(keep.programas_activos), ...splitPrograms(remove.programas_activos)]));
-    data.programas_activos = programs.length ? programs.join(" | ") : keep.programas_activos;
-    data.cantidad_programas = Math.max(programs.length, flags, keep.cantidad_programas);
-
-    await tx.padronUnificado.update({ where: { dni: keepDni }, data });
-    await tx.participacionPrograma.updateMany({ where: { dni: removeDni }, data: { dni: keepDni } });
-    await tx.stormVictimRecord.updateMany({ where: { dni: removeDni }, data: { dni: keepDni } });
-
-    // Legajo (Registro Único): si existen los dos, todo pasa al que queda.
-    const [keepPerson, removePerson] = await Promise.all([
-      tx.person.findUnique({ where: { dni: keepDni } }),
-      tx.person.findUnique({ where: { dni: removeDni } }),
-    ]);
-    if (removePerson && keepPerson) {
-      const moved = { personId: keepPerson.id };
-      await tx.case.updateMany({ where: { personId: removePerson.id }, data: moved });
-      await tx.intervention.updateMany({ where: { personId: removePerson.id }, data: moved });
-      await tx.stormVictimRecord.updateMany({ where: { personId: removePerson.id }, data: moved });
-      await tx.document.updateMany({ where: { personId: removePerson.id }, data: moved });
-      const fill: Prisma.PersonUpdateInput = {};
-      if (!keepPerson.birthDate && removePerson.birthDate) fill.birthDate = removePerson.birthDate;
-      if (!keepPerson.gender && removePerson.gender) fill.gender = removePerson.gender;
-      if (!keepPerson.address && removePerson.address) fill.address = removePerson.address;
-      if (!keepPerson.phone && removePerson.phone) fill.phone = removePerson.phone;
-      if (!keepPerson.email && removePerson.email) fill.email = removePerson.email;
-      if (keepPerson.latitude == null && removePerson.latitude != null) {
-        fill.latitude = removePerson.latitude;
-        fill.longitude = removePerson.longitude;
-      }
-      if (!keepPerson.familyId && removePerson.familyId) {
-        fill.family = { connect: { id: removePerson.familyId } };
-        fill.isFamilyHead = removePerson.isFamilyHead;
-      }
-      await tx.person.delete({ where: { id: removePerson.id } });
-      if (Object.keys(fill).length) await tx.person.update({ where: { id: keepPerson.id }, data: fill });
-    } else if (removePerson) {
-      await tx.person.update({ where: { id: removePerson.id }, data: { dni: keepDni } });
-    }
-
-    await tx.padronUnificado.delete({ where: { dni: removeDni } });
-    await tx.auditLog.create({
-      data: {
-        userId,
-        action: "PADRON_DUPLICADO_UNIDO",
-        entity: "PadronUnificado",
-        entityId: keepDni,
-        details: `Se unió el DNI ${removeDni} en el DNI ${keepDni}. Registro borrado: ${JSON.stringify(remove)}`,
-      },
-    });
-  });
+  await mergePeople(userId, keepDni, removeDni);
 }
