@@ -3,15 +3,23 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { ArrowUp, ArrowUpRight, Copy, Loader2, Mic, MicOff, RefreshCw, Sparkles, Square, Volume2, VolumeX } from "lucide-react";
+import { ArrowUp, ArrowUpRight, Copy, History, Loader2, Mic, MicOff, RefreshCw, Sparkles, Square, Volume2, VolumeX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/layout/page-header";
 import { AssistantAnswer } from "@/components/assistant/assistant-answer";
 import { AssistantChart } from "@/components/assistant/assistant-chart";
 import { AssistantWelcome } from "@/components/assistant/assistant-welcome";
-import { AssistantProposal, type AssistantProposalData } from "@/components/assistant/assistant-proposal";
+import { AssistantProposal, type AssistantProposalData, type ProposalResult } from "@/components/assistant/assistant-proposal";
+import { AssistantHistory, type ConversationItem } from "@/components/assistant/assistant-history";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { confirmar } from "@/components/ui/confirm-dialog";
 import { useSession } from "next-auth/react";
-import { plainAnswer } from "@/lib/assistant-text";
+import { plainAnswer, type AnswerStat } from "@/lib/assistant-text";
+import {
+  deleteAssistantConversationAction,
+  getAssistantConversationAction,
+  listAssistantConversationsAction,
+} from "@/app/(dashboard)/admin/actions/assistant-actions";
 
 type Source = { type?: string; name: string; url?: string };
 type Action = { label: string; actionType: string; payload?: { path?: string } };
@@ -23,10 +31,27 @@ type Message = {
   status?: string;
   stopped?: boolean;
   failed?: boolean;
-  dataSummary?: { sources?: Source[]; actions?: Action[]; chart?: any; proposal?: AssistantProposalData };
+  /** Con qué id quedó guardada la respuesta (para anotar si se confirmó la tarjeta). */
+  savedId?: string;
+  dataSummary?: {
+    sources?: Source[];
+    actions?: Action[];
+    chart?: any;
+    stats?: AnswerStat[];
+    proposal?: AssistantProposalData;
+    proposalResult?: ProposalResult;
+  };
 };
 
 const newId = () => Math.random().toString(36).slice(2);
+
+/** La conversación abierta queda en la dirección (?c=…), así sobrevive a recargar o ir y volver. */
+function setConversationInUrl(id: string | null) {
+  const url = new URL(window.location.href);
+  if (id) url.searchParams.set("c", id);
+  else url.searchParams.delete("c");
+  window.history.replaceState(window.history.state, "", url.toString());
+}
 
 export default function AssistantPage() {
   const router = useRouter();
@@ -36,10 +61,81 @@ export default function AssistantPage() {
   const [loading, setLoading] = useState(false);
   const [speakingId, setSpeakingId] = useState<string | null>(null);
   const [listening, setListening] = useState(false);
+  const [conversationId, setConversationId] = useState<string | null>(null);
+  const [conversations, setConversations] = useState<ConversationItem[] | null>(null);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [opening, setOpening] = useState(false);
   const recognitionRef = useRef<any>(null);
   const abortRef = useRef<AbortController | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  async function refreshConversations() {
+    try {
+      setConversations(await listAssistantConversationsAction());
+    } catch {
+      setConversations((prev) => prev ?? []);
+    }
+  }
+
+  async function openConversation(id: string) {
+    setHistoryOpen(false);
+    if (id === conversationId && messages.length) return;
+    abortRef.current?.abort();
+    window.speechSynthesis?.cancel();
+    setSpeakingId(null);
+    setOpening(true);
+    try {
+      const conv = await getAssistantConversationAction(id);
+      if (!conv) {
+        toast.error("Esa conversación ya no está: se borró o pasaron más de 10 días.");
+        setConversationInUrl(null);
+        refreshConversations();
+        return;
+      }
+      setConversationId(conv.id);
+      setConversationInUrl(conv.id);
+      setMessages(
+        conv.messages.map((m) => ({
+          id: m.id,
+          sender: m.sender,
+          text: m.text,
+          savedId: m.sender === "assistant" ? m.id : undefined,
+          dataSummary: (m.data ?? undefined) as Message["dataSummary"],
+        })),
+      );
+    } catch {
+      toast.error("No se pudo abrir la conversación. Probá de nuevo.");
+    } finally {
+      setOpening(false);
+    }
+  }
+
+  async function removeConversation(item: ConversationItem) {
+    const ok = await confirmar({
+      title: "¿Borrar esta conversación?",
+      description: `"${item.title}" se borra para siempre. Lo que hayas guardado desde ahí (tareas, pedidos de vehículo) no se borra.`,
+      confirmLabel: "Borrar",
+      danger: true,
+    });
+    if (!ok) return;
+    const res = await deleteAssistantConversationAction(item.id);
+    if (!res.ok) {
+      toast.error("No se pudo borrar la conversación.");
+      return;
+    }
+    setConversations((prev) => (prev ?? []).filter((c) => c.id !== item.id));
+    if (item.id === conversationId) newConversation();
+    toast.success("Se borró la conversación.");
+  }
+
+  // Al entrar: la lista de conversaciones y, si la dirección trae una, esa conversación.
+  useEffect(() => {
+    refreshConversations();
+    const id = new URLSearchParams(window.location.search).get("c");
+    if (id) openConversation(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Baja hasta lo último a medida que llega la respuesta. La bienvenida se ve desde arriba.
   useEffect(() => {
@@ -132,11 +228,7 @@ export default function AssistantPage() {
     if (!text || loading) return;
     const history = messages.filter((m) => m.text).map((m) => ({ role: m.sender, content: m.text }));
     const answerId = newId();
-    setMessages((prev) => [
-      ...prev,
-      { id: newId(), sender: "user", text },
-      { id: answerId, sender: "assistant", text: "", status: "Leyendo tu pregunta…" },
-    ]);
+    setMessages((prev) => [...prev, { id: newId(), sender: "user", text }, { id: answerId, sender: "assistant", text: "", status: "Leyendo tu pregunta…" }]);
     setInput("");
     setLoading(true);
     const controller = new AbortController();
@@ -146,7 +238,7 @@ export default function AssistantPage() {
       const response = await fetch("/api/assistant/stream", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query: text, history }),
+        body: JSON.stringify({ query: text, history, conversationId }),
         signal: controller.signal,
       });
       if (!response.ok || !response.body) {
@@ -177,7 +269,14 @@ export default function AssistantPage() {
             answer += payload.chunk;
             update(answerId, { text: answer, status: undefined });
           }
-          if (payload.done) update(answerId, { dataSummary: payload.dataSummary, status: undefined });
+          if (payload.done) {
+            update(answerId, { dataSummary: payload.dataSummary, status: undefined, savedId: payload.messageId });
+            if (payload.conversationId) {
+              setConversationId(payload.conversationId);
+              setConversationInUrl(payload.conversationId);
+              refreshConversations();
+            }
+          }
           if (payload.error) throw new Error(payload.error);
         }
       }
@@ -205,6 +304,8 @@ export default function AssistantPage() {
     setSpeakingId(null);
     setMessages([]);
     setInput("");
+    setConversationId(null);
+    setConversationInUrl(null);
   }
 
   const empty = messages.length === 0;
@@ -217,151 +318,214 @@ export default function AssistantPage() {
         description="Preguntale por los datos de la Secretaría y te responde con números, tablas y gráficos."
         icon={Sparkles}
         actions={
-          !empty ? (
-            <Button variant="outline" onClick={newConversation} className="gap-2">
-              <RefreshCw className="h-4 w-4" /> Nueva conversación
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setHistoryOpen(true)} className="gap-2 lg:hidden">
+              <History className="h-4 w-4" /> Anteriores
             </Button>
-          ) : undefined
+            {!empty && (
+              <Button variant="outline" onClick={newConversation} className="gap-2">
+                <RefreshCw className="h-4 w-4" /> Nueva conversación
+              </Button>
+            )}
+          </div>
         }
       />
 
-      <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto">
-        <div className="mx-auto w-full max-w-3xl px-1 sm:px-4">
-          {empty ? (
-            <AssistantWelcome onAsk={ask} disabled={loading} role={session?.user?.role} />
-          ) : (
-            <ol className="space-y-6 py-4" aria-live="polite">
-              {messages.map((m) =>
-                m.sender === "user" ? (
-                  <li key={m.id} className="flex justify-end">
-                    <p className="max-w-[85%] whitespace-pre-wrap rounded-2xl rounded-br-md bg-primary px-4 py-2.5 text-sm text-primary-foreground sm:text-[15px]">
-                      {m.text}
-                    </p>
-                  </li>
-                ) : (
-                  <li key={m.id} className="flex gap-3">
-                    <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-orange-50 text-orange-500 dark:bg-orange-500/10" aria-hidden>
-                      <Sparkles className="h-4 w-4" />
-                    </span>
-                    <div className="min-w-0 flex-1 text-sm leading-relaxed text-foreground sm:text-[15px]">
-                      {m.status && (
-                        <p className="flex items-center gap-2 py-1.5 text-muted-foreground" role="status">
-                          <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-                          {m.status}
+      <div className="flex min-h-0 flex-1 gap-4">
+        <aside className="hidden w-64 shrink-0 flex-col rounded-2xl border border-border/70 bg-card p-2 lg:flex" aria-label="Conversaciones anteriores">
+          <h2 className="flex items-center gap-2 px-2 pb-2 pt-1 text-sm font-semibold text-foreground">
+            <History className="h-4 w-4 text-muted-foreground" aria-hidden /> Conversaciones anteriores
+          </h2>
+          <AssistantHistory
+            className="flex-1"
+            conversations={conversations}
+            activeId={conversationId}
+            onOpen={openConversation}
+            onDelete={removeConversation}
+          />
+        </aside>
+
+        <div className="flex min-w-0 flex-1 flex-col gap-3">
+          <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto">
+            <div className="mx-auto w-full max-w-3xl px-1 sm:px-4">
+              {opening ? (
+                <p className="flex items-center gap-2 py-10 text-sm text-muted-foreground" role="status">
+                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> Abriendo la conversación…
+                </p>
+              ) : empty ? (
+                <AssistantWelcome onAsk={ask} disabled={loading} role={session?.user?.role} />
+              ) : (
+                <ol className="space-y-6 py-4" aria-live="polite">
+                  {messages.map((m) =>
+                    m.sender === "user" ? (
+                      <li key={m.id} className="flex justify-end">
+                        <p className="max-w-[85%] whitespace-pre-wrap rounded-2xl rounded-br-md bg-primary px-4 py-2.5 text-sm text-primary-foreground sm:text-[15px]">
+                          {m.text}
                         </p>
-                      )}
-                      {m.text && (m.failed ? <p className="text-rose-700 dark:text-rose-300">{m.text}</p> : <AssistantAnswer text={m.text} />)}
-                      {m.stopped && <p className="mt-1 text-xs text-muted-foreground">{m.text ? "Frenaste la respuesta acá." : "Frenaste la respuesta."}</p>}
-                      {m.dataSummary?.chart && <AssistantChart chart={m.dataSummary.chart} />}
-                      {m.dataSummary?.proposal && <AssistantProposal proposal={m.dataSummary.proposal} />}
+                      </li>
+                    ) : (
+                      <li key={m.id} className="flex gap-3">
+                        <span
+                          className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-orange-50 text-orange-500 dark:bg-orange-500/10"
+                          aria-hidden
+                        >
+                          <Sparkles className="h-4 w-4" />
+                        </span>
+                        <div className="min-w-0 flex-1 text-sm leading-relaxed text-foreground sm:text-[15px]">
+                          {m.status && (
+                            <p className="flex items-center gap-2 py-1.5 text-muted-foreground" role="status">
+                              <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                              {m.status}
+                            </p>
+                          )}
+                          {m.text &&
+                            (m.failed ? (
+                              <p className="text-rose-700 dark:text-rose-300">{m.text}</p>
+                            ) : (
+                              <AssistantAnswer text={m.text} stats={m.dataSummary?.stats} />
+                            ))}
+                          {m.stopped && (
+                            <p className="mt-1 text-xs text-muted-foreground">{m.text ? "Frenaste la respuesta acá." : "Frenaste la respuesta."}</p>
+                          )}
+                          {m.dataSummary?.chart && <AssistantChart chart={m.dataSummary.chart} />}
+                          {m.dataSummary?.proposal && (
+                            <AssistantProposal proposal={m.dataSummary.proposal} messageId={m.savedId} initialResult={m.dataSummary.proposalResult} />
+                          )}
 
-                      {!!m.dataSummary?.sources?.length && (
-                        <div className="mt-3">
-                          <p className="mb-1.5 text-xs font-medium text-muted-foreground">Sale de estos datos</p>
-                          <div className="flex flex-wrap gap-1.5">
-                            {m.dataSummary.sources.map((src, i) =>
-                              src.url ? (
-                                <button
-                                  key={i}
-                                  type="button"
-                                  onClick={() => router.push(src.url!)}
-                                  className="inline-flex items-center gap-1 rounded-full border border-border/70 bg-card px-2.5 py-1 text-xs font-medium text-foreground/85 hover:bg-muted hover:text-foreground"
-                                >
-                                  {src.name}
-                                  <ArrowUpRight className="h-3 w-3 text-muted-foreground" aria-hidden />
-                                </button>
-                              ) : (
-                                <span key={i} className="inline-flex items-center rounded-full border border-border/70 bg-card px-2.5 py-1 text-xs font-medium text-foreground/85">
-                                  {src.name}
-                                </span>
-                              )
-                            )}
-                          </div>
-                        </div>
-                      )}
+                          {!!m.dataSummary?.sources?.length && (
+                            <div className="mt-3">
+                              <p className="mb-1.5 text-xs font-medium text-muted-foreground">Sale de estos datos</p>
+                              <div className="flex flex-wrap gap-1.5">
+                                {m.dataSummary.sources.map((src, i) =>
+                                  src.url ? (
+                                    <button
+                                      key={i}
+                                      type="button"
+                                      onClick={() => router.push(src.url!)}
+                                      className="inline-flex items-center gap-1 rounded-full border border-border/70 bg-card px-2.5 py-1 text-xs font-medium text-foreground/85 hover:bg-muted hover:text-foreground"
+                                    >
+                                      {src.name}
+                                      <ArrowUpRight className="h-3 w-3 text-muted-foreground" aria-hidden />
+                                    </button>
+                                  ) : (
+                                    <span
+                                      key={i}
+                                      className="inline-flex items-center rounded-full border border-border/70 bg-card px-2.5 py-1 text-xs font-medium text-foreground/85"
+                                    >
+                                      {src.name}
+                                    </span>
+                                  ),
+                                )}
+                              </div>
+                            </div>
+                          )}
 
-                      {!!m.dataSummary?.actions?.length && (
-                        <div className="mt-3 flex flex-wrap gap-2">
-                          {m.dataSummary.actions.map((act, i) => (
-                            <Button key={i} size="sm" variant="outline" onClick={() => runAction(act)} className="h-8 gap-1.5">
-                              {act.label}
-                              <ArrowUpRight className="h-3.5 w-3.5" aria-hidden />
-                            </Button>
-                          ))}
-                        </div>
-                      )}
+                          {!!m.dataSummary?.actions?.length && (
+                            <div className="mt-3 flex flex-wrap gap-2">
+                              {m.dataSummary.actions.map((act, i) => (
+                                <Button key={i} size="sm" variant="outline" onClick={() => runAction(act)} className="h-8 gap-1.5">
+                                  {act.label}
+                                  <ArrowUpRight className="h-3.5 w-3.5" aria-hidden />
+                                </Button>
+                              ))}
+                            </div>
+                          )}
 
-                      {m.text && !m.status && !m.failed && (
-                        <div className="mt-2 flex gap-1 text-muted-foreground">
-                          <Button size="sm" variant="ghost" className="h-7 gap-1.5 px-2 text-xs" onClick={() => copy(m)}>
-                            <Copy className="h-3.5 w-3.5" /> Copiar
-                          </Button>
-                          <Button size="sm" variant="ghost" className="h-7 gap-1.5 px-2 text-xs" onClick={() => speak(m)} aria-pressed={speakingId === m.id}>
-                            {speakingId === m.id ? <VolumeX className="h-3.5 w-3.5" /> : <Volume2 className="h-3.5 w-3.5" />}
-                            {speakingId === m.id ? "Dejar de leer" : "Escuchar"}
-                          </Button>
+                          {m.text && !m.status && !m.failed && (
+                            <div className="mt-2 flex gap-1 text-muted-foreground">
+                              <Button size="sm" variant="ghost" className="h-7 gap-1.5 px-2 text-xs" onClick={() => copy(m)}>
+                                <Copy className="h-3.5 w-3.5" /> Copiar
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-7 gap-1.5 px-2 text-xs"
+                                onClick={() => speak(m)}
+                                aria-pressed={speakingId === m.id}
+                              >
+                                {speakingId === m.id ? <VolumeX className="h-3.5 w-3.5" /> : <Volume2 className="h-3.5 w-3.5" />}
+                                {speakingId === m.id ? "Dejar de leer" : "Escuchar"}
+                              </Button>
+                            </div>
+                          )}
                         </div>
-                      )}
-                    </div>
-                  </li>
-                )
+                      </li>
+                    ),
+                  )}
+                </ol>
               )}
-            </ol>
-          )}
+            </div>
+          </div>
+
+          <div className="mx-auto w-full max-w-3xl shrink-0 px-1 sm:px-4">
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                ask(input);
+              }}
+              className="flex items-end gap-2 rounded-2xl border border-border/80 bg-card p-2 shadow-sm focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/15"
+            >
+              <label htmlFor="assistant-question" className="sr-only">
+                Tu pregunta
+              </label>
+              <textarea
+                id="assistant-question"
+                ref={inputRef}
+                rows={1}
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    ask(input);
+                  }
+                }}
+                placeholder={listening ? "Te escucho…" : "Escribí tu pregunta"}
+                className="max-h-40 min-h-[40px] flex-1 resize-none bg-transparent px-2 py-2 text-sm text-foreground outline-none placeholder:text-muted-foreground sm:text-[15px]"
+              />
+              <Button
+                type="button"
+                variant={listening ? "destructive" : "ghost"}
+                size="icon"
+                onClick={toggleVoice}
+                className="h-10 w-10 shrink-0 rounded-xl"
+                aria-label={listening ? "Dejar de dictar" : "Dictar la pregunta"}
+                title={listening ? "Dejar de dictar" : "Dictar la pregunta"}
+              >
+                {listening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+              </Button>
+              {loading ? (
+                <Button type="button" onClick={stop} className="h-10 shrink-0 gap-1.5 rounded-xl px-3" aria-label="Frenar la respuesta">
+                  <Square className="h-3.5 w-3.5 fill-current" /> Frenar
+                </Button>
+              ) : (
+                <Button type="submit" size="icon" disabled={!input.trim()} className="h-10 w-10 shrink-0 rounded-xl" aria-label="Enviar la pregunta">
+                  <ArrowUp className="h-4 w-4" />
+                </Button>
+              )}
+            </form>
+            <p className="mt-1.5 text-center text-xs text-muted-foreground">
+              Responde con los datos de la app. Revisá los números importantes antes de usarlos en un informe.
+            </p>
+          </div>
         </div>
       </div>
 
-      <div className="mx-auto w-full max-w-3xl shrink-0 px-1 sm:px-4">
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            ask(input);
-          }}
-          className="flex items-end gap-2 rounded-2xl border border-border/80 bg-card p-2 shadow-sm focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/15"
-        >
-          <label htmlFor="assistant-question" className="sr-only">
-            Tu pregunta
-          </label>
-          <textarea
-            id="assistant-question"
-            ref={inputRef}
-            rows={1}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                ask(input);
-              }
-            }}
-            placeholder={listening ? "Te escucho…" : "Escribí tu pregunta"}
-            className="max-h-40 min-h-[40px] flex-1 resize-none bg-transparent px-2 py-2 text-sm text-foreground outline-none placeholder:text-muted-foreground sm:text-[15px]"
+      <Sheet open={historyOpen} onOpenChange={setHistoryOpen}>
+        <SheetContent side="left" className="flex w-[20rem] max-w-[88vw] flex-col gap-0 p-3">
+          <SheetHeader className="px-2 pb-3 text-left">
+            <SheetTitle>Conversaciones anteriores</SheetTitle>
+            <SheetDescription className="sr-only">Tus conversaciones con el asistente de los últimos 10 días.</SheetDescription>
+          </SheetHeader>
+          <AssistantHistory
+            className="min-h-0 flex-1"
+            conversations={conversations}
+            activeId={conversationId}
+            onOpen={openConversation}
+            onDelete={removeConversation}
           />
-          <Button
-            type="button"
-            variant={listening ? "destructive" : "ghost"}
-            size="icon"
-            onClick={toggleVoice}
-            className="h-10 w-10 shrink-0 rounded-xl"
-            aria-label={listening ? "Dejar de dictar" : "Dictar la pregunta"}
-            title={listening ? "Dejar de dictar" : "Dictar la pregunta"}
-          >
-            {listening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
-          </Button>
-          {loading ? (
-            <Button type="button" onClick={stop} className="h-10 shrink-0 gap-1.5 rounded-xl px-3" aria-label="Frenar la respuesta">
-              <Square className="h-3.5 w-3.5 fill-current" /> Frenar
-            </Button>
-          ) : (
-            <Button type="submit" size="icon" disabled={!input.trim()} className="h-10 w-10 shrink-0 rounded-xl" aria-label="Enviar la pregunta">
-              <ArrowUp className="h-4 w-4" />
-            </Button>
-          )}
-        </form>
-        <p className="mt-1.5 text-center text-xs text-muted-foreground">
-          Responde con los datos de la app. Revisá los números importantes antes de usarlos en un informe.
-        </p>
-      </div>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }

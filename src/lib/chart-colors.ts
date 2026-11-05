@@ -11,3 +11,23 @@ export type ChartPalette = readonly string[];
 export function chartPalette(dark: boolean): ChartPalette {
   return dark ? CHART_COLORS_DARK : CHART_COLORS;
 }
+
+/**
+ * Colores con sentido para los gráficos, los mismos que las insignias de estado (lib/status-tones.ts):
+ * rojo = urgente o fuera de servicio, naranja = alta o en el taller, verde = disponible, etc.
+ */
+const TONE_HEX: Record<string, [light: string, dark: string]> = {
+  red: ["#E11D48", "#FB7185"],
+  orange: ["#EA580C", "#FB923C"],
+  amber: ["#D97706", "#FBBF24"],
+  blue: ["#2563EB", "#60A5FA"],
+  green: ["#059669", "#34D399"],
+  violet: ["#7C3AED", "#A78BFA"],
+  slate: ["#64748B", "#94A3B8"],
+};
+
+/** El color de un tono de estado ("red", "green"…); null si no es uno conocido. */
+export function toneColor(tone: string | undefined | null, dark: boolean): string | null {
+  const hex = tone ? TONE_HEX[tone] : undefined;
+  return hex ? hex[dark ? 1 : 0] : null;
+}

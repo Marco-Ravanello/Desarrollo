@@ -35,16 +35,23 @@ describe("expedientes con filtros", () => {
     const { ninez } = await seedCases();
     const all = await handleCasesTool({ prioridad: "URGENTE", agrupar_por: "area", grafico: true }, buildAssistantScope({ role: "SUPERADMIN" }));
     expect(all.answer).toContain("Hay **3 expedientes abiertos** de prioridad urgente.");
-    expect(all.answer).toContain("| Coordinación de Violencia de Género | 1 |");
+    expect(all.answer).toMatch(/\| \[Coordinación de Violencia de Género\]\(\/cases\?status=ACTIVOS&priority=URGENTE&area=[^)]+\) \| 1 \|/);
     expect(all.dataSummary.chart.data).toHaveLength(3);
+    expect(all.dataSummary.chart.columns).toEqual(["Área", "Expedientes"]);
+    expect(all.dataSummary.stats).toEqual([{ label: "Expedientes abiertos", value: "3", href: "/cases?status=ACTIVOS&priority=URGENTE" }]);
+    const byPriority = await handleCasesTool({ agrupar_por: "prioridad", grafico: true }, buildAssistantScope({ role: "SUPERADMIN" }));
+    expect(byPriority.dataSummary.chart.data).toEqual([
+      { name: "Urgente", value: 3, tone: "red" },
+      { name: "Media", value: 1, tone: "slate" },
+    ]);
     expect(all.dataSummary.actions[0].payload.path).toBe("/cases?status=ACTIVOS&priority=URGENTE");
     expect(all.answer).not.toContain("Caso inventado");
 
     const director = buildAssistantScope({ role: "DIRECTOR_AREA", areaId: ninez.id });
     const own = await handleCasesTool({ agrupar_por: "etiqueta" }, director);
     expect(own.answer).toContain("Hay **2 expedientes abiertos**.");
-    expect(own.answer).toContain("| Niñez y adolescencia | 2 |");
-    expect(own.answer).toContain("| Discapacidad | 1 |");
+    expect(own.answer).toContain("| [Niñez y adolescencia](/cases?status=ACTIVOS&label=NINEZ) | 2 |");
+    expect(own.answer).toContain("| [Discapacidad](/cases?status=ACTIVOS&label=DISCAPACIDAD) | 1 |");
     expect(own.answer).not.toContain("Hábitat");
     expect(own.answer).toContain("Te muestro solo los datos de tu área.");
 

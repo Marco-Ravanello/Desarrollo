@@ -4,6 +4,7 @@ import { MANAGEMENT_ONLY_ANSWER, scopeCanSee, scopedAreaWhere, type AssistantSco
 import { columnasDelCruce, condicionDelCruce, fraseDelCruce, nombreDelModo, type ModoCruce } from "@/lib/cruces";
 import { PADRON_PROGRAMS } from "@/lib/padron-programs";
 import { plural } from "@/lib/formato";
+import { answerStat } from "@/lib/assistant-text";
 import { canAccessPath } from "@/lib/permissions";
 import type { AIResponse } from "./types";
 import {
@@ -154,7 +155,13 @@ async function crossPrograms(names: string[], modeName: string): Promise<AIRespo
   return {
     intent: "crossing_query",
     answer: `### Cruce de programas (${nombreDelModo(modo)})\n\nHay **${plural(total, "persona")}** ${fraseDelCruce(labels, modo)}.`,
-    dataSummary: { hasResults: true, total, sources: [{ type: "Cruces de programas", name: labels.join(" + "), url: "/people/programas/cruces" }], actions },
+    dataSummary: {
+      hasResults: true,
+      total,
+      stats: [answerStat(`Personas (${nombreDelModo(modo).toLowerCase()})`, total)],
+      sources: [{ type: "Cruces de programas", name: labels.join(" + "), url: "/people/programas/cruces" }],
+      actions,
+    },
   };
 }
 

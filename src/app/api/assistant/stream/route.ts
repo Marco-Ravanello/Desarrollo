@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { canUseAiAssistant } from "@/lib/permissions";
 import { queryAIAssistantStream } from "@/services/ai-assistant";
+import { saveExchange } from "@/services/assistant/conversations";
 
 export const dynamic = "force-dynamic";
 
@@ -15,7 +16,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { query, history } = await req.json();
+    const { query, history, conversationId } = await req.json();
     if (!query || typeof query !== "string" || query.trim() === "") {
       return NextResponse.json({ error: "La consulta no puede estar vacía." }, { status: 400 });
     }
@@ -38,7 +39,20 @@ export async function POST(req: NextRequest) {
             areaId: session.user.areaId,
             onStatus: (status) => send(null, { status }),
           });
-          send("metadata", { done: true, intent: result.intent, dataSummary: result.dataSummary });
+          // Se guarda la pregunta con su respuesta, salvo que la persona la haya frenado.
+          let saved: { conversationId: string; messageId: string } | null = null;
+          if (!req.signal.aborted && result.answer) {
+            saved = await saveExchange(session.user.id!, {
+              conversationId: typeof conversationId === "string" ? conversationId : null,
+              question: query,
+              answer: result.answer,
+              data: result.dataSummary,
+            }).catch((err) => {
+              console.error("No se pudo guardar la conversación del asistente:", err);
+              return null;
+            });
+          }
+          send("metadata", { done: true, intent: result.intent, dataSummary: result.dataSummary, ...(saved ?? {}) });
         } catch (err: any) {
           console.error("Streaming error in /api/assistant/stream:", err);
           send("error", { error: "No se pudo responder la consulta. Probá de nuevo." });

@@ -7,6 +7,8 @@ import { formatNumber, plural } from "@/lib/formato";
 import { diaAR } from "@/lib/fechas";
 import { AREA_NOTE, NO_AREA_ANSWER, scopedAreaWhere, scopedCaseWhere, scopeWithoutArea, type AssistantScope } from "@/lib/assistant-scope";
 import { matchAreaName, type ToolArgs } from "@/lib/assistant-tools";
+import { answerLink, answerStat } from "@/lib/assistant-text";
+import { CASE_STATUS_TONE, PRIORITY_TONE, type StatusTone } from "@/lib/status-tones";
 import type { AIResponse } from "./types";
 import { handleCasesSummary } from "./module-handlers";
 
@@ -135,13 +137,22 @@ export async function handleCasesTool(args: ToolArgs, scope: AssistantScope, now
   const filtersText = described.length ? ` ${described.join(", ")}` : "";
   let answer = `### Expedientes\n\nHay **${noun}**${filtersText}.`;
 
-  let rows: { name: string; value: number }[] = [];
+  let rows: GroupRow[] = [];
   const chosenGroup = group ?? (wantsChart ? "area" : null);
   if (total > 0 && chosenGroup) rows = await groupCases(chosenGroup, where, areas, now);
 
   if (rows.length) {
     answer += `\n\n| ${GROUP_TITLE[chosenGroup!]} | Expedientes |\n| :--- | ---: |\n`;
-    for (const r of rows) answer += `| ${cell(r.name)} | ${formatNumber(r.value)} |\n`;
+    for (const r of rows) {
+      // Cada fila lleva a la lista de Expedientes con los mismos filtros y el de esa fila.
+      let href: string | null = null;
+      if (r.filter) {
+        const params = new URLSearchParams(listParams);
+        params.set(r.filter[0], r.filter[1]);
+        href = `/cases?${params.toString()}`;
+      }
+      answer += `| ${href ? answerLink(r.name, href) : cell(r.name)} | ${formatNumber(r.value)} |\n`;
+    }
     if (chosenGroup === "etiqueta") answer += `\nUn expediente puede tener más de una etiqueta.`;
     if ((chosenGroup === "mes" || chosenGroup === "edad" || chosenGroup === "genero") && total > MAX_ROWS) {
       answer += `\nCuento los ${formatNumber(MAX_ROWS)} más nuevos.`;
@@ -152,48 +163,68 @@ export async function handleCasesTool(args: ToolArgs, scope: AssistantScope, now
   const chart =
     wantsChart && rows.length
       ? {
-          type: chosenGroup === "estado" || chosenGroup === "genero" ? "pie" : "bar",
+          type: chosenGroup === "estado" || chosenGroup === "genero" ? "pie" : chosenGroup === "mes" ? "line" : "bar",
           title: `Expedientes${stateWord ? ` ${stateWord}s` : ""} por ${GROUP_TITLE[chosenGroup!].toLowerCase()}`,
-          color: "#1e3a8a",
-          data: rows,
+          columns: [GROUP_TITLE[chosenGroup!], "Expedientes"],
+          data: rows.map((r) => ({ name: r.name, value: r.value, ...(r.tone ? { tone: r.tone } : {}) })),
         }
       : undefined;
 
+  const listHref = `/cases${listParams.size ? `?${listParams.toString()}` : ""}`;
+  const stats = [answerStat(stateWord ? `Expedientes ${stateWord}s` : "Expedientes", total, { href: listHref })];
   return {
     intent: wantsChart ? "chart_render" : "cases_query",
     answer: answer.trim(),
     dataSummary: {
       hasResults: total > 0,
       total,
+      stats,
       ...(chart ? { chart } : {}),
       sources: [],
-      actions: [nav("Ver estos expedientes", `/cases${listParams.size ? `?${listParams.toString()}` : ""}`)],
+      actions: [nav("Ver estos expedientes", listHref)],
     },
   };
 }
 
-async function groupCases(group: string, where: Prisma.CaseWhereInput, areas: { id: string; name: string }[], now: Date) {
+/** Una fila del agrupado. `filter` es el filtro de la lista de Expedientes que la muestra; `tone`, su color. */
+type GroupRow = { name: string; value: number; filter?: [string, string]; tone?: StatusTone };
+
+async function groupCases(group: string, where: Prisma.CaseWhereInput, areas: { id: string; name: string }[], now: Date): Promise<GroupRow[]> {
   if (group === "area") {
     const g = await prisma.case.groupBy({ by: ["areaId"], where, _count: { _all: true } });
     return areas
-      .map((a) => ({ name: a.name, value: g.find((r) => r.areaId === a.id)?._count._all ?? 0 }))
+      .map((a): GroupRow => ({ name: a.name, value: g.find((r) => r.areaId === a.id)?._count._all ?? 0, filter: ["area", a.id] }))
       .filter((r) => r.value > 0)
       .sort((a, b) => b.value - a.value);
   }
   if (group === "prioridad") {
     const g = await prisma.case.groupBy({ by: ["priority"], where, _count: { _all: true } });
-    return PRIORITY_ORDER.map((p) => ({ name: PRIORITY_LABEL[p], value: g.find((r) => r.priority === p)?._count._all ?? 0 })).filter((r) => r.value > 0);
+    return PRIORITY_ORDER.map(
+      (p): GroupRow => ({ name: PRIORITY_LABEL[p], value: g.find((r) => r.priority === p)?._count._all ?? 0, filter: ["priority", p], tone: PRIORITY_TONE[p] })
+    ).filter((r) => r.value > 0);
   }
   if (group === "estado") {
     const g = await prisma.case.groupBy({ by: ["status"], where, _count: { _all: true } });
-    return g.map((r) => ({ name: (CASE_STATUS_LABEL as Record<string, string>)[r.status] ?? r.status, value: r._count._all })).sort((a, b) => b.value - a.value);
+    return g
+      .map(
+        (r): GroupRow => ({
+          name: (CASE_STATUS_LABEL as Record<string, string>)[r.status] ?? r.status,
+          value: r._count._all,
+          filter: ["status", r.status],
+          tone: CASE_STATUS_TONE[r.status],
+        })
+      )
+      .sort((a, b) => b.value - a.value);
   }
   if (group === "etiqueta") {
     const counts = await Promise.all([
       ...CASE_LABELS.map((l) => prisma.case.count({ where: { AND: [where, { labels: { has: l.key } }] } })),
       prisma.case.count({ where: { AND: [where, { labels: { isEmpty: true } }] } }),
     ]);
-    return [...CASE_LABELS.map((l, i) => ({ name: l.label, value: counts[i] })), { name: "Sin etiqueta", value: counts[CASE_LABELS.length] }].filter((r) => r.value > 0);
+    return [
+      ...CASE_LABELS.map((l, i): GroupRow => ({ name: l.label, value: counts[i], filter: ["label", l.key] })),
+      { name: "Sin etiqueta", value: counts[CASE_LABELS.length] },
+    ].filter((r) => r.value > 0);
   }
   if (group === "a_cargo") {
     const g = await prisma.case.groupBy({ by: ["assignedToId"], where, _count: { _all: true } });
@@ -204,7 +235,11 @@ async function groupCases(group: string, where: Prisma.CaseWhereInput, areas: { 
     return g
       .map((r) => {
         const u = users.find((x) => x.id === r.assignedToId);
-        return { name: r.assignedToId ? u?.name || u?.username || "Otra persona" : "Sin profesional a cargo", value: r._count._all };
+        return {
+          name: r.assignedToId ? u?.name || u?.username || "Otra persona" : "Sin profesional a cargo",
+          value: r._count._all,
+          filter: ["assigned", r.assignedToId ?? "none"] as [string, string],
+        };
       })
       .sort((a, b) => b.value - a.value)
       .slice(0, 30);

@@ -7,6 +7,7 @@ import { getProgramSummaries } from "@/services/programs";
 import { getBarrioSummaries } from "@/services/barrios";
 import { getCursos } from "@/services/cursos";
 import { AREA_NOTE, NO_AREA_ANSWER, programVisible, scopeWithoutArea, type AssistantScope } from "@/lib/assistant-scope";
+import { answerLink, answerStat } from "@/lib/assistant-text";
 import type { AIResponse } from "./types";
 
 // Respuestas del asistente para las partes nuevas de la app: expedientes, licencias, programas, barrios,
@@ -30,11 +31,18 @@ export async function handleCasesSummary(scope: AssistantScope): Promise<AIRespo
   }
   let answer = `### Expedientes abiertos\n\nHay **${plural(open, "expediente abierto")}**: ${plural(urgent, "urgente")} y ${plural(stale, "sin movimiento", "sin movimiento")} hace 30 días o más.\n\n`;
   answer += `| Área | Abiertos | Urgentes | Sin movimiento |\n| :--- | ---: | ---: | ---: |\n`;
-  for (const r of rows.sort((a, b) => b.open - a.open)) answer += `| ${cell(r.name)} | ${formatNumber(r.open)} | ${formatNumber(r.urgent)} | ${formatNumber(r.stale)} |\n`;
+  for (const r of rows.sort((a, b) => b.open - a.open)) {
+    answer += `| ${answerLink(r.name, `/cases?status=ACTIVOS&area=${r.id}`)} | ${formatNumber(r.open)} | ${formatNumber(r.urgent)} | ${formatNumber(r.stale)} |\n`;
+  }
   const actions = [nav("Ver expedientes abiertos", "/cases")];
   if (urgent) actions.push(nav("Ver los urgentes", "/cases?priority=URGENTE"));
   if (stale) actions.push(nav("Ver los que no se mueven", "/cases?quiet=1"));
-  return { intent: "cases_summary", answer: answer.trim() + areaNote(scope), dataSummary: { hasResults: true, sources: [], actions } };
+  const stats = [
+    answerStat("Abiertos", open, { href: "/cases?status=ACTIVOS" }),
+    answerStat("Urgentes", urgent, { href: "/cases?status=ACTIVOS&priority=URGENTE", attention: true }),
+    answerStat("Sin movimiento hace 30 días", stale, { href: "/cases?quiet=1", attention: true }),
+  ];
+  return { intent: "cases_summary", answer: answer.trim() + areaNote(scope), dataSummary: { hasResults: true, stats, sources: [], actions } };
 }
 
 /** Quién está de licencia o de vacaciones hoy, y cuántas vueltas faltan confirmar. */
@@ -49,7 +57,7 @@ export async function handleLeavesQuery(): Promise<AIResponse> {
     answer += `| Persona | Área | Situación | Hasta |\n| :--- | :--- | :--- | :--- |\n`;
     for (const a of away.slice(0, 30)) {
       const vuelve = a.until ? `${a.until.split("-").reverse().join("/")}` : "Sin fecha";
-      answer += `| ${cell(a.name)} | ${cell(a.area ?? "Sin área")} | ${label[a.status] ?? "Licencia"} | ${vuelve} |\n`;
+      answer += `| ${answerLink(a.name, `/admin/hr/${a.id}`)} | ${cell(a.area ?? "Sin área")} | ${label[a.status] ?? "Licencia"} | ${vuelve} |\n`;
     }
     if (away.length > 30) answer += `\nY ${plural(away.length - 30, "persona")} más.\n`;
   }
@@ -58,8 +66,9 @@ export async function handleLeavesQuery(): Promise<AIResponse> {
   }
   const actions = [nav("Ver Ausencias del mes", "/admin/hr/ausencias")];
   if (expired > 0) actions.push(nav("Confirmar las vueltas", "/admin/hr?status=volver"));
-  const sources = away.slice(0, 8).map((a) => ({ type: "Recursos Humanos", name: a.name, url: `/admin/hr/${a.id}` }));
-  return { intent: "leaves_query", answer: answer.trim(), dataSummary: { hasResults: away.length > 0 || expired > 0, sources, actions } };
+  const stats = [answerStat("Faltan hoy", away.length, { href: "/admin/hr/ausencias" })];
+  if (expired > 0) stats.push(answerStat("Falta confirmar la vuelta", expired, { href: "/admin/hr?status=volver", attention: true }));
+  return { intent: "leaves_query", answer: answer.trim(), dataSummary: { hasResults: away.length > 0 || expired > 0, stats, sources: [], actions } };
 }
 
 /** Cuántas personas hay en cada programa, con las altas y bajas de los últimos 30 días. */
@@ -73,11 +82,15 @@ export async function handleProgramsQuery(scope: AssistantScope): Promise<AIResp
     return { intent: "programs_query", answer: "Todavía no hay personas cargadas en ningún programa.", dataSummary: { hasResults: false, actions: [nav("Ir a Programas", "/people/programas")] } };
   }
   let answer = `### Personas en cada programa\n\n| Programa | Personas | Altas (30 días) | Bajas (30 días) |\n| :--- | ---: | ---: | ---: |\n`;
-  for (const p of programs) answer += `| ${cell(p.label)} | ${formatNumber(p.people)} | ${formatNumber(p.altas)} | ${formatNumber(p.bajas)} |\n`;
+  for (const p of programs) answer += `| ${answerLink(p.label, `/people/programas/${p.slug}`)} | ${formatNumber(p.people)} | ${formatNumber(p.altas)} | ${formatNumber(p.bajas)} |\n`;
   answer += `\nUna persona puede estar en más de un programa.`;
   if (scope.areaId) answer += ` Te muestro los programas a cargo de tu área y los que no tienen un área a cargo.`;
-  const sources = programs.slice(0, 6).map((p) => ({ type: "Programa", name: p.label, url: `/people/programas/${p.slug}` }));
-  return { intent: "programs_query", answer, dataSummary: { hasResults: true, sources, actions: [nav("Ver Programas", "/people/programas")] } };
+  const stats = [
+    answerStat("Programas con personas", programs.filter((p) => p.people > 0).length, { href: "/people/programas" }),
+    answerStat("Altas en 30 días", programs.reduce((n, p) => n + p.altas, 0)),
+    answerStat("Bajas en 30 días", programs.reduce((n, p) => n + p.bajas, 0)),
+  ];
+  return { intent: "programs_query", answer, dataSummary: { hasResults: true, stats, sources: [], actions: [nav("Ver Programas", "/people/programas")] } };
 }
 
 /** Personas del padrón, con programas y expedientes abiertos en cada uno de los 29 barrios. */
@@ -88,11 +101,15 @@ export async function handleBarriosQuery(scope: AssistantScope): Promise<AIRespo
     return { intent: "barrios_query", answer: "Todavía no hay personas del padrón ubicadas en los barrios.", dataSummary: { hasResults: false, actions: [nav("Ir a Barrios", "/barrios")] } };
   }
   let answer = `### Barrios\n\n| Barrio | Personas | Con programas | Expedientes abiertos |\n| :--- | ---: | ---: | ---: |\n`;
-  for (const b of rows) answer += `| ${cell(b.barrio)} | ${formatNumber(b.people)} | ${formatNumber(b.withPrograms)} | ${formatNumber(b.openCases)} |\n`;
+  for (const b of rows) answer += `| ${answerLink(b.barrio, `/barrios/${b.slug}`)} | ${formatNumber(b.people)} | ${formatNumber(b.withPrograms)} | ${formatNumber(b.openCases)} |\n`;
   if (withoutBarrio > 0) answer += `\n${plural(withoutBarrio, "persona")} del padrón no ${withoutBarrio === 1 ? "tiene" : "tienen"} un barrio de la lista.`;
   if (scope.areaId) answer += `\n\nLas personas son de todo el padrón; los expedientes abiertos, solo los de tu área.`;
-  const sources = rows.slice(0, 6).map((b) => ({ type: "Barrio", name: b.barrio, url: `/barrios/${b.slug}` }));
-  return { intent: "barrios_query", answer: answer.trim(), dataSummary: { hasResults: true, sources, actions: [nav("Ver Barrios", "/barrios")] } };
+  const stats = [
+    answerStat("Personas en los barrios", rows.reduce((n, b) => n + b.people, 0)),
+    answerStat("Con programas", rows.reduce((n, b) => n + b.withPrograms, 0)),
+    answerStat("Expedientes abiertos", rows.reduce((n, b) => n + b.openCases, 0)),
+  ];
+  return { intent: "barrios_query", answer: answer.trim(), dataSummary: { hasResults: true, stats, sources: [], actions: [nav("Ver Barrios", "/barrios")] } };
 }
 
 /** Los cursos y talleres abiertos, con inscriptos y asistencia. */
@@ -106,10 +123,10 @@ export async function handleCoursesQuery(scope: AssistantScope): Promise<AIRespo
   let answer = `### Cursos y talleres abiertos\n\nHay **${plural(cursos.length, "curso abierto", "cursos abiertos")}** con ${plural(inscriptos, "persona inscripta", "personas inscriptas")}.\n\n`;
   answer += `| Curso | Lugar | Inscriptos | Asistencia |\n| :--- | :--- | ---: | ---: |\n`;
   for (const c of cursos.slice(0, 25)) {
-    answer += `| ${cell(c.nombre)} | ${cell(c.lugar ?? "Sin lugar")} | ${formatNumber(c.inscriptos)} | ${c.asistencia === null ? "Sin clases" : `${c.asistencia} %`} |\n`;
+    answer += `| ${answerLink(c.nombre, `/cursos/${c.id}`)} | ${cell(c.lugar ?? "Sin lugar")} | ${formatNumber(c.inscriptos)} | ${c.asistencia === null ? "Sin clases" : `${c.asistencia} %`} |\n`;
   }
-  const sources = cursos.slice(0, 6).map((c) => ({ type: "Curso", name: c.nombre, url: `/cursos/${c.id}` }));
-  return { intent: "courses_query", answer: answer.trim() + areaNote(scope), dataSummary: { hasResults: true, sources, actions: [nav("Ver Cursos y talleres", "/cursos")] } };
+  const stats = [answerStat("Cursos abiertos", cursos.length, { href: "/cursos" }), answerStat("Personas inscriptas", inscriptos)];
+  return { intent: "courses_query", answer: answer.trim() + areaNote(scope), dataSummary: { hasResults: true, stats, sources: [], actions: [nav("Ver Cursos y talleres", "/cursos")] } };
 }
 
 /** Las tareas sin terminar de quien pregunta: atrasadas, de hoy y de los próximos 7 días. */
@@ -118,7 +135,7 @@ export async function handleMyTasksQuery(user: { id?: string | null }, now = new
   const today = diaAR(now);
   const tasks = await prisma.task.findMany({
     where: { userId: user.id, status: { not: "COMPLETADA" } },
-    select: { id: true, title: true, dueDate: true },
+    select: { id: true, title: true, dueDate: true, caseId: true },
     orderBy: [{ dueDate: { sort: "asc", nulls: "last" } }],
     take: 200,
   });
@@ -132,9 +149,14 @@ export async function handleMyTasksQuery(user: { id?: string | null }, now = new
     return { intent: "tasks_query", answer: "### Mis tareas\n\nNo tenés tareas pendientes.", dataSummary: { hasResults: false, actions: [nav("Ir a Mis tareas", "/tasks")] } };
   }
   const list = (title: string, items: typeof tasks) =>
-    items.length ? `#### ${title} (${items.length})\n${items.slice(0, 10).map((t) => `- ${t.title}${t.dueDate ? ` · ${ddmm(new Date(`${day(t.dueDate)}T00:00:00Z`))}` : ""}`).join("\n")}\n\n` : "";
+    items.length ? `#### ${title} (${items.length})\n${items.slice(0, 10).map((t) => `- ${t.caseId ? answerLink(t.title, `/cases/${t.caseId}`) : t.title}${t.dueDate ? ` · ${ddmm(new Date(`${day(t.dueDate)}T00:00:00Z`))}` : ""}`).join("\n")}\n\n` : "";
   let answer = `### Mis tareas\n\nTenés **${plural(tasks.length, "tarea pendiente", "tareas pendientes")}**.\n\n`;
   answer += list("Atrasadas", late) + list("Para hoy", forToday) + list("En los próximos 7 días", soon);
   if (undated) answer += `${plural(undated, "tarea", "tareas")} sin fecha.`;
-  return { intent: "tasks_query", answer: answer.trim(), dataSummary: { hasResults: true, sources: [], actions: [nav("Ir a Mis tareas", "/tasks")] } };
+  const stats = [
+    answerStat("Pendientes", tasks.length, { href: "/tasks" }),
+    answerStat("Atrasadas", late.length, { href: "/tasks", attention: true }),
+    answerStat("Para hoy", forToday.length, { href: "/tasks" }),
+  ];
+  return { intent: "tasks_query", answer: answer.trim(), dataSummary: { hasResults: true, stats, sources: [], actions: [nav("Ir a Mis tareas", "/tasks")] } };
 }
