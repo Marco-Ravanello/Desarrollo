@@ -26,7 +26,7 @@ import { CaseTag } from "@/components/cases/case-tag";
 import { CaseLabelChips } from "@/components/cases/case-label-chips";
 import { caseLabelName, isCaseLabel } from "@/lib/case-labels";
 import { getCaseLabelCounts } from "@/services/case-labels";
-import { CASE_PRIORITY_LABEL, CASE_STATUS_LABEL, STALE_DAYS, agoText, daysText, fechaCorta, isProvisionalDni, splitCaseTitle, summarizeCase } from "@/lib/case-summary";
+import { CASE_PRIORITY_LABEL, CASE_STATUS_LABEL, STALE_DAYS, agoText, daysText, fechaCorta, isProvisionalDni, movementDaysParam, splitCaseTitle, summarizeCase } from "@/lib/case-summary";
 import { canAssignCase, countMyOpenCases, getAssignableUsers } from "@/services/case-assignment";
 import { SavedFilters } from "@/components/cases/saved-filters";
 import { consultaDeFiltros, parseFiltros } from "@/lib/filtros-guardados";
@@ -48,6 +48,7 @@ interface CasesPageProps {
     priority?: string;
     assigned?: string;
     quiet?: string;
+    moved?: string;
     label?: string;
     page?: string;
     limit?: string;
@@ -71,12 +72,16 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
   if (!session?.user?.id) redirect("/login");
 
   const { q, area, status, priority, page, limit } = await searchParams;
-  const { assigned: assignedRaw, quiet: quietRaw, label: labelRaw } = await searchParams;
+  const { assigned: assignedRaw, quiet: quietRaw, moved: movedRaw, label: labelRaw } = await searchParams;
   const label = isCaseLabel(labelRaw) ? labelRaw : undefined;
   // "mine", "none" o el id de un profesional (desde el equipo del área en el inicio).
   const assigned =
     assignedRaw === "mine" || assignedRaw === "none" || (assignedRaw && /^c[a-z0-9]{20,30}$/.test(assignedRaw)) ? assignedRaw : undefined;
-  const quiet = quietRaw === "1";
+  // "quiet=1" es el filtro de siempre (30 días); el asistente puede mandar otros días ("quiet=60", "moved=7").
+  const quietDays = movementDaysParam(quietRaw, "quiet");
+  const quiet = quietDays !== null;
+  const quietParam = quietDays === STALE_DAYS ? "1" : String(quietDays);
+  const movedDays = quiet ? null : movementDaysParam(movedRaw, "moved");
   const pageNum = Math.max(1, Number(page) || 1);
   const limitNum = Math.max(1, Math.min(100, Number(limit) || 20));
 
@@ -90,7 +95,8 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
       status,
       priority,
       assigned,
-      quiet,
+      quiet: quietDays ?? false,
+      moved: movedDays ?? undefined,
       label,
       userId: session.user.id,
       page: pageNum,
@@ -141,7 +147,8 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
     if (status) params.set("status", status);
     if (priority) params.set("priority", priority);
     if (assigned) params.set("assigned", assigned);
-    if (quiet) params.set("quiet", "1");
+    if (quiet) params.set("quiet", quietParam);
+    if (movedDays) params.set("moved", String(movedDays));
     if (label) params.set("label", label);
     params.set("page", String(n));
     return `/cases?${params.toString()}`;
@@ -157,7 +164,8 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
     const pr = over.priority ?? priority;
     if (pr) params.set("priority", pr);
     if (assigned) params.set("assigned", assigned);
-    if (quiet) params.set("quiet", "1");
+    if (quiet) params.set("quiet", quietParam);
+    if (movedDays) params.set("moved", String(movedDays));
     if (label) params.set("label", label);
     const qs = params.toString();
     return qs ? `/cases?${qs}` : "/cases";
@@ -237,7 +245,7 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
               Buscar
             </Button>
           </div>
-          <MobileFilters active={[area && area !== "all", status && status !== "all", priority && priority !== "all", assigned, quiet, label].filter(Boolean).length}>
+          <MobileFilters active={[area && area !== "all", status && status !== "all", priority && priority !== "all", assigned, quiet || movedDays, label].filter(Boolean).length}>
           <div>
             <select
               name="area"
@@ -309,9 +317,11 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
             </select>
           </div>
           <label className="flex items-center gap-2 text-xs text-muted-foreground sm:col-span-2 lg:col-span-3">
-            <input type="checkbox" name="quiet" value="1" defaultChecked={quiet} className="h-4 w-4 rounded border-border" />
-            Solo los que no tuvieron intervenciones hace {STALE_DAYS} días o más
+            <input type="checkbox" name="quiet" value={quiet ? quietParam : "1"} defaultChecked={quiet} className="h-4 w-4 rounded border-border" />
+            Solo los que no tuvieron intervenciones hace {quietDays ?? STALE_DAYS} días o más
           </label>
+          {/* "Con movimiento en los últimos días" llega desde el asistente: se mantiene al cambiar otros filtros. */}
+          {movedDays ? <input type="hidden" name="moved" value={movedDays} /> : null}
           </MobileFilters>
         </FilterForm>
         <div className="mt-3">
@@ -325,7 +335,8 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
             status && status !== "all" && `Estado: ${STATUS_LABELS[status] || status}`,
             priority && priority !== "all" && `Prioridad: ${CASE_PRIORITY_LABEL[priority]?.replace(/^Prioridad /, "") ?? priority}`,
             assignedLabel,
-            quiet && `Sin movimiento hace ${STALE_DAYS} días o más`,
+            quiet && `Sin movimiento hace ${quietDays} días o más`,
+            !!movedDays && `Con movimiento en los últimos ${movedDays === 1 ? "día" : `${movedDays} días`}`,
             label && `Etiqueta: ${caseLabelName(label)}`,
           ]}
         />

@@ -34,9 +34,24 @@ export function daysBetween(from: Date, to: Date): number {
  * STALE_DAYS - 1 días. Lo que no tuvo intervenciones desde ahí lleva STALE_DAYS días o más quieto
  * (mismo criterio que summarizeCase, para usar en las consultas a la base).
  */
-export function staleCutoff(now: Date = new Date()): Date {
+export function staleCutoff(now: Date = new Date(), days: number = STALE_DAYS): Date {
   const today = dayKey(now);
-  return new Date(Date.parse(`${today}T00:00:00-03:00`) - (STALE_DAYS - 1) * 86_400_000);
+  return new Date(Date.parse(`${today}T00:00:00-03:00`) - (days - 1) * 86_400_000);
+}
+
+/** Días de "sin movimiento" o "con movimiento" que se pueden pedir. */
+export const MOVEMENT_DAYS_MAX = 365;
+
+/**
+ * Los días de un filtro de movimiento en la dirección (?quiet=60, ?moved=7). En "quiet", "1" es el filtro de
+ * siempre (30 días). null si no es un número de días válido.
+ */
+export function movementDaysParam(raw: string | null | undefined, kind: "quiet" | "moved"): number | null {
+  if (!raw) return null;
+  if (kind === "quiet" && raw === "1") return STALE_DAYS;
+  if (!/^\d{1,3}$/.test(raw)) return null;
+  const n = Number(raw);
+  return n >= 1 && n <= MOVEMENT_DAYS_MAX ? n : null;
 }
 
 /** "hoy", "1 día", "12 días". */

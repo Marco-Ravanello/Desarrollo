@@ -103,6 +103,17 @@ export function storedAnswerData(raw: unknown): Record<string, unknown> | null {
     out.proposal = proposal;
   }
 
+  // La consulta que respondió, para seguir la charla al volver a la conversación (se revisa de nuevo al usarla).
+  if (isObj(raw.call) && typeof raw.call.tool === "string" && isObj(raw.call.args)) {
+    const args: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(raw.call.args).slice(0, 20)) {
+      if (typeof v === "string") args[k.slice(0, 40)] = v.slice(0, 100);
+      else if (typeof v === "number" || typeof v === "boolean") args[k.slice(0, 40)] = v;
+      else if (Array.isArray(v)) args[k.slice(0, 40)] = v.filter((x) => typeof x === "string").slice(0, 10).map((x) => (x as string).slice(0, 100));
+    }
+    out.call = { tool: raw.call.tool.slice(0, 40), args };
+  }
+
   if (isObj(raw.proposalResult)) {
     const r = raw.proposalResult;
     if (r.step === "done") out.proposalResult = { step: "done", message: str(r.message, 300) ?? "", link: isAppPath(r.link) ? r.link : "/" };

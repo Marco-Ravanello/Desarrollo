@@ -1,5 +1,5 @@
 import { sanitizeText } from "@/lib/pii-sanitizer";
-import { geminiFunctionDeclarations, validateToolArgs, type ToolCall } from "@/lib/assistant-tools";
+import { geminiFunctionDeclarations, previousCallText, validateToolArgs, type ToolCall } from "@/lib/assistant-tools";
 import { CASE_LABELS } from "@/lib/case-labels";
 import { formatFechaLarga, formatHora, diaAR } from "@/lib/fechas";
 import { getGeminiModelCandidates } from "@/services/gemini-ai";
@@ -13,7 +13,7 @@ const PLAN_TIMEOUT_MS = 8000;
 export async function planWithGemini(
   question: string,
   history: { role: "user" | "assistant"; content: string }[] = [],
-  context: { areaNames: string[]; now?: Date } = { areaNames: [] }
+  context: { areaNames: string[]; now?: Date; previousCall?: ToolCall | null } = { areaNames: [] }
 ): Promise<ToolCall | null> {
   const apiKey = process.env.GEMINI_API_KEY?.trim();
   if (!apiKey) return null;
@@ -30,7 +30,9 @@ Elegí la consulta que responde la pregunta y completá sus filtros solo con lo 
 Hoy es ${formatFechaLarga(now)} (${diaAR(now)}), son las ${formatHora(now)} en Argentina. "Esta semana", "mañana" o "el jueves" se cuentan desde hoy.
 Áreas: ${context.areaNames.join("; ") || "sin datos"}.
 Etiquetas de expedientes: ${CASE_LABELS.map((l) => `${l.key} (${l.label})`).join("; ")}.
-Los textos como [DNI_1] son datos tapados: copialos tal cual.`;
+Los textos como [DNI_1] son datos tapados: copialos tal cual.
+Si pregunta "cuáles son", o pide verlos o listarlos, en expedientes poné listar=true.
+${previousCallText(context.previousCall ?? null)}`.trim();
 
   const contents = [
     ...parts.map((text) => ({ role: "user", parts: [{ text }] })),

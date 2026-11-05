@@ -16,6 +16,16 @@ export interface Novedad {
 export const NOVEDADES: Novedad[] = [
   {
     fecha: "2026-11-05",
+    parte: 3,
+    titulo: "El Asistente de IA entiende más preguntas de expedientes",
+    cambios: [
+      "Le podés preguntar por los expedientes con movimiento o sin movimiento en los días que quieras: \"los que tuvieron movimiento esta semana\" o \"sin movimiento hace 60 días\".",
+      "Si preguntás \"¿cuáles son?\", te muestra hasta 20 expedientes con su área, su prioridad y su última intervención. Tocá uno para abrirlo.",
+      "Sigue la charla: después de una respuesta podés preguntar \"¿y cuáles?\", \"¿y de Niñez?\" o \"¿y los urgentes?\" sin repetir todo.",
+    ],
+  },
+  {
+    fecha: "2026-11-05",
     parte: 2,
     titulo: "El Asistente de IA guarda tus conversaciones",
     cambios: [

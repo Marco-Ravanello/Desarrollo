@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { query, history, conversationId } = await req.json();
+    const { query, history, conversationId, previousCall } = await req.json();
     if (!query || typeof query !== "string" || query.trim() === "") {
       return NextResponse.json({ error: "La consulta no puede estar vacía." }, { status: 400 });
     }
@@ -38,6 +38,7 @@ export async function POST(req: NextRequest) {
             role: session.user.role,
             areaId: session.user.areaId,
             onStatus: (status) => send(null, { status }),
+            previousCall,
           });
           // Se guarda la pregunta con su respuesta, salvo que la persona la haya frenado.
           let saved: { conversationId: string; messageId: string } | null = null;

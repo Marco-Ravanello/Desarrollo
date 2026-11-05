@@ -195,8 +195,10 @@ export interface GetCasesFilters {
   /** "mine": a cargo de `userId`; "none": sin profesional a cargo; o el id de un usuario (a cargo de esa persona). */
   assigned?: string;
   userId?: string;
-  /** Solo los que no tuvieron intervenciones hace STALE_DAYS días o más (sin cerrar). */
-  quiet?: boolean;
+  /** Solo los que no tuvieron intervenciones hace STALE_DAYS días o más (sin cerrar); un número = esos días. */
+  quiet?: boolean | number;
+  /** Solo los que tuvieron al menos una intervención en los últimos tantos días. */
+  moved?: number;
   /** Solo los que tienen esta etiqueta (clave de src/lib/case-labels.ts). */
   label?: string;
 }
@@ -235,10 +237,12 @@ export async function getAllCases(filters: GetCasesFilters = {}) {
     where.labels = { has: filters.label };
   }
   if (filters.quiet) {
-    const cutoff = staleCutoff();
+    const cutoff = staleCutoff(new Date(), typeof filters.quiet === "number" ? filters.quiet : undefined);
     where.createdAt = { lt: cutoff };
     where.interventions = { none: { date: { gte: cutoff } } };
     if (!where.status) where.status = { not: "CERRADO" };
+  } else if (filters.moved) {
+    where.interventions = { some: { date: { gte: staleCutoff(new Date(), filters.moved) } } };
   }
   if (filters.query && filters.query.trim()) {
     const q = filters.query.trim();

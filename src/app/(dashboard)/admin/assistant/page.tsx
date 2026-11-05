@@ -40,6 +40,8 @@ type Message = {
     stats?: AnswerStat[];
     proposal?: AssistantProposalData;
     proposalResult?: ProposalResult;
+    /** La consulta que respondió: se manda con la pregunta siguiente para seguir la charla. */
+    call?: { tool: string; args: Record<string, unknown> };
   };
 };
 
@@ -227,6 +229,8 @@ export default function AssistantPage() {
     const text = raw.trim();
     if (!text || loading) return;
     const history = messages.filter((m) => m.text).map((m) => ({ role: m.sender, content: m.text }));
+    // La consulta de la última respuesta, para seguir la charla ("¿y cuáles?").
+    const previousCall = [...messages].reverse().find((m) => m.sender === "assistant" && m.dataSummary?.call)?.dataSummary?.call ?? null;
     const answerId = newId();
     setMessages((prev) => [...prev, { id: newId(), sender: "user", text }, { id: answerId, sender: "assistant", text: "", status: "Leyendo tu pregunta…" }]);
     setInput("");
@@ -238,7 +242,7 @@ export default function AssistantPage() {
       const response = await fetch("/api/assistant/stream", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query: text, history, conversationId }),
+        body: JSON.stringify({ query: text, history, conversationId, previousCall }),
         signal: controller.signal,
       });
       if (!response.ok || !response.body) {

@@ -2,9 +2,9 @@ import type { Prisma } from "@prisma/client";
 import prisma from "@/lib/prisma";
 import { ACTIVE_CASE_STATUSES } from "@/lib/case-urgency";
 import { CASE_LABELS, caseLabelName } from "@/lib/case-labels";
-import { CASE_STATUS_LABEL, staleCutoff } from "@/lib/case-summary";
+import { CASE_STATUS_LABEL, STALE_DAYS, splitCaseTitle, staleCutoff } from "@/lib/case-summary";
 import { formatNumber, plural } from "@/lib/formato";
-import { diaAR } from "@/lib/fechas";
+import { diaAR, formatFecha } from "@/lib/fechas";
 import { AREA_NOTE, NO_AREA_ANSWER, scopedAreaWhere, scopedCaseWhere, scopeWithoutArea, type AssistantScope } from "@/lib/assistant-scope";
 import { matchAreaName, type ToolArgs } from "@/lib/assistant-tools";
 import { answerLink, answerStat } from "@/lib/assistant-text";
@@ -14,7 +14,8 @@ import { handleCasesSummary } from "./module-handlers";
 
 // La consulta "expedientes" del asistente: cuenta con los filtros que eligió Gemini (o que salieron de la
 // pregunta) y separa por área, prioridad, estado, etiqueta, mes, edad, género o profesional a cargo.
-// Solo números y nombres de área o de profesional: nunca títulos ni datos de las personas.
+// Con "listar" muestra hasta 20 expedientes con su título y su enlace, los mismos que la persona ve en la lista
+// de Expedientes. Esta respuesta va directo a la pantalla: no pasa por Gemini.
 
 const PRIORITY_ORDER = ["URGENTE", "ALTA", "MEDIA", "BAJA"];
 const PRIORITY_LABEL: Record<string, string> = { URGENTE: "Urgente", ALTA: "Alta", MEDIA: "Media", BAJA: "Baja" };
@@ -57,7 +58,7 @@ function genderLabel(g: string | null): string {
 export async function handleCasesTool(args: ToolArgs, scope: AssistantScope, now = new Date()): Promise<AIResponse> {
   if (scopeWithoutArea(scope)) return { intent: "cases_query", answer: NO_AREA_ANSWER, dataSummary: { hasResults: false } };
 
-  const filterKeys = ["prioridad", "area", "etiqueta", "desde", "hasta", "sin_movimiento", "sin_asignar"];
+  const filterKeys = ["prioridad", "area", "etiqueta", "desde", "hasta", "sin_movimiento", "sin_movimiento_dias", "con_movimiento_dias", "sin_asignar", "listar"];
   const hasFilters = filterKeys.some((k) => args[k] !== undefined && args[k] !== false);
   const estado = typeof args.estado === "string" ? args.estado : "abiertos";
   const group = typeof args.agrupar_por === "string" ? args.agrupar_por : null;
@@ -118,11 +119,18 @@ export async function handleCasesTool(args: ToolArgs, scope: AssistantScope, now
           : `abiertos hasta el ${ddmmyyyy(String(args.hasta))}`
     );
   }
-  if (args.sin_movimiento === true) {
-    const cutoff = staleCutoff(now);
+  // Movimiento = intervenciones, con el mismo corte de días que la lista de Expedientes.
+  const quietDays = typeof args.sin_movimiento_dias === "number" ? args.sin_movimiento_dias : args.sin_movimiento === true ? STALE_DAYS : null;
+  const movedDays = quietDays === null && typeof args.con_movimiento_dias === "number" ? args.con_movimiento_dias : null;
+  if (quietDays !== null) {
+    const cutoff = staleCutoff(now, quietDays);
     and.push({ status: { not: "CERRADO" }, createdAt: { lt: cutoff }, interventions: { none: { date: { gte: cutoff } } } });
-    described.push("sin movimiento hace 30 días o más");
-    listParams.set("quiet", "1");
+    described.push(`sin movimiento hace ${plural(quietDays, "día", "días")} o más`);
+    listParams.set("quiet", quietDays === STALE_DAYS ? "1" : String(quietDays));
+  } else if (movedDays !== null) {
+    and.push({ interventions: { some: { date: { gte: staleCutoff(now, movedDays) } } } });
+    described.push(movedDays === 1 ? "con alguna intervención hoy" : `con alguna intervención en los últimos ${movedDays} días`);
+    listParams.set("moved", String(movedDays));
   }
   if (args.sin_asignar === true) {
     and.push({ assignedToId: null });
@@ -136,6 +144,11 @@ export async function handleCasesTool(args: ToolArgs, scope: AssistantScope, now
   const noun = stateWord ? plural(total, `expediente ${stateWord}`, `expedientes ${stateWord}s`) : plural(total, "expediente");
   const filtersText = described.length ? ` ${described.join(", ")}` : "";
   let answer = `### Expedientes\n\nHay **${noun}**${filtersText}.`;
+
+  // "¿Cuáles son?": hasta 20, cada uno con su enlace.
+  if (args.listar === true && total > 0) {
+    answer += await listCases(where, { showArea: !scope.areaId && typeof args.area !== "string", quietFirst: quietDays !== null, total });
+  }
 
   let rows: GroupRow[] = [];
   const chosenGroup = group ?? (wantsChart ? "area" : null);
@@ -188,6 +201,38 @@ export async function handleCasesTool(args: ToolArgs, scope: AssistantScope, now
 
 /** Una fila del agrupado. `filter` es el filtro de la lista de Expedientes que la muestra; `tone`, su color. */
 type GroupRow = { name: string; value: number; filter?: [string, string]; tone?: StatusTone };
+
+const LIST_MAX = 20;
+
+/** La tabla de "¿cuáles son?": título con enlace, área, prioridad y última intervención. */
+async function listCases(where: Prisma.CaseWhereInput, opts: { showArea: boolean; quietFirst: boolean; total: number }): Promise<string> {
+  const cases = await prisma.case.findMany({
+    where,
+    select: {
+      id: true,
+      title: true,
+      priority: true,
+      createdAt: true,
+      area: { select: { name: true } },
+      interventions: { select: { date: true }, orderBy: { date: "desc" }, take: 1 },
+    },
+    // Los quietos, del que lleva más tiempo sin moverse; si no, los que se movieron hace menos.
+    orderBy: opts.quietFirst ? [{ createdAt: "asc" }] : [{ updatedAt: "desc" }],
+    take: opts.quietFirst ? 500 : LIST_MAX,
+  });
+  const last = (c: (typeof cases)[number]) => c.interventions[0]?.date ?? null;
+  const sorted = opts.quietFirst
+    ? cases.sort((a, b) => (last(a) ?? a.createdAt).getTime() - (last(b) ?? b.createdAt).getTime()).slice(0, LIST_MAX)
+    : cases.sort((a, b) => (last(b)?.getTime() ?? 0) - (last(a)?.getTime() ?? 0));
+  let out = `\n\n| Expediente |${opts.showArea ? " Área |" : ""} Prioridad | Última intervención |\n| :--- |${opts.showArea ? " :--- |" : ""} :--- | :--- |\n`;
+  for (const c of sorted) {
+    const title = splitCaseTitle(c.title).title || "Expediente";
+    const when = last(c) ? formatFecha(last(c)) : "Sin intervenciones";
+    out += `| ${answerLink(title, `/cases/${c.id}`)} |${opts.showArea ? ` ${cell(c.area.name)} |` : ""} ${PRIORITY_LABEL[c.priority] ?? c.priority} | ${when} |\n`;
+  }
+  if (opts.total > sorted.length) out += `\nTe muestro ${sorted.length} de ${formatNumber(opts.total)}. Para ver todos, tocá "Ver estos expedientes".`;
+  return out;
+}
 
 async function groupCases(group: string, where: Prisma.CaseWhereInput, areas: { id: string; name: string }[], now: Date): Promise<GroupRow[]> {
   if (group === "area") {
