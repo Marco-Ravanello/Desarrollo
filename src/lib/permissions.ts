@@ -125,6 +125,7 @@ const ROUTE_ACCESS: { prefix: string; allowed: (role: Role) => boolean }[] = [
   { prefix: "/admin/vehicles/requests", allowed: (r) => FLEET_ADMIN_ROLES.includes(r) },
   { prefix: "/admin/vehicles/reports", allowed: (r) => [...MANAGEMENT_ROLES, "AUDITOR"].includes(r) },
   // Sistema
+  { prefix: "/admin/assistant/sin-respuesta", allowed: (r) => r === "SUPERADMIN" },
   { prefix: "/admin/assistant", allowed: (r) => canUseAiAssistant(r) },
   { prefix: "/admin/settings", allowed: (r) => MANAGEMENT_ROLES.includes(r) },
   { prefix: "/admin/users", allowed: (r) => MANAGEMENT_ROLES.includes(r) || hasPermission(r, PERMISSIONS.MANAGE_USERS) },

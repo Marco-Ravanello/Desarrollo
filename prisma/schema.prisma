@@ -1137,3 +1137,25 @@ model AssistantMessage {
   @@index([conversationId, createdAt])
   @@map("asistente_mensajes")
 }
+
+/// Una pregunta que el Asistente de IA no pudo responder (no la entendió o dio error). La ve solo el
+/// Superadmin, agrupada por pregunta, y se borra sola a los 60 días (src/lib/assistant-unanswered.ts).
+/// No se guarda la respuesta ni quién preguntó: solo el rol y el área.
+model AssistantUnansweredQuestion {
+  id         String    @id @default(cuid())
+  /// La pregunta con los DNI y teléfonos tapados.
+  question   String
+  /// La pregunta normalizada, para juntar las iguales.
+  key        String
+  /// "NO_ENTENDIO" o "ERROR".
+  reason     String
+  role       String?
+  areaName   String?
+  createdAt  DateTime  @default(now())
+  /// Cuándo se marcó "Ya la entiende".
+  resolvedAt DateTime?
+
+  @@index([key])
+  @@index([createdAt])
+  @@map("asistente_preguntas_sin_respuesta")
+}

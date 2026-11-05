@@ -3,7 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { ArrowUp, ArrowUpRight, Copy, History, Loader2, Mic, MicOff, RefreshCw, Sparkles, Square, Volume2, VolumeX } from "lucide-react";
+import Link from "next/link";
+import { ArrowUp, ArrowUpRight, Copy, History, MessageSquareWarning, Loader2, Mic, MicOff, RefreshCw, Sparkles, Square, Volume2, VolumeX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/layout/page-header";
 import { AssistantAnswer } from "@/components/assistant/assistant-answer";
@@ -16,6 +17,7 @@ import { confirmar } from "@/components/ui/confirm-dialog";
 import { useSession } from "next-auth/react";
 import { plainAnswer, type AnswerStat } from "@/lib/assistant-text";
 import {
+  countUnansweredAction,
   deleteAssistantConversationAction,
   getAssistantConversationAction,
   listAssistantConversationsAction,
@@ -67,6 +69,9 @@ export default function AssistantPage() {
   const [conversations, setConversations] = useState<ConversationItem[] | null>(null);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [opening, setOpening] = useState(false);
+  /** Preguntas sin respuesta que esperan (solo se pide si es Superadmin). */
+  const [unanswered, setUnanswered] = useState<number | null>(null);
+  const isSuperadmin = session?.user?.role === "SUPERADMIN";
   const recognitionRef = useRef<any>(null);
   const abortRef = useRef<AbortController | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -134,10 +139,25 @@ export default function AssistantPage() {
   // Al entrar: la lista de conversaciones y, si la dirección trae una, esa conversación.
   useEffect(() => {
     refreshConversations();
-    const id = new URLSearchParams(window.location.search).get("c");
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get("c");
     if (id) openConversation(id);
+    // "Probar de nuevo" desde Preguntas sin respuesta: deja la pregunta escrita, lista para mandar.
+    const pregunta = params.get("pregunta");
+    if (pregunta && !id) {
+      setInput(pregunta.slice(0, 500));
+      const url = new URL(window.location.href);
+      url.searchParams.delete("pregunta");
+      window.history.replaceState(window.history.state, "", url.toString());
+      inputRef.current?.focus();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (!isSuperadmin) return;
+    countUnansweredAction().then(setUnanswered).catch(() => setUnanswered(null));
+  }, [isSuperadmin]);
 
   // Baja hasta lo último a medida que llega la respuesta. La bienvenida se ve desde arriba.
   useEffect(() => {
@@ -322,7 +342,19 @@ export default function AssistantPage() {
         description="Preguntale por los datos de la Secretaría y te responde con números, tablas y gráficos."
         icon={Sparkles}
         actions={
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
+            {isSuperadmin && (
+              <Button asChild variant="outline" className="gap-2">
+                <Link href="/admin/assistant/sin-respuesta">
+                  <MessageSquareWarning className="h-4 w-4" aria-hidden /> Sin respuesta
+                  {unanswered ? (
+                    <span className="rounded-full bg-[#C2410C] px-1.5 text-xs font-semibold tabular-nums text-white" aria-label={`${unanswered} pendientes`}>
+                      {unanswered}
+                    </span>
+                  ) : null}
+                </Link>
+              </Button>
+            )}
             <Button variant="outline" onClick={() => setHistoryOpen(true)} className="gap-2 lg:hidden">
               <History className="h-4 w-4" /> Anteriores
             </Button>

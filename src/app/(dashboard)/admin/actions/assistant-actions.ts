@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache";
 import { queryAIAssistant, AIResponse } from "@/services/ai-assistant";
 import { confirmReservationProposal, confirmTaskProposal } from "@/services/assistant/proposals";
 import { deleteConversation, getConversation, listConversations, markProposalResult } from "@/services/assistant/conversations";
+import { countPendingUnanswered, deleteUnanswered, reopenUnanswered, resolveUnanswered } from "@/services/assistant/unanswered";
 
 export async function queryAssistantAction(
   queryText: string,
@@ -108,4 +109,27 @@ export async function deleteAssistantConversationAction(id: string): Promise<{ o
   const userId = await assistantUserId();
   if (!userId || typeof id !== "string") return { ok: false };
   return { ok: await deleteConversation(userId, id) };
+}
+
+// Preguntas sin respuesta: solo el Superadmin.
+async function isSuperadmin(): Promise<boolean> {
+  const session = await auth();
+  return session?.user?.role === "SUPERADMIN";
+}
+
+/** Cuántas preguntas distintas esperan, para el botón de la página del asistente. 0 si no es Superadmin. */
+export async function countUnansweredAction(): Promise<number> {
+  if (!(await isSuperadmin())) return 0;
+  return countPendingUnanswered().catch(() => 0);
+}
+
+export async function changeUnansweredAction(key: string, change: "resolver" | "reabrir" | "borrar"): Promise<{ ok: boolean; error?: string }> {
+  if (!(await isSuperadmin())) return { ok: false, error: "Solo el Superadmin puede cambiar esta lista." };
+  if (typeof key !== "string" || !key) return { ok: false, error: "No se encontró la pregunta." };
+  if (change === "resolver") await resolveUnanswered(key);
+  else if (change === "reabrir") await reopenUnanswered(key);
+  else if (change === "borrar") await deleteUnanswered(key);
+  else return { ok: false, error: "No se entendió el cambio." };
+  revalidatePath("/admin/assistant/sin-respuesta");
+  return { ok: true };
 }

@@ -16,6 +16,15 @@ export interface Novedad {
 export const NOVEDADES: Novedad[] = [
   {
     fecha: "2026-11-05",
+    parte: 4,
+    titulo: "El Asistente de IA anota lo que todavía no sabe responder",
+    cambios: [
+      "Cuando el asistente no entiende una pregunta, la anota para que podamos enseñársela. Se guarda solo la pregunta, sin la respuesta ni tu nombre, y los DNI y teléfonos quedan tapados.",
+      "Esas preguntas se borran solas a los 60 días.",
+    ],
+  },
+  {
+    fecha: "2026-11-05",
     parte: 3,
     titulo: "El Asistente de IA entiende más preguntas de expedientes",
     cambios: [
