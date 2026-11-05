@@ -13,7 +13,7 @@ import { lookupPersonByName } from "./assistant/person-name-lookup";
 import { helpAnswer, runTool, toolStatus, visibleAreaNames } from "./assistant/tools";
 import { planWithGemini } from "./assistant/planner";
 import { needsPersonLookup, pickRoute, routingText, WRITING_STATUS } from "@/lib/assistant-routing";
-import { isGreeting, routeToToolCall, type ToolCall } from "@/lib/assistant-tools";
+import { followUpCall, isFollowUp, isGreeting, parsePreviousCall, routeToToolCall, type ToolCall } from "@/lib/assistant-tools";
 import { buildAssistantScope, scopeCanSee, scopedAreaIdWhere, scopedCaseWhere, type AssistantScope } from "@/lib/assistant-scope";
 
 export type { Message, AIResponse, UniversalSearchResult };
@@ -236,7 +236,7 @@ export async function queryAIAssistantStream(
   history?: { role: "user" | "assistant"; content: string }[],
   userId?: string,
   onChunk?: (chunk: string) => void,
-  options: { role?: string | null; areaId?: string | null; onStatus?: (status: string) => void } = {}
+  options: { role?: string | null; areaId?: string | null; onStatus?: (status: string) => void; previousCall?: unknown } = {}
 ): Promise<AIResponse> {
   const onStatus = options.onStatus;
   const scope = buildAssistantScope({ id: userId, role: options.role, areaId: options.areaId });
@@ -262,17 +262,20 @@ export async function queryAIAssistantStream(
 
     // 1. Gemini elige una de las consultas fijas (lib/assistant-tools.ts). 2. Si no hay Gemini o no responde,
     // se elige buscando palabras en la pregunta.
+    // La consulta de la respuesta anterior, para seguir la charla ("¿y cuáles?", "¿y de Niñez?").
+    const previousCall = parsePreviousCall(options.previousCall);
     let call: ToolCall | null = null;
     if (process.env.GEMINI_API_KEY) {
       onStatus?.("Entendiendo la pregunta…");
-      call = await planWithGemini(queryText, history, { areaNames: await visibleAreaNames(scope) }).catch(() => null);
+      call = await planWithGemini(queryText, history, { areaNames: await visibleAreaNames(scope), previousCall }).catch(() => null);
     }
     if (!call) {
       const routing = routingText(query);
       // Si la consulta nombra a una persona del padrón, se responde con su ficha antes que con la búsqueda social genérica.
-      const personByName = needsPersonLookup(routing) && scopeCanSee(scope, "/people") ? await lookupPersonByName(queryText, scope) : null;
+      const followsUp = Boolean(previousCall) && isFollowUp(queryText);
+      const personByName = !followsUp && needsPersonLookup(routing) && scopeCanSee(scope, "/people") ? await lookupPersonByName(queryText, scope) : null;
       const route = pickRoute(routing, Boolean(personByName));
-      call = routeToToolCall(route, routing, queryText);
+      call = (!personByName && followUpCall(previousCall, route, routing, queryText)) || routeToToolCall(route, routing, queryText);
       if (route === "person" && personByName) dbResponse = personByName;
     }
     onStatus?.(toolStatus(call));
@@ -291,7 +294,7 @@ export async function queryAIAssistantStream(
         },
       });
     }
-    dbResponse = { ...dbResponse, dataSummary: { ...dbResponse.dataSummary, via: call.via } };
+    dbResponse = { ...dbResponse, dataSummary: { ...dbResponse.dataSummary, via: call.via, call: { tool: call.tool, args: call.args } } };
 
     if (dbResponse.dataSummary?.sources) {
       sources = dbResponse.dataSummary.sources;

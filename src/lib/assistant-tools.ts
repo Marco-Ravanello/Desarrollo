@@ -50,7 +50,7 @@ export const ASSISTANT_TOOLS: ToolDef[] = [
   {
     name: "expedientes",
     description:
-      "Contar expedientes (casos sociales) con filtros, y agruparlos o graficarlos. Sirve para: cuántos hay abiertos, urgentes, sin movimiento, sin profesional a cargo, de una etiqueta, de un área, abiertos en un período, o un gráfico de expedientes.",
+      "Contar o listar expedientes (casos sociales) con filtros, y agruparlos o graficarlos. Sirve para: cuántos hay abiertos, urgentes, sin movimiento o con movimiento en los últimos días, sin profesional a cargo, de una etiqueta, de un área, abiertos en un período, cuáles son, o un gráfico de expedientes.",
     params: {
       estado: { type: "string", enum: CASE_STATES, description: "abiertos (abiertos o en proceso, el valor normal), cerrados, derivados o todos." },
       prioridad: { type: "string", enum: ["URGENTE", "ALTA", "MEDIA", "BAJA"], description: "Solo los de esa prioridad." },
@@ -58,7 +58,15 @@ export const ASSISTANT_TOOLS: ToolDef[] = [
       etiqueta: { type: "string", enum: CASE_LABELS.map((l) => l.key), description: "Etiqueta del expediente." },
       desde: DATE("Abiertos desde esta fecha."),
       hasta: DATE("Abiertos hasta esta fecha."),
-      sin_movimiento: { type: "boolean", description: "Solo los que no tienen intervenciones hace 30 días o más." },
+      sin_movimiento: { type: "boolean", description: "Solo los que no tienen intervenciones hace 30 días o más (si la pregunta no dice cuántos días)." },
+      sin_movimiento_dias: { type: "integer", min: 1, max: 365, description: "Solo los que no tienen intervenciones hace esta cantidad de días o más (\"sin movimiento hace 60 días\")." },
+      con_movimiento_dias: {
+        type: "integer",
+        min: 1,
+        max: 365,
+        description: "Solo los que tuvieron al menos una intervención en los últimos tantos días (\"los que se movieron esta semana\" = 7, \"en el último mes\" = 30).",
+      },
+      listar: { type: "boolean", description: "true si pregunta cuáles son o pide verlos o listarlos: muestra hasta 20 expedientes con su enlace." },
       sin_asignar: { type: "boolean", description: "Solo los que no tienen un profesional a cargo." },
       agrupar_por: { type: "string", enum: CASE_GROUPS, description: "Cómo separarlos en la tabla o el gráfico. a_cargo es por profesional." },
       grafico: { type: "boolean", description: "true si pide un gráfico." },
@@ -366,7 +374,8 @@ function caseGroup(text: string): (typeof CASE_GROUPS)[number] | undefined {
   if (has(text, ["etiqueta"])) return "etiqueta";
   if (has(text, ["edad", "franja"])) return "edad";
   if (has(text, ["genero", "sexo"])) return "genero";
-  if (has(text, ["mes", "meses"])) return "mes";
+  // "por mes" agrupa; "en el último mes" es un plazo, no una agrupación.
+  if (has(text, ["por mes", "cada mes", "mes a mes", "mensual", "por meses", "meses"]) && !/(ultimos|últimos)\s+\d*\s*meses/.test(text)) return "mes";
   if (has(text, ["profesional", "a cargo"])) return "a_cargo";
   if (has(text, ["area"])) return "area";
   return undefined;
@@ -378,13 +387,45 @@ function caseArgs(text: string): ToolArgs {
   // "¿Cuántos hay abiertos y cuántos son urgentes?" pide las dos cosas: va al resumen, sin filtrar.
   if (has(text, ["urgente"]) && !/\by\s+cu[aá]ntos\s+(son\s+|hay\s+)?urgentes/.test(text)) args.prioridad = "URGENTE";
   if (has(text, ["cerrado"])) args.estado = "cerrados";
-  if (has(text, ["sin movimiento", "quieto", "no se mueven"])) args.sin_movimiento = true;
+  Object.assign(args, movementArgs(text));
   if (has(text, ["sin asignar", "sin profesional", "nadie a cargo"])) args.sin_asignar = true;
   const label = CASE_LABELS.find((l) => text.includes(l.label.toLowerCase()) || text.includes(l.label.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "")));
   if (label) args.etiqueta = label.key;
   const group = caseGroup(text);
   if (group) args.agrupar_por = group;
+  else if (ASKS_WHICH.test(text)) args.listar = true;
   return args;
+}
+
+/** "¿Cuáles son?", "listámelos", "mostrame los…": pide ver los expedientes, no solo cuántos son. */
+const ASKS_WHICH = /\bcuales\b|\bcuáles\b|\blist[aá](me|r|melos)?\b|\bmostr[aá]me(los)?\s+(los|cuales|cuáles)|\bmostr[aá]melos\b|\bque expedientes\b|\bqué expedientes\b|\bnombr[aá]me(los)?\b/;
+
+/** Los días que nombra la pregunta: "30 días", "la última semana" (7), "el último mes" (30), "hoy" (1). */
+export function daysInText(text: string): number | null {
+  const n = text.match(/\b(\d{1,3})\s*d[ií]as?\b/);
+  if (n) return Math.min(365, Math.max(1, Number(n[1])));
+  const weeks = text.match(/\b(\d{1,2})\s*semanas?\b/);
+  if (weeks) return Math.min(365, Number(weeks[1]) * 7);
+  const months = text.match(/\b(\d{1,2})\s*mes(es)?\b/);
+  if (months) return Math.min(365, Number(months[1]) * 30);
+  if (/(ultima|última|esta)\s+semana/.test(text)) return 7;
+  if (/(ultima|última)\s+quincena/.test(text)) return 15;
+  if (/(ultimo|último|este)\s+mes\b/.test(text)) return 30;
+  if (/\bhoy\b/.test(text)) return 1;
+  return null;
+}
+
+/**
+ * Con o sin movimiento (intervenciones), y en cuántos días: "los que tuvieron movimiento en los últimos 30 días",
+ * "sin movimiento hace 60 días", "los que no se movieron este mes". Acepta errores de tipeo ("moviiento").
+ */
+function movementArgs(text: string): ToolArgs {
+  const days = daysInText(text);
+  const without = /\bsin\s+(mov|interv)|\bno\s+(se\s+)?(mueven|movieron|movio|movió)|\bno\s+(tuvieron|tienen|hubo)\s+(ningun\w*\s+)?(mov|interv)|quieto/.test(text);
+  if (without) return days && days !== 30 ? { sin_movimiento_dias: days } : { sin_movimiento: true };
+  const withMove = /\bmovi\w*|\bmovim\w*|\bse\s+mov\w*|\binterv\w*|\bactividad\b/.test(text) && (days !== null || /\b(ultim|últim|reciente)/.test(text));
+  if (withMove) return { con_movimiento_dias: days ?? 30 };
+  return {};
 }
 
 function chartCall(text: string): Omit<ToolCall, "via"> {
@@ -514,4 +555,60 @@ export function taskTitleFromQuery(query: string): string {
     .replace(/\s+/g, " ")
     .trim();
   return t ? t.charAt(0).toUpperCase() + t.slice(1, 120) : "Tarea";
+}
+
+// ---------------------------------------------------------------------------
+// Seguir la charla: "¿y cuáles?", "¿y de Niñez?", "¿y los urgentes?".
+// ---------------------------------------------------------------------------
+
+/** Las consultas cuyos filtros se le pueden mostrar a Gemini como "consulta anterior" (no llevan nombres ni DNI). */
+const SAFE_TO_REPEAT = new Set(["expedientes", "programas", "barrios", "licencias", "cursos", "mis_tareas", "compras", "vehiculos", "convenios", "stock", "grafico", "cruce_programas", "personal"]);
+
+/** La consulta anterior que mandó la pantalla, revisada como si la hubiera elegido Gemini. null si no sirve. */
+export function parsePreviousCall(raw: unknown): ToolCall | null {
+  if (!raw || typeof raw !== "object") return null;
+  const { tool, args } = raw as { tool?: unknown; args?: unknown };
+  if (typeof tool !== "string" || !SAFE_TO_REPEAT.has(tool)) return null;
+  const valid = validateToolArgs(tool, args);
+  return valid ? { tool, args: valid, via: "palabras" } : null;
+}
+
+/** Para Gemini: qué se consultó antes, así puede seguir la charla con los mismos filtros. */
+export function previousCallText(prev: ToolCall | null): string {
+  if (!prev) return "";
+  const args = Object.entries(prev.args)
+    .filter(([k]) => k !== "listar" && k !== "grafico")
+    .map(([k, v]) => `${k}=${Array.isArray(v) ? v.join(", ") : v}`)
+    .join("; ");
+  return `La respuesta anterior usó la consulta "${prev.tool}"${args ? ` con estos filtros: ${args}` : " sin filtros"}. Si la pregunta sigue esa charla ("¿y cuáles?", "¿y de Niñez?", "¿y los urgentes?"), usá la misma consulta con los mismos filtros y cambiá o agregá solo lo que pida.`;
+}
+
+const MOVEMENT_KEYS = ["sin_movimiento", "sin_movimiento_dias", "con_movimiento_dias"];
+
+/** ¿La pregunta sigue la anterior? Empieza con "y…", "¿y…", "cuáles…", "esos…" o "de esos…". */
+export function isFollowUp(query: string): boolean {
+  const q = query.toLowerCase().trim().replace(/^[¿¡\s]+/, "");
+  return /^(y|e|pero|ahora|tambi[eé]n)\b/.test(q) || /^(cu[aá]les|esos|esas|de esos|de esas|mostr[aá]melos|list[aá]melos|y\s)/.test(q);
+}
+
+/**
+ * Sin Gemini: si la pregunta sigue la anterior y no nombra otro tema, repite la consulta anterior con los filtros
+ * nuevos encima. "¿y de Niñez?" busca el área "Niñez"; si no existe, la consulta lo dice.
+ */
+export function followUpCall(prev: ToolCall | null, route: AssistantRoute, text: string, query: string): ToolCall | null {
+  if (!prev) return null;
+  const vague = route === "search" || route === "social" || route === "cases";
+  if (!vague || (!isFollowUp(query) && route !== "search")) return null;
+  if (prev.tool !== "expedientes") return route === "search" && isFollowUp(query) ? { ...prev, via: "palabras" } : null;
+  const { listar: _l, grafico: _g, ...base } = prev.args;
+  const fresh = caseArgs(text);
+  // Lo nuevo sobre movimiento reemplaza lo anterior ("¿y los que sí se movieron?").
+  if (MOVEMENT_KEYS.some((k) => k in fresh)) for (const k of MOVEMENT_KEYS) delete base[k];
+  const args: ToolArgs = { ...base, ...fresh };
+  const area = query
+    .toLowerCase()
+    .replace(/[¿?¡!.]/g, " ")
+    .match(/^\s*y\s+(?:los|las)?\s*(?:de|del|en)\s+(?:la\s+|el\s+)?([a-záéíóúñ ]{3,40}?)\s*$/);
+  if (area && !/\b(dias?|semana|mes|hoy|urgente|prioridad|etiqueta)\b/.test(area[1])) args.area = area[1].trim();
+  return { tool: "expedientes", args: validateToolArgs("expedientes", args) ?? args, via: "palabras" };
 }

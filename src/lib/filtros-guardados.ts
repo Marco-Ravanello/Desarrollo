@@ -7,7 +7,7 @@ export const FILTROS_MAX = 10;
 export const FILTRO_NOMBRE_MAX = 40;
 
 /** Los filtros de la lista que se guardan (la página no). */
-const CLAVES = ["q", "area", "status", "priority", "assigned", "quiet", "label"] as const;
+const CLAVES = ["q", "area", "status", "priority", "assigned", "quiet", "moved", "label"] as const;
 
 /** La búsqueda de la lista sin la página ni valores vacíos o "todos", en un orden fijo. "" si no hay filtros. */
 export function consultaDeFiltros(params: Record<string, string | string[] | undefined | null>): string {
@@ -16,7 +16,7 @@ export function consultaDeFiltros(params: Record<string, string | string[] | und
     const raw = params[k];
     const v = (Array.isArray(raw) ? raw[0] : raw)?.trim();
     if (!v || v === "all") continue;
-    if (k === "quiet" && v !== "1") continue;
+    if ((k === "quiet" || k === "moved") && !/^[1-9]\d{0,2}$/.test(v)) continue;
     out.set(k, v.slice(0, 120));
   }
   return out.toString();
