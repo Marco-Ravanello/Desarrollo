@@ -15,6 +15,15 @@ export interface Novedad {
 
 export const NOVEDADES: Novedad[] = [
   {
+    fecha: "2026-11-05",
+    titulo: "El Asistente de IA entiende mejor y te pide confirmar",
+    cambios: [
+      "Entiende las preguntas escritas a tu manera: elige qué consultar y con qué filtros, por ejemplo \"expedientes urgentes sin movimiento de Niñez\".",
+      "Antes de agendar una tarea o pedir un vehículo te muestra lo que va a cargar, y se guarda recién cuando tocás \"Confirmar\". Los vehículos quedan pendientes hasta que los aprueben, como en la pantalla de reservas.",
+      "Quien dirige un área ve en las respuestas solo los datos de su área, como en el resto de la app.",
+    ],
+  },
+  {
     fecha: "2026-11-04",
     parte: 7,
     titulo: "Un Asistente de IA más cómodo",

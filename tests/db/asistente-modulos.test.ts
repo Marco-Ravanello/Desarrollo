@@ -4,6 +4,7 @@ import { handleCasesSummary, handleLeavesQuery, handleMyTasksQuery } from "@/ser
 import { queryAIAssistantStream } from "@/services/ai-assistant";
 import { createArea, createUser } from "./helpers";
 import { diaAR } from "@/lib/fechas";
+import { buildAssistantScope } from "@/lib/assistant-scope";
 
 // Datos inventados, solo en la base de prueba local que se vacía en cada archivo.
 
@@ -19,13 +20,14 @@ describe("respuestas del asistente para las partes nuevas", () => {
     await mk(ninez.id, "MEDIA", "CERRADO");
     await mk(vg.id, "MEDIA");
 
-    const all = await handleCasesSummary({ role: "SUPERADMIN" });
+    const all = await handleCasesSummary(buildAssistantScope({ role: "SUPERADMIN" }));
     expect(all.answer).toContain("Hay **3 expedientes abiertos**: 1 urgente");
     expect(all.answer).toContain("| Coordinación de Violencia de Género | 1 |");
     expect(all.answer).not.toContain("Caso inventado");
 
-    const director = await handleCasesSummary({ role: "DIRECTOR_AREA" });
+    const director = await handleCasesSummary(buildAssistantScope({ role: "DIRECTOR_AREA", areaId: ninez.id }));
     expect(director.answer).toContain("Hay **2 expedientes abiertos**");
+    expect(director.answer).toContain("Te muestro solo los datos de tu área.");
     expect(director.answer).not.toContain("Violencia");
     expect(director.dataSummary.actions.map((a: any) => a.payload.path)).toContain("/cases?priority=URGENTE");
   });

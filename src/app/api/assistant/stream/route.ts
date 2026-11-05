@@ -35,6 +35,7 @@ export async function POST(req: NextRequest) {
         try {
           const result = await queryAIAssistantStream(query, history, session.user.id, (chunk: string) => send(null, { chunk }), {
             role: session.user.role,
+            areaId: session.user.areaId,
             onStatus: (status) => send(null, { status }),
           });
           send("metadata", { done: true, intent: result.intent, dataSummary: result.dataSummary });

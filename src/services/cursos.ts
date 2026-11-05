@@ -53,6 +53,7 @@ export type CursoFila = {
   nombre: string;
   tipo: string;
   estado: string;
+  areaId: string | null;
   area: string | null;
   programa: string | null;
   docente: string | null;
@@ -105,6 +106,7 @@ export async function getCursos(filtro: CursosFiltro = {}): Promise<CursoFila[]>
       nombre: c.nombre,
       tipo: c.tipo,
       estado: c.estado,
+      areaId: c.areaId,
       area: c.area?.name ?? null,
       programa: c.programa ? findPadronProgram(c.programa)?.label ?? null : null,
       docente: c.docente,

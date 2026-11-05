@@ -9,6 +9,8 @@ import { PageHeader } from "@/components/layout/page-header";
 import { AssistantAnswer } from "@/components/assistant/assistant-answer";
 import { AssistantChart } from "@/components/assistant/assistant-chart";
 import { AssistantWelcome } from "@/components/assistant/assistant-welcome";
+import { AssistantProposal, type AssistantProposalData } from "@/components/assistant/assistant-proposal";
+import { useSession } from "next-auth/react";
 import { plainAnswer } from "@/lib/assistant-text";
 
 type Source = { type?: string; name: string; url?: string };
@@ -21,13 +23,14 @@ type Message = {
   status?: string;
   stopped?: boolean;
   failed?: boolean;
-  dataSummary?: { sources?: Source[]; actions?: Action[]; chart?: any };
+  dataSummary?: { sources?: Source[]; actions?: Action[]; chart?: any; proposal?: AssistantProposalData };
 };
 
 const newId = () => Math.random().toString(36).slice(2);
 
 export default function AssistantPage() {
   const router = useRouter();
+  const { data: session } = useSession();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -225,7 +228,7 @@ export default function AssistantPage() {
       <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto">
         <div className="mx-auto w-full max-w-3xl px-1 sm:px-4">
           {empty ? (
-            <AssistantWelcome onAsk={ask} disabled={loading} />
+            <AssistantWelcome onAsk={ask} disabled={loading} role={session?.user?.role} />
           ) : (
             <ol className="space-y-6 py-4" aria-live="polite">
               {messages.map((m) =>
@@ -250,6 +253,7 @@ export default function AssistantPage() {
                       {m.text && (m.failed ? <p className="text-rose-700 dark:text-rose-300">{m.text}</p> : <AssistantAnswer text={m.text} />)}
                       {m.stopped && <p className="mt-1 text-xs text-muted-foreground">{m.text ? "Frenaste la respuesta acá." : "Frenaste la respuesta."}</p>}
                       {m.dataSummary?.chart && <AssistantChart chart={m.dataSummary.chart} />}
+                      {m.dataSummary?.proposal && <AssistantProposal proposal={m.dataSummary.proposal} />}
 
                       {!!m.dataSummary?.sources?.length && (
                         <div className="mt-3">

@@ -8,29 +8,13 @@ import {
 import { ZERO_HALLUCINATION_SYSTEM_PROMPT } from "./assistant/prompts";
 import { callOllama, callOllamaStream } from "./assistant/ollama-client";
 import { resolveAnaphoraAndContext, expandMunicipalSynonyms } from "./assistant/context-resolver";
-import {
-  handleChartRequest,
-  handleHRQuery,
-  handleBudgetQuery,
-  handleVehicleQuery,
-  handleAgreementQuery,
-  handleSocialQuery,
-  handleSupplyQuery,
-  handleDocumentRAGQuery,
-  handleAgentCommandQuery,
-  handleFichaSocialAIQuery,
-  handleSpatialProximityQuery
-} from "./assistant/intent-handlers";
+import { handleFichaSocialAIQuery } from "./assistant/intent-handlers";
 import { lookupPersonByName } from "./assistant/person-name-lookup";
-import {
-  handleBarriosQuery,
-  handleCasesSummary,
-  handleCoursesQuery,
-  handleLeavesQuery,
-  handleMyTasksQuery,
-  handleProgramsQuery,
-} from "./assistant/module-handlers";
-import { needsPersonLookup, pickRoute, routingText, ROUTE_STATUS, WRITING_STATUS } from "@/lib/assistant-routing";
+import { helpAnswer, runTool, toolStatus, visibleAreaNames } from "./assistant/tools";
+import { planWithGemini } from "./assistant/planner";
+import { needsPersonLookup, pickRoute, routingText, WRITING_STATUS } from "@/lib/assistant-routing";
+import { isGreeting, routeToToolCall, type ToolCall } from "@/lib/assistant-tools";
+import { buildAssistantScope, scopeCanSee, scopedAreaIdWhere, scopedCaseWhere, type AssistantScope } from "@/lib/assistant-scope";
 
 export type { Message, AIResponse, UniversalSearchResult };
 export { handleFichaSocialAIQuery };
@@ -50,65 +34,29 @@ const DIRECT_INTENTS = new Set([
   "barrios_query",
   "courses_query",
   "tasks_query",
+  "cases_query",
+  "crossing_query",
+  "crossing_question",
+  "task_proposal",
+  "reservation_proposal",
+  "reservation_question",
+  "reservation_error",
+  "command_error",
+  "access_denied",
+  "person_not_found",
+  "greeting",
+  "thanks",
+  "goodbye",
 ]);
 
-export function isGreetingOrGeneralQuery(queryText: string): boolean {
-  const clean = queryText.toLowerCase().trim();
-  const greetingsAndGeneral = [
-    "hola", "buenas", "que tal", "qué tal", "quien sos", "quién sos", "que podes hacer", "qué podés hacer",
-    "que puede hacer", "qué puede hacer", "ayuda", "gracias", "chau", "adios", "adiós", "buen dia", "buen día",
-    "buenas tardes", "buenas noches", "saludos", "como estas", "cómo estás", "como andas", "cómo andás"
-  ];
-  return greetingsAndGeneral.some(g => clean.includes(g));
-}
-
-export function handleGreetingQuery(queryText: string): AIResponse {
-  const clean = queryText.toLowerCase().trim();
-  let answer = "";
-  let intent = "greeting";
-
-  if (clean.includes("gracias")) {
-    answer = `De nada. Si necesitás algo más, preguntame.`;
-    intent = "thanks";
-  } else if (clean.includes("chau") || clean.includes("adios") || clean.includes("adiós")) {
-    answer = `¡Hasta luego! Acá voy a estar para la próxima.`;
-    intent = "goodbye";
-  } else {
-    answer = [
-      "### Asistente de IA",
-      "",
-      "Te ayudo a consultar los datos de la app. Podés preguntarme por:",
-      "",
-      "- **Expedientes:** cuántos hay abiertos, urgentes o sin movimiento, por área.",
-      "- **Personas, programas y barrios:** cuántas personas hay en cada programa o barrio, o los datos de alguien por DNI o apellido.",
-      "- **Recursos Humanos:** quién está de licencia, el personal y los sueldos.",
-      "- **Compras y stock:** las órdenes de compra, el presupuesto y los insumos que faltan.",
-      "- **Vehículos:** el estado de cada uno, la VTV, el seguro y el combustible.",
-      "- **Cursos y tareas:** los cursos abiertos y tus tareas pendientes.",
-      "",
-      "Por ejemplo: \"¿Qué vehículos tienen la VTV vencida?\".",
-    ].join("\n");
-  }
-
-  return {
-    intent,
-    answer,
-    dataSummary: {
-      hasResults: true,
-      sources: [],
-      actions: [
-        { label: "Ver en Mapa Social", actionType: "NAVIGATE", payload: { path: "/maps" } },
-        { label: "Ver Nómina de RRHH", actionType: "NAVIGATE", payload: { path: "/admin/hr" } },
-        { label: "Ver agenda", actionType: "NAVIGATE", payload: { path: "/admin/calendar" } },
-        { label: "Ver Órdenes de Compra", actionType: "NAVIGATE", payload: { path: "/admin/purchase-orders" } }
-      ]
-    }
-  };
-}
-
+/**
+ * Busca las palabras de la pregunta en toda la app. Con los permisos de quien pregunta: el personal solo para
+ * la conducción, y los expedientes y las órdenes de su área si es Director de Área.
+ */
 export async function performUniversalDBSearch(
   queryText: string,
-  history?: { role: "user" | "assistant"; content: string }[]
+  history: { role: "user" | "assistant"; content: string }[] | undefined,
+  scope: AssistantScope
 ): Promise<UniversalSearchResult> {
   const resolvedQuery = resolveAnaphoraAndContext(queryText, history);
   const query = resolvedQuery.toLowerCase().trim();
@@ -186,6 +134,12 @@ export async function performUniversalDBSearch(
     orderOrderBy = { amount: "desc" as const };
   }
 
+  const none = { id: "none" };
+  if (!scopeCanSee(scope, "/admin/hr")) hrWhere = none;
+  caseWhere = { AND: [scopedCaseWhere(scope), caseWhere || none] };
+  if (!scopeCanSee(scope, "/admin/purchase-orders")) orderWhere = none;
+  else if (scope.areaId) orderWhere = { AND: [scopedAreaIdWhere(scope), orderWhere || (synonyms.isBigOrders ? {} : none)] };
+
   const [people, hrRecords, cases, orders, vehicles] = await Promise.all([
     prisma.person.findMany({
       where: personWhere || (synonyms.isSeniors || synonyms.isChildren ? undefined : { id: "none" }),
@@ -196,7 +150,7 @@ export async function performUniversalDBSearch(
       take: 5
     }),
     prisma.case.findMany({
-      where: caseWhere || { id: "none" },
+      where: caseWhere,
       include: { area: true },
       take: 5
     }),
@@ -282,11 +236,12 @@ export async function queryAIAssistantStream(
   history?: { role: "user" | "assistant"; content: string }[],
   userId?: string,
   onChunk?: (chunk: string) => void,
-  options: { role?: string | null; onStatus?: (status: string) => void } = {}
+  options: { role?: string | null; areaId?: string | null; onStatus?: (status: string) => void } = {}
 ): Promise<AIResponse> {
   const onStatus = options.onStatus;
-  if (isGreetingOrGeneralQuery(queryText)) {
-    const greetingResponse = handleGreetingQuery(queryText);
+  const scope = buildAssistantScope({ id: userId, role: options.role, areaId: options.areaId });
+  if (isGreeting(queryText)) {
+    const greetingResponse = helpAnswer(queryText, scope);
     if (onChunk) {
       const words = greetingResponse.answer.split(" ");
       for (let i = 0; i < words.length; i++) {
@@ -301,73 +256,42 @@ export async function queryAIAssistantStream(
   const query = resolvedQuery.toLowerCase().trim();
 
   try {
-    let dbResponse: AIResponse;
-
-    const routing = routingText(query);
+    let dbResponse: AIResponse | null = null;
     let sources: any[] = [];
     let actions: any[] = [];
 
-    // Si la consulta nombra a una persona del padrón, se responde con su ficha antes que con la búsqueda social genérica.
-    const personByName = needsPersonLookup(routing) ? await lookupPersonByName(queryText) : null;
-    const route = pickRoute(routing, Boolean(personByName));
-    onStatus?.(ROUTE_STATUS[route]);
-    const user = { id: userId, role: options.role };
-
-    if (route === "chart") {
-      dbResponse = await handleChartRequest(query);
-    } else if (route === "command") {
-      dbResponse = await handleAgentCommandQuery(queryText, userId);
-    } else if (route === "documents") {
-      dbResponse = await handleDocumentRAGQuery(queryText);
-    } else if (route === "leaves") {
-      dbResponse = await handleLeavesQuery();
-    } else if (route === "tasks") {
-      dbResponse = await handleMyTasksQuery(user);
-    } else if (route === "courses") {
-      dbResponse = await handleCoursesQuery();
-    } else if (route === "programs") {
-      dbResponse = await handleProgramsQuery();
-    } else if (route === "barrios") {
-      dbResponse = await handleBarriosQuery(user);
-    } else if (route === "hr") {
-      dbResponse = await handleHRQuery(query);
-    } else if (route === "budget") {
-      dbResponse = await handleBudgetQuery(query);
-    } else if (route === "vehicles") {
-      dbResponse = await handleVehicleQuery(query);
-    } else if (route === "agreements") {
-      dbResponse = await handleAgreementQuery(query);
-    } else if (route === "person" && personByName) {
-      dbResponse = personByName;
-    } else if (route === "cases") {
-      dbResponse = await handleCasesSummary(user);
-    } else if (route === "social") {
-      dbResponse = await handleSocialQuery(query);
-    } else if (route === "crossing") {
-      dbResponse = await handleFichaSocialAIQuery(queryText);
-    } else if (route === "supplies") {
-      dbResponse = await handleSupplyQuery(query);
-    } else if (route === "nearby") {
-      dbResponse = await handleSpatialProximityQuery(query);
-    } else {
-      const search = await performUniversalDBSearch(queryText, history);
-      sources = search.sources;
-      actions = search.actions;
-
-      if (search.contextText !== "") {
-        dbResponse = {
-          intent: "universal_search",
-          answer: search.contextText,
-          dataSummary: { ...search.dataSummary, sources, actions }
-        };
-      } else {
-        dbResponse = {
-          intent: "fallback",
-          answer: NO_DATA,
-          dataSummary: { hasResults: false, sources, actions }
-        };
-      }
+    // 1. Gemini elige una de las consultas fijas (lib/assistant-tools.ts). 2. Si no hay Gemini o no responde,
+    // se elige buscando palabras en la pregunta.
+    let call: ToolCall | null = null;
+    if (process.env.GEMINI_API_KEY) {
+      onStatus?.("Entendiendo la pregunta…");
+      call = await planWithGemini(queryText, history, { areaNames: await visibleAreaNames(scope) }).catch(() => null);
     }
+    if (!call) {
+      const routing = routingText(query);
+      // Si la consulta nombra a una persona del padrón, se responde con su ficha antes que con la búsqueda social genérica.
+      const personByName = needsPersonLookup(routing) && scopeCanSee(scope, "/people") ? await lookupPersonByName(queryText, scope) : null;
+      const route = pickRoute(routing, Boolean(personByName));
+      call = routeToToolCall(route, routing, queryText);
+      if (route === "person" && personByName) dbResponse = personByName;
+    }
+    onStatus?.(toolStatus(call));
+
+    if (!dbResponse) {
+      dbResponse = await runTool(call, {
+        scope,
+        query,
+        rawQuery: queryText,
+        history,
+        universalSearch: async (text) => {
+          const search = await performUniversalDBSearch(text, history, scope);
+          return search.contextText !== ""
+            ? { intent: "universal_search", answer: search.contextText, dataSummary: { ...search.dataSummary, sources: search.sources, actions: search.actions } }
+            : { intent: "fallback", answer: NO_DATA, dataSummary: { hasResults: false, sources: search.sources, actions: search.actions } };
+        },
+      });
+    }
+    dbResponse = { ...dbResponse, dataSummary: { ...dbResponse.dataSummary, via: call.via } };
 
     if (dbResponse.dataSummary?.sources) {
       sources = dbResponse.dataSummary.sources;
@@ -492,7 +416,7 @@ export async function queryAIAssistantStream(
 export async function queryAIAssistant(
   queryText: string,
   history?: { role: "user" | "assistant"; content: string }[],
-  userId?: string
+  user: { id?: string; role?: string | null; areaId?: string | null } = {}
 ): Promise<AIResponse> {
-  return await queryAIAssistantStream(queryText, history, userId);
+  return await queryAIAssistantStream(queryText, history, user.id, undefined, { role: user.role, areaId: user.areaId });
 }
