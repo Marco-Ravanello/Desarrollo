@@ -1,4 +1,6 @@
 import prisma from "@/lib/prisma";
+import { answerLink, answerStat } from "@/lib/assistant-text";
+import { VEHICLE_STATUS_TONE } from "@/lib/status-tones";
 import fs from "fs/promises";
 import path from "path";
 import { findPeopleNearPoint } from "@/services/spatial";
@@ -64,7 +66,10 @@ export async function handleChartRequest(tipo: string, scope: AssistantScope): P
     return {
       intent: "chart_render",
       answer: `### Personas por inicial del apellido\n\nLas ${total.toLocaleString("es-AR")} personas del padrón, según la letra con la que empieza su apellido.`,
-      dataSummary: { chart: { type: "bar", title: `Personas por inicial del apellido (${total.toLocaleString("es-AR")} en total)`, color: "#8b5cf6", data: chartData } },
+      dataSummary: {
+        stats: [answerStat("Personas en el padrón", total)],
+        chart: { type: "bar", title: "Personas por inicial del apellido", columns: ["Inicial", "Personas"], data: chartData },
+      },
     };
   }
 
@@ -82,7 +87,7 @@ export async function handleChartRequest(tipo: string, scope: AssistantScope): P
     return {
       intent: "chart_render",
       answer: `### Gasto por proveedor\n\nCuánto suman las órdenes de compra aprobadas o cumplidas de cada proveedor.${scope.areaId ? ` ${AREA_NOTE}` : ""}`,
-      dataSummary: { chart: { type: "bar", title: "Gasto por proveedor", color: "#10b981", data: chartData } },
+      dataSummary: { chart: { type: "bar", title: "Gasto por proveedor", format: "pesos", columns: ["Proveedor", "Gasto"], data: chartData } },
     };
   }
 
@@ -101,7 +106,7 @@ export async function handleChartRequest(tipo: string, scope: AssistantScope): P
     return {
       intent: "chart_render",
       answer: `### Gasto por área\n\nCuánto suman las órdenes de compra aprobadas o cumplidas de cada área.${scope.areaId ? ` ${AREA_NOTE}` : ""}`,
-      dataSummary: { chart: { type: "bar", title: "Gasto por área", color: "#10b981", data: chartData } },
+      dataSummary: { chart: { type: "bar", title: "Gasto por área", format: "pesos", columns: ["Área", "Gasto"], data: chartData } },
     };
   }
 
@@ -112,18 +117,20 @@ export async function handleChartRequest(tipo: string, scope: AssistantScope): P
     return {
       intent: "chart_render",
       answer: `### Personal por tipo de contrato\n\nCuántas personas del personal (sin contar las bajas) hay con cada tipo de contrato.`,
-      dataSummary: { chart: { type: "pie", title: "Personal por tipo de contrato", data: chartData } },
+      dataSummary: { chart: { type: "pie", title: "Personal por tipo de contrato", columns: ["Tipo de contrato", "Personas"], data: chartData } },
     };
   }
 
   // vehiculos_estado
   const rows = await prisma.vehicle.groupBy({ by: ["status"], _count: { _all: true } });
   const label: Record<string, string> = { DISPONIBLE: "Disponibles", EN_TALLER: "En el taller", FUERA_DE_SERVICIO: "Fuera de servicio" };
-  const chartData = rows.map((r) => ({ name: label[r.status] ?? r.status, value: r._count._all })).filter((r) => r.value > 0);
+  const chartData = rows
+    .map((r) => ({ name: label[r.status] ?? r.status, value: r._count._all, tone: VEHICLE_STATUS_TONE[r.status] }))
+    .filter((r) => r.value > 0);
   return {
     intent: "chart_render",
     answer: `### Vehículos por estado\n\nCuántos vehículos están disponibles, en el taller o fuera de servicio.`,
-    dataSummary: { chart: { type: "pie", title: "Vehículos por estado", data: chartData } },
+    dataSummary: { chart: { type: "pie", title: "Vehículos por estado", columns: ["Estado", "Vehículos"], data: chartData } },
   };
 }
 
@@ -545,6 +552,7 @@ export async function handleSocialQuery(query: string, scope: AssistantScope): P
       dataSummary: {
         totalCitizens: totalPeople,
         totalPrestaciones,
+        stats: [answerStat("Personas en el padrón", totalPeople, { href: "/people" }), answerStat("Prestaciones y programas", totalPrestaciones)],
         sources: [{ type: "Padrón Social Unificado", name: "Padrón 360° 3F", url: "/people" }],
         actions: [
           { label: "Ver Registro Único", actionType: "NAVIGATE", payload: { path: "/people" } }
@@ -625,7 +633,7 @@ export async function handleSocialQuery(query: string, scope: AssistantScope): P
       answer += `| Persona | DNI | Teléfono | Dirección |\n`;
       answer += `| :--- | :---: | :---: | :--- |\n`;
       filteredPeople.forEach(p => {
-        answer += `| **${p.lastName}, ${p.firstName}** | ${p.dni} | ${p.phone || "No registrado"} | ${p.address || "No registrado"} |\n`;
+        answer += `| ${answerLink(`${p.lastName}, ${p.firstName}`, `/people/${p.dni}`)} | ${p.dni} | ${p.phone || "No registrado"} | ${p.address || "No registrado"} |\n`;
       });
     } else {
       answer += `*No encontré personas con el DNI terminado en ${digit}.*`;
@@ -687,7 +695,7 @@ export async function handleSocialQuery(query: string, scope: AssistantScope): P
       answer += `| Persona | DNI | Barrio / Localidad | Programas activos |\n`;
       answer += `| :--- | :---: | :--- | :---: |\n`;
       sampleRows.forEach((p: any) => {
-        answer += `| **${p.nombre_completo}** | ${p.dni} | ${p.barrio || "Tres de Febrero"} | ${p.cantidad_programas || 0} programas |\n`;
+        answer += `| ${answerLink(p.nombre_completo, `/people/${p.dni}`)} | ${p.dni} | ${p.barrio || "Tres de Febrero"} | ${p.cantidad_programas || 0} programas |\n`;
       });
 
       if (totalCount > 15) {

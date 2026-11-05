@@ -16,6 +16,17 @@ export interface Novedad {
 export const NOVEDADES: Novedad[] = [
   {
     fecha: "2026-11-05",
+    parte: 2,
+    titulo: "El Asistente de IA guarda tus conversaciones",
+    cambios: [
+      "Tus conversaciones con el asistente quedan guardadas: las ves al costado en \"Conversaciones anteriores\" y podés seguir cualquiera. Solo vos las ves, y se borran solas 10 días después de la última pregunta.",
+      "Las respuestas muestran arriba los números importantes en grande, como en el Inicio. Tocalos para abrir esa lista.",
+      "Cada área, persona, legajo, programa, barrio o curso de una respuesta es un enlace a su página.",
+      "Los gráficos muestran el número arriba de cada barra y usan los colores de siempre (por ejemplo, rojo para lo urgente). Los datos se descargan en Excel.",
+    ],
+  },
+  {
+    fecha: "2026-11-05",
     titulo: "El Asistente de IA entiende mejor y te pide confirmar",
     cambios: [
       "Entiende las preguntas escritas a tu manera: elige qué consultar y con qué filtros, por ejemplo \"expedientes urgentes sin movimiento de Niñez\".",

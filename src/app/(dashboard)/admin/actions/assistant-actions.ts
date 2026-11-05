@@ -5,6 +5,7 @@ import { canUseAiAssistant } from "@/lib/permissions";
 import { revalidatePath } from "next/cache";
 import { queryAIAssistant, AIResponse } from "@/services/ai-assistant";
 import { confirmReservationProposal, confirmTaskProposal } from "@/services/assistant/proposals";
+import { deleteConversation, getConversation, listConversations, markProposalResult } from "@/services/assistant/conversations";
 
 export async function queryAssistantAction(
   queryText: string,
@@ -34,7 +35,30 @@ export async function queryAssistantAction(
  * "Confirmar" en la tarjeta de una tarea o un pedido de vehículo que armó el asistente. Hasta acá no se guardó
  * nada; se revisa todo de nuevo, con las mismas reglas que las pantallas de tareas y de reservas.
  */
-export async function confirmAssistantProposalAction(proposal: unknown): Promise<{ ok: true; message: string; link: string } | { ok: false; error: string }> {
+export async function confirmAssistantProposalAction(
+  proposal: unknown,
+  messageId?: string | null
+): Promise<{ ok: true; message: string; link: string } | { ok: false; error: string }> {
+  const res = await confirmProposal(proposal);
+  if (res.ok && typeof messageId === "string") {
+    const session = await auth();
+    if (session?.user?.id) {
+      await markProposalResult(session.user.id, messageId, { step: "done", message: res.message, link: res.link }).catch((err) =>
+        console.error("No se pudo anotar la confirmación en la conversación:", err)
+      );
+    }
+  }
+  return res;
+}
+
+/** "Cancelar" en la tarjeta: no se guarda nada, solo se anota en la conversación para no ofrecerla de nuevo. */
+export async function cancelAssistantProposalAction(messageId: string): Promise<void> {
+  const session = await auth();
+  if (!session?.user?.id || typeof messageId !== "string") return;
+  await markProposalResult(session.user.id, messageId, { step: "cancelled" }).catch(() => undefined);
+}
+
+async function confirmProposal(proposal: unknown): Promise<{ ok: true; message: string; link: string } | { ok: false; error: string }> {
   const session = await auth();
   if (!session?.user?.id) return { ok: false, error: "Tu sesión expiró. Volvé a iniciar sesión." };
   if (!canUseAiAssistant(session.user.role)) return { ok: false, error: "Tu rol no tiene acceso al Asistente de IA." };
@@ -58,4 +82,30 @@ export async function confirmAssistantProposalAction(proposal: unknown): Promise
     console.error("Error confirmando lo que armó el asistente:", error);
     return { ok: false, error: "No se pudo guardar. Probá de nuevo." };
   }
+}
+
+// Conversaciones guardadas: cada persona ve y borra solo las suyas.
+
+async function assistantUserId(): Promise<string | null> {
+  const session = await auth();
+  if (!session?.user?.id || !canUseAiAssistant(session.user.role)) return null;
+  return session.user.id;
+}
+
+export async function listAssistantConversationsAction() {
+  const userId = await assistantUserId();
+  if (!userId) return [];
+  return listConversations(userId);
+}
+
+export async function getAssistantConversationAction(id: string) {
+  const userId = await assistantUserId();
+  if (!userId || typeof id !== "string") return null;
+  return getConversation(userId, id);
+}
+
+export async function deleteAssistantConversationAction(id: string): Promise<{ ok: boolean }> {
+  const userId = await assistantUserId();
+  if (!userId || typeof id !== "string") return { ok: false };
+  return { ok: await deleteConversation(userId, id) };
 }

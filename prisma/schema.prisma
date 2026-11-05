@@ -33,6 +33,8 @@ model User {
   caseFilters        Json?
   /// Cuándo cerró la bienvenida que se muestra la primera vez que entra; null = todavía no la vio.
   welcomeSeenAt      DateTime?
+  /// Conversaciones con el Asistente de IA (se borran solas a los 10 días de la última pregunta).
+  aiConversations    AssistantConversation[]
   createdAt          DateTime             @default(now())
   updatedAt          DateTime             @updatedAt
 }
@@ -1101,4 +1103,37 @@ model BarrioLimite {
   updatedAt   DateTime @updatedAt
 
   @@map("barrio_limites")
+}
+
+/// Una conversación con el Asistente de IA. La ve solo quien la tuvo, y se borra sola 10 días después de la
+/// última pregunta (src/lib/assistant-conversations.ts).
+model AssistantConversation {
+  id        String             @id @default(cuid())
+  userId    String
+  user      User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// La primera pregunta, recortada.
+  title     String
+  messages  AssistantMessage[]
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+
+  @@index([userId, updatedAt])
+  @@index([updatedAt])
+  @@map("asistente_conversaciones")
+}
+
+/// Una pregunta o una respuesta de una conversación con el asistente.
+model AssistantMessage {
+  id             String                @id @default(cuid())
+  conversationId String
+  conversation   AssistantConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  /// "user" o "assistant".
+  sender         String
+  text           String
+  /// Lo que acompaña la respuesta (números, gráfico, enlaces, tarjeta para confirmar). Solo esas partes.
+  data           Json?
+  createdAt      DateTime              @default(now())
+
+  @@index([conversationId, createdAt])
+  @@map("asistente_mensajes")
 }

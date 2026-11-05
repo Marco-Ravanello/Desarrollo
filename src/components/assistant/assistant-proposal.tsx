@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowUpRight, CalendarCheck, Car, Check, Loader2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { confirmAssistantProposalAction } from "@/app/(dashboard)/admin/actions/assistant-actions";
+import { cancelAssistantProposalAction, confirmAssistantProposalAction } from "@/app/(dashboard)/admin/actions/assistant-actions";
 
 export type AssistantProposalData = {
   kind: "tarea" | "reserva";
@@ -12,22 +12,34 @@ export type AssistantProposalData = {
   [key: string]: unknown;
 };
 
+/** Lo que pasó con la tarjeta, guardado en la conversación para no ofrecerla de nuevo al volver. */
+export type ProposalResult = { step: "done"; message: string; link: string } | { step: "cancelled" };
+
 type State = { step: "idle" } | { step: "done"; message: string; link: string } | { step: "cancelled" } | { step: "error"; message: string };
 
 /**
  * La tarjeta de lo que armó el asistente (una tarea o un pedido de vehículo). Nada se guarda hasta "Confirmar",
  * y al confirmar se revisa todo de nuevo en el servidor.
  */
-export function AssistantProposal({ proposal }: { proposal: AssistantProposalData }) {
+export function AssistantProposal({
+  proposal,
+  messageId,
+  initialResult,
+}: {
+  proposal: AssistantProposalData;
+  /** La respuesta guardada en la conversación (si se guardó). */
+  messageId?: string;
+  initialResult?: ProposalResult;
+}) {
   const router = useRouter();
-  const [state, setState] = useState<State>({ step: "idle" });
+  const [state, setState] = useState<State>(initialResult ?? { step: "idle" });
   const [pending, startTransition] = useTransition();
   const isTask = proposal.kind === "tarea";
   const Icon = isTask ? CalendarCheck : Car;
 
   const confirm = () =>
     startTransition(async () => {
-      const res = await confirmAssistantProposalAction(proposal);
+      const res = await confirmAssistantProposalAction(proposal, messageId ?? null);
       setState(res.ok ? { step: "done", message: res.message, link: res.link } : { step: "error", message: res.error });
     });
 
@@ -59,7 +71,10 @@ export function AssistantProposal({ proposal }: { proposal: AssistantProposalDat
                 {pending ? <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden /> : <Check className="h-3.5 w-3.5" aria-hidden />}
                 Confirmar
               </Button>
-              <Button size="sm" variant="outline" onClick={() => setState({ step: "cancelled" })} disabled={pending} className="h-8 gap-1.5">
+              <Button size="sm" variant="outline" onClick={() => {
+                  setState({ step: "cancelled" });
+                  if (messageId) cancelAssistantProposalAction(messageId).catch(() => undefined);
+                }} disabled={pending} className="h-8 gap-1.5">
                 <X className="h-3.5 w-3.5" aria-hidden />
                 Cancelar
               </Button>

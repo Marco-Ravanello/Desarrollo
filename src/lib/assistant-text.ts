@@ -2,7 +2,9 @@
 // Acá se pasan a bloques para dibujarlos con React. Nada se dibuja como HTML: lo que venga escrito
 // en un nombre o un título se muestra como texto, aunque tenga signos raros.
 
-export type Inline = { kind: "text" | "bold" | "italic" | "code"; text: string };
+import { formatNumber } from "@/lib/formato";
+
+export type Inline = { kind: "text" | "bold" | "italic" | "code"; text: string } | { kind: "link"; text: string; href: string };
 
 export type AnswerBlock =
   | { type: "title"; level: 3 | 4; text: string }
@@ -10,18 +12,42 @@ export type AnswerBlock =
   | { type: "list"; ordered: boolean; items: Inline[][] }
   | { type: "table"; header: string[]; rows: Inline[][][] };
 
-const INLINE = /\*\*(.+?)\*\*|`([^`]+?)`|\*([^*\s][^*]*?)\*/g;
+const INLINE = /\[([^\]]+)\]\(([^)\s]*)\)|\*\*(.+?)\*\*|`([^`]+?)`|\*([^*\s][^*]*?)\*/g;
 
-/** Negrita (**así**), código (`así`) e itálica (*así*) dentro de un renglón. */
+/** Solo enlaces a pantallas de la app ("/cases/…"): nada que salga de la app ni que corra código. */
+export const isSafeAppLink = (href: string) => /^\/(?![/\\])[^\s\\]*$/.test(href);
+
+/** Un enlace a una pantalla de la app, para escribir en una respuesta. Lo de adentro se muestra como texto. */
+export function answerLink(text: string, href: string): string {
+  const label = (text ?? "").replace(/[[\]|]/g, " ").replace(/\s+/g, " ").trim();
+  if (!label) return "";
+  return isSafeAppLink(href) ? `[${label}](${href})` : label;
+}
+
+/** Un número importante de la respuesta, que se muestra grande arriba. "attention" (naranja) es solo para lo que pide atención. */
+export type AnswerStat = { label: string; value: string; tone?: "attention"; href?: string };
+
+/** `attention` pinta de naranja el número si es mayor que cero. */
+export function answerStat(label: string, value: number, opts: { href?: string; attention?: boolean } = {}): AnswerStat {
+  return {
+    label,
+    value: formatNumber(value),
+    ...(opts.attention && value > 0 ? { tone: "attention" as const } : {}),
+    ...(opts.href && isSafeAppLink(opts.href) ? { href: opts.href } : {}),
+  };
+}
+
+/** Negrita (**así**), código (`así`), itálica (*así*) y enlaces a la app ([así](/ruta)) dentro de un renglón. */
 export function parseInline(line: string): Inline[] {
   const out: Inline[] = [];
   let last = 0;
   for (const m of line.matchAll(INLINE)) {
     const at = m.index ?? 0;
     if (at > last) out.push({ kind: "text", text: line.slice(last, at) });
-    if (m[1] !== undefined) out.push({ kind: "bold", text: m[1] });
-    else if (m[2] !== undefined) out.push({ kind: "code", text: m[2] });
-    else out.push({ kind: "italic", text: m[3] });
+    if (m[1] !== undefined) out.push(isSafeAppLink(m[2]) ? { kind: "link", text: m[1], href: m[2] } : { kind: "text", text: m[1] });
+    else if (m[3] !== undefined) out.push({ kind: "bold", text: m[3] });
+    else if (m[4] !== undefined) out.push({ kind: "code", text: m[4] });
+    else out.push({ kind: "italic", text: m[5] });
     last = at + m[0].length;
   }
   if (last < line.length) out.push({ kind: "text", text: line.slice(last) });

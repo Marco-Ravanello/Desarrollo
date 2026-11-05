@@ -22,8 +22,13 @@ describe("respuestas del asistente para las partes nuevas", () => {
 
     const all = await handleCasesSummary(buildAssistantScope({ role: "SUPERADMIN" }));
     expect(all.answer).toContain("Hay **3 expedientes abiertos**: 1 urgente");
-    expect(all.answer).toContain("| Coordinación de Violencia de Género | 1 |");
+    expect(all.answer).toMatch(/\| \[Coordinación de Violencia de Género\]\(\/cases\?status=ACTIVOS&area=[^)]+\) \| 1 \|/);
     expect(all.answer).not.toContain("Caso inventado");
+    expect(all.dataSummary.stats).toEqual([
+      { label: "Abiertos", value: "3", href: "/cases?status=ACTIVOS" },
+      { label: "Urgentes", value: "1", tone: "attention", href: "/cases?status=ACTIVOS&priority=URGENTE" },
+      { label: "Sin movimiento hace 30 días", value: "0", href: "/cases?quiet=1" },
+    ]);
 
     const director = await handleCasesSummary(buildAssistantScope({ role: "DIRECTOR_AREA", areaId: ninez.id }));
     expect(director.answer).toContain("Hay **2 expedientes abiertos**");
@@ -43,7 +48,9 @@ describe("respuestas del asistente para las partes nuevas", () => {
 
     const res = await handleLeavesQuery();
     expect(res.answer).toContain("Hoy falta 1 persona.");
-    expect(res.answer).toContain("| Inventada, Sofía |");
+    const sofia = await prisma.hRRecord.findUniqueOrThrow({ where: { dni: "93100001" } });
+    expect(res.answer).toContain(`| [Inventada, Sofía](/admin/hr/${sofia.id}) |`);
+    expect(res.dataSummary.stats.map((s: any) => [s.label, s.value])).toEqual([["Faltan hoy", "1"], ["Falta confirmar la vuelta", "1"]]);
     expect(res.answer).not.toContain("Lía");
     expect(res.answer).toContain("1 persona terminó su licencia y falta confirmar que volvió.");
     expect(res.dataSummary.actions.map((a: any) => a.label)).toEqual(["Ver Ausencias del mes", "Confirmar las vueltas"]);
