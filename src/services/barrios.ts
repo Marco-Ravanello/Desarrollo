@@ -18,7 +18,8 @@ import { nombrePropio } from "@/lib/nombres";
 // filtra por esas combinaciones exactas.
 
 type Actor = { id?: string | null; role?: string | null };
-export type BarrioScope = { canViewSensitive: boolean };
+/** areaId: solo los expedientes de esa área (el Director de Área, en el asistente). */
+export type BarrioScope = { canViewSensitive: boolean; areaId?: string | null };
 
 const SEP = "\u001f";
 
@@ -58,9 +59,10 @@ export async function inBarriosSql(barrios: readonly Barrio3F[]): Promise<Prisma
 
 /** Expedientes sin cerrar, sin los de Violencia de Género para quien no puede verlos. */
 function openCaseFilter(scope: BarrioScope): Prisma.Sql {
-  return scope.canViewSensitive
+  const base = scope.canViewSensitive
     ? Prisma.sql`c.status <> 'CERRADO'`
     : Prisma.sql`c.status <> 'CERRADO' AND a.name NOT ILIKE '%violencia%'`;
+  return scope.areaId ? Prisma.sql`${base} AND c."areaId" = ${scope.areaId}` : base;
 }
 
 /** Las fichas de tormenta de un barrio: se reconocen igual, por el texto que se escribió en la ficha. */

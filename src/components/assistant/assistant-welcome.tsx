@@ -1,5 +1,6 @@
 import { ArrowUpRight, BriefcaseBusiness, Car, FileText, GraduationCap, MapPinned, ShoppingCart, Sparkles, type LucideIcon } from "lucide-react";
 import { ASSISTANT_TOPICS, type SuggestionTopic } from "@/lib/assistant-suggestions";
+import { canAccessPath } from "@/lib/permissions";
 
 const ICONS: Record<SuggestionTopic["id"], LucideIcon> = {
   expedientes: FileText,
@@ -11,7 +12,9 @@ const ICONS: Record<SuggestionTopic["id"], LucideIcon> = {
 };
 
 /** La bienvenida del asistente: qué puede contestar, con preguntas de ejemplo por tema. */
-export function AssistantWelcome({ onAsk, disabled }: { onAsk: (question: string) => void; disabled?: boolean }) {
+export function AssistantWelcome({ onAsk, disabled, role }: { onAsk: (question: string) => void; disabled?: boolean; role?: string | null }) {
+  // Solo los temas que puede ver con su rol (por ejemplo, Recursos Humanos es de la conducción).
+  const topics = ASSISTANT_TOPICS.filter((t) => !role || canAccessPath(role, t.path));
   return (
     <div className="py-4 sm:py-8">
       <div className="mb-6 text-center">
@@ -24,7 +27,7 @@ export function AssistantWelcome({ onAsk, disabled }: { onAsk: (question: string
         </p>
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
-        {ASSISTANT_TOPICS.map((topic) => {
+        {topics.map((topic) => {
           const Icon = ICONS[topic.id];
           return (
             <section key={topic.id} className="rounded-2xl border border-border/70 bg-card p-3 shadow-xs">

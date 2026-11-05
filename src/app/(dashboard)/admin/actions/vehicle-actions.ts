@@ -7,7 +7,7 @@ import { ReservationStatus, VehicleStatus } from "@prisma/client";
 import { actionErrorMessage } from "@/lib/action-error";
 import { FLEET_ADMIN_ROLES } from "@/lib/permissions";
 import { RESERVATION_STATUS, canChangeReservation, formatReservationRange, reservationStatusLabel } from "@/lib/vehicle-reservations";
-import { conflictMessage, findBlockingReservation, lockVehicle } from "@/services/vehicle-reservations";
+import { conflictMessage, findBlockingReservation, lockVehicle, requestVehicleReservation } from "@/services/vehicle-reservations";
 import { formatPesos } from "@/lib/formato";
 
 const parseLocalDate = (dateStr: string) => {
@@ -30,55 +30,15 @@ export async function createVehicleReservationAction(formData: FormData) {
   const reason = formData.get("reason") as string;
   const areaId = (session.user as any).areaId || null;
 
-  if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) return { error: "Revisá la fecha y hora de salida y de devolución." };
-  if (endDate <= startDate) return { error: "La devolución tiene que ser después de la salida." };
-
   try {
-    const vehicle = await prisma.vehicle.findUnique({ where: { id: vehicleId } });
-    if (!vehicle) return { error: "No encontramos ese vehículo." };
-    if (vehicle.status !== 'DISPONIBLE') {
-      return { error: `El vehículo no se puede reservar: está ${vehicle.status === "EN_TALLER" ? "en el taller" : "fuera de servicio"}.` };
-    }
-
-    const overlapping = await findBlockingReservation(vehicleId, startDate, endDate);
-    if (overlapping) return { error: conflictMessage(overlapping) };
-
-    const reservation = await prisma.vehicleReservation.create({
-      data: {
-        vehicleId,
-        userId: session.user.id!,
-        areaId,
-        startDate,
-        endDate,
-        reason,
-        status: 'PENDIENTE'
-      }
+    const result = await requestVehicleReservation({
+      vehicleId,
+      user: { id: session.user.id!, name: session.user.name, areaId },
+      startDate,
+      endDate,
+      reason,
     });
-
-    await prisma.auditLog.create({
-      data: {
-        userId: session.user.id!,
-        action: 'VEHICLE_RESERVATION_REQUEST',
-        entity: 'VehicleReservation',
-        entityId: reservation.id,
-        details: `Pedido de vehículo: ${vehicle.brand} ${vehicle.model} (${vehicle.plate}), ${formatReservationRange(startDate, endDate)}`
-      }
-    });
-
-    const admins = await prisma.user.findMany({
-      where: { role: { in: FLEET_ADMIN_ROLES }, NOT: { id: session.user.id! } },
-      select: { id: true },
-    });
-    if (admins.length > 0) {
-      await prisma.notification.createMany({
-        data: admins.map((admin) => ({
-          userId: admin.id,
-          title: "Nuevo pedido de vehículo",
-          message: `${session.user.name} pide el ${vehicle.plate} el ${formatReservationRange(startDate, endDate)}.`,
-          link: "/admin/vehicles/requests"
-        }))
-      });
-    }
+    if (!result.ok) return { error: result.error };
 
     revalidatePath("/admin/vehicles");
     revalidatePath("/admin/vehicles/requests");

@@ -10,8 +10,9 @@ import { readUploadedFile, storedNameFromUrl } from "@/lib/file-storage";
 import { extractTextFromPDFBuffer } from "@/services/pdf-rag";
 import { agreementState } from "@/lib/convenios";
 import { todayInArgentina } from "@/lib/follow-up-dates";
-import { TZ_AR, formatFecha, formatFechaCalendario, formatFechaHora, formatFechaLarga, formatHora } from "@/lib/fechas";
+import { formatFecha, formatFechaCalendario, formatFechaLarga, formatHora } from "@/lib/fechas";
 import { isUrgentOpenCase } from "@/lib/case-urgency";
+import { AREA_NOTE, scopedAreaIdWhere, scopedAreaWhere, scopedCaseWhere, type AssistantScope } from "@/lib/assistant-scope";
 
 // Pasa a minúsculas y saca los acentos (conserva la ñ) para que "cuántas" o "padrón"
 // se reconozcan igual que "cuantas" o "padron".
@@ -24,52 +25,27 @@ export function normalizeQueryText(query: string): string {
     .trim();
 }
 
-export async function handleChartRequest(query: string): Promise<AIResponse> {
-  const cleanQuery = normalizeQueryText(query);
+/** El texto de "¿qué gráficos podés hacer?". El gráfico de ejemplo (expedientes por área) lo agrega quien la llama. */
+export const CHART_OPTIONS_TEXT = `### Gráficos que puedo armar
+Puedo armar gráficos con los datos de la app. Pedímelos con tus palabras, por ejemplo:
 
-  const isMetaChartQuery = cleanQuery.includes("podes hacer") ||
-                           cleanQuery.includes("cualquier") || cleanQuery.includes("que graficos") || cleanQuery.includes("tipos de grafico") || cleanQuery.includes("que tipo");
+1. **Expedientes** por área, prioridad, estado, etiqueta, mes, edad, género o profesional a cargo (*"gráfico de expedientes urgentes por área"*).
+2. **Gasto por área** (*"gráfico de presupuesto por área"*).
+3. **Gasto por proveedor** (*"gráfico de órdenes de compra por proveedor"*).
+4. **Personal por tipo de contrato** (*"gráfico de personal por contrato"*).
+5. **Vehículos por estado** (*"gráfico de vehículos por estado"*).
+6. **Personas por inicial del apellido** (*"gráfico por inicial de apellido"*).
 
-  if (isMetaChartQuery) {
-    const casesByArea = await prisma.case.groupBy({
-      by: ['areaId'],
-      _count: { _all: true },
-    });
-    const areas = await prisma.area.findMany();
-    const fallbackChartData = areas.map(area => {
-      const count = casesByArea.find(c => c.areaId === area.id)?._count._all || 0;
-      return { name: area.name.replace("Dirección de ", "").replace("Coordinación de ", "").substring(0, 22), value: count };
-    }).filter(a => a.value > 0);
+*Como ejemplo, acá tenés los expedientes abiertos por área:*`;
 
-    return {
-      intent: "chart_capabilities",
-      answer: `### Gráficos que puedo armar
-Sí. Puedo armar gráficos con los datos de la app.
+const shortArea = (name: string) => name.replace("Dirección de ", "").replace("Coordinación de ", "").substring(0, 22);
 
-#### Gráficos que podés pedirme con tus palabras:
-1. **Expedientes por área** (por ejemplo: *"gráfico de expedientes por área"*).
-2. **Expedientes por edad** (por ejemplo: *"gráfico de expedientes por edad"*).
-3. **Expedientes por género** (por ejemplo: *"gráfico de expedientes por género"*).
-4. **Expedientes por prioridad** (por ejemplo: *"gráfico de expedientes por prioridad"*).
-5. **Gasto por área** (por ejemplo: *"gráfico de presupuesto por área"*).
-6. **Gasto por proveedor** (por ejemplo: *"gráfico de órdenes de compra por proveedor"*).
-7. **Personal por tipo de contrato** (por ejemplo: *"gráfico de personal por contrato"*).
-8. **Vehículos por estado** (por ejemplo: *"gráfico de vehículos por estado"*).
-9. **Personas por inicial del apellido** (por ejemplo: *"gráfico por inicial de apellido"*).
-
-*Como ejemplo, acá tenés los expedientes por área:*`,
-      dataSummary: {
-        chart: {
-          type: "bar",
-          title: "Expedientes por área",
-          color: "#3b82f6",
-          data: fallbackChartData
-        }
-      }
-    };
-  }
-
-  if (cleanQuery.includes("letra") || cleanQuery.includes("inicial") || cleanQuery.includes("apellido") || cleanQuery.includes("nombre")) {
+/**
+ * Los gráficos que no son de expedientes (los de expedientes los arma handleCasesTool, con filtros).
+ * `scope` limita las compras al área del Director.
+ */
+export async function handleChartRequest(tipo: string, scope: AssistantScope): Promise<AIResponse> {
+  if (tipo === "personas_inicial") {
     let chartData: { name: string; value: number }[] = [];
     try {
       const rows: any[] = await prisma.$queryRawUnsafe(
@@ -80,293 +56,74 @@ Sí. Puedo armar gráficos con los datos de la app.
          GROUP BY inicial
          ORDER BY inicial ASC;`
       );
-      if (rows && rows.length > 0) {
-        chartData = rows.map((r: any) => ({ name: `Letra ${r.inicial}`, value: r.cantidad }));
-      }
+      chartData = rows.map((r: any) => ({ name: `Letra ${r.inicial}`, value: r.cantidad }));
     } catch (e) {
       console.error("Error consultando padron_unificado para gráfico por inicial:", e);
     }
-    if (chartData.length === 0) {
-      const people = await prisma.person.findMany();
-      const isFirstName = cleanQuery.includes("nombre");
-      const counts: Record<string, number> = {};
-      people.forEach(p => {
-        const name = isFirstName ? p.firstName : p.lastName;
-        const initial = name && name.trim() ? name.trim().charAt(0).toUpperCase() : "?";
-        counts[initial] = (counts[initial] || 0) + 1;
-      });
-      chartData = Object.entries(counts)
-        .sort((a, b) => a[0].localeCompare(b[0]))
-        .map(([name, value]) => ({ name: `Letra ${name}`, value }));
-    }
-    const totalPersonasGrafico = chartData.reduce((acc, curr) => acc + curr.value, 0);
+    const total = chartData.reduce((acc, curr) => acc + curr.value, 0);
     return {
       intent: "chart_render",
-      answer: `### Personas por inicial del apellido\n\nSobre el padrón de **${totalPersonasGrafico.toLocaleString("es-AR")} ciudadanos** de Tres de Febrero según la letra inicial de su apellido.`,
-      dataSummary: {
-        chart: {
-          type: "bar",
-          title: `Personas por inicial del apellido (${totalPersonasGrafico.toLocaleString("es-AR")} en total)`,
-          color: "#8b5cf6",
-          data: chartData
-        }
-      }
+      answer: `### Personas por inicial del apellido\n\nLas ${total.toLocaleString("es-AR")} personas del padrón, según la letra con la que empieza su apellido.`,
+      dataSummary: { chart: { type: "bar", title: `Personas por inicial del apellido (${total.toLocaleString("es-AR")} en total)`, color: "#8b5cf6", data: chartData } },
     };
   }
 
-  if (cleanQuery.includes("proveedor") || cleanQuery.includes("proveedores")) {
-    const orders = await prisma.purchaseOrder.findMany();
-    const providerTotals: Record<string, number> = {};
-
-    orders.forEach(o => {
-      const pName = o.providerName || "Desconocido";
-      providerTotals[pName] = (providerTotals[pName] || 0) + Number(o.amount || 0);
+  if (tipo === "gasto_proveedor") {
+    const rows = await prisma.purchaseOrder.groupBy({
+      by: ["providerName"],
+      where: { ...scopedAreaIdWhere(scope), status: { in: ["APROBADA", "CUMPLIDA"] } },
+      _sum: { amount: true },
     });
-
-    const chartData = Object.entries(providerTotals)
-      .map(([name, value]) => ({ name: name.substring(0, 20), value }))
-      .sort((a, b) => b.value - a.value);
-
+    const chartData = rows
+      .map((r) => ({ name: (r.providerName || "Sin proveedor").substring(0, 20), value: Number(r._sum.amount || 0) }))
+      .filter((r) => r.value > 0)
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 15);
     return {
       intent: "chart_render",
-      answer: `### Gasto por proveedor\n\nCuánto suman las órdenes de compra de cada proveedor.`,
-      dataSummary: {
-        chart: {
-          type: "bar",
-          title: "Gasto por proveedor",
-          color: "#10b981",
-          data: chartData
-        }
-      }
+      answer: `### Gasto por proveedor\n\nCuánto suman las órdenes de compra aprobadas o cumplidas de cada proveedor.${scope.areaId ? ` ${AREA_NOTE}` : ""}`,
+      dataSummary: { chart: { type: "bar", title: "Gasto por proveedor", color: "#10b981", data: chartData } },
     };
   }
 
-  if (cleanQuery.includes("edad") || cleanQuery.includes("año") || cleanQuery.includes("nacimiento") || cleanQuery.includes("rango")) {
-    const casesWithPeople = await prisma.case.findMany({
-      include: { person: true }
-    });
-
-    const ageBuckets = {
-      "Niños (0-12)": 0,
-      "Adolescentes (13-17)": 0,
-      "Jóvenes (18-29)": 0,
-      "Adultos (30-59)": 0,
-      "Adultos Mayores (60+)": 0,
-      "No registrado": 0,
-    };
-
-    const now = new Date();
-    casesWithPeople.forEach(c => {
-      if (c.person && c.person.birthDate) {
-        const birth = new Date(c.person.birthDate);
-        let age = now.getFullYear() - birth.getFullYear();
-        const monthDiff = now.getMonth() - birth.getMonth();
-        if (monthDiff < 0 || (monthDiff === 0 && now.getDate() < birth.getDate())) {
-          age--;
-        }
-        if (age <= 12) ageBuckets["Niños (0-12)"]++;
-        else if (age <= 17) ageBuckets["Adolescentes (13-17)"]++;
-        else if (age <= 29) ageBuckets["Jóvenes (18-29)"]++;
-        else if (age <= 59) ageBuckets["Adultos (30-59)"]++;
-        else ageBuckets["Adultos Mayores (60+)"]++;
-      } else {
-        ageBuckets["No registrado"]++;
-      }
-    });
-
-    const chartData = Object.entries(ageBuckets)
-      .map(([name, value]) => ({ name, value }))
-      .filter(item => item.value > 0);
-
+  if (tipo === "gasto_area") {
+    const [rows, areas] = await Promise.all([
+      prisma.purchaseOrder.groupBy({
+        by: ["areaId"],
+        where: { ...scopedAreaIdWhere(scope), status: { in: ["APROBADA", "CUMPLIDA"] } },
+        _sum: { amount: true },
+      }),
+      prisma.area.findMany({ where: scopedAreaWhere(scope), select: { id: true, name: true } }),
+    ]);
+    const chartData = areas
+      .map((a) => ({ name: shortArea(a.name), value: Number(rows.find((r) => r.areaId === a.id)?._sum.amount || 0) }))
+      .filter((a) => a.value > 0);
     return {
       intent: "chart_render",
-      answer: `### Expedientes por edad\n\nCuántos expedientes hay en cada franja de edad de la persona.`,
-      dataSummary: {
-        chart: {
-          type: "bar",
-          title: "Expedientes por edad",
-          color: "#3b82f6",
-          data: chartData
-        }
-      }
+      answer: `### Gasto por área\n\nCuánto suman las órdenes de compra aprobadas o cumplidas de cada área.${scope.areaId ? ` ${AREA_NOTE}` : ""}`,
+      dataSummary: { chart: { type: "bar", title: "Gasto por área", color: "#10b981", data: chartData } },
     };
   }
 
-  if (cleanQuery.includes("genero") || cleanQuery.includes("sexo")) {
-    const casesWithPeople = await prisma.case.findMany({
-      include: { person: true }
-    });
-
-    const genderCounts: Record<string, number> = {};
-    casesWithPeople.forEach(c => {
-      const g = c.person?.gender ? c.person.gender.toUpperCase() : "NO ESPECIFICADO";
-      genderCounts[g] = (genderCounts[g] || 0) + 1;
-    });
-
-    const chartData = Object.entries(genderCounts)
-      .map(([name, value]) => ({
-        name: name === "FEMENINO" ? "Femenino" : name === "MASCULINO" ? "Masculino" : name === "OTRO" ? "Otro" : "No especificado",
-        value
-      }));
-
+  if (tipo === "personal_contrato") {
+    const rows = await prisma.hRRecord.groupBy({ by: ["contractType"], where: { status: { not: "BAJA" } }, _count: { _all: true } });
+    const label: Record<string, string> = { MONOTRIBUTISTA: "Monotributistas", MENSUALIZADO: "Mensualizados", PLANTA_PERMANENTE: "Planta permanente" };
+    const chartData = rows.map((r) => ({ name: label[r.contractType] ?? r.contractType, value: r._count._all })).filter((r) => r.value > 0);
     return {
       intent: "chart_render",
-      answer: `### Expedientes por género\n\nCuántos expedientes hay según el género cargado en la ficha de la persona.`,
-      dataSummary: {
-        chart: {
-          type: "pie",
-          title: "Expedientes por género",
-          data: chartData
-        }
-      }
+      answer: `### Personal por tipo de contrato\n\nCuántas personas del personal (sin contar las bajas) hay con cada tipo de contrato.`,
+      dataSummary: { chart: { type: "pie", title: "Personal por tipo de contrato", data: chartData } },
     };
   }
 
-  if (cleanQuery.includes("prioridad") || cleanQuery.includes("urgencia") || cleanQuery.includes("severidad")) {
-    const cases = await prisma.case.findMany();
-    const priorityCounts: Record<string, number> = {
-      "BAJA": 0,
-      "MEDIA": 0,
-      "ALTA": 0,
-      "URGENTE": 0
-    };
-    cases.forEach(c => {
-      if (c.priority) {
-        priorityCounts[c.priority] = (priorityCounts[c.priority] || 0) + 1;
-      }
-    });
-    const chartData = Object.entries(priorityCounts)
-      .map(([name, value]) => ({ name: name.charAt(0) + name.slice(1).toLowerCase(), value }))
-      .filter(item => item.value > 0);
-
-    return {
-      intent: "chart_render",
-      answer: `### Expedientes por prioridad\n\nCuántos expedientes hay de cada prioridad.`,
-      dataSummary: {
-        chart: {
-          type: "bar",
-          title: "Expedientes por prioridad",
-          color: "#f5a623",
-          data: chartData
-        }
-      }
-    };
-  }
-
-  if (cleanQuery.includes("estado") || cleanQuery.includes("status") || cleanQuery.includes("etapa")) {
-    const cases = await prisma.case.findMany();
-    const statusCounts: Record<string, number> = {};
-    cases.forEach(c => {
-      if (c.status) {
-        statusCounts[c.status] = (statusCounts[c.status] || 0) + 1;
-      }
-    });
-    const chartData = Object.entries(statusCounts)
-      .map(([name, value]) => ({ name: name.replace("_", " ").charAt(0) + name.replace("_", " ").slice(1).toLowerCase(), value }))
-      .filter(item => item.value > 0);
-
-    return {
-      intent: "chart_render",
-      answer: `### Expedientes por estado\n\nCuántos expedientes están abiertos, en proceso o cerrados.`,
-      dataSummary: {
-        chart: {
-          type: "pie",
-          title: "Expedientes por estado",
-          data: chartData
-        }
-      }
-    };
-  }
-
-  if (cleanQuery.includes("gasto") || cleanQuery.includes("orden") || cleanQuery.includes("compra") || cleanQuery.includes("presupuesto") || cleanQuery.includes("monto")) {
-    const orders = await prisma.purchaseOrder.findMany({ include: { area: true } });
-    const areas = await prisma.area.findMany();
-    const approvedOrders = orders.filter(o => o.status === "APROBADA" || o.status === "CUMPLIDA");
-
-    const chartData = areas.map(area => {
-      const total = approvedOrders
-        .filter(o => o.areaId === area.id)
-        .reduce((sum, curr) => sum + Number(curr.amount), 0);
-      return { name: area.name.replace("Dirección de ", "").replace("Coordinación de ", "").substring(0, 22), value: total };
-    }).filter(a => a.value > 0);
-
-    return {
-      intent: "chart_render",
-      answer: `### Gasto por área\n\nCuánto suman las órdenes de compra de cada área.`,
-      dataSummary: {
-        chart: {
-          type: "bar",
-          title: "Gasto por área",
-          color: "#10b981",
-          data: chartData
-        }
-      }
-    };
-  }
-
-  if (cleanQuery.includes("personal") || cleanQuery.includes("rrhh") || cleanQuery.includes("recursos humanos") || cleanQuery.includes("sueldo") || cleanQuery.includes("salario")) {
-    const records = await prisma.hRRecord.findMany({ where: { status: "ACTIVO" } });
-    const contractsBreakdown = [
-      { name: "Monotributistas", value: records.filter(r => r.contractType === "MONOTRIBUTISTA").length },
-      { name: "Mensualizados", value: records.filter(r => r.contractType === "MENSUALIZADO").length },
-      { name: "Planta Permanente", value: records.filter(r => r.contractType === "PLANTA_PERMANENTE").length },
-    ].filter(c => c.value > 0);
-
-    return {
-      intent: "chart_render",
-      answer: `### Personal por tipo de contrato\n\nCuántas personas activas hay con cada tipo de contrato.`,
-      dataSummary: {
-        chart: {
-          type: "pie",
-          title: "Personal por tipo de contrato",
-          data: contractsBreakdown
-        }
-      }
-    };
-  }
-
-  if (cleanQuery.includes("vehiculo") || cleanQuery.includes("flota")) {
-    const vehicles = await prisma.vehicle.findMany();
-    const states = [
-      { name: "Disponibles", value: vehicles.filter(v => v.status === "DISPONIBLE").length },
-      { name: "En Taller", value: vehicles.filter(v => v.status === "EN_TALLER").length },
-      { name: "Fuera de Servicio", value: vehicles.filter(v => v.status === "FUERA_DE_SERVICIO").length },
-    ].filter(s => s.value > 0);
-
-    return {
-      intent: "chart_render",
-      answer: `### Vehículos por estado\n\nCuántos vehículos están disponibles, en el taller o fuera de servicio.`,
-      dataSummary: {
-        chart: {
-          type: "pie",
-          title: "Vehículos por estado",
-          data: states
-        }
-      }
-    };
-  }
-
-  const casesByArea = await prisma.case.groupBy({
-    by: ['areaId'],
-    _count: { _all: true },
-  });
-  const areas = await prisma.area.findMany();
-  const fallbackChartData = areas.map(area => {
-    const count = casesByArea.find(c => c.areaId === area.id)?._count._all || 0;
-    return { name: area.name.replace("Dirección de ", "").replace("Coordinación de ", "").substring(0, 22), value: count };
-  }).filter(a => a.value > 0);
-
+  // vehiculos_estado
+  const rows = await prisma.vehicle.groupBy({ by: ["status"], _count: { _all: true } });
+  const label: Record<string, string> = { DISPONIBLE: "Disponibles", EN_TALLER: "En el taller", FUERA_DE_SERVICIO: "Fuera de servicio" };
+  const chartData = rows.map((r) => ({ name: label[r.status] ?? r.status, value: r._count._all })).filter((r) => r.value > 0);
   return {
     intent: "chart_render",
-    answer: `### Expedientes por área\n\nCuántos expedientes tiene cada área.`,
-    dataSummary: {
-      chart: {
-        type: "bar",
-        title: "Expedientes por área",
-        color: "#3b82f6",
-        data: fallbackChartData
-      }
-    }
+    answer: `### Vehículos por estado\n\nCuántos vehículos están disponibles, en el taller o fuera de servicio.`,
+    dataSummary: { chart: { type: "pie", title: "Vehículos por estado", data: chartData } },
   };
 }
 
@@ -456,10 +213,10 @@ Si querés, te muestro los sueldos de alguno de estos contratos.`;
   };
 }
 
-export async function handleBudgetQuery(query: string): Promise<AIResponse> {
+export async function handleBudgetQuery(query: string, scope: AssistantScope): Promise<AIResponse> {
   const [orders, areas, providers] = await Promise.all([
-    prisma.purchaseOrder.findMany({ include: { area: true, items: true } }),
-    prisma.area.findMany(),
+    prisma.purchaseOrder.findMany({ where: scopedAreaIdWhere(scope), include: { area: true, items: true }, orderBy: { createdAt: "asc" } }),
+    prisma.area.findMany({ where: scopedAreaWhere(scope) }),
     prisma.provider.findMany()
   ]);
 
@@ -714,10 +471,10 @@ ${vehicles.map(v => {
   };
 }
 
-export async function handleAgreementQuery(query: string): Promise<AIResponse> {
+export async function handleAgreementQuery(query: string, scope: AssistantScope): Promise<AIResponse> {
   const [agreements, areas] = await Promise.all([
-    prisma.agreement.findMany({ include: { area: true } }),
-    prisma.area.findMany()
+    prisma.agreement.findMany({ where: scopedAreaIdWhere(scope), include: { area: true } }),
+    prisma.area.findMany({ where: scopedAreaWhere(scope) })
   ]);
 
   const total = agreements.length;
@@ -754,16 +511,16 @@ ${areas.map(a => {
   };
 }
 
-export async function handleSocialQuery(query: string): Promise<AIResponse> {
+export async function handleSocialQuery(query: string, scope: AssistantScope): Promise<AIResponse> {
   const cleanQuery = normalizeQueryText(query);
 
   const [padronCountRes, partCountRes, topBarrioRes, cases, families, areas] = await Promise.all([
     prisma.$queryRawUnsafe(`SELECT COUNT(*)::int as total FROM padron_unificado;`).catch(() => [{ total: 0 }]),
     prisma.$queryRawUnsafe(`SELECT COUNT(*)::int as total FROM participaciones_programas;`).catch(() => [{ total: 0 }]),
     prisma.$queryRawUnsafe(`SELECT COALESCE(NULLIF(barrio, ''), NULLIF(localidad, '')) as barrio, COUNT(*)::int as cant FROM padron_unificado WHERE (barrio IS NOT NULL AND TRIM(barrio) != '') OR (localidad IS NOT NULL AND TRIM(localidad) != '') GROUP BY 1 ORDER BY cant DESC LIMIT 1;`).catch(() => []),
-    prisma.case.findMany({ include: { area: true, person: true } }).catch(() => []),
+    prisma.case.findMany({ where: scopedCaseWhere(scope), select: { areaId: true, status: true, priority: true } }).catch(() => []),
     prisma.family.findMany().catch(() => []),
-    prisma.area.findMany().catch(() => [])
+    prisma.area.findMany({ where: scopedAreaWhere(scope) }).catch(() => [])
   ]);
 
   let totalPeople = (padronCountRes as any)[0]?.total || 0;
@@ -799,16 +556,14 @@ export async function handleSocialQuery(query: string): Promise<AIResponse> {
   const numericDniMatch = cleanQuery.replace(/[^0-9]/g, "").match(/\b\d{7,8}\b/);
   if (numericDniMatch) {
     const targetDni = numericDniMatch[0];
-    const people = await prisma.person.findMany({
+    // Los expedientes de la persona, como en su ficha: sin Violencia de Género para quien no tiene el permiso.
+    const matchedPerson = await prisma.person.findFirst({
+      where: { dni: targetDni },
       include: {
-        cases: {
-          include: { area: true }
-        },
-        documents: true
+        cases: { where: scope.canViewSensitive ? {} : { NOT: { area: { name: { contains: "violencia", mode: "insensitive" } } } }, include: { area: true } },
+        documents: { where: { OR: [{ caseId: null }, { case: scope.canViewSensitive ? {} : { NOT: { area: { name: { contains: "violencia", mode: "insensitive" } } } } }] } }
       }
     });
-
-    const matchedPerson = people.find(p => p.dni && p.dni.replace(/[^0-9]/g, "") === targetDni);
     if (matchedPerson) {
       let answer = `### ${matchedPerson.lastName}, ${matchedPerson.firstName}\n\n`;
       answer += ``;
@@ -861,12 +616,7 @@ export async function handleSocialQuery(query: string): Promise<AIResponse> {
 
   if (isDniQuery && digitMatch && digitMatch[1]) {
     const digit = digitMatch[1];
-    const people = await prisma.person.findMany();
-    const filteredPeople = people.filter(p => {
-      if (!p.dni) return false;
-      const cleanDni = p.dni.replace(/[^0-9]/g, "");
-      return cleanDni.endsWith(digit);
-    });
+    const filteredPeople = await prisma.person.findMany({ where: { dni: { endsWith: digit } }, orderBy: { lastName: "asc" }, take: 50 });
 
     let answer = `### Personas con DNI terminado en ${digit}\n\n`;
     answer += `Encontré **${filteredPeople.length} personas**:\n\n`;
@@ -1009,10 +759,12 @@ Si querés el detalle de algún expediente en particular, pedímelo con el DNI o
   };
 }
 
-export async function handleSupplyQuery(query: string): Promise<AIResponse> {
+export async function handleSupplyQuery(query: string, scope: AssistantScope): Promise<AIResponse> {
+  // El Director ve el stock de su área y el que es para todas las áreas.
+  const itemWhere = scopedAreaIdWhere(scope, true);
   const [items, requests] = await Promise.all([
-    prisma.supplyItem.findMany({ include: { area: true } }),
-    prisma.supplyRequest.findMany({ include: { supply: true } })
+    prisma.supplyItem.findMany({ where: itemWhere, include: { area: true } }),
+    prisma.supplyRequest.findMany({ where: { supply: itemWhere }, include: { supply: true } })
   ]);
 
   const totalItems = items.length;
@@ -1055,29 +807,24 @@ export async function extractTextFromPDFFile(filePath: string): Promise<string> 
   }
 }
 
-export async function handleDocumentRAGQuery(query: string): Promise<AIResponse> {
-  const people = await prisma.person.findMany({ include: { documents: true } });
-  const cases = await prisma.case.findMany({ include: { documents: true } });
+export async function handleDocumentRAGQuery(query: string, scope: AssistantScope): Promise<AIResponse> {
+  // Los documentos de expedientes que no puede ver (otra área para el Director, o Violencia de Género) no se leen.
+  const caseScope = scopedCaseWhere(scope);
+  const visibleDocs = { OR: [{ caseId: null }, { case: caseScope }] };
+  const words = normalizeQueryText(query).split(/[^a-zñ]+/).filter((w) => w.length >= 3).slice(0, 6);
 
-  let matchedPerson = null;
-  let matchedCase = null;
-
-  for (const p of people) {
-    const fullName = `${p.firstName} ${p.lastName}`.toLowerCase();
-    if (query.includes(p.lastName.toLowerCase()) || query.includes(p.firstName.toLowerCase()) || query.includes(fullName)) {
-      matchedPerson = p;
-      break;
-    }
-  }
-
-  if (!matchedPerson) {
-    for (const c of cases) {
-      if (c.title && query.includes(c.title.toLowerCase())) {
-        matchedCase = c;
-        break;
-      }
-    }
-  }
+  const matchedPerson = words.length
+    ? await prisma.person.findFirst({
+        where: { OR: words.map((w) => ({ lastName: { equals: w, mode: "insensitive" as const } })) },
+        include: { documents: { where: visibleDocs } },
+      })
+    : null;
+  const matchedCase = !matchedPerson && words.length
+    ? await prisma.case.findFirst({
+        where: { AND: [caseScope, ...words.map((w) => ({ title: { contains: w, mode: "insensitive" as const } }))] },
+        include: { documents: true },
+      })
+    : null;
 
   let documentsToParse = [];
   let subjectName = "documentos generales";
@@ -1090,6 +837,7 @@ export async function handleDocumentRAGQuery(query: string): Promise<AIResponse>
     subjectName = `expediente del caso "${matchedCase.title}"`;
   } else {
     documentsToParse = await prisma.document.findMany({
+      where: visibleDocs,
       orderBy: { createdAt: "desc" },
       take: 3
     });
@@ -1291,109 +1039,6 @@ REGLAS ESTRICTAS DE RESPUESTA:
   }
 
   return { title: fallbackTitle, dueDate: fallbackDate };
-}
-
-export async function handleAgentCommandQuery(query: string, userId?: string): Promise<AIResponse> {
-  const cleanQuery = normalizeQueryText(query);
-
-  if (!userId) {
-    return {
-      intent: "command_error",
-      answer: "Tu sesión expiró. Volvé a iniciar sesión para agendar tareas o reservas."
-    };
-  }
-
-  const isTaskCommand = cleanQuery.includes("tarea") || cleanQuery.includes("recordatorio") || cleanQuery.includes("reunion") || cleanQuery.includes("pendiente") || cleanQuery.includes("evento") || cleanQuery.includes("cita") || cleanQuery.includes("turno") || cleanQuery.includes("agendar");
-  if (isTaskCommand) {
-    const details = await extractSchedulingDetails(query);
-
-    const task = await prisma.task.create({
-      data: {
-        userId,
-        title: details.title,
-        dueDate: details.dueDate,
-        status: "PENDIENTE"
-      }
-    });
-
-    const formatOptions: Intl.DateTimeFormatOptions = {
-      weekday: "long",
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-      hourCycle: "h23",
-      timeZone: TZ_AR
-    };
-
-    return {
-      intent: "task_created",
-      answer: `### Tarea agendada
-Agendé esta tarea:
-*   **Título:** ${task.title}
-*   **Fecha:** ${task.dueDate ? new Date(task.dueDate).toLocaleDateString("es-AR", formatOptions) : "Sin fecha"}
-
-La vas a ver en Mis tareas.
-
-Si querés agendar algo más, decime.`,
-      dataSummary: task
-    };
-  }
-
-  const isReservationCommand = cleanQuery.includes("reserva") || cleanQuery.includes("reservar") || cleanQuery.includes("vehiculo") || cleanQuery.includes("auto") || cleanQuery.includes("camioneta");
-  if (isReservationCommand) {
-    const vehicles = await prisma.vehicle.findMany();
-    let matchedVehicle = vehicles.find(v => v.status === "DISPONIBLE");
-
-    const plateMatch = cleanQuery.replace(/[^a-z0-9]/g, "").match(/[a-z]{3}\d{3}|[a-z]{2}\d{3}[a-z]{2}/);
-    if (plateMatch) {
-      const targetPlate = plateMatch[0].toUpperCase();
-      const vehicleByPlate = vehicles.find(v => v.plate && v.plate.replace(/[^a-z0-9]/g, "").toUpperCase() === targetPlate);
-      if (vehicleByPlate) matchedVehicle = vehicleByPlate;
-    }
-
-    if (!matchedVehicle) {
-      return {
-        intent: "reservation_error",
-        answer: "No hay ningún vehículo disponible para reservar."
-      };
-    }
-
-    const details = await extractSchedulingDetails(query);
-    const startDate = details.dueDate;
-    const endDate = new Date(startDate);
-    endDate.setHours(startDate.getHours() + 4);
-
-    const reservation = await prisma.vehicleReservation.create({
-      data: {
-        vehicleId: matchedVehicle.id,
-        userId,
-        startDate,
-        endDate,
-        reason: details.title !== "Nueva tarea agendada por IA" ? `Reserva para: ${details.title}` : "Reserva cargada desde el asistente",
-        status: "APROBADA"
-      }
-    });
-
-    return {
-      intent: "reservation_created",
-      answer: `### Reserva cargada
-Cargué esta reserva de vehículo:
-*   **Vehículo:** ${matchedVehicle.brand} ${matchedVehicle.model} (${matchedVehicle.plate})
-*   **Inicio:** ${formatFechaHora(reservation.startDate)} hs
-*   **Fin:** ${formatFechaHora(reservation.endDate)} hs
-*   **Motivo:** ${reservation.reason}
-
-La vas a ver en la Agenda y en la reserva de vehículos.`,
-      dataSummary: reservation
-    };
-  }
-
-  return {
-    intent: "fallback",
-    answer: "No ha sido posible interpretar el comando especificado."
-  };
 }
 
 export async function handleFichaSocialAIQuery(query: string): Promise<AIResponse> {

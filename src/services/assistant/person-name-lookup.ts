@@ -1,6 +1,7 @@
 import prisma from "@/lib/prisma";
 import { AIResponse } from "@/services/assistant/types";
 import { handleFichaSocialAIQuery } from "@/services/assistant/intent-handlers";
+import type { AssistantScope } from "@/lib/assistant-scope";
 
 // Palabras de la consulta que no forman parte de un nombre ("quiero la información sobre ...").
 const STOPWORDS = new Set([
@@ -61,10 +62,38 @@ async function findPadronByName(words: string[]): Promise<{ matches: PadronMatch
 }
 
 /**
+ * La ficha de una persona del padrón por su DNI, con sus expedientes como en su ficha de la app: sin los de
+ * Violencia de Género para quien no tiene el permiso. null si el DNI no está en el padrón.
+ */
+export async function personByDni(dni: string, scope: Pick<AssistantScope, "canViewSensitive">): Promise<AIResponse | null> {
+  const ficha = await handleFichaSocialAIQuery(dni);
+  if (ficha.intent !== "ficha_social_lookup") return null;
+  const person = await prisma.person
+    .findFirst({
+      where: { dni },
+      include: {
+        cases: {
+          where: scope.canViewSensitive ? {} : { NOT: { area: { name: { contains: "violencia", mode: "insensitive" } } } },
+          include: { area: true },
+        },
+      },
+    })
+    .catch(() => null);
+  let answer = ficha.answer;
+  if (person && person.cases.length > 0) {
+    answer += `\n#### Expedientes (${person.cases.length}):\n`;
+    person.cases.forEach((c, idx) => {
+      answer += `${idx + 1}. **${c.title}** — Estado: \`${c.status}\`, Prioridad: \`${c.priority}\`, Área: ${c.area?.name || "General"}\n`;
+    });
+  }
+  return { ...ficha, answer };
+}
+
+/**
  * Si la consulta nombra a una persona del padrón, arma la respuesta con sus datos.
  * Devuelve null cuando no hay coincidencias, para que el asistente siga con el resto de las búsquedas.
  */
-export async function lookupPersonByName(query: string): Promise<AIResponse | null> {
+export async function lookupPersonByName(query: string, scope: Pick<AssistantScope, "canViewSensitive">): Promise<AIResponse | null> {
   const words = extractNameWords(query);
   let result: { matches: PadronMatch[]; total: number };
   try {
@@ -76,22 +105,8 @@ export async function lookupPersonByName(query: string): Promise<AIResponse | nu
   if (result.matches.length === 0) return null;
 
   if (result.total === 1) {
-    const ficha = await handleFichaSocialAIQuery(result.matches[0].dni);
-    if (ficha.intent === "ficha_social_lookup") {
-      const person = await prisma.person.findFirst({
-        where: { dni: result.matches[0].dni },
-        include: { cases: { include: { area: true } } },
-      }).catch(() => null);
-
-      let answer = ficha.answer;
-      if (person && person.cases.length > 0) {
-        answer += `\n#### Expedientes (${person.cases.length}):\n`;
-        person.cases.forEach((c, idx) => {
-          answer += `${idx + 1}. **${c.title}** — Estado: \`${c.status}\`, Prioridad: \`${c.priority}\`, Área: ${c.area?.name || "General"}\n`;
-        });
-      }
-      return { ...ficha, answer };
-    }
+    const ficha = await personByDni(result.matches[0].dni, scope);
+    if (ficha) return ficha;
   }
 
   let answer = `### Personas encontradas\n\n`;

@@ -67,8 +67,10 @@ describe("dónde busca cada pregunta", () => {
       "¿Cuántos convenios hay vigentes?": "agreements",
       "¿Cómo está la flota de vehículos?": "vehicles",
       "¿Qué vehículos tienen la VTV o el seguro vencido?": "vehicles",
+      "Reservame un auto el viernes de 9 a 12": "command",
       "¿Qué cursos y talleres están abiertos?": "courses",
       "¿Qué tareas tengo pendientes?": "tasks",
+      "Agendame una tarea para mañana a las 10: llamar a la escuela": "command",
     });
   });
 
