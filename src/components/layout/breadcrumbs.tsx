@@ -20,6 +20,7 @@ const PATH_DICTIONARY: Record<string, string> = {
   dashboard: "Inicio",
   admin: "Administración",
   assistant: "Asistente de IA",
+  "sin-respuesta": "Preguntas sin respuesta",
   users: "Usuarios",
   settings: "Configuración",
   budget: "Presupuesto",

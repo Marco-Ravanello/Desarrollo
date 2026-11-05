@@ -3,6 +3,8 @@ import { auth } from "@/auth";
 import { canUseAiAssistant } from "@/lib/permissions";
 import { queryAIAssistantStream } from "@/services/ai-assistant";
 import { saveExchange } from "@/services/assistant/conversations";
+import { recordUnanswered } from "@/services/assistant/unanswered";
+import { unansweredReason, type UnansweredReason } from "@/lib/assistant-unanswered";
 
 export const dynamic = "force-dynamic";
 
@@ -20,6 +22,12 @@ export async function POST(req: NextRequest) {
     if (!query || typeof query !== "string" || query.trim() === "") {
       return NextResponse.json({ error: "La consulta no puede estar vacía." }, { status: 400 });
     }
+
+    // Si no pudo responder, se anota la pregunta para el Superadmin (sin la respuesta ni el nombre).
+    const noteUnanswered = (reason: UnansweredReason) =>
+      recordUnanswered({ question: query, reason, role: session.user.role, areaId: session.user.areaId }).catch((err) =>
+        console.error("No se pudo anotar la pregunta sin respuesta:", err)
+      );
 
     const encoder = new TextEncoder();
     const stream = new ReadableStream({
@@ -53,9 +61,12 @@ export async function POST(req: NextRequest) {
               return null;
             });
           }
+          const reason = req.signal.aborted ? null : unansweredReason(result);
+          if (reason) await noteUnanswered(reason);
           send("metadata", { done: true, intent: result.intent, dataSummary: result.dataSummary, ...(saved ?? {}) });
         } catch (err: any) {
           console.error("Streaming error in /api/assistant/stream:", err);
+          if (!req.signal.aborted) await noteUnanswered("ERROR");
           send("error", { error: "No se pudo responder la consulta. Probá de nuevo." });
         } finally {
           try {
