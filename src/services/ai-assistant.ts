@@ -236,9 +236,25 @@ export async function queryAIAssistantStream(
   history?: { role: "user" | "assistant"; content: string }[],
   userId?: string,
   onChunk?: (chunk: string) => void,
-  options: { role?: string | null; areaId?: string | null; onStatus?: (status: string) => void; previousCall?: unknown } = {}
+  options: {
+    role?: string | null;
+    areaId?: string | null;
+    onStatus?: (status: string) => void;
+    previousCall?: unknown;
+    /** Cambia todo lo que ya se mostró por este texto (si Gemini empezó a escribir y después no sirvió). */
+    onReplace?: (text: string) => void;
+  } = {}
 ): Promise<AIResponse> {
   const onStatus = options.onStatus;
+  // Si Gemini ya mostró una parte, lo que venga después reemplaza lo escrito en vez de sumarse.
+  let streamed = false;
+  const showWhole = (text: string) => {
+    if (!onChunk) return;
+    if (streamed && options.onReplace) {
+      options.onReplace(text);
+      streamed = false;
+    } else onChunk(text);
+  };
   const scope = buildAssistantScope({ id: userId, role: options.role, areaId: options.areaId });
   if (isGreeting(queryText)) {
     const greetingResponse = helpAnswer(queryText, scope);
@@ -329,7 +345,14 @@ export async function queryAIAssistantStream(
           queryText,
           dbResponse.answer,
           { names: namesToSanitize, addresses: addressesToSanitize },
-          history
+          history,
+          // Se va mostrando a medida que Gemini la escribe.
+          onChunk
+            ? (text) => {
+                streamed = true;
+                onChunk(text);
+              }
+            : undefined
         );
         if (geminiResult.answer) {
           if (
@@ -337,16 +360,15 @@ export async function queryAIAssistantStream(
             dbResponse.answer &&
             !dbResponse.answer.toLowerCase().includes(NO_DATA_MARK)
           ) {
-            if (onChunk) onChunk(dbResponse.answer);
+            showWhole(dbResponse.answer);
             return {
               intent: dbResponse.intent,
               answer: dbResponse.answer,
               dataSummary: { ...dbResponse.dataSummary, sources, actions }
             };
           }
-          if (onChunk) {
-            onChunk(geminiResult.answer);
-          }
+          // Lo que no se llegó a mandar mientras escribía (por ejemplo, si era "no encontré datos" y la app tampoco tenía).
+          if (!geminiResult.streamed) showWhole(geminiResult.answer);
           return {
             intent: dbResponse.intent,
             answer: geminiResult.answer,
@@ -383,6 +405,8 @@ export async function queryAIAssistantStream(
 
       let ollamaAnswer = "";
       if (onChunk) {
+        // Si Gemini dejó algo escrito a medias, se borra antes de que escriba Ollama.
+        if (streamed) showWhole("");
         ollamaAnswer = await callOllamaStream(ollamaMessages, onChunk);
       } else {
         ollamaAnswer = await callOllama(ollamaMessages);
@@ -397,9 +421,7 @@ export async function queryAIAssistantStream(
       }
     } catch (ollamaError) {
       console.warn("Ollama is not available, falling back to static answer:", ollamaError);
-      if (onChunk && dbResponse.answer) {
-        onChunk(dbResponse.answer);
-      }
+      if (dbResponse.answer) showWhole(dbResponse.answer);
     }
 
     return {

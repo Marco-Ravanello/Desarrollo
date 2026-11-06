@@ -16,6 +16,7 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "
 import { confirmar } from "@/components/ui/confirm-dialog";
 import { useSession } from "next-auth/react";
 import { plainAnswer, type AnswerStat } from "@/lib/assistant-text";
+import { nextReveal } from "@/lib/assistant-stream";
 import {
   countUnansweredAction,
   deleteAssistantConversationAction,
@@ -74,6 +75,8 @@ export default function AssistantPage() {
   const isSuperadmin = session?.user?.role === "SUPERADMIN";
   const recognitionRef = useRef<any>(null);
   const abortRef = useRef<AbortController | null>(null);
+  // Muestra de golpe lo que ya llegó (al frenar).
+  const revealRef = useRef<(() => void) | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -272,36 +275,70 @@ export default function AssistantPage() {
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
       let buffer = "";
-      let answer = "";
-      while (true) {
-        const { value, done } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-        const events = buffer.split("\n\n");
-        buffer = events.pop() ?? "";
-        for (const event of events) {
-          const line = event.split("\n").find((l) => l.startsWith("data: "));
-          if (!line) continue;
-          let payload: any;
-          try {
-            payload = JSON.parse(line.slice(6));
-          } catch {
-            continue;
-          }
-          if (payload.status) update(answerId, { status: payload.status });
-          if (payload.chunk) {
-            answer += payload.chunk;
-            update(answerId, { text: answer, status: undefined });
-          }
-          if (payload.done) {
-            update(answerId, { dataSummary: payload.dataSummary, status: undefined, savedId: payload.messageId });
-            if (payload.conversationId) {
-              setConversationId(payload.conversationId);
-              setConversationInUrl(payload.conversationId);
-              refreshConversations();
+      // La respuesta se va mostrando de a poco: `received` es lo que llegó y `shown`, cuánto se ve.
+      let received = "";
+      let shown = 0;
+      let timer: ReturnType<typeof setTimeout> | null = null;
+      let finished: any = null;
+      const instant = typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+      const paint = () => update(answerId, { text: received.slice(0, shown), status: undefined });
+      const tick = () => {
+        shown = nextReveal(shown, received);
+        paint();
+        timer = shown < received.length ? setTimeout(tick, 30) : null;
+      };
+      const receive = (text: string, restart = false) => {
+        received = text;
+        if (restart || shown > received.length) shown = 0;
+        if (instant || controller.signal.aborted) {
+          shown = received.length;
+          paint();
+        } else if (timer === null) tick();
+      };
+      revealRef.current = () => {
+        if (timer) clearTimeout(timer);
+        timer = null;
+        shown = received.length;
+        if (received) paint();
+      };
+      try {
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true });
+          const events = buffer.split("\n\n");
+          buffer = events.pop() ?? "";
+          for (const event of events) {
+            const line = event.split("\n").find((l) => l.startsWith("data: "));
+            if (!line) continue;
+            let payload: any;
+            try {
+              payload = JSON.parse(line.slice(6));
+            } catch {
+              continue;
             }
+            if (payload.status && !received) update(answerId, { status: payload.status });
+            if (typeof payload.replace === "string") receive(payload.replace, true);
+            if (payload.chunk) receive(received + payload.chunk);
+            if (payload.done) finished = payload;
+            if (payload.error) throw new Error(payload.error);
           }
-          if (payload.error) throw new Error(payload.error);
+        }
+        // Se termina de escribir y recién ahí aparecen el gráfico, los datos y los botones.
+        await new Promise<void>((resolve) => {
+          const wait = () => (timer === null ? resolve() : setTimeout(wait, 30));
+          wait();
+        });
+      } finally {
+        if (timer) clearTimeout(timer);
+        revealRef.current = null;
+      }
+      if (finished) {
+        update(answerId, { text: received, dataSummary: finished.dataSummary, status: undefined, savedId: finished.messageId });
+        if (finished.conversationId) {
+          setConversationId(finished.conversationId);
+          setConversationInUrl(finished.conversationId);
+          refreshConversations();
         }
       }
       update(answerId, (m) => (m.text ? { status: undefined } : { text: "No encontré datos para esa pregunta. Probá con otras palabras.", status: undefined }));
@@ -320,6 +357,8 @@ export default function AssistantPage() {
 
   function stop() {
     abortRef.current?.abort();
+    // Lo que ya llegó se muestra entero, sin seguir la animación.
+    revealRef.current?.();
   }
 
   function newConversation() {
@@ -467,7 +506,7 @@ export default function AssistantPage() {
                             </div>
                           )}
 
-                          {m.text && !m.status && !m.failed && (
+                          {m.text && !m.status && !m.failed && !(loading && m.id === messages[messages.length - 1]?.id) && (
                             <div className="mt-2 flex gap-1 text-muted-foreground">
                               <Button size="sm" variant="ghost" className="h-7 gap-1.5 px-2 text-xs" onClick={() => copy(m)}>
                                 <Copy className="h-3.5 w-3.5" /> Copiar

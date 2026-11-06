@@ -101,3 +101,51 @@ export function visibleHourRange(
   }
   return [from, to];
 }
+
+const MONTHS_LOWER = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
+const WEEKDAYS_LONG = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
+
+/**
+ * El título de un día en la vista Lista: "Hoy · jueves 5 de noviembre", "Mañana · …", "Ayer · …" o
+ * "Lunes 9 de noviembre". Si es de otro año, lo agrega al final.
+ */
+export function listDayTitle(day: Date, today: Date): { title: string; relative: "hoy" | "manana" | "ayer" | null } {
+  const d = new Date(day.getFullYear(), day.getMonth(), day.getDate());
+  const t = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  const diff = Math.round((d.getTime() - t.getTime()) / 86_400_000);
+  const base = `${WEEKDAYS_LONG[d.getDay()]} ${d.getDate()} de ${MONTHS_LOWER[d.getMonth()]}${d.getFullYear() !== t.getFullYear() ? ` de ${d.getFullYear()}` : ""}`;
+  if (diff === 0) return { title: `Hoy · ${base}`, relative: "hoy" };
+  if (diff === 1) return { title: `Mañana · ${base}`, relative: "manana" };
+  if (diff === -1) return { title: `Ayer · ${base}`, relative: "ayer" };
+  return { title: base.charAt(0).toUpperCase() + base.slice(1), relative: null };
+}
+
+/**
+ * La vista Lista, agrupada por día y en orden. Lo que empezó antes de `from` y sigue (una reserva de varios
+ * días) va en el día `from`, con `ongoing`, para que no quede colgado de un día que no se muestra.
+ * Dentro de cada día, primero lo de todo el día y después por hora.
+ */
+export function groupByDay<T extends { startDate: Date; allDay?: boolean }>(
+  events: T[],
+  from: Date | null
+): { key: string; day: Date; items: { event: T; ongoing: boolean }[] }[] {
+  const fromDay = from ? new Date(from.getFullYear(), from.getMonth(), from.getDate()) : null;
+  const groups = new Map<string, { key: string; day: Date; items: { event: T; ongoing: boolean }[] }>();
+  for (const e of events) {
+    const ongoing = !!fromDay && e.startDate < fromDay;
+    const day = ongoing ? fromDay! : new Date(e.startDate.getFullYear(), e.startDate.getMonth(), e.startDate.getDate());
+    const key = localDayKey(day);
+    if (!groups.has(key)) groups.set(key, { key, day, items: [] });
+    groups.get(key)!.items.push({ event: e, ongoing });
+  }
+  const out = [...groups.values()].sort((a, b) => a.day.getTime() - b.day.getTime());
+  for (const g of out) {
+    g.items.sort(
+      (a, b) =>
+        Number(b.ongoing) - Number(a.ongoing) ||
+        Number(!!b.event.allDay) - Number(!!a.event.allDay) ||
+        a.event.startDate.getTime() - b.event.startDate.getTime()
+    );
+  }
+  return out;
+}
