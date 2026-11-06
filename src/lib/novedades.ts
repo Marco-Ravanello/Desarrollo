@@ -15,6 +15,16 @@ export interface Novedad {
 
 export const NOVEDADES: Novedad[] = [
   {
+    fecha: "2026-11-06",
+    titulo: "Altas y bajas de varias personas, fallecimientos y documentos que vencen",
+    cambios: [
+      "En la página de cada programa podés elegir varias personas con la casilla y darles la baja juntas, con la misma fecha y el mismo motivo. Con \"Alta de varias personas\" pegás una lista de DNI, la revisás y das todas las altas de una vez. En Posibles destinatarios también podés elegir varias.",
+      "En la ficha hay un botón \"Falleció o se mudó\". La persona sale de sus programas (con la baja y el motivo), de las recorridas que todavía no se hicieron y deja de generar avisos. Si fue un error, se saca la marca.",
+      "Al agregar un documento podés elegir qué es (CUD, DNI, certificado de escolaridad…) y cuándo vence, aunque no tengas el archivo. La campanita avisa un mes antes, una semana antes y cuando vence, y en el Registro Único está la lista \"Documentos por vencer\".",
+      "En la Agenda, las reservas y las órdenes que todavía no se aprobaron se ven con borde punteado y la palabra \"Pendiente\".",
+    ],
+  },
+  {
     fecha: "2026-11-05",
     parte: 6,
     titulo: "La Agenda en lista por día y el asistente que escribe de a poco",

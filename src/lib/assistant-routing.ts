@@ -8,6 +8,7 @@ export type AssistantRoute =
   | "leaves"
   | "tasks"
   | "courses"
+  | "expiring_documents"
   | "programs"
   | "barrios"
   | "hr"
@@ -30,6 +31,7 @@ export const ROUTE_STATUS: Record<AssistantRoute, string> = {
   leaves: "Buscando en Licencias y vacaciones…",
   tasks: "Buscando en Mis tareas…",
   courses: "Buscando en Cursos y talleres…",
+  expiring_documents: "Buscando en Documentos por vencer…",
   programs: "Buscando en Programas…",
   barrios: "Buscando en Barrios…",
   hr: "Buscando en Recursos Humanos…",
@@ -61,6 +63,8 @@ const CHART = ["gráfico", "grafico", "chart", "dibujar"];
 const DOCUMENTS = ["pdf", "documento", "archivo", "leé", "lee", "informe", "adjunto", "ordenanza", "decreto", "pliego", "resolución", "resolucion"];
 const LEAVES = ["licencia", "vacacion", "ausen"];
 const COURSES = ["curso", "talleres", "inscript"];
+const EXPIRING = ["vence", "vencid", "vencimiento", "por vencer"];
+const PERSON_DOCS = ["cud", "certificado", "documento", "papeles"];
 const BARRIOS = ["barrio"];
 const HR = ["sueldo", "salario", "rrhh", "recursos humanos", "personal", "empleado", "agente", "contrato", "nómina", "nomina"];
 const BUDGET = ["orden", "compras", "gasto", "presupuesto", "comprar", "monto", "factura"];
@@ -92,6 +96,7 @@ export function needsPersonLookup(text: string): boolean {
 export function pickRoute(text: string, personFound = false): AssistantRoute {
   if (has(text, CHART)) return "chart";
   if (isCreationRequest(text)) return "command";
+  if (has(text, EXPIRING) && has(text, PERSON_DOCS)) return "expiring_documents";
   if (has(text, DOCUMENTS)) return "documents";
   if (has(text, LEAVES) && !text.includes("conducir")) return "leaves";
   if (text.includes("tarea")) return "tasks";

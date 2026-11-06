@@ -21,7 +21,8 @@ import { Input } from "@/components/ui/input";
 import { StatCard } from "@/components/ui/stat-card";
 import { StatRow } from "@/components/ui/mobile-list";
 import { EmptyMessage } from "@/components/ui/empty-message";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { BulkSelectTable, PasteDnisEnrollDialog } from "@/components/programs/bulk-program-people";
+import { todayInArgentina } from "@/lib/follow-up-dates";
 import { ProgramMonthsChart } from "@/components/programs/program-months-chart";
 import { ProgramAreaDialog } from "@/components/programs/program-area-dialog";
 import { ProgramRequirementsDialog } from "@/components/programs/program-requirements-dialog";
@@ -72,6 +73,7 @@ export default async function ProgramPage({
   const canExport = hasPermission(session.user.role, PERMISSIONS.EXPORT_PERSONAL_DATA);
   const shownBarrios = detail.barrios.slice(0, 10);
   const otherBarrios = detail.people - shownBarrios.reduce((a, b) => a + b.total, 0);
+  const today = todayInArgentina();
   const pageHref = (page: number) => `/people/programas/${slug}?${new URLSearchParams({ ...(list.q ? { q: list.q } : {}), page: String(page) })}`;
 
   return (
@@ -87,8 +89,8 @@ export default async function ProgramPage({
         title={program.label}
         description={
           owner
-            ? `A cargo de ${owner.areaName}. Esa área y la conducción dan las altas y bajas desde la ficha de cada persona.`
-            : "Sin área a cargo: cualquiera que carga datos le puede dar altas y bajas desde la ficha de cada persona."
+            ? `A cargo de ${owner.areaName}. Esa área y la conducción dan las altas y bajas, desde la ficha de cada persona o de a varias desde acá.`
+            : "Sin área a cargo: cualquiera que carga datos le puede dar altas y bajas, desde la ficha de cada persona o de a varias desde acá."
         }
         icon={Layers}
         actions={
@@ -267,14 +269,17 @@ export default async function ProgramPage({
             <CardDescription>
               {list.q
                 ? `${plural(list.total, "persona coincide", "personas coinciden")} con "${list.q}".`
-                : `${plural(list.total, "persona")}, por apellido. ${canManage ? "Las altas y bajas se dan desde la ficha de cada una." : ""}`}
+                : `${plural(list.total, "persona")}, por apellido.${canManage ? " Para dar de baja a varias juntas, elegilas con la casilla." : ""}`}
             </CardDescription>
           </div>
-          {canExport && detail.people > 0 && (
-            <Button asChild variant="outline" size="sm" className="rounded-xl font-bold gap-1.5 self-start sm:self-auto">
-              <a href={`/api/programas/${slug}/exportar`}><Download className="h-4 w-4" /> Bajar la lista</a>
-            </Button>
-          )}
+          <div className="flex flex-wrap gap-2 self-start sm:self-auto">
+            {canManage && <PasteDnisEnrollDialog column={program.column} programLabel={program.label} today={today} />}
+            {canExport && detail.people > 0 && (
+              <Button asChild variant="outline" size="sm" className="rounded-xl font-bold gap-1.5">
+                <a href={`/api/programas/${slug}/exportar`}><Download className="h-4 w-4" /> Bajar la lista</a>
+              </Button>
+            )}
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
           <form method="get" className="flex gap-2" role="search">
@@ -296,32 +301,27 @@ export default async function ProgramPage({
               description={list.q ? "Probá con el DNI, una parte del nombre o el barrio." : "Cuando se dé de alta a alguien desde su ficha o se importe una planilla, aparece acá."}
             />
           ) : (
-            <Table stickyHeader>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Persona</TableHead>
-                  <TableHead>DNI</TableHead>
-                  <TableHead>Barrio</TableHead>
-                  <TableHead>Teléfono</TableHead>
-                  <TableHead>En el programa desde</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {list.people.map((p) => (
-                  <TableRow key={p.dni}>
-                    <TableCell className="font-semibold">
-                      <Link href={`/people/${p.dni}?tab=programas`} className="text-foreground hover:text-primary hover:underline">
-                        {p.nombre || "Sin nombre"}
-                      </Link>
-                    </TableCell>
-                    <TableCell className="tabular-nums">{p.dni}</TableCell>
-                    <TableCell>{p.barrio || <span className="text-muted-foreground">Sin barrio</span>}</TableCell>
-                    <TableCell>{p.telefono || <span className="text-muted-foreground">Sin teléfono</span>}</TableCell>
-                    <TableCell>{p.desde ? dayText(p.desde) : <span className="text-muted-foreground">Sin fecha</span>}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+            <BulkSelectTable
+              mode="baja"
+              column={program.column}
+              programLabel={program.label}
+              today={today}
+              canManage={canManage}
+              headers={["Persona", "DNI", "Barrio", "Teléfono", "En el programa desde"]}
+              rows={list.people.map((p) => ({
+                dni: p.dni,
+                nombre: p.nombre,
+                cells: [
+                  <Link key="n" href={`/people/${p.dni}?tab=programas`} className="text-foreground hover:text-primary hover:underline">
+                    {p.nombre || "Sin nombre"}
+                  </Link>,
+                  p.dni,
+                  p.barrio || <span className="text-muted-foreground">Sin barrio</span>,
+                  p.telefono || <span className="text-muted-foreground">Sin teléfono</span>,
+                  p.desde ? dayText(p.desde) : <span className="text-muted-foreground">Sin fecha</span>,
+                ],
+              }))}
+            />
           )}
 
           {list.pages > 1 && (

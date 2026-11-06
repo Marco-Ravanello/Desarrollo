@@ -597,7 +597,7 @@ export async function handleSocialQuery(query: string, scope: AssistantScope): P
       if (pdfDocs.length > 0) {
         let extractedText = "";
         for (const doc of pdfDocs) {
-          const filePath = doc.url;
+          const filePath = doc.url ?? "";
           const text = await extractTextFromPDFFile(filePath);
           if (text.trim().length > 0) {
             extractedText += `\n--- CONTENIDO DEL DOCUMENTO/PDF ADJUNTO: ${doc.name} ---\n${text.substring(0, 4000)}\n`;
@@ -859,7 +859,7 @@ export async function handleDocumentRAGQuery(query: string, scope: AssistantScop
   if (pdfDocs.length > 0) {
     let extractedContext = "";
     for (const doc of pdfDocs) {
-      const filePath = doc.url;
+      const filePath = doc.url ?? "";
       const text = await extractTextFromPDFFile(filePath);
       if (text.trim().length > 0) {
         extractedContext += `\n--- CONTENIDO DEL ARCHIVO: ${doc.name} ---\n${text.substring(0, 4000)}\n`;

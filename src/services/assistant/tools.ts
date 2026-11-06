@@ -19,7 +19,7 @@ import {
   handleSupplyQuery,
   handleVehicleQuery,
 } from "./intent-handlers";
-import { handleBarriosQuery, handleCoursesQuery, handleLeavesQuery, handleMyTasksQuery, handleProgramsQuery } from "./module-handlers";
+import { handleBarriosQuery, handleCoursesQuery, handleExpiringDocumentsQuery, handleLeavesQuery, handleMyTasksQuery, handleProgramsQuery } from "./module-handlers";
 import { handleCasesTool } from "./cases-tool";
 import { lookupPersonByName, personByDni } from "./person-name-lookup";
 import { proposeReservation, proposeTask } from "./proposals";
@@ -110,6 +110,8 @@ export async function runTool(call: ToolCall, ctx: ToolContext): Promise<AIRespo
       return handleSupplyQuery(ctx.query, scope);
     case "cursos":
       return handleCoursesQuery(scope);
+    case "documentos_por_vencer":
+      return handleExpiringDocumentsQuery(scope);
     case "mis_tareas":
       return handleMyTasksQuery({ id: scope.userId });
     case "grafico": {

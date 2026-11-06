@@ -58,6 +58,8 @@ interface AgendaEvent {
   isOwner?: boolean;
   /** Tarea marcada como hecha: se ve tachada. */
   done?: boolean;
+  /** Reserva u orden que todavía no se aprobó: borde punteado y la palabra "Pendiente". */
+  pending?: boolean;
 }
 
 const MONTH_NAMES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
@@ -105,6 +107,19 @@ const TYPE_ORDER: AgendaEventType[] = ["reservation", "order", "task"];
 
 /** Una tarea hecha: gris y tachada, para distinguirla de las pendientes. */
 const DONE_COLOR = "bg-muted/60 text-muted-foreground line-through decoration-1 border-l-4 border-l-muted-foreground/40 border-border/40 hover:bg-muted";
+
+/** Lo que todavía no se aprobó: el mismo color, con el borde punteado. */
+const PENDING_COLOR: Partial<Record<AgendaEventType, string>> = {
+  reservation: "bg-blue-500/5 text-blue-800 dark:text-blue-300 border border-dashed border-blue-500/70 border-l-4 hover:bg-blue-500/15",
+  order: "bg-emerald-500/5 text-emerald-800 dark:text-emerald-300 border border-dashed border-emerald-500/70 border-l-4 hover:bg-emerald-500/15",
+};
+
+/** La palabra "Pendiente" dentro de la casilla. */
+const PendingTag = ({ compact = false }: { compact?: boolean }) => (
+  <span className={`shrink-0 rounded bg-background/80 font-bold uppercase tracking-wide text-[10px] leading-4 ${compact ? "px-0.5" : "px-1"}`}>
+    Pendiente
+  </span>
+);
 
 const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 const sameDay = (a: Date, b: Date) => a.toDateString() === b.toDateString();
@@ -193,9 +208,10 @@ export function UnifiedCalendar({ reservations = [], purchaseOrders = [], tasks 
       startDate: new Date(r.startDate),
       endDate: new Date(r.endDate),
       allDay: false,
-      color: TYPES.reservation.color,
+      color: r.status === "PENDIENTE" ? PENDING_COLOR.reservation! : TYPES.reservation.color,
       icon: Car,
       raw: r,
+      pending: r.status === "PENDIENTE",
     });
   });
 
@@ -212,9 +228,10 @@ export function UnifiedCalendar({ reservations = [], purchaseOrders = [], tasks 
       startDate: start,
       endDate: start,
       allDay,
-      color: TYPES.order.color,
+      color: o.status === "PENDIENTE_APROBACION" ? PENDING_COLOR.order! : TYPES.order.color,
       icon: ShoppingBag,
       raw: o,
+      pending: o.status === "PENDIENTE_APROBACION",
     });
   });
 
@@ -485,7 +502,7 @@ export function UnifiedCalendar({ reservations = [], purchaseOrders = [], tasks 
         ev.stopPropagation();
         openEvent(e);
       }}
-      title={`${e.title} (${whenLabel(e)})`}
+      title={`${e.pending ? "Pendiente de aprobación: " : ""}${e.title} (${whenLabel(e)})`}
       className={`w-full text-left cursor-grab active:cursor-grabbing shadow-2xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${e.color} ${className}`}
     >
       {children}
@@ -615,6 +632,7 @@ export function UnifiedCalendar({ reservations = [], purchaseOrders = [], tasks 
                 "rounded-lg px-1.5 py-1 text-xs font-semibold flex items-center gap-1 min-w-0",
                 <>
                   <IconComp className="h-3 w-3 shrink-0" />
+                  {e.pending && <PendingTag compact />}
                   <span className="truncate">{e.short}</span>
                 </>
               );
@@ -740,6 +758,13 @@ export function UnifiedCalendar({ reservations = [], purchaseOrders = [], tasks 
               </div>
             </div>
 
+            {filteredEvents.some((e) => e.pending) && (
+              <p className="flex items-center gap-2 text-xs text-muted-foreground">
+                <span className="inline-block h-3 w-5 shrink-0 rounded border border-dashed border-muted-foreground/70" aria-hidden />
+                Con borde punteado: las reservas y las órdenes que todavía no se aprobaron.
+              </p>
+            )}
+
             {showPicker && view !== "agenda" && (
               <div className="2xl:hidden rounded-2xl border border-border/60 bg-card p-4 max-w-sm">{miniCalendar}</div>
             )}
@@ -793,6 +818,7 @@ export function UnifiedCalendar({ reservations = [], purchaseOrders = [], tasks 
                             "rounded-md px-1.5 py-0.5 text-xs leading-5 flex items-center gap-1 min-w-0",
                             <>
                               {!e.allDay && <span className="tabular-nums font-semibold shrink-0">{formatTime(e.startDate)}</span>}
+                              {e.pending && <PendingTag compact />}
                               <span className="truncate font-medium">{e.short}</span>
                             </>
                           )
@@ -815,7 +841,7 @@ export function UnifiedCalendar({ reservations = [], purchaseOrders = [], tasks 
                       {dayEvents.length > 0 && (
                         <div className="sm:hidden flex flex-wrap items-center gap-1 px-0.5" aria-hidden>
                           {dayEvents.slice(0, 4).map((e) => (
-                            <span key={e.id} className={`h-2 w-2 rounded-full ${TYPES[e.type].dot}`} />
+                            <span key={e.id} className={`h-2 w-2 rounded-full ${TYPES[e.type].dot} ${e.pending ? "opacity-40" : ""}`} />
                           ))}
                           {dayEvents.length > 4 && <span className="text-[10px] font-bold text-muted-foreground">+{dayEvents.length - 4}</span>}
                         </div>
@@ -923,6 +949,7 @@ export function UnifiedCalendar({ reservations = [], purchaseOrders = [], tasks 
                                     "p-1.5 rounded-xl text-xs leading-tight flex items-center gap-1 min-w-0",
                                     <>
                                       <span className="tabular-nums font-semibold shrink-0">{formatTime(e.startDate)}</span>
+                                      {e.pending && <PendingTag compact />}
                                       <span className="truncate font-medium">{e.short}</span>
                                     </>
                                   )
@@ -997,6 +1024,7 @@ export function UnifiedCalendar({ reservations = [], purchaseOrders = [], tasks 
                               "w-auto max-w-full p-2 rounded-xl text-xs flex items-center gap-2",
                               <>
                                 <IconComp className="h-4 w-4 shrink-0" />
+                                {e.pending && <PendingTag />}
                                 <span className="font-semibold min-w-0 break-words">{e.title}</span>
                                 <span className="tabular-nums shrink-0 opacity-80">{whenLabel(e)}</span>
                               </>
@@ -1066,6 +1094,9 @@ export function UnifiedCalendar({ reservations = [], purchaseOrders = [], tasks 
                                     <span className={`block text-sm font-semibold break-words line-clamp-2 ${e.done ? "text-muted-foreground line-through" : "text-foreground"}`}>{e.title}</span>
                                     <span className="mt-0.5 flex flex-wrap items-center gap-x-1.5 text-xs text-muted-foreground">
                                       <span>{e.done ? "Tarea hecha" : t.kind}</span>
+                                      {e.pending && (
+                                        <span className="rounded border border-dashed border-current px-1 text-[10px] font-bold uppercase leading-4 tracking-wide">Pendiente</span>
+                                      )}
                                       {(ongoing || e.type === "reservation") && !e.allDay && (
                                         <>
                                           <span aria-hidden>·</span>
@@ -1104,9 +1135,16 @@ export function UnifiedCalendar({ reservations = [], purchaseOrders = [], tasks 
             </Button>
 
             <div className="space-y-2">
-              <Badge className={`rounded-full px-3 py-0.5 text-xs font-bold border-none w-fit ${TYPES[selectedEvent.type].badge}`}>
-                {TYPES[selectedEvent.type].kind}
-              </Badge>
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge className={`rounded-full px-3 py-0.5 text-xs font-bold border-none w-fit ${TYPES[selectedEvent.type].badge}`}>
+                  {TYPES[selectedEvent.type].kind}
+                </Badge>
+                {selectedEvent.pending && (
+                  <span className="rounded-full border border-dashed border-muted-foreground/60 px-3 py-0.5 text-xs font-bold text-muted-foreground">
+                    Pendiente de aprobación
+                  </span>
+                )}
+              </div>
               <h3 className="text-xl font-bold text-foreground tracking-tight">{selectedEvent.title}</h3>
             </div>
 

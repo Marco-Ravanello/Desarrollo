@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { StatusBadge } from "@/components/ui/status-badge";
 import {
-  ShieldAlert, Mail, History, Eye, FileIcon, ExternalLink, Users,
+  ShieldAlert, Mail, History, Eye, FileIcon, Users, UserX,
   Contact, Layers, FolderOpen, CheckCircle2, UserPlus, PencilLine, User, Footprints, GraduationCap, Award,
 } from "lucide-react";
 import { notFound } from "next/navigation";
@@ -28,6 +28,10 @@ import { AddFamilyMemberForm } from "./add-family-member-form";
 import { EditPersonDialog } from "./edit-person-dialog";
 import { MergePersonDialog } from "./merge-person-dialog";
 import { MergedRedirect } from "./merged-redirect";
+import { MarkPersonStatusButton, UndoPersonStatusButton } from "./person-status-controls";
+import { getPersonStatus } from "@/services/person-status";
+import { canMarkPersonStatus, canUndoPersonStatus } from "@/lib/person-status";
+import { DocumentItem } from "@/components/documents/document-item";
 import { findMergedInto } from "@/services/person-merge";
 import { RemoveFamilyMemberButton } from "./remove-family-member-button";
 import { PageBreadcrumbs } from "@/components/layout/breadcrumbs-context";
@@ -42,7 +46,7 @@ import { FichaHistorialView } from "@/components/people/ficha-historial";
 import { plural } from "@/lib/formato";
 import { getCaseStatusConfig } from "@/lib/status-styles";
 import { isSensitiveArea } from "@/lib/sensitive-areas";
-import { canEditSocialRecords, canManageProgramEnrollment, hasPermission, MANAGEMENT_ROLES, PERMISSIONS } from "@/lib/permissions";
+import { canEditSocialRecords, canManageProgramEnrollment, hasPermission, isEmergencySurveyor, MANAGEMENT_ROLES, PERMISSIONS } from "@/lib/permissions";
 import { formatFecha, formatFechaHora } from "@/lib/fechas";
 import { barrioLabel } from "@/lib/person-display";
 import { barrioSlug, matchBarrio } from "@/lib/barrios";
@@ -98,20 +102,20 @@ export default async function PersonDetailPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ tab?: string; unida?: string }>;
+  searchParams: Promise<{ tab?: string; unida?: string; doc?: string }>;
 }) {
   const session = await auth();
   const userRole = session?.user?.role;
   const canEdit = canEditSocialRecords(userRole);
   const canViewSensitive = hasPermission(userRole as any, PERMISSIONS.VIEW_SENSITIVE_CASES);
 
-  const [{ id: rawId }, { tab, unida }] = await Promise.all([params, searchParams]);
+  const [{ id: rawId }, { tab, unida, doc: docParam }] = await Promise.all([params, searchParams]);
   const id = decodeURIComponent(rawId);
   const person: any = await getPersonById(id);
   const dni = person?.dni || cleanDni(id);
   if (!dni) return <MergedRedirect {...await mergedOrNotFound(id)} />;
 
-  const [ficha, historial, grupo, registroFamily, areas, cambiosDatos, editData, addressOptions, enrollment, programHistory, visitas, cursos] = await Promise.all([
+  const [ficha, historial, grupo, registroFamily, areas, cambiosDatos, editData, addressOptions, enrollment, programHistory, visitas, cursos, estado] = await Promise.all([
     getFichaSocialByDniFromDb(dni),
     getFichaHistorial(dni, { canViewSensitive }),
     getGrupoFamiliar(dni, { canViewSensitive }),
@@ -124,6 +128,7 @@ export default async function PersonDetailPage({
     getProgramHistory(dni),
     getPersonVisits(dni),
     getCursosDePersona(dni),
+    getPersonStatus(dni),
   ]);
   const canManagePrograms = canManageProgramEnrollment(userRole) && (Boolean(person) || enrollment.inPadron);
 
@@ -132,6 +137,9 @@ export default async function PersonDetailPage({
     return <MergedRedirect {...await mergedOrNotFound(id, dni)} />;
   }
   const canMerge = Boolean(userRole && MANAGEMENT_ROLES.includes(userRole as any));
+  // "Falleció o se mudó": quien da altas y bajas, si la persona existe y todavía no está marcada.
+  const canMarkStatus = canMarkPersonStatus(userRole) && !estado && (Boolean(person) || enrollment.inPadron);
+  const today = todayInArgentina();
 
   const nombre = person ? `${person.lastName}, ${person.firstName}`.replace(/^,\s*|,\s*$/g, "") : historial.nombre || `DNI ${dni}`;
   const enPadron = ficha.encontrado;
@@ -172,6 +180,21 @@ export default async function PersonDetailPage({
         </p>
       )}
 
+      {estado && (
+        <div className="flex flex-col gap-3 rounded-2xl border border-border/60 bg-muted/50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between" role="status">
+          <div className="flex items-start gap-3">
+            <UserX className="mt-0.5 h-5 w-5 shrink-0 text-muted-foreground" aria-hidden />
+            <div className="min-w-0 text-sm">
+              <p className="font-semibold text-foreground">{estado.texto}</p>
+              <p className="text-muted-foreground [overflow-wrap:anywhere]">
+                {estado.nota ? `${estado.nota} · ` : ""}Lo marcó {estado.userName || "alguien del equipo"} el {fecha(estado.createdAt)}. Ya no está en los programas, las recorridas ni los avisos.
+              </p>
+            </div>
+          </div>
+          {canUndoPersonStatus({ id: session?.user?.id, role: userRole }, estado.userId) && <UndoPersonStatusButton dni={dni} />}
+        </div>
+      )}
+
       <PersonIdCard
         nombre={nombre}
         dni={dni}
@@ -192,7 +215,14 @@ export default async function PersonDetailPage({
         etiquetas={etiquetas}
         enPadron={enPadron}
         editButton={editData && addressOptions ? <EditPersonDialog person={editData} options={addressOptions} triggerClassName={ON_BAND_BUTTON} /> : undefined}
-        extraButtons={canMerge ? <MergePersonDialog dni={dni} triggerClassName={ON_BAND_BUTTON} /> : undefined}
+        extraButtons={
+          canMerge || canMarkStatus ? (
+            <>
+              {canMerge && <MergePersonDialog dni={dni} triggerClassName={ON_BAND_BUTTON} />}
+              {canMarkStatus && <MarkPersonStatusButton dni={dni} nombre={nombre} programas={enrollment.active.map((p) => p.label)} triggerClassName={ON_BAND_BUTTON} />}
+            </>
+          ) : undefined
+        }
         newCaseHref={person && canEdit ? `/cases/new?dni=${encodeURIComponent(dni)}` : null}
       />
 
@@ -411,25 +441,9 @@ export default async function PersonDetailPage({
               <EmptyMessage compact title="Todavía no tiene documentos" icon={FileIcon} className="rounded-2xl border border-dashed border-border/60" />
             ) : (
               <div className="grid grid-cols-1 gap-2">
-                {documents.map((d) => {
-                  const href = d.url.startsWith("/api") ? d.url : `/api${d.url}`;
-                  return (
-                    <div key={d.id} className="p-3 border border-border/60 rounded-2xl flex justify-between items-center gap-2 bg-muted/20 hover:bg-muted/40 transition-colors">
-                      <div className="flex items-center gap-3 min-w-0">
-                        <FileIcon className="h-4 w-4 text-muted-foreground shrink-0" />
-                        <div className="min-w-0">
-                          <p className="font-medium text-sm text-foreground truncate">{d.name}</p>
-                          <p className="text-xs text-muted-foreground">{fecha(d.createdAt)}</p>
-                        </div>
-                      </div>
-                      <Button variant="ghost" size="sm" asChild className="text-primary font-bold">
-                        <a href={href} target="_blank" rel="noopener noreferrer">
-                          <ExternalLink className="h-4 w-4 mr-1" /> Abrir
-                        </a>
-                      </Button>
-                    </div>
-                  );
-                })}
+                {documents.map((d) => (
+                  <DocumentItem key={d.id} doc={d} today={today} canEdit={Boolean(person && canEdit && !isEmergencySurveyor(userRole))} highlight={docParam === d.id} />
+                ))}
               </div>
             )}
             {person && canEdit && <UploadDocumentForm personId={person.id} />}

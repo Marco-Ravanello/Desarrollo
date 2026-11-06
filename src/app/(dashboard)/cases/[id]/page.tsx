@@ -1,5 +1,6 @@
 export const dynamic = "force-dynamic";
 
+import { DocumentItem } from "@/components/documents/document-item";
 import { getAreas, getCaseById } from "@/services/cases";
 import { canDeriveCases, canRespondDerivation, getCaseDerivations, hasPendingDerivationFor } from "@/services/derivations";
 import { DerivationCard, DeriveCaseButton } from "@/components/cases/derivations";
@@ -9,7 +10,7 @@ import { getCaseInterventions } from "@/services/interventions";
 import { ensurePersonInPrisma } from "@/services/people";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { notFound, redirect } from "next/navigation";
-import { User, MapPin, Tag, ArrowLeft, ShieldAlert, ClipboardList, History, FileText, Paperclip, ExternalLink } from "lucide-react";
+import { User, MapPin, Tag, ArrowLeft, ShieldAlert, ClipboardList, History, FileText, Paperclip } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { auth } from "@/auth";
@@ -294,25 +295,9 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
               <EmptyMessage compact title="Este expediente todavía no tiene documentos" description="Los informes, fotos y constancias que se adjunten aparecen acá." icon={Paperclip} className="rounded-2xl border border-dashed border-border/60" />
             ) : (
               <div className="grid grid-cols-1 gap-2">
-                {documents.map((d) => {
-                  const href = d.url.startsWith("/api") ? d.url : `/api${d.url}`;
-                  return (
-                    <div key={d.id} className="p-3 border border-border/60 rounded-2xl flex justify-between items-center gap-3 bg-muted/20">
-                      <div className="flex min-w-0 items-center gap-3">
-                        <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
-                        <div className="min-w-0">
-                          <p className="truncate font-medium text-sm text-foreground">{d.name}</p>
-                          <p className="text-xs text-muted-foreground">{fechaCorta(d.createdAt)}</p>
-                        </div>
-                      </div>
-                      <Button variant="ghost" size="sm" asChild className="shrink-0 text-primary font-bold">
-                        <a href={href} target="_blank" rel="noopener noreferrer">
-                          <ExternalLink className="h-4 w-4 mr-1" /> Abrir
-                        </a>
-                      </Button>
-                    </div>
-                  );
-                })}
+                {documents.map((d) => (
+                  <DocumentItem key={d.id} doc={d} today={today} canEdit={false} />
+                ))}
               </div>
             )}
             {person && (

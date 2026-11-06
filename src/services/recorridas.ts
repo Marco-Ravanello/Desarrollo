@@ -1,3 +1,4 @@
+import { markedDnis } from "@/services/person-status";
 import { Prisma } from "@prisma/client";
 import prisma from "@/lib/prisma";
 import { BARRIOS_3F, barrioSlug, type Barrio3F } from "@/lib/barrios";
@@ -185,6 +186,9 @@ export async function buildRecorridaList(barrio: Barrio3F, c: RecorridaCriteria)
   }
 
   await Promise.all(tasks);
+
+  // Las personas que fallecieron o se mudaron fuera del distrito no van.
+  for (const dni of await markedDnis(reasons.dnis)) reasons.delete(dni);
 
   // Visitas de los últimos días (para sacarlos de la lista, o para avisar cuándo fue la última).
   const dnis = reasons.dnis;
@@ -460,6 +464,7 @@ export async function addVisita(user: Actor, recorridaId: string, rawDni: unknow
   if (!dni) return { success: false, error: "Escribí el DNI." };
   const person = await prisma.padronUnificado.findUnique({ where: { dni }, select: { dni: true, nombre_completo: true, direccion: true } });
   if (!person) return { success: false, error: "Ese DNI no está en el padrón." };
+  if ((await markedDnis([dni])).size) return { success: false, error: "Esa persona está marcada como que falleció o se mudó fuera del distrito." };
   const exists = await prisma.recorridaVisita.findUnique({ where: { recorridaId_dni: { recorridaId, dni } } });
   if (exists) return { success: false, error: "Esa persona ya está en la lista." };
   await prisma.recorridaVisita.create({

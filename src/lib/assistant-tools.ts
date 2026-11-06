@@ -185,6 +185,13 @@ export const ASSISTANT_TOOLS: ToolDef[] = [
     status: "Buscando en Cursos y talleres…",
   },
   {
+    name: "documentos_por_vencer",
+    description: "Los documentos de las personas (CUD, DNI, certificados) que vencen en los próximos 60 días y los que ya vencieron.",
+    params: {},
+    path: "/people/vencimientos",
+    status: "Buscando en Documentos por vencer…",
+  },
+  {
     name: "mis_tareas",
     description: "Las tareas pendientes de quien pregunta: atrasadas, de hoy y de la semana.",
     params: {},
@@ -461,6 +468,8 @@ export function routeToToolCall(route: AssistantRoute, text: string, query: stri
         return { tool: "mis_tareas", args: {} };
       case "courses":
         return { tool: "cursos", args: {} };
+      case "expiring_documents":
+        return { tool: "documentos_por_vencer", args: {} };
       case "programs":
         return { tool: "programas", args: {} };
       case "barrios":

@@ -51,6 +51,7 @@ const PATH_DICTIONARY: Record<string, string> = {
   equipo: "Carga del equipo",
   duplicados: "Posibles duplicados",
   calidad: "Calidad de datos",
+  vencimientos: "Documentos por vencer",
   cruces: "Cruces de programas",
   programas: "Programas",
   cursos: "Cursos y talleres",

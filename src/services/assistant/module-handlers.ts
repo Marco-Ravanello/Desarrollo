@@ -6,12 +6,14 @@ import { getStaffAwayToday } from "@/services/hr";
 import { getProgramSummaries } from "@/services/programs";
 import { getBarrioSummaries } from "@/services/barrios";
 import { getCursos } from "@/services/cursos";
+import { listExpiringDocuments } from "@/services/document-expiry";
+import { EXPIRY_WARN_DAYS, documentKindLabel } from "@/lib/document-kinds";
 import { AREA_NOTE, NO_AREA_ANSWER, programVisible, scopeWithoutArea, type AssistantScope } from "@/lib/assistant-scope";
 import { answerLink, answerStat } from "@/lib/assistant-text";
 import type { AIResponse } from "./types";
 
 // Respuestas del asistente para las partes nuevas de la app: expedientes, licencias, programas, barrios,
-// cursos y tareas. Usan las mismas consultas que las pantallas, así los números coinciden.
+// cursos, tareas y documentos por vencer. Usan las mismas consultas que las pantallas, así los números coinciden.
 
 const areaNote = (scope: AssistantScope) => (scope.areaId ? `\n\n${AREA_NOTE}` : "");
 const noArea = (intent: string): AIResponse => ({ intent, answer: NO_AREA_ANSWER, dataSummary: { hasResults: false } });
@@ -159,4 +161,26 @@ export async function handleMyTasksQuery(user: { id?: string | null }, now = new
     answerStat("Para hoy", forToday.length, { href: "/tasks" }),
   ];
   return { intent: "tasks_query", answer: answer.trim(), dataSummary: { hasResults: true, stats, sources: [], actions: [nav("Ir a Mis tareas", "/tasks")] } };
+}
+
+/** Los documentos de las personas (el CUD, por ejemplo) que vencen en los próximos 60 días y los que ya vencieron. */
+export async function handleExpiringDocumentsQuery(scope: AssistantScope, today = diaAR(new Date())): Promise<AIResponse> {
+  const { docs, porVencer, vencidos } = await listExpiringDocuments(scope.role, "por-vencer", today);
+  const actions = [nav("Ver Documentos por vencer", "/people/vencimientos")];
+  if (vencidos) actions.push(nav("Ver los vencidos", "/people/vencimientos?vista=vencidos"));
+  const stats = [
+    answerStat("Vencen en 60 días", porVencer, { href: "/people/vencimientos" }),
+    answerStat("Vencidos en el último año", vencidos, { href: "/people/vencimientos?vista=vencidos", attention: true }),
+  ];
+  if (porVencer === 0) {
+    const answer = `### Documentos por vencer\n\nNo hay documentos que venzan en los próximos ${EXPIRY_WARN_DAYS} días.${vencidos ? ` Hay ${plural(vencidos, "documento vencido", "documentos vencidos")} en el último año.` : ""}`;
+    return { intent: "expiring_documents", answer, dataSummary: { hasResults: vencidos > 0, stats, sources: [], actions } };
+  }
+  let answer = `### Documentos por vencer\n\nEn los próximos ${EXPIRY_WARN_DAYS} días vencen **${plural(porVencer, "documento", "documentos")}**${vencidos ? `, y hay ${plural(vencidos, "vencido", "vencidos")} en el último año` : ""}.\n\n`;
+  answer += `| Persona | Documento | Vence |\n| :--- | :--- | :--- |\n`;
+  for (const d of docs.slice(0, 15)) {
+    answer += `| ${answerLink(d.persona, `/people/${d.dni}?tab=documentos&doc=${d.id}`)} | ${cell(d.kind ? documentKindLabel(d.kind) : d.name)} | ${ddmm(new Date(`${d.expiresAt}T00:00:00Z`))} |\n`;
+  }
+  if (docs.length > 15) answer += `\nY ${plural(docs.length - 15, "documento más", "documentos más")} en la lista.`;
+  return { intent: "expiring_documents", answer: answer.trim(), dataSummary: { hasResults: true, stats, sources: [], actions } };
 }

@@ -3,7 +3,7 @@
 
 import { diasEntre } from "@/lib/fechas";
 
-export type ExpiryKind = "vtv" | "seguro" | "convenio";
+export type ExpiryKind = "vtv" | "seguro" | "convenio" | "documento";
 
 /** Se avisa un mes antes, una semana antes y cuando ya venció. */
 export type ExpiryStage = "mes" | "semana" | "vencido";
@@ -25,6 +25,8 @@ const WHAT: Record<ExpiryKind, { la: string; vence: string }> = {
   vtv: { la: "la VTV", vence: "vence" },
   seguro: { la: "el seguro", vence: "vence" },
   convenio: { la: "el convenio", vence: "termina" },
+  // El de un documento lleva el nombre entero en `label` ("el CUD de Pérez, Juana").
+  documento: { la: "", vence: "vence" },
 };
 
 /**
@@ -36,19 +38,24 @@ export function expiryNotice(kind: ExpiryKind, label: string, day: string, today
   if (!stage) return null;
   const { la, vence } = WHAT[kind];
   const left = diasEntre(today, day);
-  const La = la.charAt(0).toUpperCase() + la.slice(1);
+  // "la VTV de AB123CD" o, para un documento, el nombre que ya viene armado ("el CUD de Pérez, Juana").
+  const subject = kind === "documento" ? label : `${la} de ${label}`;
+  const Subject = subject.charAt(0).toUpperCase() + subject.slice(1);
   if (stage === "vencido") {
     const venció = kind === "convenio" ? "Terminó" : "Venció";
     return {
-      title: `${venció} ${la} de ${label}`,
-      message: kind === "convenio"
-        ? `Terminó el ${fecha(day)}. Si se renovó, actualizá la fecha; si no, cambiale el estado.`
-        : `Venció el ${fecha(day)}. Cuando se renueve, cargá la fecha nueva en el vehículo.`,
+      title: `${venció} ${subject}`,
+      message:
+        kind === "convenio"
+          ? `Terminó el ${fecha(day)}. Si se renovó, actualizá la fecha; si no, cambiale el estado.`
+          : kind === "documento"
+            ? `Venció el ${fecha(day)}. Cuando se renueve, cargá la fecha nueva en la ficha.`
+            : `Venció el ${fecha(day)}. Cuando se renueve, cargá la fecha nueva en el vehículo.`,
     };
   }
   const cuando = left === 0 ? "hoy" : left === 1 ? "mañana" : `en ${left} días`;
   return {
-    title: stage === "semana" ? `${La} de ${label} ${vence} esta semana` : `${La} de ${label} ${vence} este mes`,
+    title: stage === "semana" ? `${Subject} ${vence} esta semana` : `${Subject} ${vence} este mes`,
     message: `${vence === "termina" ? "Termina" : "Vence"} el ${fecha(day)} (${cuando}).`,
   };
 }
