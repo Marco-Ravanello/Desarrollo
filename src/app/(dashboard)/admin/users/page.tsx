@@ -4,6 +4,8 @@ import { getLastLogins, getUsers } from "@/services/system";
 import { lastLoginInfo } from "@/lib/user-activity";
 import { getAreas } from "@/services/cases";
 import { UsersManagementView } from "./users-management-view";
+import { PasswordHelpRequests } from "./password-help-requests";
+import { getPasswordHelpRequests } from "@/services/password-help";
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { canCreateUsersAndResetPasswords, hasPermission, PERMISSIONS } from "@/lib/permissions";
@@ -34,10 +36,11 @@ export default async function UsersPage({
   const isSuperadmin = canCreateUsersAndResetPasswords(userRole);
   const autoOpenNew = isSuperadmin && Boolean(isNew === "true" || isNew === "1" || create === "true" || create === "1");
 
-  const [usersRaw, areas, logins] = await Promise.all([
+  const [usersRaw, areas, logins, helpRequests] = await Promise.all([
     getUsers(),
     getAreas(),
     getLastLogins(),
+    isSuperadmin ? getPasswordHelpRequests() : Promise.resolve([]),
   ]);
 
   const sanitizedUsers = (usersRaw || []).map((u: any) => ({
@@ -59,6 +62,11 @@ export default async function UsersPage({
       currentUserId={session.user.id}
       autoOpenNew={autoOpenNew}
       isSuperadmin={isSuperadmin}
+      helpRequests={
+        <PasswordHelpRequests
+          requests={helpRequests.map((r) => ({ ...r, requestedAt: r.requestedAt.toISOString() }))}
+        />
+      }
     />
   );
 }

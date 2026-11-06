@@ -1,3 +1,4 @@
+import { condicionBusquedaSql } from "@/lib/search-text";
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
@@ -29,12 +30,14 @@ export async function GET(request: Request) {
         `%${q}%`
       );
     } else {
+      // Sin importar tildes ni el orden de las palabras.
+      const palabras = condicionBusquedaSql("texto_busqueda", q, 1);
       rows = await prisma.$queryRawUnsafe(
         `SELECT dni, nombre_completo, programas_activos FROM padron_unificado
-         WHERE LOWER(nombre_completo) LIKE $1
+         WHERE ${palabras.sql}
          ORDER BY cantidad_programas DESC
          LIMIT 8;`,
-        `%${q.toLowerCase()}%`
+        ...palabras.params
       );
     }
 

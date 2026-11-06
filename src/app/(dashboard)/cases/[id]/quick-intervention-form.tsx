@@ -5,7 +5,7 @@ import { ABRIR_NUEVA_INTERVENCION } from "@/lib/atajos";
 import { pedidoDeIntervencion } from "@/components/cases/new-intervention-signal";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Loader2, Send } from "lucide-react";
+import { PencilLine, Loader2, Send } from "lucide-react";
 import { addCaseInterventionAction } from "@/app/(dashboard)/cases/actions/case-actions";
 import { toast } from "sonner";
 import { INTERVENTION_TYPES } from "@/lib/intervention-types";
@@ -82,9 +82,11 @@ export function QuickInterventionForm({ caseId, caseTitle }: QuickInterventionFo
           setExpanded(true);
           setFocusNext(true);
         }}
-        className="w-full rounded-2xl bg-primary/10 hover:bg-primary/10 text-primary border border-primary/20 font-bold gap-2 h-11"
+        variant="outline"
+        className="h-11 w-full justify-start gap-2 rounded-2xl border-dashed border-primary/30 bg-card font-medium text-muted-foreground hover:bg-primary/5 hover:text-foreground"
       >
-        <PlusCircle className="h-4 w-4" /> Nueva intervención
+        {/* Parece un campo para escribir: así no repite el botón "Nueva intervención" del encabezado. */}
+        <PencilLine className="h-4 w-4 text-primary" aria-hidden /> Escribir una intervención…
       </Button>
     );
   }

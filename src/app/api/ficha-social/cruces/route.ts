@@ -1,3 +1,4 @@
+import { condicionBusquedaSql } from "@/lib/search-text";
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
@@ -31,8 +32,10 @@ export async function GET(request: Request) {
 
     const params: any[] = [];
     if (q) {
-      params.push(`%${q.toLowerCase()}%`);
-      whereClause += ` AND (LOWER(dni) LIKE $${params.length} OR LOWER(nombre_completo) LIKE $${params.length} OR LOWER(barrio) LIKE $${params.length})`;
+      // DNI, o nombre y barrio sin importar tildes ni el orden de las palabras.
+      const palabras = condicionBusquedaSql("texto_busqueda", q, params.length + 1);
+      params.push(...palabras.params, `%${q.toLowerCase()}%`);
+      whereClause += ` AND (dni LIKE $${params.length} OR ${palabras.sql})`;
     }
 
     const countResult: any[] = await prisma.$queryRawUnsafe(

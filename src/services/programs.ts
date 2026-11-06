@@ -1,3 +1,4 @@
+import { palabrasEnSql, textoPadron } from "@/services/search-sql";
 import prisma from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 import {
@@ -199,7 +200,7 @@ function peopleWhere(column: PadronProgramColumn, q: string): Prisma.Sql {
     conditions.push(
       /^\d[\d.\s]*$/.test(text) && digits
         ? Prisma.sql`p.dni LIKE ${digits + "%"}`
-        : Prisma.sql`(p.nombre_completo ILIKE ${"%" + text + "%"} OR p.barrio ILIKE ${"%" + text + "%"})`
+        : palabrasEnSql(textoPadron("p"), text)
     );
   }
   return Prisma.join(conditions, " AND ");

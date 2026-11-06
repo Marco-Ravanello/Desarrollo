@@ -1,4 +1,5 @@
 export const dynamic = "force-dynamic";
+import { MoreActions } from "@/components/layout/more-actions";
 import { getPersonById, getRegistroFamilyMembers } from "@/services/people";
 import { getFichaSocialByDniFromDb } from "@/services/ficha-social-db";
 import { getFichaHistorial } from "@/services/ficha-historial";
@@ -217,10 +218,11 @@ export default async function PersonDetailPage({
         editButton={editData && addressOptions ? <EditPersonDialog person={editData} options={addressOptions} triggerClassName={ON_BAND_BUTTON} /> : undefined}
         extraButtons={
           canMerge || canMarkStatus ? (
-            <>
-              {canMerge && <MergePersonDialog dni={dni} triggerClassName={ON_BAND_BUTTON} />}
-              {canMarkStatus && <MarkPersonStatusButton dni={dni} nombre={nombre} programas={enrollment.active.map((p) => p.label)} triggerClassName={ON_BAND_BUTTON} />}
-            </>
+            // Lo que se usa poco va en "Más acciones" (idea 109).
+            <MoreActions tone="band">
+              {canMerge && <MergePersonDialog dni={dni} />}
+              {canMarkStatus && <MarkPersonStatusButton dni={dni} nombre={nombre} programas={enrollment.active.map((p) => p.label)} />}
+            </MoreActions>
           ) : undefined
         }
         newCaseHref={person && canEdit ? `/cases/new?dni=${encodeURIComponent(dni)}` : null}

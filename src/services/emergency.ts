@@ -1,3 +1,5 @@
+import { condicionBusquedaSql } from "@/lib/search-text";
+import { idsQueCoinciden } from "@/services/search-sql";
 import { prisma } from "@/lib/prisma";
 import { normalizeDni } from "@/lib/padron-import";
 import { canEditSocialRecords, canManageEmergencyStock, canViewStormDeliveries, isEmergencySurveyor } from "@/lib/permissions";
@@ -451,12 +453,12 @@ export async function searchPeopleForEmergency(query: string): Promise<SearchPer
   const suggestions: SearchPersonSuggestion[] = [];
 
   try {
+    const byName = await idsQueCoinciden(prisma, '"Person"', ["lastName", "firstName"], cleanQuery, 5);
     const persons = await prisma.person.findMany({
       where: {
         OR: [
           { dni: { contains: cleanQuery, mode: "insensitive" } },
-          { firstName: { contains: cleanQuery, mode: "insensitive" } },
-          { lastName: { contains: cleanQuery, mode: "insensitive" } },
+          { id: { in: byName } },
         ],
       },
       take: 5,
@@ -474,12 +476,15 @@ export async function searchPeopleForEmergency(query: string): Promise<SearchPer
       });
     }
 
+    // Nombre sin importar tildes ni el orden de las palabras.
+    const palabrasPadron = condicionBusquedaSql("texto_busqueda", cleanQuery, 2);
     const rawPadron = await prisma.$queryRawUnsafe<any[]>(
       `SELECT dni, nombre_completo, direccion, barrio, telefono, dnis_familiares, nombres_familiares, edad_aprox
        FROM padron_unificado
-       WHERE dni ILIKE $1 OR nombre_completo ILIKE $1
+       WHERE dni ILIKE $1 OR ${palabrasPadron.sql}
        LIMIT 5`,
-      `%${cleanQuery}%`
+      `%${cleanQuery}%`,
+      ...palabrasPadron.params
     );
 
     for (const pad of rawPadron) {

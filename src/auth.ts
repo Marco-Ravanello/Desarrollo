@@ -1,3 +1,4 @@
+import { clearPasswordHelpRequest } from "@/services/password-help";
 import NextAuth, { CredentialsSignin } from "next-auth";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import prisma from "@/lib/prisma";
@@ -93,6 +94,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
           console.log(`✅ Login exitoso (id ${user.id}, rol ${user.role})`);
           await logLogin(user.id, "LOGIN", "Ingreso al sistema");
+          // Si había pedido una clave temporal y al final se acordó, el pedido ya no hace falta.
+          if (user.passwordHelpRequestedAt) await clearPasswordHelpRequest(user.id).catch(() => {});
 
           return {
             id: user.id,

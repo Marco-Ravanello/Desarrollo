@@ -1,25 +1,67 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Building2, Car, DollarSign, Minimize2, Package, Radio, RefreshCw, ShieldAlert, Users } from "lucide-react";
+import { Building2, CalendarDays, Car, DollarSign, GraduationCap, MapPinned, Minimize2, Package, Radio, RefreshCw, ShieldAlert, Sun, Truck, Users } from "lucide-react";
 import { MunicipalCrest } from "@/components/ui/municipal-crest";
 import { plural } from "@/lib/formato";
 import { cn } from "@/lib/utils";
-import type { WarRoomData } from "./war-room-view";
+import type { WarRoomData, WarRoomToday } from "./war-room-view";
+import { nextPanelIndex, TODAY_KIND_LABEL, TV_PANELS, TV_ROTATE_SECONDS, type TodayItemKind } from "@/lib/war-room-tv";
+
+const KIND_ICON: Record<TodayItemKind, typeof Car> = { vehiculo: Car, recorrida: MapPinned, entrega: Truck, clase: GraduationCap };
+
+/**
+ * Que la tele no se apague ni ponga el protector de pantalla mientras está la Sala de Situación.
+ * El navegador suelta el pedido cuando la pestaña queda atrás: al volver se pide de nuevo.
+ */
+function useScreenAwake(): boolean {
+  const [awake, setAwake] = useState(false);
+  useEffect(() => {
+    const nav = navigator as Navigator & { wakeLock?: { request: (type: "screen") => Promise<{ release: () => Promise<void>; addEventListener: (e: "release", f: () => void) => void }> } };
+    if (!nav.wakeLock) return;
+    let lock: { release: () => Promise<void> } | null = null;
+    let cancelled = false;
+    const request = async () => {
+      try {
+        const l = await nav.wakeLock!.request("screen");
+        if (cancelled) return void l.release().catch(() => {});
+        lock = l;
+        setAwake(true);
+        l.addEventListener("release", () => setAwake(false));
+      } catch {
+        setAwake(false);
+      }
+    };
+    const onVisible = () => {
+      if (document.visibilityState === "visible") request();
+    };
+    request();
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      cancelled = true;
+      document.removeEventListener("visibilitychange", onVisible);
+      lock?.release().catch(() => {});
+    };
+  }, []);
+  return awake;
+}
 
 /**
  * Sala de Situación para una tele o un proyector: fondo azul institucional, letra grande,
  * sin menú ni enlaces, y la hora a la vista. El botón "Salir" y el puntero se esconden solos
- * si no se mueve el mouse.
+ * si no se mueve el mouse. La pantalla no se apaga y la parte de abajo va pasando sola entre
+ * "Expedientes" y "Hoy en la Secretaría" (idea 117); con las flechas se pasa a mano.
  */
 export function WarRoomTv({
   data,
+  today,
   time,
   date,
   countdown,
   onExit,
 }: {
   data: WarRoomData;
+  today: WarRoomToday;
   time: string;
   date: string;
   countdown: number;
@@ -27,6 +69,33 @@ export function WarRoomTv({
 }) {
   const [idle, setIdle] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const awake = useScreenAwake();
+  const [panel, setPanel] = useState(0);
+  const [panelSeconds, setPanelSeconds] = useState(TV_ROTATE_SECONDS);
+
+  // Pasa a la pantalla siguiente cada TV_ROTATE_SECONDS; con las flechas se cambia a mano.
+  useEffect(() => {
+    const tick = setInterval(() => {
+      setPanelSeconds((s) => {
+        if (s <= 1) {
+          setPanel((p) => nextPanelIndex(p));
+          return TV_ROTATE_SECONDS;
+        }
+        return s - 1;
+      });
+    }, 1000);
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
+      setPanel((p) => nextPanelIndex(p, e.key === "ArrowRight" ? 1 : -1));
+      setPanelSeconds(TV_ROTATE_SECONDS);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => {
+      clearInterval(tick);
+      window.removeEventListener("keydown", onKey);
+    };
+  }, []);
+  const panelId = TV_PANELS[panel].id;
 
   useEffect(() => {
     const wake = () => {
@@ -138,7 +207,7 @@ export function WarRoomTv({
             <p
               className={cn(
                 "mt-3 truncate font-heading font-bold leading-none tabular-nums tracking-tight",
-                k.label === "Presupuesto adjudicado" ? "text-4xl xl:text-5xl" : "text-5xl xl:text-7xl",
+                k.label === "Presupuesto adjudicado" ? "text-4xl 2xl:text-5xl" : "text-5xl 2xl:text-7xl",
                 k.alert ? "text-muni-orange" : "text-white"
               )}
             >
@@ -150,8 +219,38 @@ export function WarRoomTv({
         ))}
       </div>
 
-      {/* Expedientes y áreas */}
-      <div className="grid min-h-0 flex-1 grid-cols-3 gap-4 xl:gap-6">
+      {/* Pantallas que van pasando solas */}
+      <nav aria-label="Pantallas" className="-mb-1 flex items-center gap-3">
+        {TV_PANELS.map((p, i) => (
+          <button
+            key={p.id}
+            type="button"
+            onClick={() => {
+              setPanel(i);
+              setPanelSeconds(TV_ROTATE_SECONDS);
+            }}
+            aria-current={i === panel ? "true" : undefined}
+            className={cn(
+              "inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-muni-orange xl:text-base",
+              i === panel ? "bg-white text-[#0E2A49]" : "bg-white/10 text-white/70 hover:bg-white/20"
+            )}
+          >
+            {p.label}
+            {p.id === "hoy" && today.total > 0 && (
+              <span className={cn("rounded-full px-2 text-xs tabular-nums", i === panel ? "bg-[#0E2A49]/10" : "bg-white/15")}>{today.total}</span>
+            )}
+          </button>
+        ))}
+        <span className="ml-auto text-xs font-medium tabular-nums text-white/45" aria-live="off">
+          Cambia en {panelSeconds} s · flechas para pasar
+          {awake && " · La pantalla queda prendida"}
+        </span>
+      </nav>
+
+      {panelId === "hoy" ? (
+        <TodayPanel today={today} date={date} />
+      ) : (
+      <div key="expedientes" className="grid min-h-0 flex-1 grid-cols-3 gap-4 motion-safe:animate-in motion-safe:fade-in xl:gap-6">
         <section className="col-span-2 flex min-h-0 flex-col rounded-3xl bg-white/[0.06] p-5 ring-1 ring-inset ring-white/10 xl:p-6">
           <h2 className="mb-4 flex items-center gap-2.5 text-xl font-bold xl:text-2xl">
             <Radio className="h-6 w-6 text-muni-orange" aria-hidden /> Últimos expedientes
@@ -210,6 +309,7 @@ export function WarRoomTv({
           )}
         </section>
       </div>
+      )}
 
       <button
         type="button"
@@ -222,5 +322,64 @@ export function WarRoomTv({
         <Minimize2 className="h-4 w-4" aria-hidden /> Salir (Esc)
       </button>
     </div>
+  );
+}
+
+/** "Hoy en la Secretaría": vehículos, recorridas, entregas y cursos del día. */
+function TodayPanel({ today, date }: { today: WarRoomToday; date: string }) {
+  // Mitad en cada columna, para que no quede una sola columna larga.
+  const half = Math.ceil(today.items.length / 2);
+  const left = today.items.slice(0, half);
+  const right = today.items.slice(half);
+  const hidden = today.total - today.items.length;
+  return (
+    <section
+      key="hoy"
+      aria-labelledby="tv-hoy"
+      className="flex min-h-0 flex-1 flex-col rounded-3xl bg-white/[0.06] p-5 ring-1 ring-inset ring-white/10 motion-safe:animate-in motion-safe:fade-in xl:p-6"
+    >
+      <h2 id="tv-hoy" className="mb-4 flex items-center gap-2.5 text-xl font-bold xl:text-2xl">
+        <CalendarDays className="h-6 w-6 text-muni-orange" aria-hidden /> Hoy en la Secretaría
+        {date && <span className="text-base font-semibold text-white/55 xl:text-lg">· {date}</span>}
+      </h2>
+      {today.items.length === 0 ? (
+        <div className="flex flex-1 flex-col items-center justify-center gap-3 text-center">
+          <Sun className="h-12 w-12 text-[#9CC3EC]" aria-hidden />
+          <p className="text-xl font-semibold text-white/80">Hoy no hay salidas de vehículos, recorridas, entregas ni cursos cargados.</p>
+        </div>
+      ) : (
+        <div className="grid min-h-0 flex-1 grid-cols-2 gap-x-6">
+          {[left, right].map((col, ci) => (
+            <ul key={ci} className="min-h-0 space-y-3 overflow-hidden">
+              {col.map((item) => {
+                const Icon = KIND_ICON[item.kind];
+                return (
+                  <li
+                    key={item.id}
+                    className={cn(
+                      "flex items-center gap-4 rounded-2xl px-4 py-3",
+                      item.pending ? "border-2 border-dashed border-white/30 bg-transparent" : "bg-white/[0.05]"
+                    )}
+                  >
+                    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white/10" title={TODAY_KIND_LABEL[item.kind]}>
+                      <Icon className="h-6 w-6 text-[#9CC3EC]" aria-hidden />
+                      <span className="sr-only">{TODAY_KIND_LABEL[item.kind]}</span>
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-lg font-semibold xl:text-xl">{item.title}</p>
+                      <p className="truncate text-sm text-white/60 xl:text-base">
+                        {[item.pending ? "Pendiente de aprobación" : null, item.detail].filter(Boolean).join(" · ") || TODAY_KIND_LABEL[item.kind]}
+                      </p>
+                    </div>
+                    <span className="max-w-[40%] shrink-0 truncate text-right text-base font-semibold tabular-nums text-white/75">{item.when}</span>
+                  </li>
+                );
+              })}
+            </ul>
+          ))}
+        </div>
+      )}
+      {hidden > 0 && <p className="mt-3 text-sm text-white/55">Y {hidden} más en la Agenda.</p>}
+    </section>
   );
 }

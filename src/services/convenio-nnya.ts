@@ -1,3 +1,4 @@
+import { idsQueCoinciden, palabrasEnSql, textoPadron } from "@/services/search-sql";
 import { Prisma } from "@prisma/client";
 import prisma from "@/lib/prisma";
 import { todayInArgentina } from "@/lib/follow-up-dates";
@@ -224,12 +225,12 @@ export async function buscarEnRegistro(user: Actor, agreementId: string, q: stri
   const [padron, personas] = await Promise.all([
     prisma.$queryRaw<{ dni: string; nombre_completo: string | null }[]>`
       SELECT dni, nombre_completo FROM padron_unificado
-      WHERE ${porDni ? Prisma.sql`dni LIKE ${patron}` : Prisma.sql`nombre_completo ILIKE ${patron}`}
+      WHERE ${porDni ? Prisma.sql`dni LIKE ${patron}` : palabrasEnSql(textoPadron(), texto)}
       ORDER BY nombre_completo LIMIT 8`.catch(() => []),
     prisma.person.findMany({
       where: porDni
         ? { dni: { contains: dni } }
-        : { OR: [{ firstName: { contains: texto, mode: "insensitive" } }, { lastName: { contains: texto, mode: "insensitive" } }] },
+        : { id: { in: await idsQueCoinciden(prisma, '"Person"', ["lastName", "firstName"], texto, 8) } },
       select: { dni: true, firstName: true, lastName: true },
       take: 8,
     }),

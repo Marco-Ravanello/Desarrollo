@@ -34,7 +34,7 @@ import { canAssignCase, canTakeCase, getAssignableUsers } from "@/services/case-
 import { canCloseOrReopenCase } from "@/lib/case-closing";
 import { CloseReopenCaseButton } from "@/components/cases/close-reopen-case";
 import { caseTitle } from "@/lib/page-titles";
-import { MobileActions } from "@/components/layout/mobile-actions";
+import { MoreActions } from "@/components/layout/more-actions";
 import { CaseLabelsEditor } from "@/components/cases/case-labels-editor";
 
 export const generateMetadata = caseTitle;
@@ -138,20 +138,22 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
         icon={ClipboardList}
         actions={
           <>
+            {/* Una acción principal a la vista; las demás, en "Más acciones" (idea 109). */}
             {!isClosed && <NewInterventionButton />}
-            <MobileActions>
-            <PrintCaseButton caseId={caseData.id} />
-            {canScheduleFollowUp && <ScheduleFollowUpButton caseId={caseData.id} today={today} />}
-            {canCloseOrReopen && <CloseReopenCaseButton caseId={caseData.id} mode={isClosed ? "reopen" : "close"} />}
-            {canDerive && (
-              <DeriveCaseButton
-                caseId={caseData.id}
-                areas={areas.map((a) => ({ id: a.id, name: a.name }))}
-                currentAreaId={caseData.areaId}
-                triggerClassName=""
-              />
-            )}
-            </MobileActions>
+            {isClosed && canCloseOrReopen && <CloseReopenCaseButton caseId={caseData.id} mode="reopen" />}
+            <MoreActions>
+              {canScheduleFollowUp && <ScheduleFollowUpButton caseId={caseData.id} today={today} />}
+              {canDerive && (
+                <DeriveCaseButton
+                  caseId={caseData.id}
+                  areas={areas.map((a) => ({ id: a.id, name: a.name }))}
+                  currentAreaId={caseData.areaId}
+                  triggerClassName=""
+                />
+              )}
+              <PrintCaseButton caseId={caseData.id} />
+              {!isClosed && canCloseOrReopen && <CloseReopenCaseButton caseId={caseData.id} mode="close" />}
+            </MoreActions>
             <Button variant="ghost" size="icon" asChild className="hidden md:inline-flex rounded-xl">
               <Link href={areaUrl} aria-label="Volver"><ArrowLeft className="h-4 w-4" /></Link>
             </Button>
