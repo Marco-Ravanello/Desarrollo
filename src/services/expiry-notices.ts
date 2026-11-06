@@ -3,6 +3,8 @@ import prisma from "@/lib/prisma";
 import { diaAR, diaDeVencimiento } from "@/lib/fechas";
 import { EXPIRY_NOTICE_DAYS, expiryNotice, type ExpiryKind } from "@/lib/vencimientos";
 import { FLEET_ADMIN_ROLES, MANAGEMENT_ROLES } from "@/lib/permissions";
+import { documentKindLabel } from "@/lib/document-kinds";
+import { markedDnis } from "@/services/person-status";
 
 interface ExpiryUser {
   id: string;
@@ -53,6 +55,27 @@ async function dueFor(user: ExpiryUser, now: Date): Promise<Due[]> {
       const name = a.title.length > 60 ? `${a.title.slice(0, 57)}…` : a.title;
       due.push({ kind: "convenio", label: a.number ? `${a.number} (${name})` : name, date: a.endDate!, link: `/admin/agreements/${a.id}` });
     }
+  }
+  // Documentos de personas (el CUD, por ejemplo): a quien lo cargó y a quien tiene a cargo un expediente abierto
+  // de esa persona. No se avisan los de personas que fallecieron o se mudaron, ni los que vencieron hace más de un mes.
+  const docs = await prisma.document.findMany({
+    where: {
+      expiresAt: { lte: limit, gte: new Date(now.getTime() - 31 * 86_400_000) },
+      personId: { not: null },
+      OR: [
+        { uploadedById: user.id },
+        { person: { cases: { some: { assignedToId: user.id, status: { not: "CERRADO" } } } } },
+      ],
+    },
+    select: { id: true, kind: true, name: true, expiresAt: true, person: { select: { dni: true, firstName: true, lastName: true } } },
+    take: 50,
+  });
+  const marked = await markedDnis(docs.map((d) => d.person?.dni).filter((d): d is string => Boolean(d)));
+  for (const d of docs) {
+    if (!d.person || marked.has(d.person.dni)) continue;
+    const who = [d.person.lastName, d.person.firstName].filter(Boolean).join(", ") || `DNI ${d.person.dni}`;
+    const what = d.kind && d.kind !== "OTRO" ? documentKindLabel(d.kind) : d.name;
+    due.push({ kind: "documento", label: `el ${what} de ${who}`, date: d.expiresAt!, link: `/people/${encodeURIComponent(d.person.dni)}?tab=documentos&doc=${d.id}` });
   }
   return due;
 }

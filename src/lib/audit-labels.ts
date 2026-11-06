@@ -49,6 +49,7 @@ const ACTIONS: Record<string, { label: string; group: AuditGroup }> = {
   CASE_DERIVATION_ACCEPTED: { label: "Aceptó una derivación", group: "expedientes" },
   CASE_DERIVATION_REJECTED: { label: "Rechazó una derivación", group: "expedientes" },
   UPLOAD_DOCUMENT: { label: "Subió un documento", group: "expedientes" },
+  DOCUMENT_VENCIMIENTO: { label: "Cambió el vencimiento de un documento", group: "personas" },
   // Personas y padrón
   ADD_FAMILY_MEMBER: { label: "Sumó un integrante a la familia", group: "personas" },
   PADRON_IMPORT: { label: "Importó una planilla al padrón", group: "personas" },

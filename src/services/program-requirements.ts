@@ -99,7 +99,8 @@ function ageJoins(today: string): Prisma.Sql {
 
 /** Todas las condiciones menos la edad (para contar aparte a quienes no tienen edad cargada). */
 async function baseConditions(column: PadronProgramColumn, r: ProgramRequirements, scope: CandidateScope): Promise<Prisma.Sql[]> {
-  const conditions: Prisma.Sql[] = [Prisma.sql`p.${col(column)} = 0`];
+  // No van las personas que fallecieron o se mudaron fuera del distrito.
+  const conditions: Prisma.Sql[] = [Prisma.sql`p.${col(column)} = 0`, Prisma.sql`NOT EXISTS (SELECT 1 FROM personas_estado pe WHERE pe.dni = p.dni)`];
   if (r.barrios.length) conditions.push(await inBarriosSql(r.barrios));
   if (r.enProgramas.length) conditions.push(Prisma.sql`(${Prisma.join(r.enProgramas.map((c) => Prisma.sql`p.${col(c)} = 1`), " OR ")})`);
   for (const c of r.sinProgramas) conditions.push(Prisma.sql`p.${col(c)} = 0`);

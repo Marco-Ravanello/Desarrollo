@@ -594,15 +594,23 @@ model HRLeave {
 }
 
 model Document {
-  id        String   @id @default(cuid())
-  name      String
-  url       String
-  fileType  String?
-  personId  String?
-  person    Person?  @relation(fields: [personId], references: [id])
-  caseId    String?
-  case      Case?    @relation(fields: [caseId], references: [id])
-  createdAt DateTime @default(now())
+  id           String    @id @default(cuid())
+  name         String
+  /// Vacío cuando solo se anotó el vencimiento, sin subir el archivo.
+  url          String?
+  fileType     String?
+  personId     String?
+  person       Person?   @relation(fields: [personId], references: [id])
+  caseId       String?
+  case         Case?     @relation(fields: [caseId], references: [id])
+  /// Tipo de documento (lib/document-kinds.ts): CUD, DNI, ESCOLARIDAD, ... u OTRO.
+  kind         String?
+  /// Día en que vence (fecha de calendario, a medianoche UTC). Se avisa antes.
+  expiresAt    DateTime?
+  uploadedById String?
+  createdAt    DateTime  @default(now())
+
+  @@index([expiresAt])
 }
 
 model Notification {
@@ -1158,4 +1166,18 @@ model AssistantUnansweredQuestion {
   @@index([key])
   @@index([createdAt])
   @@map("asistente_preguntas_sin_respuesta")
+}
+
+/// Personas que fallecieron o se mudaron fuera del distrito: salen de los programas, de los avisos y de las recorridas.
+model PersonaEstado {
+  dni       String    @id
+  /// FALLECIDA o MUDADA.
+  estado    String
+  /// Desde cuándo (fecha de calendario, a medianoche UTC), si se sabe.
+  fecha     DateTime?
+  nota      String?
+  userId    String?
+  createdAt DateTime  @default(now())
+
+  @@map("personas_estado")
 }

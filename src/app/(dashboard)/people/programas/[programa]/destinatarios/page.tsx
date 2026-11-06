@@ -17,7 +17,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { EmptyMessage } from "@/components/ui/empty-message";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { BulkSelectTable } from "@/components/programs/bulk-program-people";
+import { todayInArgentina } from "@/lib/follow-up-dates";
 import { EnrollCandidateButton } from "@/components/programs/enroll-candidate-button";
 
 type Params = { params: Promise<{ programa: string }> };
@@ -82,7 +83,7 @@ export default async function ProgramCandidatesPage({
           </CardTitle>
           <CardDescription>
             Por apellido. Antes de dar el alta, revisá la ficha: la lista no reemplaza el criterio del equipo.
-            {canManage ? " El alta queda con la fecha de hoy y se puede corregir desde la ficha." : ""}
+            {canManage ? " Con “Dar de alta” queda con la fecha de hoy; para dar de alta a varias juntas, elegilas con la casilla." : ""}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -105,42 +106,31 @@ export default async function ProgramCandidatesPage({
               description={list.q ? "Probá con el DNI, una parte del nombre o el barrio." : "Todas las personas que los cumplen ya están en el programa."}
             />
           ) : (
-            <Table stickyHeader>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Persona</TableHead>
-                  <TableHead>DNI</TableHead>
-                  <TableHead>Edad</TableHead>
-                  <TableHead>Barrio</TableHead>
-                  <TableHead>Teléfono</TableHead>
-                  <TableHead>Antes</TableHead>
-                  {canManage && <TableHead className="text-right">Alta</TableHead>}
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {list.people.map((p) => (
-                  <TableRow key={p.dni}>
-                    <TableCell className="font-semibold">
-                      <Link href={`/people/${p.dni}?tab=programas`} className="text-foreground hover:text-primary hover:underline">
-                        {p.nombre || "Sin nombre"}
-                      </Link>
-                    </TableCell>
-                    <TableCell className="tabular-nums">{p.dni}</TableCell>
-                    <TableCell className="tabular-nums">{p.edad !== null ? `${p.edad} ${p.edad === 1 ? "año" : "años"}` : <span className="text-muted-foreground">Sin dato</span>}</TableCell>
-                    <TableCell>{p.barrio || <span className="text-muted-foreground">Sin barrio</span>}</TableCell>
-                    <TableCell>{p.telefono || <span className="text-muted-foreground">Sin teléfono</span>}</TableCell>
-                    <TableCell>
-                      {p.ultimaBaja ? `Tuvo baja el ${dayText(p.ultimaBaja)}` : <span className="text-muted-foreground">Nunca estuvo</span>}
-                    </TableCell>
-                    {canManage && (
-                      <TableCell className="text-right tabular-nums">
-                        <EnrollCandidateButton dni={p.dni} name={p.nombre || `DNI ${p.dni}`} column={program.column} programLabel={program.label} />
-                      </TableCell>
-                    )}
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+            <BulkSelectTable
+              mode="alta"
+              column={program.column}
+              programLabel={program.label}
+              today={todayInArgentina()}
+              canManage={canManage}
+              headers={["Persona", "DNI", "Edad", "Barrio", "Teléfono", "Antes", ...(canManage ? ["Alta"] : [])]}
+              rows={list.people.map((p) => ({
+                dni: p.dni,
+                nombre: p.nombre,
+                cells: [
+                  <Link key="n" href={`/people/${p.dni}?tab=programas`} className="text-foreground hover:text-primary hover:underline">
+                    {p.nombre || "Sin nombre"}
+                  </Link>,
+                  p.dni,
+                  p.edad !== null ? `${p.edad} ${p.edad === 1 ? "año" : "años"}` : <span className="text-muted-foreground">Sin dato</span>,
+                  p.barrio || <span className="text-muted-foreground">Sin barrio</span>,
+                  p.telefono || <span className="text-muted-foreground">Sin teléfono</span>,
+                  p.ultimaBaja ? `Tuvo baja el ${dayText(p.ultimaBaja)}` : <span className="text-muted-foreground">Nunca estuvo</span>,
+                  ...(canManage
+                    ? [<EnrollCandidateButton key="a" dni={p.dni} name={p.nombre || `DNI ${p.dni}`} column={program.column} programLabel={program.label} />]
+                    : []),
+                ],
+              }))}
+            />
           )}
 
           {list.pages > 1 && (

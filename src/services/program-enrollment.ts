@@ -88,6 +88,8 @@ export async function enrollInProgramTx(
 ): Promise<Result> {
   const { dni, column, fecha, note, userId } = input;
   const program = findPadronProgram(column)!;
+  const marked = await tx.personaEstado.findUnique({ where: { dni }, select: { estado: true } });
+  if (marked) return { success: false, error: marked.estado === "FALLECIDA" ? "Está marcada como que falleció." : "Está marcada como que se mudó fuera del distrito." };
   let row = await lockPadronRow(tx, dni);
   if (!row) {
     const person = await tx.person.findUnique({ where: { dni } });
@@ -152,7 +154,6 @@ export async function withdrawFromProgram(
   const dni = (input.dni ?? "").trim();
   if (!isPadronProgramColumn(input.column)) return { success: false, error: "Elegí el programa." };
   const column = input.column;
-  const program = findPadronProgram(column)!;
   const checked = checkDay(input.day);
   if ("error" in checked) return { success: false, error: checked.error };
   const reason = (input.reason ?? "").trim().slice(0, PROGRAM_NOTE_MAX);
@@ -161,38 +162,51 @@ export async function withdrawFromProgram(
   const notAllowed = await programManageError(user, column);
   if (notAllowed) return { success: false, error: notAllowed };
 
-  return prisma.$transaction(async (tx) => {
-    const row = await lockPadronRow(tx, dni);
-    if (!row || !isInProgram(row as any, column)) return { success: false as const, error: `No está en ${program.label}.` };
-    const lastAlta = await tx.padronMovimiento.findFirst({
-      where: { dni, programa: column, tipo: "ALTA" },
-      orderBy: [{ fecha: "desc" }, { createdAt: "desc" }],
-    });
-    if (lastAlta && lastAlta.fecha > fecha) {
-      return { success: false as const, error: `La baja no puede ser antes del alta (${dayText(lastAlta.fecha)}).` };
-    }
+  return prisma.$transaction((tx) => withdrawFromProgramTx(tx, { dni, column, fecha, reason, userId: user.id!, origen: "APP" }));
+}
 
-    const wasMarked = (row as any)[column] === 1;
-    await tx.padronUnificado.update({
-      where: { dni },
-      data: {
-        [column]: 0,
-        ...(wasMarked && row.cantidad_programas > 0 ? { cantidad_programas: { decrement: 1 } } : {}),
-        programas_activos: removeProgramFromList(row.programas_activos, column),
-      },
-    });
-    await tx.padronMovimiento.create({ data: { dni, programa: column, tipo: "BAJA", fecha, motivo: reason, origen: "APP", userId: user.id } });
-    await tx.auditLog.create({
-      data: {
-        userId: user.id!,
-        action: "PADRON_PROGRAMA_BAJA",
-        entity: "PadronUnificado",
-        entityId: dni,
-        details: `Baja de ${program.label} desde el ${dayText(fecha)}. Motivo: ${reason}`,
-      },
-    });
-    return { success: true as const };
+/** La baja dentro de una transacción ya abierta (la usan la ficha, las bajas de a varias y marcar fallecida). No revisa permisos. */
+export async function withdrawFromProgramTx(
+  tx: Prisma.TransactionClient,
+  input: { dni: string; column: PadronProgramColumn; fecha: Date; reason: string; userId: string; origen: string }
+): Promise<Result> {
+  const { dni, column, fecha, reason, userId } = input;
+  const program = findPadronProgram(column)!;
+  const row = await lockPadronRow(tx, dni);
+  if (!row || !isInProgram(row as any, column)) return { success: false, error: `No está en ${program.label}.` };
+  const lastAlta = await tx.padronMovimiento.findFirst({
+    where: { dni, programa: column, tipo: "ALTA" },
+    orderBy: [{ fecha: "desc" }, { createdAt: "desc" }],
   });
+  if (lastAlta && lastAlta.fecha > fecha) {
+    return { success: false, error: `La baja no puede ser antes del alta (${dayText(lastAlta.fecha)}).` };
+  }
+
+  const wasMarked = (row as any)[column] === 1;
+  await tx.padronUnificado.update({
+    where: { dni },
+    data: {
+      [column]: 0,
+      ...(wasMarked && row.cantidad_programas > 0 ? { cantidad_programas: { decrement: 1 } } : {}),
+      programas_activos: removeProgramFromList(row.programas_activos, column),
+    },
+  });
+  await tx.padronMovimiento.create({ data: { dni, programa: column, tipo: "BAJA", fecha, motivo: reason, origen: input.origen, userId } });
+  await tx.auditLog.create({
+    data: {
+      userId,
+      action: "PADRON_PROGRAMA_BAJA",
+      entity: "PadronUnificado",
+      entityId: dni,
+      details: `Baja de ${program.label} desde el ${dayText(fecha)}. Motivo: ${reason}`,
+    },
+  });
+  return { success: true };
+}
+
+/** Los programas en los que la persona está hoy (columnas prog_...). */
+export function activePrograms(row: Pick<PadronUnificado, "programas_activos"> & Record<string, unknown>): PadronProgramColumn[] {
+  return PADRON_PROGRAMS.map((p) => p.column).filter((c) => isInProgram(row, c));
 }
 
 export type ProgramMovement = {

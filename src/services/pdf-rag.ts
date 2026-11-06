@@ -76,7 +76,7 @@ export async function searchPDFDocumentsForRAG(
     results.push({
       documentId: doc.id,
       name: doc.name,
-      url: doc.url,
+      url: doc.url ?? "",
       extractedText: `Documento: ${doc.name}\nRelacionado con: ${personName || caseTitle || "General"}\n` +
         `Fecha de Carga: ${formatFecha(doc.createdAt)}\n` +
         `Estado: Documento oficialmente registrado en el legajo municipal.`,
