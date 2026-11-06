@@ -1,3 +1,4 @@
+import { palabrasEnSql, textoPadron } from "@/services/search-sql";
 import { Prisma } from "@prisma/client";
 import prisma from "@/lib/prisma";
 import { findPadronProgram, isPadronProgramColumn, type PadronProgramColumn } from "@/lib/padron-programs";
@@ -131,7 +132,7 @@ function searchCondition(q: string): Prisma.Sql | null {
   const digits = text.replace(/\D/g, "");
   return /^\d[\d.\s]*$/.test(text) && digits
     ? Prisma.sql`p.dni LIKE ${digits + "%"}`
-    : Prisma.sql`(p.nombre_completo ILIKE ${"%" + text + "%"} OR p.barrio ILIKE ${"%" + text + "%"})`;
+    : palabrasEnSql(textoPadron("p"), text);
 }
 
 export type CandidateCounts = {

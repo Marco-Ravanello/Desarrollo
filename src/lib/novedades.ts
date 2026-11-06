@@ -16,6 +16,17 @@ export interface Novedad {
 export const NOVEDADES: Novedad[] = [
   {
     fecha: "2026-11-06",
+    parte: 2,
+    titulo: "Buscar sin tildes, pedir clave al ingresar y menos botones arriba",
+    cambios: [
+      "Al buscar personas ya no importan las tildes ni el orden: \"maria gomez\" encuentra a \"GÓMEZ, MARÍA\". Funciona en el Registro Único, en el buscador de arriba y en las listas de programas, barrios y cruces.",
+      "Si alguien se olvida la contraseña, desde la pantalla de ingreso puede tocar \"Pedir clave temporal\". Al Superadmin le llega el aviso y ve el pedido arriba de la lista de Usuarios.",
+      "En el expediente queda a la vista \"Nueva intervención\" y lo demás (seguimiento, derivar, imprimir, cerrar) está en \"Más acciones\". En la ficha, \"Unir con otra ficha\" y \"Falleció o se mudó\" también pasaron a \"Más acciones\".",
+      "La Sala de Situación en pantalla completa ya no deja que la tele se apague, y abajo va pasando sola entre los expedientes y lo de hoy: vehículos que salen, recorridas, entregas y cursos.",
+    ],
+  },
+  {
+    fecha: "2026-11-06",
     titulo: "Altas y bajas de varias personas, fallecimientos y documentos que vencen",
     cambios: [
       "En la página de cada programa podés elegir varias personas con la casilla y darles la baja juntas, con la misma fecha y el mismo motivo. Con \"Alta de varias personas\" pegás una lista de DNI, la revisás y das todas las altas de una vez. En Posibles destinatarios también podés elegir varias.",

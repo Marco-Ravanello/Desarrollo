@@ -18,8 +18,13 @@ import { PageHeader } from "@/components/layout/page-header";
 import { plural } from "@/lib/formato";
 import { TZ_AR, formatFechaLarga } from "@/lib/fechas";
 import { WarRoomTv } from "./war-room-tv";
+import type { TodayItem } from "@/lib/war-room-tv";
+
+export type WarRoomToday = { today: string; items: TodayItem[]; total: number };
 
 interface WarRoomViewProps {
+  /** "Hoy en la Secretaría", para la tele (idea 117). */
+  today?: WarRoomToday;
   initialData: {
     totalCitizens: number;
     activeCriticalCases: number;
@@ -61,7 +66,7 @@ const NUM_ALERT = "text-[#C2410C] dark:text-muni-orange";
 const ICON_CALM = "p-2 rounded-xl bg-[#E0EEFF] text-[#163C68] dark:bg-white/10 dark:text-blue-200";
 const ICON_ALERT = "p-2 rounded-xl bg-orange-500/10 text-[#C2410C] dark:text-muni-orange";
 
-export function WarRoomView({ initialData }: WarRoomViewProps) {
+export function WarRoomView({ initialData, today }: WarRoomViewProps) {
   const router = useRouter();
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [currentTime, setCurrentTime] = useState("");
@@ -134,6 +139,7 @@ export function WarRoomView({ initialData }: WarRoomViewProps) {
     return (
       <WarRoomTv
         data={initialData}
+        today={today ?? { today: "", items: [], total: 0 }}
         time={currentTime}
         date={currentDate}
         countdown={countdown}

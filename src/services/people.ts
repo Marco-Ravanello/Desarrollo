@@ -1,3 +1,4 @@
+import { condicionBusquedaSql } from "@/lib/search-text";
 import prisma from "@/lib/prisma";
 import { PADRON_GAPS, isPadronGap, type PadronGap } from "@/lib/padron-quality";
 import { MUNICIPAL_LOCALITIES } from "@/lib/constants/localities";
@@ -91,20 +92,19 @@ export async function getPaginatedPeople(options: GetPeopleOptions = {}): Promis
   let paramIdx = 1;
 
   if (options.query && options.query.trim()) {
+    // Nombre, barrio, localidad o dirección sin importar tildes ni el orden de las palabras
+    // ("maria gomez" encuentra a "GÓMEZ, MARÍA"), o parte del DNI.
     const q = options.query.trim();
     const numQ = q.replace(/[^0-9]/g, "");
+    const words = condicionBusquedaSql("texto_busqueda", q, paramIdx);
+    params.push(...words.params);
+    paramIdx += words.params.length;
     if (numQ && numQ.length >= 4) {
-      whereConditions.push(
-        `(dni LIKE $${paramIdx} OR LOWER(nombre_completo) LIKE $${paramIdx + 1} OR LOWER(barrio) LIKE $${paramIdx + 1} OR LOWER(direccion) LIKE $${paramIdx + 1})`
-      );
-      params.push(`%${numQ}%`, `%${q.toLowerCase()}%`);
-      paramIdx += 2;
-    } else {
-      whereConditions.push(
-        `(LOWER(nombre_completo) LIKE $${paramIdx} OR LOWER(barrio) LIKE $${paramIdx} OR LOWER(localidad) LIKE $${paramIdx} OR LOWER(direccion) LIKE $${paramIdx})`
-      );
-      params.push(`%${q.toLowerCase()}%`);
+      whereConditions.push(`(dni LIKE $${paramIdx} OR ${words.sql})`);
+      params.push(`%${numQ}%`);
       paramIdx += 1;
+    } else {
+      whereConditions.push(words.sql);
     }
   }
 

@@ -1,3 +1,4 @@
+import { palabrasEnSql, textoPadron } from "@/services/search-sql";
 import { Prisma } from "@prisma/client";
 import prisma from "@/lib/prisma";
 import {
@@ -290,7 +291,7 @@ export async function getBarrioPeople(barrio: Barrio3F, opts: { q?: string; page
     conditions.push(
       /^\d[\d.\s]*$/.test(q) && digits
         ? Prisma.sql`p.dni LIKE ${digits + "%"}`
-        : Prisma.sql`(p.nombre_completo ILIKE ${"%" + q + "%"} OR p.direccion ILIKE ${"%" + q + "%"})`
+        : palabrasEnSql(textoPadron("p"), q)
     );
   }
   const where = Prisma.join(conditions, " AND ");

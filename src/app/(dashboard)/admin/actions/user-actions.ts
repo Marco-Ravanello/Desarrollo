@@ -1,5 +1,6 @@
 "use server";
 
+import { clearPasswordHelpRequest } from "@/services/password-help";
 import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
@@ -273,7 +274,7 @@ export async function resetTemporaryPasswordAction(userId: string): Promise<{ su
     const password = generateTemporaryPassword();
     await prisma.user.update({
       where: { id: target.id },
-      data: { password: await bcrypt.hash(password, 10), mustChangePassword: true },
+      data: { password: await bcrypt.hash(password, 10), mustChangePassword: true, passwordHelpRequestedAt: null },
     });
     // También destraba la cuenta si estaba bloqueada por intentos fallidos (ver login-security).
     await prisma.auditLog.create({
@@ -292,4 +293,16 @@ export async function resetTemporaryPasswordAction(userId: string): Promise<{ su
     console.error("Error al generar clave temporal:", error);
     return { success: false, error: actionErrorMessage(error, "No se pudo generar la clave temporal") };
   }
+}
+
+/** Descarta un pedido de clave temporal sin generarla (solo Superadmin). */
+export async function dismissPasswordHelpAction(userId: string): Promise<{ success: boolean; error?: string }> {
+  const session = await auth();
+  if (!session?.user?.id || !canCreateUsersAndResetPasswords(session.user.role)) {
+    return { success: false, error: "Solo el Superadmin puede ver los pedidos de clave." };
+  }
+  if (typeof userId !== "string" || !userId) return { success: false, error: "Pedido no encontrado" };
+  await clearPasswordHelpRequest(userId);
+  revalidatePath("/admin/users");
+  return { success: true };
 }

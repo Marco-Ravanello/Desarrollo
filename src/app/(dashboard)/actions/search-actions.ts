@@ -5,6 +5,8 @@ import { auth } from "@/auth";
 import { canAccessPath, hasPermission, PERMISSIONS } from "@/lib/permissions";
 import { getRecentItems } from "@/services/recent-views";
 import { nombrePropio } from "@/lib/nombres";
+import { idsQueCoinciden, palabrasEnSql, textoPadron } from "@/services/search-sql";
+import { Prisma } from "@prisma/client";
 
 export async function searchGlobalAction(query: string) {
   const session = await auth();
@@ -26,13 +28,22 @@ export async function searchGlobalAction(query: string) {
   // Sanitizar DNI para búsqueda (quitar puntos o guiones)
   const numericQuery = trimmedQuery.replace(/[^0-9]/g, '');
 
+  const canSearchAgreements = canAccessPath(userRole, "/admin/agreements");
+
+  // Sin importar tildes ni el orden de las palabras ("maria gomez" encuentra a "GÓMEZ, MARÍA").
+  const [personIds, caseIds, hrIds, agreementIds] = await Promise.all([
+    idsQueCoinciden(prisma, '"Person"', ["lastName", "firstName"], trimmedQuery, 5),
+    idsQueCoinciden(prisma, '"Case"', ["title"], trimmedQuery, 10),
+    canManageHR ? idsQueCoinciden(prisma, '"HRRecord"', ["lastName", "firstName"], trimmedQuery, 5) : Promise.resolve([]),
+    canSearchAgreements ? idsQueCoinciden(prisma, '"Agreement"', ["title", "number", "parties"], trimmedQuery, 5) : Promise.resolve([]),
+  ]);
+
   const [citizens, cases, hr, agreements] = await Promise.all([
     // Buscar Ciudadanos
     prisma.person.findMany({
       where: {
         OR: [
-          { firstName: { contains: trimmedQuery, mode: 'insensitive' } },
-          { lastName: { contains: trimmedQuery, mode: 'insensitive' } },
+          { id: { in: personIds } },
           { dni: { contains: trimmedQuery } },
           ...(numericQuery ? [{ dni: { contains: numericQuery } }] : [])
         ]
@@ -45,8 +56,8 @@ export async function searchGlobalAction(query: string) {
     prisma.case.findMany({
       where: {
         OR: [
-          { title: { contains: query, mode: 'insensitive' } },
-          { id: { contains: query, mode: 'insensitive' } },
+          { id: { in: caseIds } },
+          { id: { contains: trimmedQuery, mode: 'insensitive' } },
         ]
       },
       include: { area: { select: { name: true } } },
@@ -58,10 +69,9 @@ export async function searchGlobalAction(query: string) {
       ? prisma.hRRecord.findMany({
           where: {
             OR: [
-              { firstName: { contains: query, mode: 'insensitive' } },
-              { lastName: { contains: query, mode: 'insensitive' } },
-              { dni: { contains: query } },
-              { fileNumber: { contains: query } },
+              { id: { in: hrIds } },
+              { dni: { contains: trimmedQuery } },
+              { fileNumber: { contains: trimmedQuery } },
             ]
           },
           include: { area: { select: { name: true } } },
@@ -70,14 +80,8 @@ export async function searchGlobalAction(query: string) {
       : Promise.resolve([]),
 
     // Buscar Convenios (sólo roles que pueden abrir Convenios)
-    !canAccessPath(userRole, "/admin/agreements") ? Promise.resolve([]) : prisma.agreement.findMany({
-      where: {
-        OR: [
-          { title: { contains: query, mode: 'insensitive' } },
-          { number: { contains: query, mode: 'insensitive' } },
-          { parties: { contains: query, mode: 'insensitive' } },
-        ]
-      },
+    !canSearchAgreements ? Promise.resolve([]) : prisma.agreement.findMany({
+      where: { id: { in: agreementIds } },
       include: { area: { select: { name: true } } },
       take: 5
     })
@@ -94,15 +98,10 @@ export async function searchGlobalAction(query: string) {
   // Buscar Ciudadanos en padron_unificado
   let padronCitizens: any[] = [];
   try {
-    const q = trimmedQuery.replace(/'/g, "''");
-    const numQ = numericQuery;
-    let whereSQL = `LOWER(nombre_completo) LIKE '%${q.toLowerCase()}%'`;
-    if (numQ && numQ.length >= 4) {
-      whereSQL += ` OR dni LIKE '%${numQ}%'`;
-    }
-    padronCitizens = await prisma.$queryRawUnsafe(
-      `SELECT dni, nombre_completo, barrio FROM padron_unificado WHERE ${whereSQL} LIMIT 5;`
-    );
+    const byName = palabrasEnSql(textoPadron(), trimmedQuery);
+    const where = numericQuery.length >= 4 ? Prisma.sql`(${byName} OR dni LIKE ${`%${numericQuery}%`})` : byName;
+    padronCitizens = await prisma.$queryRaw<any[]>`
+      SELECT dni, nombre_completo, barrio FROM padron_unificado WHERE ${where} LIMIT 5`;
   } catch (e) {
     console.error("Error searching padron in global search:", e);
   }

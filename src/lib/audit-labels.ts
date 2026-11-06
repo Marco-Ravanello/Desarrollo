@@ -127,6 +127,7 @@ const ACTIONS: Record<string, { label: string; group: AuditGroup }> = {
   ACTIVATE_USER: { label: "Reactivó un usuario", group: "usuarios" },
   DEACTIVATE_USER: { label: "Suspendió un usuario", group: "usuarios" },
   PASSWORD_RESET: { label: "Generó una clave temporal", group: "usuarios" },
+  PASSWORD_HELP_REQUEST: { label: "Pidió una clave temporal al ingresar", group: "usuarios" },
   PASSWORD_CHANGED: { label: "Cambió su contraseña", group: "usuarios" },
   // Configuración y presupuesto
   UPDATE_SYSTEM_SETTINGS: { label: "Cambió la Configuración", group: "configuracion" },
