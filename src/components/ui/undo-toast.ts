@@ -18,7 +18,7 @@ export function toastWithUndo(message: string, undo: () => Promise<UndoResult>, 
         const id = toast.loading("Deshaciendo…");
         const res = await undo().catch(() => null);
         if (res?.success) {
-          toast.success("Listo, quedó como estaba.", { id });
+          toast.success("La acción se deshizo correctamente.", { id });
           after?.();
         } else {
           toast.error(res?.error || "No se pudo deshacer. Probá de nuevo.", { id });
