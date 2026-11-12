@@ -3,7 +3,7 @@
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
 import { actionErrorMessage } from "@/lib/action-error";
-import { closeCase, reopenCase } from "@/services/case-closing";
+import { closeCase, reopenCase, undoCloseCase } from "@/services/case-closing";
 
 const NO_SESSION = "No tenés permiso para hacer esto o tu sesión expiró. Si sigue pasando, volvé a iniciar sesión.";
 
@@ -39,5 +39,19 @@ export async function reopenCaseAction(caseId: string, reason: string) {
   } catch (error) {
     console.error(error);
     return { success: false, error: actionErrorMessage(error, "No se pudo reabrir el expediente") };
+  }
+}
+
+/** "Deshacer" justo después de cerrar: vuelve a quedar abierto, sin pedir motivo. */
+export async function undoCloseCaseAction(caseId: string) {
+  const session = await auth();
+  if (!session?.user?.id) return { success: false, error: NO_SESSION };
+  try {
+    const result = await undoCloseCase({ id: session.user.id, role: session.user.role }, caseId);
+    if (result.success) revalidateCase(caseId);
+    return result;
+  } catch (error) {
+    console.error(error);
+    return { success: false, error: actionErrorMessage(error, "No se pudo deshacer el cierre") };
   }
 }

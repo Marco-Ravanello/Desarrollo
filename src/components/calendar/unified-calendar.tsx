@@ -22,7 +22,8 @@ import {
   reschedulePurchaseOrderAction,
   createSharedTaskAction
 } from "@/app/(dashboard)/admin/actions/calendar-actions";
-import { toggleTaskAction } from "@/app/(dashboard)/tasks/actions";
+import { toggleTaskAction, undoTaskDoneAction } from "@/app/(dashboard)/tasks/actions";
+import { toastWithUndo } from "@/components/ui/undo-toast";
 import { formatFechaHora, formatFechaCalendario, formatHora, formatVencimiento } from "@/lib/fechas";
 import { repeatLabel, TASK_REPEATS } from "@/lib/tasks";
 import {
@@ -369,14 +370,18 @@ export function UnifiedCalendar({ reservations = [], purchaseOrders = [], tasks 
         toast.error(res.error);
         return;
       }
-      setDoneOverride((prev) => ({ ...prev, [selectedEvent.id]: !wasDone }));
-      toast.success(
-        wasDone
-          ? "La tarea volvió a quedar pendiente."
-          : res.next
-          ? `Listo, la tarea quedó hecha. La próxima quedó para el ${formatVencimiento(res.next)}.`
-          : "Listo, la tarea quedó hecha."
-      );
+      const taskId = selectedEvent.id;
+      setDoneOverride((prev) => ({ ...prev, [taskId]: !wasDone }));
+      if (wasDone) toast.success("La tarea volvió a quedar pendiente.");
+      else
+        toastWithUndo(
+          res.next ? `Listo, la tarea quedó hecha. La próxima quedó para el ${formatVencimiento(res.next)}.` : "Listo, la tarea quedó hecha.",
+          () => undoTaskDoneAction(taskId),
+          () => {
+            setDoneOverride((prev) => ({ ...prev, [taskId]: false }));
+            router.refresh();
+          }
+        );
       setSelectedEvent(null);
       router.refresh();
     } catch {

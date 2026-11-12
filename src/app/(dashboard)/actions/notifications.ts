@@ -5,6 +5,7 @@ import { auth } from "@/auth";
 import { notifyDueFollowUps } from "@/services/follow-ups";
 import { notifyExpirations } from "@/services/expiry-notices";
 import { KEEP_NOTICE_TITLE_PREFIXES, noticesRecheckCutoff, readNoticesCutoff } from "@/lib/bell";
+import { UNDO_NOTICES_MAX } from "@/lib/undo";
 
 /**
  * Seguimientos que vencen hoy y vencimientos de VTV, seguros, convenios y documentos: se revisan acá,
@@ -77,13 +78,35 @@ export async function markAsRead(id: string) {
   // La campanita se actualiza sola: no hace falta volver a armar la página.
 }
 
-export async function markAllAsRead() {
+/** Marca todos como leídos y devuelve cuáles eran, para poder deshacerlo. */
+export async function markAllAsRead(): Promise<string[]> {
   const session = await auth();
-  if (!session?.user?.id) return;
+  if (!session?.user?.id) return [];
 
-  await prisma.notification.updateMany({
+  const unread = await prisma.notification.findMany({
     where: { userId: session.user.id, read: false },
+    select: { id: true },
+    orderBy: { createdAt: "desc" },
+  });
+  const ids = unread.map((n) => n.id);
+  if (ids.length === 0) return [];
+  await prisma.notification.updateMany({
+    where: { id: { in: ids }, userId: session.user.id },
     data: { read: true }
   });
   // La campanita se actualiza sola: no hace falta volver a armar la página.
+  return ids.slice(0, UNDO_NOTICES_MAX);
+}
+
+/** "Deshacer" de "Marcar todas como leídas": esos avisos vuelven a quedar sin leer (solo los propios). */
+export async function undoMarkAllAsRead(ids: string[]): Promise<{ success: boolean }> {
+  const session = await auth();
+  if (!session?.user?.id) return { success: false };
+  const clean = Array.isArray(ids) ? ids.filter((id) => typeof id === "string").slice(0, UNDO_NOTICES_MAX) : [];
+  if (clean.length === 0) return { success: true };
+  await prisma.notification.updateMany({
+    where: { id: { in: clean }, userId: session.user.id, read: true },
+    data: { read: false },
+  });
+  return { success: true };
 }

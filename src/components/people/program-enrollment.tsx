@@ -12,7 +12,8 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
-import { enrollInProgramAction, withdrawFromProgramAction } from "@/app/(dashboard)/people/actions/program-enrollment-actions";
+import { enrollInProgramAction, undoWithdrawFromProgramAction, withdrawFromProgramAction } from "@/app/(dashboard)/people/actions/program-enrollment-actions";
+import { toastWithUndo } from "@/components/ui/undo-toast";
 import type { ProgramMovement, ProgramOption } from "@/services/program-enrollment";
 import { programHref } from "@/lib/padron-programs";
 import { RequiredMark } from "@/components/ui/form-section";
@@ -113,7 +114,7 @@ function WithdrawDialog({ dni, program, today }: { dni: string; program: Program
     const res = await withdrawFromProgramAction(dni, program.column, day, reason).catch(() => null);
     setSaving(false);
     if (!res?.success) return toast.error(res?.error || "No se pudo guardar. Probá de nuevo.");
-    toast.success("Baja registrada.");
+    toastWithUndo(`Baja de ${program.label} registrada.`, () => undoWithdrawFromProgramAction(dni, program.column), () => router.refresh());
     setOpen(false);
     router.refresh();
   };

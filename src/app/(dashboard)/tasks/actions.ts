@@ -6,7 +6,7 @@ import { auth } from "@/auth";
 import prisma from "@/lib/prisma";
 import { actionErrorMessage } from "@/lib/action-error";
 import { followUpDueDate } from "@/lib/follow-up-dates";
-import { checkRepeat, setTaskDone, updateTask, type TaskEdit } from "@/services/tasks";
+import { checkRepeat, setTaskDone, undoTaskDone, updateTask, type TaskEdit } from "@/services/tasks";
 import { TASK_MANAGER_ROLES } from "@/lib/tasks";
 
 type TaskActionResult = { success: true } | { success: false; error: string };
@@ -89,6 +89,24 @@ export async function toggleTaskAction(id: string, currentStatus: string): Promi
   revalidatePath("/admin/calendar");
   revalidatePath("/dashboard");
   return { success: true, next: next ? next.toISOString() : null };
+}
+
+/** "Deshacer" justo después de marcarla como hecha (también los seguimientos del expediente). */
+export async function undoTaskDoneAction(id: string): Promise<TaskActionResult> {
+  const session = await auth();
+  if (!session?.user?.id) return { success: false, error: "Tu sesión expiró. Volvé a iniciar sesión." };
+  try {
+    const res = await undoTaskDone(session.user, id);
+    if (!res.success) return res;
+    if (res.caseId) revalidatePath(`/cases/${res.caseId}`);
+  } catch (error) {
+    console.error("Error en undoTaskDoneAction:", error);
+    return { success: false, error: actionErrorMessage(error, "No se pudo deshacer") };
+  }
+  revalidatePath("/tasks");
+  revalidatePath("/admin/calendar");
+  revalidatePath("/dashboard");
+  return { success: true };
 }
 
 export async function deleteTaskAction(id: string): Promise<TaskActionResult> {

@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Bell, Check, Info } from "lucide-react";
-import { getBellState, markAsRead, markAllAsRead } from "@/app/(dashboard)/actions/notifications";
+import { getBellState, markAsRead, markAllAsRead, undoMarkAllAsRead } from "@/app/(dashboard)/actions/notifications";
+import { toastWithUndo } from "@/components/ui/undo-toast";
 import { BELL_POLL_MS, BELL_REFRESH_ON_VISIBLE_MS, shouldPollBell } from "@/lib/bell";
 import {
   DropdownMenu,
@@ -86,8 +87,12 @@ export function NotificationBell() {
   };
 
   const handleMarkAllRead = async () => {
-    await markAllAsRead();
+    const ids = await markAllAsRead();
     fetchNotifications();
+    if (ids.length > 0) {
+      const texto = ids.length === 1 ? "Marcaste 1 aviso como leído." : `Marcaste ${ids.length.toLocaleString("es-AR")} avisos como leídos.`;
+      toastWithUndo(texto, () => undoMarkAllAsRead(ids), () => fetchNotifications());
+    }
   };
 
   return (
