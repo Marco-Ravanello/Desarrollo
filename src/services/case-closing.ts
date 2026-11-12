@@ -70,7 +70,7 @@ export async function undoCloseCase(user: CaseUser, caseId: string, now = new Da
   });
   if (!last || last.action !== "CLOSE_CASE" || last.userId !== user.id) return fail("Solo se puede deshacer un cierre que acabás de hacer.");
   if (!withinUndoWindow(last.createdAt, now)) return fail(UNDO_TOO_LATE);
-  const later = await prisma.intervention.count({ where: { caseId, createdAt: { gt: last.createdAt } } });
+  const later = await prisma.intervention.count({ where: { caseId, createdAt: { gte: last.createdAt } } });
   if (later) return fail("Ya se cargó algo en el expediente después del cierre. Reabrilo con un motivo.");
 
   return prisma.$transaction(async (tx) => {
