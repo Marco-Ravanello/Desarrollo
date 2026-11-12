@@ -36,6 +36,10 @@ import { CloseReopenCaseButton } from "@/components/cases/close-reopen-case";
 import { caseTitle } from "@/lib/page-titles";
 import { MoreActions } from "@/components/layout/more-actions";
 import { CaseLabelsEditor } from "@/components/cases/case-labels-editor";
+import { EditCaseButton } from "@/components/cases/edit-case";
+import { canEditCase } from "@/lib/case-edit";
+import { getAwayByUserIds } from "@/services/staff-away";
+import { awayText } from "@/lib/staff-away";
 
 export const generateMetadata = caseTitle;
 
@@ -102,9 +106,13 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
   const canTake = !isClosed && canTakeCase(session.user, caseData.areaId);
   // Mientras hay una derivación sin responder no se cierra (primero la responde el área que la recibe).
   const canCloseOrReopen = canCloseOrReopenCase(session.user, areaName) && (isClosed || !pendingDerivation);
+  const canEdit = canEditCase(session.user, { status: caseData.status, areaName });
   const assignOptions = canAssign ? await getAssignableUsers({ areaId: caseData.areaId, areaName }) : [];
   const assignee = caseData.assignedTo;
   const assigneeName = assignee ? assignee.name || assignee.email || "Usuario" : null;
+  // Si quien lo tiene a cargo está de licencia hoy, según su legajo (idea 127).
+  const assigneeAwayInfo = assignee && !isClosed ? (await getAwayByUserIds([assignee.id])).get(assignee.id) : undefined;
+  const assigneeAway = assigneeAwayInfo ? awayText(assigneeAwayInfo) : null;
 
   const lastIntervention = interventions[0] ?? null;
   const lastClose = events.filter((e) => e.kind === "CIERRE").at(-1);
@@ -142,6 +150,9 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
             {!isClosed && <NewInterventionButton />}
             {isClosed && canCloseOrReopen && <CloseReopenCaseButton caseId={caseData.id} mode="reopen" />}
             <MoreActions>
+              {canEdit && (
+                <EditCaseButton caseId={caseData.id} title={shownTitle.title} description={caseData.description ?? null} priority={caseData.priority} />
+              )}
               {canScheduleFollowUp && <ScheduleFollowUpButton caseId={caseData.id} today={today} />}
               {canDerive && (
                 <DeriveCaseButton
@@ -174,6 +185,7 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
         pendingTo={pendingDerivation?.toArea ?? null}
         person={person && personName ? { name: personName, dni: isProvisionalDni(person.dni) ? null : person.dni ?? null, href: `/people/${person.dni || person.id}` } : null}
         assigneeName={assigneeName}
+        assigneeAway={assigneeAway}
         assignmentControl={
           (canAssign || canTake) && (
             <AssignCaseControl
@@ -212,7 +224,7 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
           <Card className="rounded-2xl border border-border/60 shadow-sm bg-card space-y-4 p-6">
             <div className="pb-2 border-b border-border/40">
               <CardTitle className="text-lg font-bold text-foreground">Historia del expediente</CardTitle>
-              <CardDescription>Intervenciones, derivaciones, seguimientos, etiquetas, apertura y cierre, de lo más nuevo a lo más viejo.</CardDescription>
+              <CardDescription>Intervenciones, derivaciones, seguimientos, etiquetas, correcciones, apertura y cierre, de lo más nuevo a lo más viejo.</CardDescription>
             </div>
 
             <FollowUpList items={followUps} today={today} currentUserId={session.user.id!} />

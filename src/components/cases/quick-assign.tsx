@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { assignCaseAction } from "@/app/(dashboard)/cases/actions/case-actions";
 import { plural } from "@/lib/formato";
 
-type Person = { id: string; name: string; open: number };
+type Person = { id: string; name: string; open: number; away?: string | null };
 
 const openLabel = (n: number) => (n === 0 ? "ningún expediente" : plural(n, "abierto"));
 
@@ -48,7 +48,7 @@ export function QuickAssign({ caseId, caseLabel, suggested, people }: { caseId: 
           <option value="">{suggested ? "Otra persona…" : "Elegir a quién…"}</option>
           {people.map((p) => (
             <option key={p.id} value={p.id}>
-              {p.name} · {openLabel(p.open)}
+              {p.name} · {openLabel(p.open)}{p.away ? ` · ${p.away.toLowerCase()}` : ""}
             </option>
           ))}
         </select>

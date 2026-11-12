@@ -3,6 +3,8 @@ import prisma from "@/lib/prisma";
 import { MANAGEMENT_ROLES } from "@/lib/permissions";
 import { canAssignCase, canTakeCase, isEligibleAssignee } from "@/lib/case-assignment";
 import { countOpenCasesByUser } from "@/services/team-workload";
+import { getAwayByUserIds } from "@/services/staff-away";
+import { awayText } from "@/lib/staff-away";
 
 // Profesional a cargo de un expediente: la conducción y quien dirige el área
 // lo asignan o lo cambian; alguien del área puede tomar uno que no tiene a nadie.
@@ -22,13 +24,15 @@ export async function getAssignableUsers(caseItem: { areaId: string; areaName: s
   });
   const eligible = users.filter((u) => isEligibleAssignee(u, caseItem));
   // Cuántos expedientes abiertos tiene cada uno, para elegir sin sobrecargar a nadie.
-  const open = await countOpenCasesByUser(eligible.map((u) => u.id));
+  const [open, away] = await Promise.all([countOpenCasesByUser(eligible.map((u) => u.id)), getAwayByUserIds(eligible.map((u) => u.id))]);
   return eligible.map((u) => ({
     id: u.id,
     name: u.name || u.email || "Usuario",
     sameArea: u.areaId === caseItem.areaId,
     role: u.role,
     open: open.get(u.id) ?? 0,
+    // De licencia o de vacaciones hoy, según su legajo (idea 127).
+    away: away.has(u.id) ? awayText(away.get(u.id)!) : null,
   }));
 }
 

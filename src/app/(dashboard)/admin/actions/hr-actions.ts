@@ -10,6 +10,7 @@ import { readHRForm } from "@/lib/hr-form";
 import { canEditHR } from "@/lib/hr-labels";
 import { ActionResult } from "@/types/actions";
 import { actionErrorMessage } from "@/lib/action-error";
+import { linkHRRecordToUser } from "@/services/staff-away";
 
 /** El DNI ya está en otro legajo: mensaje claro en vez del error de la base. */
 async function dniTaken(dni: string, exceptId?: string) {
@@ -137,5 +138,21 @@ export async function deleteLeaveAction(leaveId: string): Promise<ActionResult<v
   } catch (error) {
     console.error(error);
     return { success: false, error: actionErrorMessage(error, "No se pudo borrar la licencia") };
+  }
+}
+
+/** Une el legajo con la cuenta de la app de esa persona, o lo separa (idea 127). */
+export async function linkHRUserAction(hrRecordId: string, userId: string | null): Promise<ActionResult<void>> {
+  const session = await auth();
+  if (!session?.user?.id) return { success: false, error: "Tu sesión expiró. Volvé a iniciar sesión." };
+  try {
+    const res = await linkHRRecordToUser(session.user, hrRecordId, userId || null);
+    if (!res.success) return res;
+    revalidatePath(`/admin/hr/${hrRecordId}`);
+    revalidatePath("/admin/hr");
+    return { success: true };
+  } catch (error) {
+    console.error(error);
+    return { success: false, error: actionErrorMessage(error, "No se pudo unir el legajo con el usuario") };
   }
 }

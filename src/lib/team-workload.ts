@@ -16,6 +16,8 @@ export type WorkloadMember = {
   stale: number;
   /** Expedientes que le asignaron en los últimos 7 días. */
   recent: number;
+  /** "De licencia hasta el 20/11" si hoy está fuera según su legajo de RRHH (idea 127); null si no. */
+  away?: string | null;
 };
 
 /** La conducción ve cualquier área; quien dirige un área, solo la suya. */
@@ -25,9 +27,9 @@ export function canViewTeamWorkload(user: { role: Role; areaId?: string | null }
   return user.role === "DIRECTOR_AREA" && user.areaId === areaId;
 }
 
-/** A quién se puede proponer: primero profesionales del área; si no hay, quien la dirige. */
+/** A quién se puede proponer: primero profesionales del área; si no hay, quien la dirige. Nunca a quien está de licencia. */
 function candidates(rows: WorkloadMember[]): WorkloadMember[] {
-  const usable = rows.filter((r) => r.member && r.eligible);
+  const usable = rows.filter((r) => r.member && r.eligible && !r.away);
   const professionals = usable.filter((r) => r.role !== "DIRECTOR_AREA");
   return professionals.length > 0 ? professionals : usable;
 }
@@ -46,11 +48,16 @@ export function sortByLoad(rows: WorkloadMember[]): WorkloadMember[] {
   return [...rows].sort((a, b) => b.open - a.open || b.urgent - a.urgent || a.name.localeCompare(b.name, "es"));
 }
 
-/** En el diálogo de asignar: quién del área tiene menos expedientes abiertos (profesionales primero). */
-export function suggestAssignee<T extends { id: string; name: string; role: Role; open: number; sameArea: boolean }>(options: T[]): T | null {
-  const area = options.filter((o) => o.sameArea);
+/** En el diálogo de asignar: quién del área tiene menos expedientes abiertos (profesionales primero, sin los que están de licencia). */
+export function suggestAssignee<T extends { id: string; name: string; role: Role; open: number; sameArea: boolean; away?: string | null }>(options: T[]): T | null {
+  const area = options.filter((o) => o.sameArea && !o.away);
   const professionals = area.filter((o) => o.role !== "DIRECTOR_AREA");
   const list = professionals.length > 0 ? professionals : area;
   if (list.length === 0) return null;
   return [...list].sort((a, b) => a.open - b.open || a.name.localeCompare(b.name, "es"))[0];
+}
+
+/** Quienes están de licencia hoy y tienen expedientes sin cerrar a cargo: para avisar y repartirlos (idea 127). */
+export function awayWithCases(rows: WorkloadMember[]): WorkloadMember[] {
+  return rows.filter((r) => r.away && r.open > 0).sort((a, b) => b.urgent - a.urgent || b.open - a.open);
 }

@@ -52,6 +52,7 @@ export function CaseSummaryHeader({
   pendingTo,
   person,
   assigneeName,
+  assigneeAway,
   assignmentControl,
 }: {
   status: string;
@@ -68,6 +69,8 @@ export function CaseSummaryHeader({
   person: { name: string; dni: string | null; href: string } | null;
   /** Profesional a cargo (null si no tiene). */
   assigneeName: string | null;
+  /** "De licencia hasta el 20/11" si quien lo tiene a cargo está fuera hoy (idea 127). */
+  assigneeAway?: string | null;
   /** Botón para asignar, cambiar o tomar el expediente. */
   assignmentControl?: React.ReactNode;
 }) {
@@ -107,6 +110,9 @@ export function CaseSummaryHeader({
             </p>
             {assignmentControl}
           </div>
+          {assigneeAway && (
+            <p className="text-xs font-semibold text-amber-800 dark:text-amber-300">{assigneeAway}</p>
+          )}
         </Tile>
 
         <Tile label={summary.closed ? "Estuvo abierto" : "Abierto hace"} icon={CalendarClock}>

@@ -2,7 +2,7 @@ export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { AlertTriangle, ArrowLeft, FolderOpen, Hourglass, UserX, UsersRound } from "lucide-react";
+import { AlertTriangle, ArrowLeft, CalendarOff, FolderOpen, Hourglass, UserX, UsersRound } from "lucide-react";
 import { auth } from "@/auth";
 import prisma from "@/lib/prisma";
 import { hasPermission, MANAGEMENT_ROLES, PERMISSIONS } from "@/lib/permissions";
@@ -10,7 +10,7 @@ import { isSensitiveArea } from "@/lib/sensitive-areas";
 import { getAreaShortName } from "@/lib/area-theme";
 import { formatNumber, plural } from "@/lib/formato";
 import { splitCaseTitle, STALE_DAYS } from "@/lib/case-summary";
-import { canViewTeamWorkload, pickLeastLoaded } from "@/lib/team-workload";
+import { awayWithCases, canViewTeamWorkload, pickLeastLoaded } from "@/lib/team-workload";
 import { getTeamWorkload, getUnassignedCases, UNASSIGNED_LIST_LIMIT } from "@/services/team-workload";
 import { PageHeader } from "@/components/layout/page-header";
 import { PageBreadcrumbs } from "@/components/layout/breadcrumbs-context";
@@ -64,6 +64,7 @@ export default async function TeamWorkloadPage({ searchParams }: { searchParams:
   const areaLabel = getAreaShortName(area.name);
   const suggested = pickLeastLoaded(rows);
   const assignable = rows.filter((r) => r.member && r.eligible).sort((a, b) => a.open - b.open || a.name.localeCompare(b.name, "es"));
+  const awayRows = awayWithCases(rows);
   const maxOpen = Math.max(1, ...rows.map((r) => r.open));
   const casesHref = (params: Record<string, string>) => `/cases?${new URLSearchParams({ area: area.id, ...params })}`;
 
@@ -111,6 +112,38 @@ export default async function TeamWorkloadPage({ searchParams }: { searchParams:
         <StatCard label="Sin movimiento" value={formatNumber(totals.stale)} hint={`Sin intervenciones hace ${STALE_DAYS} días o más`} icon={Hourglass} tone="slate" />
       </StatRow>
 
+      {awayRows.length > 0 && (
+        <section aria-label="De licencia con expedientes a cargo" className="space-y-2 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4">
+          <h2 className="flex items-center gap-2 text-sm font-semibold text-amber-900 dark:text-amber-200">
+            <CalendarOff className="h-4 w-4" aria-hidden /> De licencia con expedientes a cargo
+          </h2>
+          <ul className="space-y-2">
+            {awayRows.map((r) => (
+              <li key={r.userId} className="flex flex-col gap-1 text-sm text-amber-950 dark:text-amber-100 sm:flex-row sm:items-center sm:justify-between">
+                <p>
+                  <span className="font-semibold">{r.name}</span> está {r.away!.replace(/^De/, "de")} y tiene {plural(r.open, "expediente sin cerrar", "expedientes sin cerrar")}
+                  {r.urgent > 0 ? <>, <span className="font-semibold text-rose-700 dark:text-rose-300">{plural(r.urgent, "urgente")}</span></> : null}.
+                  {suggested ? <> Se los podés pasar a <span className="font-semibold">{suggested.name}</span> ({suggested.open === 0 ? "ninguno" : formatNumber(suggested.open)} sin cerrar).</> : null}
+                </p>
+                <div className="flex shrink-0 flex-wrap gap-2">
+                  {r.urgent > 0 && (
+                    <Button asChild size="sm" variant="outline" className="h-8 rounded-lg bg-background text-xs font-bold">
+                      <Link href={casesHref({ assigned: r.userId, priority: "URGENTE", status: "ACTIVOS" })}>Ver los urgentes</Link>
+                    </Button>
+                  )}
+                  <Button asChild size="sm" variant="outline" className="h-8 rounded-lg bg-background text-xs font-bold">
+                    <Link href={casesHref({ assigned: r.userId })}>Ver y reasignar</Link>
+                  </Button>
+                </div>
+              </li>
+            ))}
+          </ul>
+          <p className="text-xs text-amber-900/80 dark:text-amber-200/80">
+            En la lista podés tildar varios y elegir “Asignar a”. La licencia sale del legajo de Recursos Humanos de cada persona.
+          </p>
+        </section>
+      )}
+
       <Card className="rounded-2xl border border-border/60 bg-card p-2 shadow-sm sm:p-4">
         <h2 className="px-2 pb-2 pt-1 text-sm font-semibold text-foreground">Profesionales</h2>
         {rows.length === 0 ? (
@@ -130,7 +163,7 @@ export default async function TeamWorkloadPage({ searchParams }: { searchParams:
                 leading={<InitialsAvatar name={r.name} seed={r.userId} size="sm" />}
                 title={r.name}
                 subtitle={`${plural(r.open, "sin cerrar", "sin cerrar")} · ${plural(r.urgent, "urgente")}`}
-                meta={r.stale > 0 ? `${plural(r.stale, "sin movimiento", "sin movimiento")}` : !r.member ? "De otra área" : undefined}
+                meta={r.away ?? (r.stale > 0 ? `${plural(r.stale, "sin movimiento", "sin movimiento")}` : !r.member ? "De otra área" : undefined)}
               />
             ))}
           </MobileList>
@@ -155,6 +188,11 @@ export default async function TeamWorkloadPage({ searchParams }: { searchParams:
                           <span className="block truncate font-medium text-foreground">{r.name}</span>
                           {!r.member && <span className="block text-xs text-muted-foreground">De otra área</span>}
                           {r.member && r.role === "DIRECTOR_AREA" && <span className="block text-xs text-muted-foreground">Dirige el área</span>}
+                          {r.away && (
+                            <span className="mt-0.5 inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2 py-0.5 text-xs font-semibold text-amber-800 dark:text-amber-300">
+                              <CalendarOff className="h-3 w-3" aria-hidden /> {r.away}
+                            </span>
+                          )}
                         </span>
                       </span>
                     </td>
@@ -225,7 +263,7 @@ export default async function TeamWorkloadPage({ searchParams }: { searchParams:
                       suggested={suggested ? { id: suggested.userId, name: suggested.name, open: suggested.open } : null}
                       people={assignable
                         .filter((p) => p.userId !== suggested?.userId)
-                        .map((p) => ({ id: p.userId, name: p.name, open: p.open }))}
+                        .map((p) => ({ id: p.userId, name: p.name, open: p.open, away: p.away }))}
                     />
                   </li>
                 );

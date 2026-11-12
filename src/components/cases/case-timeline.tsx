@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ArrowRightLeft, CalendarClock, Check, FolderOpen, Lock, RotateCcw, MessageSquareText, Tags, User, UserCheck, X, Clock } from "lucide-react";
+import { ArrowRightLeft, CalendarClock, Check, FolderOpen, Lock, RotateCcw, MessageSquareText, Pencil, Tags, User, UserCheck, X, Clock } from "lucide-react";
 import { INTERVENTION_TYPES } from "@/lib/intervention-types";
 import type { InterventionRow } from "@/services/interventions";
 import type { CaseEvent } from "@/services/case-timeline";
@@ -18,6 +18,7 @@ const EXPEDIENTE = "EXPEDIENTE";
 const ASIGNACIONES = "ASIGNACIONES";
 const SEGUIMIENTOS = "SEGUIMIENTOS";
 const ETIQUETAS = "ETIQUETAS";
+const EDICIONES = "EDICIONES";
 
 /** Grupo de cada movimiento para el filtro: el tipo de intervención, derivaciones, profesional a cargo, o apertura y cierre. */
 function groupOf(item: Item) {
@@ -25,6 +26,7 @@ function groupOf(item: Item) {
   if (item.event.kind === "ASIGNACION") return ASIGNACIONES;
   if (item.event.kind === "SEGUIMIENTO") return SEGUIMIENTOS;
   if (item.event.kind === "ETIQUETAS") return ETIQUETAS;
+  if (item.event.kind === "EDICION") return EDICIONES;
   return item.event.kind === "DERIVACION" || item.event.kind === "RESPUESTA" ? DERIVACIONES : EXPEDIENTE;
 }
 
@@ -35,6 +37,7 @@ function eventIcon(e: CaseEvent) {
   if (e.kind === "ASIGNACION") return { Icon: UserCheck, className: "bg-teal-500/15 text-teal-700 dark:text-teal-300" };
   if (e.kind === "SEGUIMIENTO") return { Icon: CalendarClock, className: "bg-amber-500/15 text-amber-800 dark:text-amber-300" };
   if (e.kind === "ETIQUETAS") return { Icon: Tags, className: "bg-violet-500/15 text-violet-700 dark:text-violet-300" };
+  if (e.kind === "EDICION") return { Icon: Pencil, className: "bg-sky-500/15 text-sky-700 dark:text-sky-300" };
   if (e.kind === "RESPUESTA")
     return e.outcome === "RECHAZADA"
       ? { Icon: X, className: "bg-rose-500/15 text-rose-600 dark:text-rose-400" }
@@ -58,6 +61,12 @@ function EventCard({ e }: { e: CaseEvent }) {
           </p>
         )}
         {e.detail && <p className="text-xs text-foreground whitespace-pre-line">{e.detail}</p>}
+        {e.previousDescription && (
+          <details className="text-xs">
+            <summary className="cursor-pointer font-semibold text-primary hover:underline">Ver la descripción anterior</summary>
+            <p className="mt-1 whitespace-pre-line rounded-xl border border-border/50 bg-background p-2 text-muted-foreground">{e.previousDescription}</p>
+          </details>
+        )}
         {e.kind === "DERIVACION" && e.outcome === "PENDIENTE" && (
           <p className="flex items-center gap-1 text-xs font-semibold text-amber-700 dark:text-amber-300">
             <Clock className="h-3 w-3" /> Esperando respuesta
@@ -93,6 +102,7 @@ export function CaseTimeline({ interventions, events }: { interventions: Interve
     ...(counts.has(ASIGNACIONES) ? [{ value: ASIGNACIONES, label: "Profesional a cargo" }] : []),
     ...(counts.has(SEGUIMIENTOS) ? [{ value: SEGUIMIENTOS, label: "Seguimientos" }] : []),
     ...(counts.has(ETIQUETAS) ? [{ value: ETIQUETAS, label: "Etiquetas" }] : []),
+    ...(counts.has(EDICIONES) ? [{ value: EDICIONES, label: "Correcciones" }] : []),
     ...(counts.has(EXPEDIENTE) ? [{ value: EXPEDIENTE, label: "Apertura y cierre" }] : []),
   ];
   const visible = filter === "TODO" ? items : items.filter((item) => groupOf(item) === filter);

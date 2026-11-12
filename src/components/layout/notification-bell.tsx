@@ -1,13 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Bell, Check, Info } from "lucide-react";
-import {
-  getNotifications,
-  countUnreadNotifications,
-  markAsRead,
-  markAllAsRead
-} from "@/app/(dashboard)/actions/notifications";
+import { getBellState, markAsRead, markAllAsRead } from "@/app/(dashboard)/actions/notifications";
+import { BELL_POLL_MS, BELL_REFRESH_ON_VISIBLE_MS, shouldPollBell } from "@/lib/bell";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -25,20 +21,48 @@ export function NotificationBell() {
   const [notifications, setNotifications] = useState<any[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
 
-  const fetchNotifications = async () => {
-    const data = await getNotifications();
-    setNotifications(data);
-    const listed = data.filter((n: any) => !n.read).length;
-    // La lista trae los últimos 10; el número cuenta todos los sin leer.
-    const total = await countUnreadNotifications().catch(() => listed);
-    setUnreadCount(Math.max(listed, total));
-  };
+  const lastFetchAt = useRef(0);
+  const inFlight = useRef(false);
 
+  // Un solo pedido trae los últimos 10 avisos y cuántos hay sin leer en total.
+  const fetchNotifications = useCallback(async () => {
+    if (inFlight.current) return;
+    inFlight.current = true;
+    lastFetchAt.current = Date.now();
+    try {
+      const { items, unread } = await getBellState();
+      setNotifications(items);
+      const listed = items.filter((n: any) => !n.read).length;
+      setUnreadCount(Math.max(listed, unread));
+    } catch {
+      // Sin conexión o la sesión venció: se vuelve a intentar en la próxima vuelta.
+    } finally {
+      inFlight.current = false;
+    }
+  }, []);
+
+  // Pregunta cada un minuto solo mientras la pestaña está a la vista (idea 130). Escondida, no pregunta;
+  // al volver a ella, pregunta enseguida si pasó un rato.
   useEffect(() => {
     fetchNotifications();
-    const interval = setInterval(fetchNotifications, 30000);
-    return () => clearInterval(interval);
-  }, []);
+    const visible = () => document.visibilityState === "visible";
+    const tick = () => {
+      if (shouldPollBell({ visible: visible(), lastFetchAt: lastFetchAt.current, now: Date.now(), minGapMs: BELL_POLL_MS - 1000 })) {
+        fetchNotifications();
+      }
+    };
+    const onVisible = () => {
+      if (shouldPollBell({ visible: visible(), lastFetchAt: lastFetchAt.current, now: Date.now(), minGapMs: BELL_REFRESH_ON_VISIBLE_MS })) {
+        fetchNotifications();
+      }
+    };
+    const interval = setInterval(tick, BELL_POLL_MS);
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, [fetchNotifications]);
 
   // Los avisos sin leer también se ven en la pestaña del navegador: "(3) Inicio · MuniGestión 3F".
   // Al cambiar de pantalla la app pone otro título, así que se vuelve a agregar cada vez que cambia.
@@ -67,7 +91,12 @@ export function NotificationBell() {
   };
 
   return (
-    <DropdownMenu>
+    <DropdownMenu
+      onOpenChange={(open) => {
+        // Al abrirla, lo más nuevo (si la última pregunta fue hace más de unos segundos).
+        if (open && Date.now() - lastFetchAt.current > BELL_REFRESH_ON_VISIBLE_MS) fetchNotifications();
+      }}
+    >
       <DropdownMenuTrigger asChild>
         <Button
           variant="ghost"

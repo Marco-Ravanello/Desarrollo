@@ -14,6 +14,7 @@ import { completeFollowUp, scheduleFollowUp } from "@/services/follow-ups";
 import { isInterventionType } from "@/lib/intervention-types";
 import { normalizeCaseLabels } from "@/lib/case-labels";
 import { updateCaseLabels } from "@/services/case-labels";
+import { updateCaseDetails } from "@/services/case-edit";
 
 export async function addCaseInterventionAction(caseId: string, description: string, type?: string) {
   const session = await auth();
@@ -340,6 +341,24 @@ export async function updateCaseLabelsAction(caseId: string, labels: string[]) {
     return result;
   } catch (error: any) {
     return { success: false, error: actionErrorMessage(error, "No se pudieron guardar las etiquetas") };
+  }
+}
+
+/** Corrige la carátula, la descripción o la prioridad de un expediente abierto (idea 121). */
+export async function updateCaseDetailsAction(caseId: string, input: { title: string; description: string; priority: string }) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return { success: false, error: "No tenés permiso para hacer esto o tu sesión expiró. Si sigue pasando, volvé a iniciar sesión." };
+  }
+  try {
+    const result = await updateCaseDetails(session.user, caseId, input);
+    if (result.success && result.changed) {
+      revalidatePath(`/cases/${caseId}`);
+      revalidatePath("/cases");
+    }
+    return result;
+  } catch (error: any) {
+    return { success: false, error: actionErrorMessage(error, "No se pudieron guardar los cambios del expediente") };
   }
 }
 
