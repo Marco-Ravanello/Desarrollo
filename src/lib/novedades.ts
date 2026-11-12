@@ -16,6 +16,15 @@ export interface Novedad {
 export const NOVEDADES: Novedad[] = [
   {
     fecha: "2026-11-12",
+    parte: 4,
+    titulo: "Bajar las intervenciones por período y por área",
+    cambios: [
+      "En Importar datos, \"Bajar las intervenciones cargadas\" ahora pide el período (este mes, el mes pasado, los últimos 90 días, el año o las fechas que elijas) y, si querés, el área. La planilla trae también el tipo de intervención, quién la cargó y quién fue con esa persona.",
+      "La app quedó preparada para que la ficha, el expediente, la Carga del equipo y Mis tareas sigan rápidos cuando haya años de datos.",
+    ],
+  },
+  {
+    fecha: "2026-11-12",
     parte: 3,
     titulo: "Comparar barrios y mapa de necesidades",
     cambios: [

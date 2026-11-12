@@ -173,6 +173,11 @@ model Intervention {
   edits       InterventionEdit[]
 
   @@index([withUserIds], type: Gin)
+  // Índices para la historia del expediente y de la persona, Carga del equipo y la descarga por período (idea 131).
+  @@index([caseId, date])
+  @@index([personId, date])
+  @@index([userId, date])
+  @@index([date])
 }
 
 enum InterventionType {
@@ -624,6 +629,9 @@ model Document {
   createdAt    DateTime  @default(now())
 
   @@index([expiresAt])
+  // Documentos de la ficha y del expediente (idea 131).
+  @@index([personId])
+  @@index([caseId])
 }
 
 model Notification {
@@ -660,6 +668,8 @@ model Task {
   createdAt   DateTime   @default(now())
 
   @@index([caseId])
+  // Mis tareas, la Agenda y los seguimientos de hoy (idea 131).
+  @@index([userId, dueDate])
 }
 
 enum TaskStatus {
