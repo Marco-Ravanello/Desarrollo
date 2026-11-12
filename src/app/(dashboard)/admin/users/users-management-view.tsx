@@ -59,6 +59,8 @@ interface UsersManagementViewProps {
   autoOpenNew?: boolean;
   /** Solo el Superadmin crea usuarios y restablece contraseñas de otras personas. */
   isSuperadmin?: boolean;
+  /** Pedidos de clave temporal (solo Superadmin), debajo del título. */
+  helpRequests?: React.ReactNode;
 }
 
 export function UsersManagementView({
@@ -66,7 +68,8 @@ export function UsersManagementView({
   areas,
   currentUserId,
   autoOpenNew = false,
-  isSuperadmin = false
+  isSuperadmin = false,
+  helpRequests,
 }: UsersManagementViewProps) {
   const [isCreateOpen, setIsCreateOpen] = useState(Boolean(autoOpenNew));
   const [searchQuery, setSearchQuery] = useState("");
@@ -194,6 +197,8 @@ export function UsersManagementView({
           )
         }
       />
+
+      {helpRequests}
 
       <StatRow>
         <StatCard

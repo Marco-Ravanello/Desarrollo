@@ -7,8 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Lock, User, ShieldCheck, ArrowRight, KeyRound, Phone } from "lucide-react";
+import { Lock, User, ShieldCheck, ArrowRight, KeyRound, Phone, Send, CheckCircle2, Loader2 } from "lucide-react";
 import { MunicipalCrest } from "@/components/ui/municipal-crest";
+import { requestPasswordHelpAction } from "./actions";
 
 export function LoginForm({ helpdeskPhone }: { helpdeskPhone: string }) {
   const router = useRouter();
@@ -17,6 +18,25 @@ export function LoginForm({ helpdeskPhone }: { helpdeskPhone: string }) {
   const [loading, setLoading] = useState(false);
   const [closedByInactivity, setClosedByInactivity] = useState(false);
   const [showForgot, setShowForgot] = useState(false);
+  const [helpSending, setHelpSending] = useState(false);
+  const [helpSent, setHelpSent] = useState<string | null>(null);
+
+  // "Pedir clave temporal": le avisa al Superadmin (idea 106).
+  const requestHelp = async () => {
+    if (username.trim().length < 2) {
+      toast.error("Escribí tu usuario", { description: "Va en el campo Usuario, arriba." });
+      document.getElementById("username")?.focus();
+      return;
+    }
+    setHelpSending(true);
+    const res = await requestPasswordHelpAction(username).catch(() => null);
+    setHelpSending(false);
+    if (!res) {
+      toast.error("No se pudo enviar el pedido", { description: "Revisá la conexión y probá de nuevo." });
+      return;
+    }
+    setHelpSent(res.message);
+  };
 
   useEffect(() => {
     setClosedByInactivity(new URLSearchParams(window.location.search).get("motivo") === "inactividad");
@@ -163,6 +183,20 @@ export function LoginForm({ helpdeskPhone }: { helpdeskPhone: string }) {
                   La da quien administra la app (Superadmin). Con esa clave entrás una sola vez y en ese momento elegís una nueva.
                   Si la cuenta quedó bloqueada por intentos fallidos, la clave temporal también la desbloquea.
                 </p>
+                {helpSent ? (
+                  <p role="status" className="flex items-start gap-2 rounded-lg bg-emerald-500/10 px-2.5 py-2 font-medium text-emerald-800 dark:text-emerald-300">
+                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+                    {helpSent}
+                  </p>
+                ) : (
+                  <div className="space-y-1.5">
+                    <p className="text-muted-foreground">Escribí tu usuario arriba y pedila desde acá: le llega el aviso al Superadmin.</p>
+                    <Button type="button" variant="outline" size="sm" onClick={requestHelp} disabled={helpSending} className="h-9 gap-2 rounded-lg font-semibold">
+                      {helpSending ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <Send className="h-4 w-4" aria-hidden />}
+                      Pedir clave temporal
+                    </Button>
+                  </div>
+                )}
                 {helpdeskPhone.trim() && (
                   <p className="flex items-center gap-2 text-muted-foreground">
                     <Phone className="h-4 w-4 shrink-0 text-primary" />

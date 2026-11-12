@@ -8,35 +8,37 @@ datasource db {
 }
 
 model User {
-  id                 String               @id @default(cuid())
-  name               String?
+  id                      String                  @id @default(cuid())
+  name                    String?
   /// Con este nombre se ingresa a la app (en minúsculas). El correo es un dato aparte.
-  username           String?              @unique
-  email              String?              @unique
-  password           String?
-  role               Role                 @default(OPERATIVO)
-  areaId             String?
-  area               Area?                @relation(fields: [areaId], references: [id])
-  isActive           Boolean              @default(true)
+  username                String?                 @unique
+  email                   String?                 @unique
+  password                String?
+  role                    Role                    @default(OPERATIVO)
+  areaId                  String?
+  area                    Area?                   @relation(fields: [areaId], references: [id])
+  isActive                Boolean                 @default(true)
   /// La contraseña la puso un administrador: hay que cambiarla al ingresar.
-  mustChangePassword Boolean              @default(false)
-  accounts           Account[]
-  sessions           Session[]
-  auditLogs          AuditLog[]
-  tasks              Task[]
-  reservations       VehicleReservation[]
+  mustChangePassword      Boolean                 @default(false)
+  /// Cuándo pidió una clave temporal desde la pantalla de ingreso (se borra al generarla o al entrar bien).
+  passwordHelpRequestedAt DateTime?
+  accounts                Account[]
+  sessions                Session[]
+  auditLogs               AuditLog[]
+  tasks                   Task[]
+  reservations            VehicleReservation[]
   /// Expedientes de los que es profesional a cargo.
-  assignedCases      Case[]
+  assignedCases           Case[]
   /// Orden y tarjetas escondidas del Inicio que eligió la persona ({ order, hidden }); null = el de siempre.
-  homeLayout         Json?
+  homeLayout              Json?
   /// Filtros guardados de la lista de Expedientes: [{ nombre, consulta }]. Ver src/lib/filtros-guardados.ts.
-  caseFilters        Json?
+  caseFilters             Json?
   /// Cuándo cerró la bienvenida que se muestra la primera vez que entra; null = todavía no la vio.
-  welcomeSeenAt      DateTime?
+  welcomeSeenAt           DateTime?
   /// Conversaciones con el Asistente de IA (se borran solas a los 10 días de la última pregunta).
-  aiConversations    AssistantConversation[]
-  createdAt          DateTime             @default(now())
-  updatedAt          DateTime             @updatedAt
+  aiConversations         AssistantConversation[]
+  createdAt               DateTime                @default(now())
+  updatedAt               DateTime                @updatedAt
 }
 
 enum Role {
@@ -548,23 +550,23 @@ enum ContractType {
 }
 
 model HRRecord {
-  id           String       @id @default(cuid())
-  firstName    String
-  lastName     String
-  dni          String       @unique
-  fileNumber   String?      @unique
-  startDate    DateTime?
-  position     String?
-  areaId       String?
-  area         Area?        @relation(fields: [areaId], references: [id])
-  status       HRStatus     @default(ACTIVO)
-  statusUntil  DateTime?
-  contractType ContractType @default(MENSUALIZADO)
-  category     Int?
-  salary       Decimal?     @default(0)
-  schedule     String?
-  imageUrl     String?
-  tasks        String?      @db.Text
+  id                    String       @id @default(cuid())
+  firstName             String
+  lastName              String
+  dni                   String       @unique
+  fileNumber            String?      @unique
+  startDate             DateTime?
+  position              String?
+  areaId                String?
+  area                  Area?        @relation(fields: [areaId], references: [id])
+  status                HRStatus     @default(ACTIVO)
+  statusUntil           DateTime?
+  contractType          ContractType @default(MENSUALIZADO)
+  category              Int?
+  salary                Decimal?     @default(0)
+  schedule              String?
+  imageUrl              String?
+  tasks                 String?      @db.Text
   // Contacto y a quién avisar en una emergencia.
   phone                 String?
   email                 String?
@@ -572,8 +574,8 @@ model HRRecord {
   birthDate             DateTime?
   emergencyContactName  String?
   emergencyContactPhone String?
-  leaves       HRLeave[]
-  createdAt    DateTime     @default(now())
+  leaves                HRLeave[]
+  createdAt             DateTime     @default(now())
 }
 
 /// Cada licencia o período de vacaciones de un agente, con sus fechas (a la medianoche UTC de cada día, ambos incluidos).
@@ -734,6 +736,8 @@ model PadronUnificado {
   direccion_con_altura                                          Boolean?
   /// Nombre comparable (sin tildes ni signos, palabras en orden alfabético) para buscar posibles duplicados. Lo calcula la base (trigger) cada vez que cambia `nombre_completo`.
   nombre_clave                                                  String?
+  /// Nombre, barrio, localidad y dirección sin tildes ni signos, en mayúsculas, para buscar sin importar las tildes ni el orden. Lo calcula la base (trigger).
+  texto_busqueda                                                String?   @db.Text
   prog_centro_de_familia                                        Int       @default(0)
   prog_tarjeta_alimentar                                        Int       @default(0)
   prog_jardines_municipales                                     Int       @default(0)
