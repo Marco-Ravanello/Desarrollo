@@ -2,6 +2,7 @@ import prisma from "@/lib/prisma";
 import type { PadronUnificado, Prisma } from "@prisma/client";
 import { canManageProgramEnrollment } from "@/lib/permissions";
 import { todayInArgentina } from "@/lib/follow-up-dates";
+import { UNDONE_ACTIONS, UNDO_TOO_LATE, withinUndoWindow } from "@/lib/undo";
 import { canManageProgram } from "@/lib/program-ownership";
 import { getProgramOwners, programManageError } from "@/services/programs";
 import {
@@ -202,6 +203,55 @@ export async function withdrawFromProgramTx(
     },
   });
   return { success: true };
+}
+
+/**
+ * "Deshacer" justo después de dar una baja desde la ficha (idea 141): la persona vuelve a quedar en el
+ * programa como estaba y la baja se borra de la historia de altas y bajas (no cuenta en Reportes).
+ * Solo quien la dio, en los primeros minutos, y si no hubo otro movimiento de ese programa después.
+ * La entrada de Auditoría queda, como "baja deshecha".
+ */
+export async function undoWithdrawFromProgram(user: Actor, input: { dni: string; column: string }, now = new Date()): Promise<Result> {
+  if (!user.id || !canManageProgramEnrollment(user.role)) return { success: false, error: "Tu rol no puede dar altas en los programas." };
+  const dni = (input.dni ?? "").trim();
+  if (!isPadronProgramColumn(input.column)) return { success: false, error: "Elegí el programa." };
+  const column = input.column;
+  const notAllowed = await programManageError(user, column);
+  if (notAllowed) return { success: false, error: notAllowed };
+  const program = findPadronProgram(column)!;
+
+  return prisma.$transaction(async (tx) => {
+    const row = await lockPadronRow(tx, dni);
+    if (!row) return { success: false as const, error: "No se encontró a la persona en el padrón." };
+    const last = await tx.padronMovimiento.findFirst({
+      where: { dni, programa: column },
+      orderBy: [{ createdAt: "desc" }],
+    });
+    if (!last || last.tipo !== "BAJA" || last.origen !== "APP" || last.userId !== user.id) {
+      return { success: false as const, error: "Solo se puede deshacer una baja que acabás de dar." };
+    }
+    if (!withinUndoWindow(last.createdAt, now)) return { success: false as const, error: UNDO_TOO_LATE };
+    if (isInProgram(row as any, column)) return { success: false as const, error: `Ya está en ${program.label}.` };
+    const marked = await tx.personaEstado.findUnique({ where: { dni }, select: { estado: true } });
+    if (marked) return { success: false as const, error: "La persona quedó marcada como fallecida o mudada; la baja no se puede deshacer." };
+
+    await tx.padronUnificado.update({
+      where: { dni },
+      data: {
+        [column]: 1,
+        cantidad_programas: { increment: 1 },
+        programas_activos: addProgramToList(row.programas_activos, column),
+      },
+    });
+    await tx.padronMovimiento.delete({ where: { id: last.id } });
+    const audit = await tx.auditLog.findFirst({
+      where: { userId: user.id!, action: "PADRON_PROGRAMA_BAJA", entity: "PadronUnificado", entityId: dni, details: { startsWith: `Baja de ${program.label} ` } },
+      orderBy: { createdAt: "desc" },
+      select: { id: true },
+    });
+    if (audit) await tx.auditLog.update({ where: { id: audit.id }, data: { action: UNDONE_ACTIONS.PADRON_PROGRAMA_BAJA } });
+    return { success: true as const };
+  });
 }
 
 /** Los programas en los que la persona está hoy (columnas prog_...). */

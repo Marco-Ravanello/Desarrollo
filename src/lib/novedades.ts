@@ -16,6 +16,15 @@ export interface Novedad {
 export const NOVEDADES: Novedad[] = [
   {
     fecha: "2026-11-12",
+    parte: 5,
+    titulo: "Botón \"Deshacer\"",
+    cambios: [
+      "Si cerrás un expediente, marcás una tarea o un seguimiento como hecho, das de baja a alguien de un programa o marcás todos los avisos como leídos, durante unos segundos aparece abajo el botón \"Deshacer\" para volver atrás.",
+      "Lo que se deshace queda como estaba antes: el cierre no aparece en la historia del expediente y la baja no aparece en las altas y bajas. En Auditoría queda anotado que se hizo y se deshizo.",
+    ],
+  },
+  {
+    fecha: "2026-11-12",
     parte: 4,
     titulo: "Bajar las intervenciones por período y por área",
     cambios: [

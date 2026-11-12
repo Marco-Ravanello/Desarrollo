@@ -38,6 +38,7 @@ const ACTIONS: Record<string, { label: string; group: AuditGroup }> = {
   // Expedientes
   CREATE_CASE: { label: "Abrió un expediente", group: "expedientes" },
   CLOSE_CASE: { label: "Cerró un expediente", group: "expedientes" },
+  CLOSE_CASE_DESHECHO: { label: "Cerró un expediente y lo deshizo enseguida", group: "expedientes" },
   REOPEN_CASE: { label: "Reabrió un expediente", group: "expedientes" },
   ASSIGN_CASE: { label: "Cambió quién está a cargo", group: "expedientes" },
   CREATE_INTERVENTION: { label: "Cargó una intervención", group: "expedientes" },
@@ -56,6 +57,7 @@ const ACTIONS: Record<string, { label: string; group: AuditGroup }> = {
   PADRON_IMPORT: { label: "Importó una planilla al padrón", group: "personas" },
   PADRON_PROGRAMA_ALTA: { label: "Dio de alta a una persona en un programa", group: "personas" },
   PADRON_PROGRAMA_BAJA: { label: "Dio de baja a una persona de un programa", group: "personas" },
+  PADRON_PROGRAMA_BAJA_DESHECHA: { label: "Dio de baja a una persona de un programa y lo deshizo enseguida", group: "personas" },
   PROGRAMA_AREA: { label: "Cambió el área a cargo de un programa", group: "personas" },
   PROGRAMA_REQUISITOS: { label: "Cambió los requisitos de un programa", group: "personas" },
   LUGAR_CREADO: { label: "Cargó un lugar de referencia de un barrio", group: "personas" },

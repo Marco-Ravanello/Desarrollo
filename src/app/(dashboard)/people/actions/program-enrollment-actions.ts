@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { actionErrorMessage } from "@/lib/action-error";
-import { enrollInProgram, withdrawFromProgram } from "@/services/program-enrollment";
+import { enrollInProgram, undoWithdrawFromProgram, withdrawFromProgram } from "@/services/program-enrollment";
 import { bulkEnroll, bulkWithdraw, previewBulkEnroll } from "@/services/program-bulk";
 
 const SESSION_ERROR = "No tenés permiso para hacer esto o tu sesión expiró. Si sigue pasando, volvé a iniciar sesión.";
@@ -31,6 +31,19 @@ export async function withdrawFromProgramAction(dni: string, column: string, day
     return result;
   } catch (error) {
     return { success: false as const, error: actionErrorMessage(error, "No se pudo dar la baja") };
+  }
+}
+
+/** "Deshacer" justo después de dar una baja desde la ficha: vuelve a quedar en el programa. */
+export async function undoWithdrawFromProgramAction(dni: string, column: string) {
+  const session = await auth();
+  if (!session?.user?.id) return { success: false as const, error: SESSION_ERROR };
+  try {
+    const result = await undoWithdrawFromProgram(session.user, { dni, column });
+    if (result.success) revalidatePath(`/people/${dni}`);
+    return result;
+  } catch (error) {
+    return { success: false as const, error: actionErrorMessage(error, "No se pudo deshacer la baja") };
   }
 }
 

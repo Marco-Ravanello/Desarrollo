@@ -1,5 +1,6 @@
 import prisma from "@/lib/prisma";
 import { todayInArgentina } from "@/lib/follow-up-dates";
+import { withinUndoWindow } from "@/lib/undo";
 import {
   isTaskPriority, isTaskRepeat, nextOccurrence, parseViewerIds, serializeViewerIds, taskDueAt, TASK_MANAGER_ROLES, TASK_NOTES_MAX,
   TASK_TITLE_MAX,
@@ -119,6 +120,33 @@ export async function setTaskDone(user: Actor, id: string, done: boolean, now = 
     });
     await tx.task.update({ where: { id }, data: { nextTaskId: next.id } });
     return { success: true as const, next: next.dueDate };
+  });
+}
+
+/**
+ * "Deshacer" justo después de marcar una tarea (o un seguimiento) como hecha (idea 141): vuelve a quedar
+ * pendiente y, si se repetía, se borra la próxima que se acaba de crear, mientras nadie la haya tocado.
+ */
+export async function undoTaskDone(user: Actor, id: string, now = new Date()): Promise<{ success: true; caseId: string | null } | { success: false; error: string }> {
+  if (!user.id) return { success: false, error: "Tu sesión expiró. Volvé a iniciar sesión." };
+  return prisma.$transaction(async (tx) => {
+    const task = await tx.task.findUnique({ where: { id } });
+    if (!task) return { success: false as const, error: "La tarea ya no existe. Recargá la página." };
+    if (task.userId !== user.id && !TASK_MANAGER_ROLES.includes(user.role ?? "")) {
+      return { success: false as const, error: "Solo quien creó la tarea puede marcarla." };
+    }
+    if (task.status !== "COMPLETADA") return { success: false as const, error: "La tarea ya está pendiente." };
+    let nextTaskId = task.nextTaskId;
+    if (nextTaskId) {
+      const next = await tx.task.findUnique({ where: { id: nextTaskId } });
+      if (!next) nextTaskId = null;
+      else if (next.status === "PENDIENTE" && !next.nextTaskId && !next.notifiedAt && withinUndoWindow(next.createdAt, now)) {
+        await tx.task.delete({ where: { id: next.id } });
+        nextTaskId = null;
+      }
+    }
+    await tx.task.update({ where: { id }, data: { status: "PENDIENTE", nextTaskId } });
+    return { success: true as const, caseId: task.caseId };
   });
 }
 

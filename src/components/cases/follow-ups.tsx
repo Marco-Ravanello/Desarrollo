@@ -13,6 +13,8 @@ import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
 import { completeFollowUpAction, scheduleFollowUpAction } from "@/app/(dashboard)/cases/actions/case-actions";
+import { undoTaskDoneAction } from "@/app/(dashboard)/tasks/actions";
+import { toastWithUndo } from "@/components/ui/undo-toast";
 import { addDays, FOLLOW_UP_MAX_DAYS, FOLLOW_UP_NOTE_MAX } from "@/lib/follow-up-dates";
 import type { CaseFollowUp } from "@/services/follow-ups";
 
@@ -135,7 +137,7 @@ export function FollowUpList({ items, today, currentUserId }: { items: CaseFollo
     const res = await completeFollowUpAction(id).catch(() => null);
     setBusy(null);
     if (!res?.success) return toast.error((res as any)?.error || "No se pudo marcar. Probá de nuevo.");
-    toast.success("Seguimiento hecho.");
+    toastWithUndo("Seguimiento hecho.", () => undoTaskDoneAction(id), () => router.refresh());
     router.refresh();
   };
 

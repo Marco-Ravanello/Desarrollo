@@ -12,9 +12,11 @@ import { Badge } from "@/components/ui/badge";
 import { PRIORITY_TONE, toneOf } from "@/lib/status-tones";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { EmptyMessage } from "@/components/ui/empty-message";
-import { addTaskAction, toggleTaskAction, deleteTaskAction } from "./actions";
+import { addTaskAction, toggleTaskAction, deleteTaskAction, undoTaskDoneAction } from "./actions";
+import { toastWithUndo } from "@/components/ui/undo-toast";
 import { toast } from "sonner";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { diaAR, diaDeVencimiento, diasEntre, formatVencimiento } from "@/lib/fechas";
 import { parseViewerIds, repeatLabel, TASK_PRIORITIES, TASK_REPEATS } from "@/lib/tasks";
 import { EditTaskDialog, type ShareableUser } from "./edit-task-dialog";
@@ -61,6 +63,7 @@ export function TaskList({
   userId: string;
   users?: ShareableUser[];
 }) {
+  const router = useRouter();
   const userName = new Map(users.map((u) => [u.id, u.name]));
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -114,13 +117,13 @@ export function TaskList({
           toast.error(result.error);
           return;
         }
-        toast.success(
-          currentStatus === "COMPLETADA"
-            ? "Tarea reabierta"
-            : result.next
-            ? `¡Tarea completada! La próxima quedó para el ${formatVencimiento(result.next)}.`
-            : "¡Tarea completada!"
-        );
+        if (currentStatus === "COMPLETADA") toast.success("Tarea reabierta");
+        else
+          toastWithUndo(
+            result.next ? `¡Tarea completada! La próxima quedó para el ${formatVencimiento(result.next)}.` : "¡Tarea completada!",
+            () => undoTaskDoneAction(id),
+            () => router.refresh()
+          );
       } catch {
         toast.error("No se pudo actualizar la tarea. Revisá la conexión y probá de nuevo.");
       }
@@ -417,6 +420,7 @@ export function TaskList({
                         type="button"
                         onClick={() => handleToggle(t.id, t.status)}
                         disabled={isPending}
+                        aria-label={isDone ? `Volver a dejar pendiente: ${t.title}` : `Marcar como hecha: ${t.title}`}
                         className="mt-0.5 shrink-0 focus:outline-none"
                       >
                         {isDone ? (

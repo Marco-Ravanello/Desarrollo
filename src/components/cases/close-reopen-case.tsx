@@ -10,7 +10,8 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
-import { closeCaseAction, reopenCaseAction } from "@/app/(dashboard)/people/actions/close-case";
+import { closeCaseAction, reopenCaseAction, undoCloseCaseAction } from "@/app/(dashboard)/people/actions/close-case";
+import { toastWithUndo } from "@/components/ui/undo-toast";
 import { CASE_REASON_MAX } from "@/lib/case-closing";
 import { RequiredMark } from "@/components/ui/form-section";
 
@@ -59,7 +60,8 @@ export function CloseReopenCaseButton({
     const res = await action(caseId, reason).catch(() => null);
     setSaving(false);
     if (!res?.success) return toast.error((res as any)?.error || "No se pudo guardar. Probá de nuevo.");
-    toast.success(t.ok);
+    if (mode === "close") toastWithUndo(t.ok, () => undoCloseCaseAction(caseId), () => router.refresh());
+    else toast.success(t.ok);
     setOpen(false);
     setReason("");
     router.refresh();
