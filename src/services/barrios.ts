@@ -11,6 +11,8 @@ import { georefLookup, osmLookup } from "@/services/geocoding";
 import { barrioDondeCae, getLimites, marcarFuera, type LimiteOrigen } from "@/services/barrio-limites";
 import type { Limite } from "@/lib/barrio-limites";
 import { nombrePropio } from "@/lib/nombres";
+import { PADRON_GAPS } from "@/lib/padron-quality";
+import type { ComparisonInput } from "@/lib/barrio-comparison";
 
 // Página de cada barrio: lo que hay en el padrón, en los expedientes, en la emergencia y los lugares de referencia.
 // El barrio de una persona es el del padrón: la columna "barrio" si es uno de la lista y, si no, la "localidad"
@@ -539,4 +541,67 @@ export async function getPersonasFuera(barrio: Barrio3F): Promise<{ total: numbe
       caeEn: barrioDondeCae(limites, r.lat, r.lng),
     }));
   return { total: out.length, personas, tieneLimite: true };
+}
+
+// ── Comparar barrios y mapa de necesidades (ideas 42 y 43) ──
+
+/** Expedientes sin cerrar de cada barrio, por etiqueta (sin los de Violencia de Género para quien no puede verlos). */
+export async function getOpenCaseLabelsByBarrio(scope: BarrioScope): Promise<Map<Barrio3F, Record<string, number>>> {
+  const rows = await prisma.$queryRaw<{ barrio: string; localidad: string; label: string; total: bigint }[]>`
+    SELECT COALESCE(p.barrio, '') AS barrio, COALESCE(p.localidad, '') AS localidad, l.label, COUNT(DISTINCT c.id) AS total
+    FROM "Case" c
+    JOIN "Area" a ON a.id = c."areaId"
+    JOIN "Person" pe ON pe.id = c."personId"
+    JOIN padron_unificado p ON p.dni = pe.dni
+    CROSS JOIN LATERAL unnest(c.labels) AS l(label)
+    WHERE ${openCaseFilter(scope)}
+    GROUP BY 1, 2, 3`;
+  const out = new Map<Barrio3F, Record<string, number>>();
+  for (const r of rows) {
+    const b = barrioOfRow(r.barrio, r.localidad);
+    if (!b) continue;
+    const counts = out.get(b) ?? {};
+    counts[r.label] = (counts[r.label] ?? 0) + Number(r.total);
+    out.set(b, counts);
+  }
+  return out;
+}
+
+export type BarrioGaps = { sinTelefono: number; sinAltura: number; sinUbicacion: number };
+
+/** Datos que faltan en el padrón de cada barrio: una sola pasada por el padrón. */
+export async function getPadronGapsByBarrio(): Promise<Map<Barrio3F, BarrioGaps>> {
+  const g = PADRON_GAPS;
+  const rows = await prisma.$queryRawUnsafe<{ barrio: string; localidad: string; sin_telefono: number; sin_altura: number; sin_ubicacion: number }[]>(`
+    SELECT COALESCE(barrio, '') AS barrio, COALESCE(localidad, '') AS localidad,
+           count(*) FILTER (WHERE ${g.telefono.sql})::int AS sin_telefono,
+           count(*) FILTER (WHERE ${g.altura.sql})::int AS sin_altura,
+           count(*) FILTER (WHERE ${g.ubicacion.sql})::int AS sin_ubicacion
+    FROM padron_unificado
+    GROUP BY 1, 2`);
+  const out = new Map<Barrio3F, BarrioGaps>();
+  for (const r of rows) {
+    const b = barrioOfRow(r.barrio, r.localidad);
+    if (!b) continue;
+    const t = out.get(b) ?? { sinTelefono: 0, sinAltura: 0, sinUbicacion: 0 };
+    t.sinTelefono += Number(r.sin_telefono);
+    t.sinAltura += Number(r.sin_altura);
+    t.sinUbicacion += Number(r.sin_ubicacion);
+    out.set(b, t);
+  }
+  return out;
+}
+
+/** Los 29 barrios con lo necesario para compararlos (idea 42). */
+export async function getBarrioComparison(scope: BarrioScope): Promise<ComparisonInput[]> {
+  const [{ barrios }, gaps, labels] = await Promise.all([getBarrioSummaries(scope), getPadronGapsByBarrio(), getOpenCaseLabelsByBarrio(scope)]);
+  return barrios.map((b) => ({
+    barrio: b.barrio,
+    slug: b.slug,
+    people: b.people,
+    withPrograms: b.withPrograms,
+    openCases: b.openCases,
+    ...(gaps.get(b.barrio) ?? { sinTelefono: 0, sinAltura: 0, sinUbicacion: 0 }),
+    labels: labels.get(b.barrio) ?? {},
+  }));
 }

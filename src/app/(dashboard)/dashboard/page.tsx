@@ -352,15 +352,8 @@ export default async function DashboardPage({
 
   const viewAsOptions: ViewAsOption[] = VIEW_AS.map((v) => ({ value: v.role, label: roleLabel(v.role), needsArea: v.needsArea }));
 
-  return (
-    <div className="space-y-6">
-      <PageHeader
-        icon={LayoutDashboard}
-        title={firstName ? `${greeting}, ${firstName}` : greeting}
-        description={
-          <>
-            <span className="first-letter:uppercase inline-block">{todayLabel} · {scopeLabel}</span>
-            <span className="mt-1 block text-sm text-foreground/80" data-testid="resumen-del-dia">
+  const resumenFrase = (
+    <>
               {resumen.length === 0 ? (
                 RESUMEN_VACIO
               ) : (
@@ -383,8 +376,24 @@ export default async function DashboardPage({
                   .
                 </>
               )}
-            </span>
+    </>
+  );
+
+  return (
+    <div className="space-y-6">
+      <PageHeader
+        icon={LayoutDashboard}
+        title={<span className="sm:whitespace-nowrap">{firstName ? `${greeting}, ${firstName}` : greeting}</span>}
+        description={
+          <>
+            <span className="first-letter:uppercase inline-block sm:whitespace-nowrap">{todayLabel} · {scopeLabel}</span>
+            {/* En el celular, la frase de hoy sigue bajo la fecha; en la computadora va abajo, a todo el ancho. */}
+            <span className="mt-1 block text-sm text-foreground/80 sm:hidden">{resumenFrase}</span>
           </>
+        }
+        below={
+          // A todo el ancho, para que en la computadora entre en una línea (idea 119).
+          <p className="hidden text-sm text-foreground/80 sm:block sm:pl-[3.625rem]" data-testid="resumen-del-dia">{resumenFrase}</p>
         }
         actions={
           <>

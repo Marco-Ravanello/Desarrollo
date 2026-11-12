@@ -13,6 +13,8 @@ interface PageHeaderProps {
   badge?: React.ReactNode;
   /** Botones o menús que van a la derecha del título. */
   actions?: React.ReactNode;
+  /** Debajo del título y los botones, a todo el ancho (por ejemplo, la frase de hoy del Inicio). */
+  below?: React.ReactNode;
   className?: string;
 }
 
@@ -20,12 +22,13 @@ interface PageHeaderProps {
  * Encabezado común de todas las pantallas: ícono con el color de su sección del menú,
  * mismo tamaño de título, descripción y lugar para los botones.
  */
-export function PageHeader({ title, description, icon: Icon, leading, badge, actions, className }: PageHeaderProps) {
-  return (
+export function PageHeader({ title, description, icon: Icon, leading, badge, actions, below, className }: PageHeaderProps) {
+  const row = (
     <div
       className={cn(
-        "flex flex-col gap-4 border-b border-border/60 pb-5 sm:flex-row sm:items-center sm:justify-between",
-        className
+        "flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between",
+        !below && "border-b border-border/60 pb-5",
+        !below && className
       )}
     >
       <div className="flex min-w-0 items-start gap-3.5">
@@ -53,6 +56,13 @@ export function PageHeader({ title, description, icon: Icon, leading, badge, act
         </div>
       </div>
       {actions && <div className="flex flex-wrap items-center gap-2 sm:justify-end">{actions}</div>}
+    </div>
+  );
+  if (!below) return row;
+  return (
+    <div className={cn("space-y-3 border-b border-border/60 pb-5", className)}>
+      {row}
+      {below}
     </div>
   );
 }

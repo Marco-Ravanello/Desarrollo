@@ -19,7 +19,7 @@ import {
   handleSupplyQuery,
   handleVehicleQuery,
 } from "./intent-handlers";
-import { handleBarriosQuery, handleCoursesQuery, handleExpiringDocumentsQuery, handleLeavesQuery, handleMyTasksQuery, handleProgramsQuery } from "./module-handlers";
+import { handleBarriosQuery, handleCompareBarriosQuery, handleCoursesQuery, handleExpiringDocumentsQuery, handleLeavesQuery, handleMyTasksQuery, handleProgramsQuery } from "./module-handlers";
 import { handleCasesTool } from "./cases-tool";
 import { lookupPersonByName, personByDni } from "./person-name-lookup";
 import { proposeReservation, proposeTask } from "./proposals";
@@ -89,6 +89,8 @@ export async function runTool(call: ToolCall, ctx: ToolContext): Promise<AIRespo
       return crossPrograms(Array.isArray(a.programas) ? a.programas : [], str(a.modo));
     case "barrios":
       return handleBarriosQuery(scope);
+    case "comparar_barrios":
+      return handleCompareBarriosQuery(scope, str(a.orden), str(a.etiqueta));
     case "cerca_de":
       return handleSpatialProximityQuery(words ? ctx.query : `${a.metros ?? 500} metros ${str(a.lugar)}`);
     case "licencias":

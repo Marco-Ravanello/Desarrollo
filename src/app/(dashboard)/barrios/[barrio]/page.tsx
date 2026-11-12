@@ -64,8 +64,9 @@ type Tab = (typeof TABS)[number]["key"];
 /** Pestañas del barrio: cada una es una dirección (?ver=), así el mapa se carga solo si se abre. */
 function BarrioTabs({ slug, active, counts, hideMap }: { slug: string; active: Tab; counts: Partial<Record<Tab, number>>; hideMap: boolean }) {
   return (
-    <nav aria-label="Secciones del barrio" className="-mx-1 overflow-x-auto px-1">
-      <ul className={`inline-flex min-w-max gap-1 ${TAB_LIST_CLASS}`}>
+    // En el celular, en dos filas, sin deslizar (idea 119).
+    <nav aria-label="Secciones del barrio">
+      <ul className={`grid grid-cols-2 gap-1 sm:inline-flex ${TAB_LIST_CLASS}`}>
         {TABS.filter((t) => !(hideMap && t.key === "mapa")).map((t) => {
           const on = t.key === active;
           return (
@@ -73,7 +74,7 @@ function BarrioTabs({ slug, active, counts, hideMap }: { slug: string; active: T
               <Link
                 href={t.key === "resumen" ? `/barrios/${slug}` : `/barrios/${slug}?ver=${t.key}`}
                 aria-current={on ? "page" : undefined}
-                className={tabLinkClass(on)}
+                className={`${tabLinkClass(on)} w-full justify-center sm:w-auto`}
               >
                 <t.icon className="h-3.5 w-3.5" aria-hidden />
                 {t.label}

@@ -117,6 +117,17 @@ export const ASSISTANT_TOOLS: ToolDef[] = [
     status: "Buscando en Barrios…",
   },
   {
+    name: "comparar_barrios",
+    description:
+      "Compara los barrios: expedientes abiertos cada 1.000 personas del padrón, porcentaje con algún programa, datos que faltan (teléfono, altura, ubicación) y, si se pide, cuántos expedientes abiertos tienen una etiqueta (mapa de necesidades). Sirve para '¿qué barrio tiene más demanda y menos cobertura?' o '¿dónde hay más casos de adultos mayores?'.",
+    params: {
+      orden: { type: "string", enum: ["expedientes", "cobertura", "telefono", "altura", "ubicacion", "personas"], description: "Por qué ordenar. expedientes (cada 1.000) es el valor normal; cobertura pone primero a los de menos personas en programas." },
+      etiqueta: { type: "string", enum: CASE_LABELS.map((l) => l.key), description: "Para contar los expedientes abiertos con esa etiqueta en cada barrio." },
+    },
+    path: "/barrios/comparar",
+    status: "Comparando barrios…",
+  },
+  {
     name: "cerca_de",
     description: "Personas ubicadas en el mapa cerca de un lugar (Palacio Municipal, centro comunitario, hospital, plaza o comisaría) o de unas coordenadas.",
     params: {

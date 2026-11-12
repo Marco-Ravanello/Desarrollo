@@ -2,11 +2,12 @@ export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { MapPinned } from "lucide-react";
+import { MapPinned, Scale } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { auth } from "@/auth";
 import { MANAGEMENT_ROLES, hasPermission, PERMISSIONS } from "@/lib/permissions";
 import { formatNumber, plural } from "@/lib/formato";
-import { getBarrioSummaries } from "@/services/barrios";
+import { getBarrioSummaries, getOpenCaseLabelsByBarrio } from "@/services/barrios";
 import { getLimites } from "@/services/barrio-limites";
 import { BarriosMapaPintadoLoader } from "@/components/barrios/barrio-map-loader";
 import { fechaDeRecorrida, getRecorridaStatsByBarrio, getReferentes } from "@/services/recorridas";
@@ -27,11 +28,13 @@ export default async function BarriosPage() {
   const role = session.user.role;
   const isManagement = MANAGEMENT_ROLES.includes(role);
 
-  const [data, referentes, recorridas, limites] = await Promise.all([
-    getBarrioSummaries({ canViewSensitive: hasPermission(role, PERMISSIONS.VIEW_SENSITIVE_CASES) }),
+  const scope = { canViewSensitive: hasPermission(role, PERMISSIONS.VIEW_SENSITIVE_CASES) };
+  const [data, referentes, recorridas, limites, labels] = await Promise.all([
+    getBarrioSummaries(scope),
     getReferentes(),
     getRecorridaStatsByBarrio(),
     getLimites(),
+    getOpenCaseLabelsByBarrio(scope),
   ]);
   const mine = data.barrios.filter((b) => referentes.get(b.barrio)?.userId === session.user.id);
   const recorridaText = (barrio: string) => {
@@ -50,6 +53,11 @@ export default async function BarriosPage() {
         title="Barrios"
         description="Los 29 barrios de Tres de Febrero. Tocá uno para ver su mapa, quiénes viven ahí, sus expedientes abiertos y lugares de referencia, y para preparar una recorrida."
         icon={MapPinned}
+        actions={
+          <Button asChild variant="outline" size="sm" className="h-9 gap-1.5 rounded-xl">
+            <Link href="/barrios/comparar"><Scale className="h-4 w-4" /> Comparar barrios</Link>
+          </Button>
+        }
       />
 
       {mine.length > 0 && (
@@ -72,6 +80,7 @@ export default async function BarriosPage() {
             slug: b.slug,
             people: b.people,
             openCases: b.openCases,
+            labels: labels.get(b.barrio) ?? {},
             limite: limites.get(b.barrio)?.puntos ?? null,
           }))}
         />

@@ -4,7 +4,9 @@ import { diaAR } from "@/lib/fechas";
 import { getAreaOverview } from "@/services/dashboard";
 import { getStaffAwayToday } from "@/services/hr";
 import { getProgramSummaries } from "@/services/programs";
-import { getBarrioSummaries } from "@/services/barrios";
+import { getBarrioComparison, getBarrioSummaries } from "@/services/barrios";
+import { comparisonRows, decimalText, highDemandLowCoverage, isCompareSort, sortComparison } from "@/lib/barrio-comparison";
+import { caseLabelName, isCaseLabel } from "@/lib/case-labels";
 import { getCursos } from "@/services/cursos";
 import { listExpiringDocuments } from "@/services/document-expiry";
 import { EXPIRY_WARN_DAYS, documentKindLabel } from "@/lib/document-kinds";
@@ -112,6 +114,31 @@ export async function handleBarriosQuery(scope: AssistantScope): Promise<AIRespo
     answerStat("Expedientes abiertos", rows.reduce((n, b) => n + b.openCases, 0)),
   ];
   return { intent: "barrios_query", answer: answer.trim(), dataSummary: { hasResults: true, stats, sources: [], actions: [nav("Ver Barrios", "/barrios")] } };
+}
+
+/** Comparar los barrios (idea 42) y, con una etiqueta, el mapa de necesidades (idea 43). */
+export async function handleCompareBarriosQuery(scope: AssistantScope, orden: string, etiqueta: string): Promise<AIResponse> {
+  const label = isCaseLabel(etiqueta) ? etiqueta : null;
+  const rows = comparisonRows(await getBarrioComparison({ canViewSensitive: scope.canViewSensitive, areaId: scope.areaId })).filter((r) => r.people > 0);
+  if (rows.length === 0) {
+    return { intent: "barrios_compare", answer: "Todavía no hay personas del padrón ubicadas en los barrios.", dataSummary: { hasResults: false, actions: [nav("Ir a Barrios", "/barrios")] } };
+  }
+  const pct = (n: number | null) => (n === null ? "—" : `${decimalText(n)} %`);
+  const sorted = label
+    ? [...rows].sort((a, b) => (b.labels[label] ?? 0) - (a.labels[label] ?? 0) || a.barrio.localeCompare(b.barrio, "es"))
+    : sortComparison(rows, isCompareSort(orden) ? orden : "expedientes");
+  const labelName = label ? caseLabelName(label) ?? label : null;
+  let answer = label ? `### Expedientes abiertos de ${labelName!.toLowerCase()} por barrio\n\n` : `### Comparación de barrios\n\n`;
+  answer += `| Barrio |${label ? ` ${labelName} |` : ""} Expedientes cada 1.000 | Con programa | Sin teléfono |\n| :--- |${label ? " ---: |" : ""} ---: | ---: | ---: |\n`;
+  for (const r of sorted.slice(0, 29)) {
+    answer += `| ${answerLink(r.barrio, `/barrios/${r.slug}`)} |${label ? ` ${formatNumber(r.labels[label] ?? 0)} |` : ""} ${decimalText(r.casesPer1000)} | ${pct(r.coverage)} | ${pct(r.faltaTelefono)} |\n`;
+  }
+  const attention = highDemandLowCoverage(rows);
+  if (!label && attention.length > 0) answer += `\nDónde mirar primero (muchos expedientes y poca cobertura): ${attention.map((r) => r.barrio).join(", ")}.`;
+  answer += `\n\nLas cuentas son sobre las personas del padrón de cada barrio.`;
+  if (scope.areaId) answer += ` Los expedientes son solo los de tu área.`;
+  const stats = [answerStat("Barrios con personas", rows.length), answerStat("Para mirar primero", attention.length, { href: "/barrios/comparar" })];
+  return { intent: "barrios_compare", answer: answer.trim(), dataSummary: { hasResults: true, stats, sources: [], actions: [nav("Comparar barrios", "/barrios/comparar"), nav("Ver el mapa de barrios", "/barrios")] } };
 }
 
 /** Los cursos y talleres abiertos, con inscriptos y asistencia. */
