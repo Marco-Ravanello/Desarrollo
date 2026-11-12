@@ -9,8 +9,11 @@ import "leaflet/dist/leaflet.css";
 import { TRES_DE_FEBRERO_CENTER } from "@/lib/constants/localities";
 import { formatNumber, plural } from "@/lib/formato";
 import type { Limite } from "@/lib/barrio-limites";
+import { CASE_LABELS, caseLabelName } from "@/lib/case-labels";
+import { labelTotals, topLabels } from "@/lib/barrio-comparison";
 
-// Los 29 barrios pintados según cuánta gente o cuántos expedientes abiertos tienen.
+// Los 29 barrios pintados según cuánta gente o cuántos expedientes abiertos tienen, o según una etiqueta
+// de sus expedientes abiertos: el mapa de necesidades (idea 43).
 // Un solo color (azul institucional), de claro a oscuro; en cero, gris. Tocar un barrio abre su página.
 
 export type BarrioPintado = {
@@ -18,14 +21,17 @@ export type BarrioPintado = {
   slug: string;
   people: number;
   openCases: number;
+  /** Expedientes abiertos por etiqueta (sin Violencia de Género para quien no puede verlos). */
+  labels: Record<string, number>;
   limite: Limite | null;
 };
 
-type Medida = "people" | "openCases";
+type Medida = "people" | "openCases" | "etiqueta";
 
 const MEDIDAS: { id: Medida; label: string; corto: string; unidad: [string, string] }[] = [
   { id: "people", label: "Personas del padrón", corto: "Personas", unidad: ["persona", "personas"] },
   { id: "openCases", label: "Expedientes abiertos", corto: "Expedientes", unidad: ["expediente abierto", "expedientes abiertos"] },
+  { id: "etiqueta", label: "Necesidades", corto: "Necesidades", unidad: ["expediente abierto", "expedientes abiertos"] },
 ];
 
 /** De claro a oscuro. */
@@ -68,10 +74,18 @@ function Encuadrar({ limites }: { limites: Limite[] }) {
 export function BarriosMapaPintado({ barrios }: { barrios: BarrioPintado[] }) {
   const router = useRouter();
   const [medida, setMedida] = useState<Medida>("people");
+  const totals = useMemo(() => labelTotals(barrios.map((b) => b.labels)), [barrios]);
+  // Arranca con la etiqueta que más aparece, así el mapa no queda vacío.
+  const [etiqueta, setEtiqueta] = useState<string>(() => topLabels(totals, 1)[0]?.key ?? CASE_LABELS[0].key);
   const [activo, setActivo] = useState<string | null>(null);
   const info = MEDIDAS.find((m) => m.id === medida)!;
+  const valor = (b: BarrioPintado) => (medida === "etiqueta" ? b.labels[etiqueta] ?? 0 : b[medida]);
+  const etiquetaNombre = (caseLabelName(etiqueta) ?? etiqueta).toLowerCase();
 
-  const cortes = useMemo(() => tramos(barrios.map((b) => b[medida])), [barrios, medida]);
+  const cortes = useMemo(
+    () => tramos(barrios.map((b) => (medida === "etiqueta" ? b.labels[etiqueta] ?? 0 : b[medida]))),
+    [barrios, medida, etiqueta]
+  );
   const conLimite = useMemo(() => barrios.filter((b) => b.limite), [barrios]);
   const limites = useMemo(() => conLimite.map((b) => b.limite!), [conLimite]);
   const sinLimite = barrios.filter((b) => !b.limite);
@@ -89,7 +103,7 @@ export function BarriosMapaPintado({ barrios }: { barrios: BarrioPintado[] }) {
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div role="radiogroup" aria-label="Pintar los barrios según" className="inline-grid grid-cols-2 gap-1 rounded-xl border border-border/60 bg-muted/30 p-1">
+        <div role="radiogroup" aria-label="Pintar los barrios según" className="inline-grid grid-cols-3 gap-1 rounded-xl border border-border/60 bg-muted/30 p-1">
           {MEDIDAS.map((m) => (
             <button
               key={m.id}
@@ -106,6 +120,22 @@ export function BarriosMapaPintado({ barrios }: { barrios: BarrioPintado[] }) {
             </button>
           ))}
         </div>
+        {medida === "etiqueta" && (
+          <label className="flex items-center gap-2 text-sm">
+            <span className="text-muted-foreground">Etiqueta</span>
+            <select
+              value={etiqueta}
+              onChange={(e) => setEtiqueta(e.target.value)}
+              className="h-9 rounded-xl border border-border/60 bg-card px-2 text-sm font-semibold"
+            >
+              {CASE_LABELS.map((l) => (
+                <option key={l.key} value={l.key}>
+                  {l.label} ({formatNumber(totals[l.key] ?? 0)})
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
         <ul className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground" aria-label={`Referencias: ${info.label.toLowerCase()}`}>
           {leyenda.map((l) => (
             <li key={l.texto} className="flex items-center gap-1.5">
@@ -135,11 +165,11 @@ export function BarriosMapaPintado({ barrios }: { barrios: BarrioPintado[] }) {
           <ZoomControl position="bottomleft" />
           <Encuadrar limites={limites} />
           {conLimite.map((b) => {
-            const n = b[medida];
+            const n = valor(b);
             const encima = activo === b.barrio;
             return (
               <Polygon
-                key={`${b.barrio}-${medida}`}
+                key={`${b.barrio}-${medida}-${etiqueta}`}
                 positions={b.limite!}
                 pathOptions={{
                   color: encima ? "#F28C28" : "#ffffff",
@@ -155,7 +185,15 @@ export function BarriosMapaPintado({ barrios }: { barrios: BarrioPintado[] }) {
               >
                 <Tooltip sticky direction="top" offset={[0, -6]}>
                   <span className="block text-sm font-semibold">{b.barrio}</span>
-                  <span className="block text-xs tabular-nums">{plural(n, info.unidad[0], info.unidad[1])}</span>
+                  <span className="block text-xs tabular-nums">
+                    {plural(n, info.unidad[0], info.unidad[1])}
+                    {medida === "etiqueta" && ` de ${etiquetaNombre}`}
+                  </span>
+                  {medida === "etiqueta" && topLabels(b.labels, 3).length > 0 && (
+                    <span className="block text-[11px] text-slate-600">
+                      Lo que más aparece: {topLabels(b.labels, 3).map((t) => `${caseLabelName(t.key) ?? t.key} (${formatNumber(t.total)})`).join(", ")}
+                    </span>
+                  )}
                   <span className="block text-[11px] text-slate-500">Tocá para ver el barrio</span>
                 </Tooltip>
               </Polygon>
@@ -171,7 +209,7 @@ export function BarriosMapaPintado({ barrios }: { barrios: BarrioPintado[] }) {
             <span key={b.barrio}>
               {i > 0 && (i === sinLimite.length - 1 ? " y " : ", ")}
               <Link href={`/barrios/${b.slug}`} className="font-semibold text-primary hover:underline">{b.barrio}</Link>{" "}
-              <span className="tabular-nums">({b[medida] ? formatNumber(b[medida]) : "—"})</span>
+              <span className="tabular-nums">({valor(b) ? formatNumber(valor(b)) : "—"})</span>
             </span>
           ))}
           . La conducción puede dibujarlo desde la página de cada barrio.

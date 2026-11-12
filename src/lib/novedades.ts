@@ -16,6 +16,17 @@ export interface Novedad {
 export const NOVEDADES: Novedad[] = [
   {
     fecha: "2026-11-12",
+    parte: 3,
+    titulo: "Comparar barrios y mapa de necesidades",
+    cambios: [
+      "En Barrios, el botón \"Comparar barrios\" muestra los 29 barrios uno al lado del otro: expedientes abiertos cada 1.000 personas, cuántas están en algún programa y qué datos faltan. Arriba dice dónde conviene mirar primero.",
+      "El mapa de Barrios tiene una opción nueva, \"Necesidades\": elegís una etiqueta, por ejemplo adulto mayor, y cada barrio se pinta según cuántos expedientes abiertos la tienen.",
+      "El Asistente de IA también puede comparar barrios.",
+      "Retoques: en la computadora, la frase de hoy del Inicio entra en una línea, y en el celular las pestañas de la ficha y del barrio se ven todas sin deslizar.",
+    ],
+  },
+  {
+    fecha: "2026-11-12",
     parte: 2,
     titulo: "Intervenciones hechas entre varios",
     cambios: [
