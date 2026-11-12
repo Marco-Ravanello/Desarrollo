@@ -16,6 +16,15 @@ export interface Novedad {
 export const NOVEDADES: Novedad[] = [
   {
     fecha: "2026-11-12",
+    parte: 6,
+    titulo: "Menú con el botón derecho y dirección en el mapa",
+    cambios: [
+      "En Expedientes y en el Registro Único, el botón derecho del mouse sobre una fila abre un menú con más acciones: abrir en otra pestaña, ver la ficha, copiar el DNI, tomar o asignar el expediente, agendar un seguimiento, cerrarlo, empezar un expediente nuevo o escribir por WhatsApp.",
+      "En Cargar persona y en Editar datos, mientras escribís la dirección aparece un mapa con el punto. Si no es exacto o no se encontró, tocás el lugar correcto y se guarda ese.",
+    ],
+  },
+  {
+    fecha: "2026-11-12",
     parte: 5,
     titulo: "Botón \"Deshacer\"",
     cambios: [

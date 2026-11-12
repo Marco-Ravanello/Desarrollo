@@ -10,7 +10,8 @@ import { getOpenCasesInArea } from "@/services/cases";
 import { createDerivation, respondDerivation } from "@/services/derivations";
 import { editIntervention, getCompanionOptions } from "@/services/interventions";
 import { checkCompanions } from "@/lib/intervention-companions";
-import { assignCase, assignCases } from "@/services/case-assignment";
+import { assignCase, assignCases, canAssignCase, getAssignableUsers } from "@/services/case-assignment";
+import { getAreaShortName } from "@/lib/area-theme";
 import { completeFollowUp, scheduleFollowUp } from "@/services/follow-ups";
 import { isInterventionType } from "@/lib/intervention-types";
 import { normalizeCaseLabels } from "@/lib/case-labels";
@@ -399,5 +400,25 @@ export async function assignCasesAction(caseIds: string[], assigneeId: string) {
     return result;
   } catch (error: any) {
     return { success: false as const, error: actionErrorMessage(error, "No se pudieron asignar los expedientes") };
+  }
+}
+
+/** Para "Asignar…" desde el menú del botón derecho de la lista: quiénes pueden quedar a cargo de este expediente. */
+export async function getCaseAssignOptionsAction(caseId: string) {
+  const session = await auth();
+  if (!session?.user?.id) return { success: false as const, error: "Tu sesión expiró. Volvé a iniciar sesión." };
+  try {
+    const c = await prisma.case.findUnique({
+      where: { id: caseId },
+      select: { areaId: true, status: true, assignedToId: true, area: { select: { name: true } } },
+    });
+    if (!c) return { success: false as const, error: "Expediente no encontrado." };
+    if (c.status === "CERRADO" || !canAssignCase(session.user, c.areaId)) {
+      return { success: false as const, error: "No podés asignar este expediente." };
+    }
+    const options = await getAssignableUsers({ areaId: c.areaId, areaName: c.area?.name ?? null });
+    return { success: true as const, options, assigneeId: c.assignedToId, areaLabel: getAreaShortName(c.area?.name ?? "") };
+  } catch (error: any) {
+    return { success: false as const, error: actionErrorMessage(error, "No se pudo cargar la lista") };
   }
 }

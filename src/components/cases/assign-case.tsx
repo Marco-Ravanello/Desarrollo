@@ -15,6 +15,7 @@ import { plural } from "@/lib/formato";
 import type { Role } from "@prisma/client";
 
 type Option = { id: string; name: string; sameArea: boolean; role: Role; open: number; away?: string | null };
+export type AssignOption = Option;
 
 const optionLabel = (o: Option, currentUserId: string) =>
   `${o.name}${o.id === currentUserId ? " (vos)" : ""} · ${o.open === 0 ? "ningún expediente" : plural(o.open, "abierto")}${o.away ? ` · ${o.away.toLowerCase()}` : ""}`;
@@ -31,6 +32,8 @@ export function AssignCaseControl({
   canTake,
   currentUserId,
   options,
+  open: openProp,
+  onOpenChange,
 }: {
   caseId: string;
   areaLabel: string;
@@ -39,9 +42,15 @@ export function AssignCaseControl({
   canTake: boolean;
   currentUserId: string;
   options: Option[];
+  /** Para abrir el diálogo desde afuera (el menú del botón derecho), sin el botón propio. */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }) {
   const router = useRouter();
-  const [open, setOpen] = useState(false);
+  const [innerOpen, setInnerOpen] = useState(false);
+  const controlled = openProp !== undefined;
+  const open = controlled ? openProp : innerOpen;
+  const setOpen = (v: boolean) => (controlled ? onOpenChange?.(v) : setInnerOpen(v));
   const [selected, setSelected] = useState(assigneeId ?? "");
   const [saving, setSaving] = useState(false);
 
@@ -76,11 +85,13 @@ export function AssignCaseControl({
         if (v) setSelected(assigneeId ?? "");
       }}
     >
-      <DialogTrigger asChild>
-        <Button size="sm" variant="outline" className="h-7 rounded-lg px-2 text-xs font-bold gap-1">
-          <UserCog className="h-3 w-3" /> {assigneeId ? "Cambiar" : "Asignar"}
-        </Button>
-      </DialogTrigger>
+      {!controlled && (
+        <DialogTrigger asChild>
+          <Button size="sm" variant="outline" className="h-7 rounded-lg px-2 text-xs font-bold gap-1">
+            <UserCog className="h-3 w-3" /> {assigneeId ? "Cambiar" : "Asignar"}
+          </Button>
+        </DialogTrigger>
+      )}
       <DialogContent className="sm:max-w-md rounded-2xl">
         <form
           onSubmit={(e) => {

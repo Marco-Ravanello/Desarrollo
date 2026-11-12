@@ -7,14 +7,15 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { Plus, Upload, Users, Calendar, Building2, MapPin, Phone, RotateCcw, UserX, CopyCheck, ChevronRight } from "lucide-react";
+import { Plus, Upload, Users, Calendar, Building2, MapPin, Phone, RotateCcw, UserX, CopyCheck, ChevronRight, MousePointerClick } from "lucide-react";
 import Link from "next/link";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import InterventionsAdminPage from "../../admin/interventions/page";
 import { PadronImport } from "@/components/people/padron-import";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { auth } from "@/auth";
-import { MANAGEMENT_ROLES } from "@/lib/permissions";
+import { MANAGEMENT_ROLES, canAccessPath, canEditSocialRecords } from "@/lib/permissions";
+import { PersonRowMenu } from "@/components/people/person-row-menu";
 import { PeopleFilters } from "@/components/people/people-filters";
 import { PeoplePagination } from "@/components/people/people-pagination";
 import { PageHeader } from "@/components/layout/page-header";
@@ -60,6 +61,7 @@ export default async function PeoplePage({
   ]);
   // Importar personas e intervenciones es solo para la conducción.
   const canImport = Boolean(session?.user && MANAGEMENT_ROLES.includes(session.user.role));
+  const canCreateCase = Boolean(session?.user && canEditSocialRecords(session.user.role) && canAccessPath(session.user.role, "/cases/new"));
 
   const { people, total, totalPages, currentPage, pageSize } = paginatedData;
 
@@ -157,6 +159,11 @@ export default async function PeoplePage({
           </MobileList>
         )}
         <div className={people.length > 0 ? "hidden md:block" : undefined}>
+          {people.length > 0 && (
+            <p className="mb-2 flex items-center gap-1.5 text-xs text-muted-foreground">
+              <MousePointerClick className="h-3.5 w-3.5" /> Con el botón derecho sobre una persona aparecen más acciones: nuevo expediente, copiar el DNI, WhatsApp o abrir en otra pestaña.
+            </p>
+          )}
           <Table mobileCards={false} stickyHeader>
             <TableHeader>
               <TableRow className="hover:bg-transparent">
@@ -175,7 +182,14 @@ export default async function PeoplePage({
                 people.map((p: any) => {
                   const chips = programChips(p.programasActivos);
                   return (
-                    <TableRow key={p.id}>
+                    <PersonRowMenu
+                      key={p.id}
+                      href={`/people/${p.id}`}
+                      name={`${p.lastName}, ${p.firstName}`}
+                      dni={p.dni}
+                      phone={p.phone || null}
+                      canCreateCase={canCreateCase}
+                    >
                       <TableCell className="text-sm font-semibold text-foreground">
                         <Link href={`/people/${p.id}`} className="flex items-center gap-2.5 hover:text-primary">
                           <InitialsAvatar name={p.firstName} lastName={p.lastName} seed={p.dni} size="sm" />
@@ -222,7 +236,7 @@ export default async function PeoplePage({
                           </Link>
                         </Button>
                       </TableCell>
-                    </TableRow>
+                    </PersonRowMenu>
                   );
                 })
               ) : (

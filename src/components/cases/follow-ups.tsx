@@ -29,9 +29,23 @@ const fechaLarga = (isoDay: string) =>
   new Date(`${isoDay}T12:00:00Z`).toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" });
 
 /** Botón con diálogo para agendar un seguimiento del expediente. */
-export function ScheduleFollowUpButton({ caseId, today }: { caseId: string; today: string }) {
+export function ScheduleFollowUpButton({
+  caseId,
+  today,
+  open: openProp,
+  onOpenChange,
+}: {
+  caseId: string;
+  today: string;
+  /** Para abrir el diálogo desde afuera (el menú del botón derecho), sin el botón propio. */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+}) {
   const router = useRouter();
-  const [open, setOpen] = useState(false);
+  const [innerOpen, setInnerOpen] = useState(false);
+  const controlled = openProp !== undefined;
+  const open = controlled ? openProp : innerOpen;
+  const setOpen = (v: boolean) => (controlled ? onOpenChange?.(v) : setInnerOpen(v));
   const [day, setDay] = useState(addDays(today, 7));
   const [note, setNote] = useState("");
   const [saving, setSaving] = useState(false);
@@ -52,11 +66,13 @@ export function ScheduleFollowUpButton({ caseId, today }: { caseId: string; toda
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline" className="rounded-xl font-bold gap-1.5">
-          <CalendarClock className="h-4 w-4" /> Agendar seguimiento
-        </Button>
-      </DialogTrigger>
+      {!controlled && (
+        <DialogTrigger asChild>
+          <Button variant="outline" className="rounded-xl font-bold gap-1.5">
+            <CalendarClock className="h-4 w-4" /> Agendar seguimiento
+          </Button>
+        </DialogTrigger>
+      )}
       <DialogContent className="sm:max-w-md rounded-2xl">
         <form onSubmit={submit} className="space-y-4">
           <DialogHeader>

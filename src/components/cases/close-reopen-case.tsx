@@ -39,15 +39,23 @@ export function CloseReopenCaseButton({
   caseId,
   mode,
   compact = false,
+  open: openProp,
+  onOpenChange,
 }: {
   caseId: string;
   mode: "close" | "reopen";
   /** Botón chico, para listas. */
   compact?: boolean;
+  /** Para abrir el diálogo desde afuera (el menú del botón derecho), sin el botón propio. */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }) {
   const router = useRouter();
   const t = TEXT[mode];
-  const [open, setOpen] = useState(false);
+  const [innerOpen, setInnerOpen] = useState(false);
+  const controlled = openProp !== undefined;
+  const open = controlled ? openProp : innerOpen;
+  const setOpen = (v: boolean) => (controlled ? onOpenChange?.(v) : setInnerOpen(v));
   const [reason, setReason] = useState("");
   const [saving, setSaving] = useState(false);
   const Icon = mode === "close" ? CheckCircle2 : RotateCcw;
@@ -69,6 +77,7 @@ export function CloseReopenCaseButton({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
+      {!controlled && (
       <DialogTrigger asChild>
         {compact ? (
           <Button
@@ -84,6 +93,7 @@ export function CloseReopenCaseButton({
           </Button>
         )}
       </DialogTrigger>
+      )}
       <DialogContent className="sm:max-w-md rounded-2xl">
         <form onSubmit={submit} className="space-y-4">
           <DialogHeader>

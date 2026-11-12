@@ -11,6 +11,7 @@ import { createPersonAction } from "../actions/create-person";
 import { AddressFields, type AddressValue } from "@/components/people/address-fields";
 import { GENEROS } from "@/lib/person-display";
 import type { AddressOptions } from "@/lib/localidades";
+import type { PickedPoint } from "@/lib/address-preview";
 import { MapPin, UserRound } from "lucide-react";
 import { RequiredMark } from "@/components/ui/form-section";
 
@@ -25,6 +26,7 @@ export function CreatePersonForm({ options }: { options: AddressOptions }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [address, setAddress] = useState<AddressValue>({ direccion: "", barrio: "", localidad: "" });
+  const [picked, setPicked] = useState<PickedPoint | null>(null);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -108,7 +110,7 @@ export function CreatePersonForm({ options }: { options: AddressOptions }) {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <AddressFields idPrefix="nueva" value={address} onChange={setAddress} options={options} inputClassName="bg-background" labelClassName="" />
+          <AddressFields idPrefix="nueva" value={address} onChange={setAddress} options={options} inputClassName="bg-background" labelClassName="" picked={picked} onPickedChange={setPicked} />
           <p className="mt-3 text-xs text-muted-foreground">Completá la calle y altura, o al menos el barrio.</p>
         </CardContent>
       </Card>
