@@ -2,6 +2,7 @@ import type { InterventionType } from "@prisma/client";
 import prisma from "@/lib/prisma";
 import { canEditSocialRecords } from "@/lib/permissions";
 import { canEditIntervention, interventionTypeLabel, isInterventionType } from "@/lib/intervention-types";
+import { canAccompany } from "@/lib/intervention-companions";
 
 // Intervenciones de un expediente: quién las cargó, de qué tipo son y sus correcciones.
 
@@ -11,6 +12,8 @@ export type InterventionRow = {
   description: string;
   type: InterventionType | null;
   author: string | null;
+  /** Quienes la hicieron junto con quien la cargó (idea 124). */
+  withNames: string[];
   editedAt: string | null;
   canEdit: boolean;
   edits: { id: string; date: string; previousDescription: string; previousType: InterventionType | null; editedBy: string | null }[];
@@ -22,7 +25,7 @@ export async function getCaseInterventions(caseId: string, viewerId?: string | n
     orderBy: { date: "desc" },
     include: { edits: { orderBy: { createdAt: "desc" } } },
   });
-  const userIds = Array.from(new Set(interventions.map((i) => i.userId)));
+  const userIds = Array.from(new Set(interventions.flatMap((i) => [i.userId, ...(i.withUserIds ?? [])])));
   const users = userIds.length ? await prisma.user.findMany({ where: { id: { in: userIds } }, select: { id: true, name: true } }) : [];
   const names = new Map(users.map((u) => [u.id, u.name || null]));
   const now = new Date();
@@ -33,6 +36,7 @@ export async function getCaseInterventions(caseId: string, viewerId?: string | n
     description: i.description,
     type: i.type,
     author: names.get(i.userId) ?? null,
+    withNames: (i.withUserIds ?? []).map((id) => names.get(id)).filter((n): n is string => Boolean(n)),
     editedAt: i.editedAt?.toISOString() ?? null,
     canEdit: canEditIntervention(i, viewerId, now),
     edits: i.edits.map((e) => ({
@@ -88,4 +92,24 @@ export async function editIntervention(
     }),
   ]);
   return { success: true };
+}
+
+export type CompanionOption = { id: string; name: string; sameArea: boolean };
+
+/**
+ * A quiénes se puede sumar a una intervención de este expediente (idea 124): usuarios activos que cargan
+ * intervenciones, primero los del área. Sin quien la está cargando.
+ */
+export async function getCompanionOptions(
+  caseItem: { areaId: string; areaName: string | null },
+  authorId: string
+): Promise<CompanionOption[]> {
+  const users = await prisma.user.findMany({
+    where: { isActive: true, id: { not: authorId } },
+    select: { id: true, name: true, username: true, role: true, areaId: true },
+  });
+  return users
+    .filter((u) => canAccompany(u.role, caseItem.areaName))
+    .map((u) => ({ id: u.id, name: u.name || u.username || "Sin nombre", sameArea: u.areaId === caseItem.areaId }))
+    .sort((a, b) => Number(b.sameArea) - Number(a.sameArea) || a.name.localeCompare(b.name, "es"));
 }

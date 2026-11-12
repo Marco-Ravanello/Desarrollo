@@ -165,10 +165,14 @@ model Intervention {
   /// Qué se hizo. Las intervenciones viejas o importadas pueden no tenerlo.
   type        InterventionType?
   userId      String
+  /// Otros profesionales que la hicieron junto con quien la cargó ("fuimos con Lucía"); ids de User. Idea 124.
+  withUserIds String[]           @default([])
   createdAt   DateTime           @default(now())
   /// Última corrección (quien la cargó puede corregirla el mismo día).
   editedAt    DateTime?
   edits       InterventionEdit[]
+
+  @@index([withUserIds], type: Gin)
 }
 
 enum InterventionType {

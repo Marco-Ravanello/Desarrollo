@@ -2,7 +2,7 @@ import type { Priority, Prisma, Role } from "@prisma/client";
 import prisma from "@/lib/prisma";
 import { isEligibleAssignee } from "@/lib/case-assignment";
 import { summarizeCase } from "@/lib/case-summary";
-import { sortByLoad, type WorkloadMember } from "@/lib/team-workload";
+import { DONE_DAYS, sortByLoad, tallyInterventions, type WorkloadMember } from "@/lib/team-workload";
 import { dashboardCaseWhere, staleCaseWhere, type DashboardScope } from "@/services/dashboard";
 import { URGENT_OPEN_CASE_WHERE } from "@/lib/case-urgency";
 import { getAwayByUserIds } from "@/services/staff-away";
@@ -33,7 +33,8 @@ export async function getTeamWorkload(scope: Scope, now = new Date()) {
 
   const notClosed: Prisma.CaseWhereInput = { ...dashboardCaseWhere(scope), status: { not: "CERRADO" } };
   const since = new Date(now.getTime() - RECENT_DAYS * 86_400_000);
-  const [members, open, urgent, stale, recent] = await Promise.all([
+  const doneSince = new Date(now.getTime() - DONE_DAYS * 86_400_000);
+  const [members, open, urgent, stale, recent, done] = await Promise.all([
     prisma.user.findMany({
       where: { areaId: area.id, isActive: true, role: { in: TEAM_ROLES } },
       select: { id: true, name: true, username: true, role: true, areaId: true, isActive: true },
@@ -42,7 +43,13 @@ export async function getTeamWorkload(scope: Scope, now = new Date()) {
     prisma.case.groupBy({ by: ["assignedToId"], where: { ...dashboardCaseWhere(scope), ...URGENT_OPEN_CASE_WHERE }, _count: { _all: true } }),
     prisma.case.groupBy({ by: ["assignedToId"], where: staleCaseWhere(scope, now), _count: { _all: true } }),
     prisma.case.groupBy({ by: ["assignedToId"], where: { ...notClosed, assignedAt: { gte: since } }, _count: { _all: true } }),
+    // Intervenciones del último mes en expedientes del área: cuentan para quien la cargó y para quienes fueron (idea 124).
+    prisma.intervention.findMany({
+      where: { date: { gte: doneSince, lte: now }, case: dashboardCaseWhere(scope) },
+      select: { userId: true, withUserIds: true },
+    }),
   ]);
+  const doneBy = tallyInterventions(done);
   const count = (rows: { assignedToId: string | null; _count: { _all: number } }[], id: string | null) =>
     rows.find((r) => r.assignedToId === id)?._count._all ?? 0;
 
@@ -66,6 +73,8 @@ export async function getTeamWorkload(scope: Scope, now = new Date()) {
     urgent: count(urgent, u.id),
     stale: count(stale, u.id),
     recent: count(recent, u.id),
+    done: doneBy.get(u.id)?.total ?? 0,
+    doneShared: doneBy.get(u.id)?.shared ?? 0,
     away: away.has(u.id) ? awayText(away.get(u.id)!) : null,
   }));
 

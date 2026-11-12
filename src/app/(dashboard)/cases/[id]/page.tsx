@@ -6,7 +6,7 @@ import { canDeriveCases, canRespondDerivation, getCaseDerivations, hasPendingDer
 import { DerivationCard, DeriveCaseButton } from "@/components/cases/derivations";
 import { CaseTimeline } from "@/components/cases/case-timeline";
 import { getCaseEvents } from "@/services/case-timeline";
-import { getCaseInterventions } from "@/services/interventions";
+import { getCaseInterventions, getCompanionOptions } from "@/services/interventions";
 import { ensurePersonInPrisma } from "@/services/people";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { notFound, redirect } from "next/navigation";
@@ -95,6 +95,7 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
     getCaseFollowUps(caseData.id),
   ]);
   const today = todayInArgentina();
+  const companionOptions = isClosed ? [] : await getCompanionOptions({ areaId: caseData.areaId, areaName }, session.user.id!);
   const canScheduleFollowUp = !isClosed && canEditSocialRecords(session.user.role);
   const events = await getCaseEvents({ id: caseData.id, createdAt: caseData.createdAt, areaName }, derivations);
   const pendingDerivation = derivations.find((d) => d.status === "PENDIENTE");
@@ -230,7 +231,7 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
             <FollowUpList items={followUps} today={today} currentUserId={session.user.id!} />
 
             {!isClosed && (
-              <QuickInterventionForm caseId={caseData.id} caseTitle={titleStr} />
+              <QuickInterventionForm caseId={caseData.id} caseTitle={titleStr} companions={companionOptions} areaLabel={areaLabel} />
             )}
 
             <CardContent className="px-0 pt-2">

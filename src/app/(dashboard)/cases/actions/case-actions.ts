@@ -8,7 +8,8 @@ import { actionErrorMessage } from "@/lib/action-error";
 import { canEditSocialRecords, hasPermission, PERMISSIONS } from "@/lib/permissions";
 import { getOpenCasesInArea } from "@/services/cases";
 import { createDerivation, respondDerivation } from "@/services/derivations";
-import { editIntervention } from "@/services/interventions";
+import { editIntervention, getCompanionOptions } from "@/services/interventions";
+import { checkCompanions } from "@/lib/intervention-companions";
 import { assignCase, assignCases } from "@/services/case-assignment";
 import { completeFollowUp, scheduleFollowUp } from "@/services/follow-ups";
 import { isInterventionType } from "@/lib/intervention-types";
@@ -16,7 +17,7 @@ import { normalizeCaseLabels } from "@/lib/case-labels";
 import { updateCaseLabels } from "@/services/case-labels";
 import { updateCaseDetails } from "@/services/case-edit";
 
-export async function addCaseInterventionAction(caseId: string, description: string, type?: string) {
+export async function addCaseInterventionAction(caseId: string, description: string, type?: string, withUserIds?: string[]) {
   const session = await auth();
   if (session?.user && !canEditSocialRecords(session.user.role)) {
     return { success: false, error: "Tu rol (Auditoría) puede consultar pero no cargar ni modificar datos." };
@@ -36,7 +37,7 @@ export async function addCaseInterventionAction(caseId: string, description: str
   try {
     const caseItem = await prisma.case.findUnique({
       where: { id: caseId },
-      select: { id: true, personId: true, status: true, title: true }
+      select: { id: true, personId: true, status: true, title: true, areaId: true, area: { select: { name: true } } }
     });
 
     if (!caseItem) {
@@ -44,6 +45,15 @@ export async function addCaseInterventionAction(caseId: string, description: str
     }
     if (!caseItem.personId) {
       return { success: false, error: "El expediente no tiene titular: cargalo antes de registrar una intervención." };
+    }
+
+    // Quienes fueron junto con quien la carga (idea 124): solo personas que pueden figurar en este expediente.
+    let companions: string[] = [];
+    if (withUserIds && withUserIds.length > 0) {
+      const options = await getCompanionOptions({ areaId: caseItem.areaId, areaName: caseItem.area?.name ?? null }, session.user.id);
+      const check = checkCompanions(withUserIds, session.user.id, new Set(options.map((o) => o.id)));
+      if (!check.ok) return { success: false, error: check.error };
+      companions = check.ids;
     }
 
     const validPerson = await ensurePersonInPrisma(caseItem.personId);
@@ -58,6 +68,7 @@ export async function addCaseInterventionAction(caseId: string, description: str
         description: cleanDesc,
         type: type && isInterventionType(type) ? type : null,
         userId: session.user.id,
+        withUserIds: companions,
         date: new Date()
       }
     });
@@ -78,7 +89,7 @@ export async function addCaseInterventionAction(caseId: string, description: str
         action: "CREATE_INTERVENTION",
         entity: "Case",
         entityId: caseId,
-        details: `Carga rápida de intervención social en expediente ${caseItem.title}`
+        details: `Carga rápida de intervención social en expediente ${caseItem.title}${companions.length ? ` (junto con ${companions.length === 1 ? "otra persona" : `${companions.length} personas`})` : ""}`
       }
     });
 
