@@ -9,6 +9,7 @@ import {
   type GeoFuente,
   type GeocodingStatus,
 } from "@/lib/geocoding";
+import type { AddressPreview } from "@/lib/address-preview";
 
 // Ubica en el mapa las direcciones del padrón.
 // 1. Georef (servicio oficial de direcciones del Estado, datos.gob.ar): rápido, de a muchas.
@@ -273,6 +274,39 @@ export async function relocateAfterAddressChange(dni: string): Promise<RelocateR
   }
   await markState([dni], "NO_ENCONTRADA");
   return "NO_ENCONTRADA";
+}
+
+/**
+ * Busca una dirección para mostrarla en el mapa mientras se escribe (idea 157). No guarda nada:
+ * Georef primero y, si no la encuentra, OpenStreetMap (una sola consulta).
+ */
+export async function previewAddress(direccion: string, localidad?: string | null, barrio?: string | null): Promise<AddressPreview> {
+  const address = cleanAddressForSearch(direccion);
+  if (!address) return { status: "SIN_ALTURA" };
+  try {
+    const [georef] = await georefLookup([address]);
+    if (georef) return { status: "UBICADA", ...georef };
+    const osm = await osmLookup(address, localidad, barrio);
+    if (osm) return { status: "UBICADA", ...osm };
+  } catch (err) {
+    if (err instanceof GeocodingServiceError) return { status: "SIN_SERVICIO" };
+    throw err;
+  }
+  return { status: "NO_ENCONTRADA" };
+}
+
+/**
+ * El punto que se marcó en el mapa al cargar o editar a la persona: queda como ubicación "a mano",
+ * aunque la búsqueda automática haya encontrado otro. Solo si la persona está en el padrón.
+ */
+export async function applyPickedPoint(dni: string, point: Point, userId: string): Promise<boolean> {
+  const row = await prisma.padronUnificado.findUnique({ where: { dni }, select: { dni: true } });
+  if (!row) return false;
+  if (!(await setManualLocation(dni, point))) return false;
+  await prisma.auditLog.create({
+    data: { userId, action: "PADRON_GEO_UPDATE", entity: "PadronUnificado", entityId: dni, details: "Ubicación marcada a mano en el mapa al cargar o editar los datos." },
+  });
+  return true;
 }
 
 /** Guarda el punto que alguien marcó a mano en el mapa. */

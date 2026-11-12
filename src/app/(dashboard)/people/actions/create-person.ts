@@ -2,7 +2,8 @@
 
 import { findExistingPersonByDni } from "@/services/people";
 import { createPersonRecord, parsePersonDataForm } from "@/services/person-data";
-import type { RelocateResult } from "@/services/geocoding";
+import { applyPickedPoint, type RelocateResult } from "@/services/geocoding";
+import { parsePickedPoint } from "@/lib/address-preview";
 import { createAuditLog } from "@/services/system";
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
@@ -44,8 +45,13 @@ export async function createPersonAction(formData: FormData): Promise<CreatePers
       };
     }
 
-    const { id, ubicacion } = await createPersonRecord(dni, parsed.data);
+    const created = await createPersonRecord(dni, parsed.data);
+    const { id } = created;
+    let ubicacion = created.ubicacion;
     await createAuditLog(session.user.id, "CREATE", "Person", id, { dni });
+    // El punto que se marcó en el mapa del formulario (idea 157) manda sobre el que se buscó solo.
+    const picked = parsePickedPoint(formData.get("punto_lat"), formData.get("punto_lon"));
+    if (picked && (await applyPickedPoint(dni, picked, session.user.id).catch(() => false))) ubicacion = "UBICADA";
 
     revalidatePath("/people");
     revalidatePath("/maps");

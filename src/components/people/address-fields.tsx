@@ -1,6 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import { Input } from "@/components/ui/input";
+import { AddressMapPreview } from "@/components/people/address-map-preview";
+import type { PickedPoint } from "@/lib/address-preview";
 import { Label } from "@/components/ui/label";
 import type { AddressOptions } from "@/lib/localidades";
 
@@ -19,11 +22,26 @@ interface AddressFieldsProps {
   inputClassName?: string;
   /** Por defecto, chicas como en "Editar datos". */
   labelClassName?: string;
+  /**
+   * Con estos dos, debajo de la dirección aparece el mapa con el punto (idea 157) en cuanto se cambia algo.
+   * El punto marcado a mano viaja en el formulario como punto_lat y punto_lon.
+   */
+  picked?: PickedPoint | null;
+  onPickedChange?: (p: PickedPoint | null) => void;
 }
 
 /** Calle y altura, localidad y barrio en campos separados, como en el padrón. Localidad y barrio se eligen de una lista o se escriben. */
-export function AddressFields({ value, onChange, options, idPrefix = "addr", inputClassName, labelClassName = "text-xs font-bold text-muted-foreground" }: AddressFieldsProps) {
-  const set = (k: keyof AddressValue) => (e: React.ChangeEvent<HTMLInputElement>) => onChange({ ...value, [k]: e.target.value });
+export function AddressFields({
+  value, onChange, options, idPrefix = "addr", inputClassName, labelClassName = "text-xs font-bold text-muted-foreground", picked = null, onPickedChange,
+}: AddressFieldsProps) {
+  // El mapa aparece recién cuando se toca la dirección (al editar, no hace falta buscar la que ya estaba).
+  const [touched, setTouched] = useState(false);
+  const set = (k: keyof AddressValue) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    setTouched(true);
+    // Si cambia la dirección, el punto marcado a mano ya no corresponde.
+    if (picked) onPickedChange?.(null);
+    onChange({ ...value, [k]: e.target.value });
+  };
   return (
     <div className="space-y-4">
       <div className="space-y-1.5">
@@ -73,6 +91,15 @@ export function AddressFields({ value, onChange, options, idPrefix = "addr", inp
           </datalist>
         </div>
       </div>
+      {onPickedChange && touched && (
+        <AddressMapPreview
+          direccion={value.direccion}
+          localidad={value.localidad}
+          barrio={value.barrio}
+          picked={picked}
+          onPickedChange={onPickedChange}
+        />
+      )}
     </div>
   );
 }

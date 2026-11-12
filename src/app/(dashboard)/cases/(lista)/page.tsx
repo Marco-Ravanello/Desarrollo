@@ -18,7 +18,7 @@ import { MobileFilters } from "@/components/ui/mobile-filters";
 import { FilterForm } from "@/components/ui/filter-form";
 import { ActiveFilters } from "@/components/ui/active-filters";
 import { EmptyMessage } from "@/components/ui/empty-message";
-import { hasPermission, MANAGEMENT_ROLES, PERMISSIONS } from "@/lib/permissions";
+import { canEditSocialRecords, hasPermission, MANAGEMENT_ROLES, PERMISSIONS } from "@/lib/permissions";
 import { getCaseStatusConfig } from "@/lib/status-styles";
 import { getAreaShortName } from "@/lib/area-theme";
 import { interventionTypeLabel } from "@/lib/intervention-types";
@@ -27,14 +27,17 @@ import { CaseLabelChips } from "@/components/cases/case-label-chips";
 import { caseLabelName, isCaseLabel } from "@/lib/case-labels";
 import { getCaseLabelCounts } from "@/services/case-labels";
 import { CASE_PRIORITY_LABEL, CASE_STATUS_LABEL, STALE_DAYS, agoText, daysText, fechaCorta, isProvisionalDni, movementDaysParam, splitCaseTitle, summarizeCase } from "@/lib/case-summary";
-import { canAssignCase, countMyOpenCases, getAssignableUsers } from "@/services/case-assignment";
+import { canAssignCase, canTakeCase, countMyOpenCases, getAssignableUsers } from "@/services/case-assignment";
+import { CaseRowMenu } from "@/components/cases/case-row-menu";
+import { canCloseOrReopenCase } from "@/lib/case-closing";
+import { todayInArgentina } from "@/lib/follow-up-dates";
 import { SavedFilters } from "@/components/cases/saved-filters";
 import { consultaDeFiltros, parseFiltros } from "@/lib/filtros-guardados";
 import { BulkAssignBar, BulkAssignProvider, BulkCheckbox, BulkSelectAll } from "@/components/cases/bulk-assign";
 import prisma from "@/lib/prisma";
 import {
   FileText, ShieldAlert, CheckCircle2, Clock, Plus, Search,
-  ArrowRight, ClipboardList, ArrowRightLeft, AlertTriangle, UserCheck, UsersRound
+  ArrowRight, ClipboardList, ArrowRightLeft, AlertTriangle, UserCheck, UsersRound, MousePointerClick
 } from "lucide-react";
 import Link from "next/link";
 import { formatNumber, plural } from "@/lib/formato";
@@ -86,6 +89,7 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
   const limitNum = Math.max(1, Math.min(100, Number(limit) || 20));
 
   const canViewSensitive = hasPermission(session.user.role as any, PERMISSIONS.VIEW_SENSITIVE_CASES);
+  const today = todayInArgentina();
   const canSeeTeam = MANAGEMENT_ROLES.includes(session.user.role) || session.user.role === "DIRECTOR_AREA";
 
   const [data, areasList, derivationsToAnswer, myOpenCases, labelCounts, me] = await Promise.all([
@@ -422,6 +426,9 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
             })}
           </MobileList>
           <div className="hidden md:block">
+          <p className="mb-2 flex items-center gap-1.5 text-xs text-muted-foreground">
+            <MousePointerClick className="h-3.5 w-3.5" /> Con el botón derecho sobre un expediente aparecen más acciones: asignar, agendar un seguimiento, cerrar o abrir en otra pestaña.
+          </p>
           <Table mobileCards={false} stickyHeader>
               <TableHeader>
                 <TableRow className="border-border/60 bg-muted/30">
@@ -454,8 +461,9 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
                   });
                   const shown = splitCaseTitle(c.title);
                   const assigneeName = c.assignedTo ? c.assignedTo.name || c.assignedTo.email || "Usuario" : null;
-                  return (
-                    <TableRow key={c.id} className={`border-border/60 hover:bg-muted/30 transition-colors ${summary.stale ? "bg-amber-500/[0.04]" : ""}`}>
+                  const rowClass = `border-border/60 hover:bg-muted/30 transition-colors ${summary.stale ? "bg-amber-500/[0.04]" : ""}`;
+                  const cells = (
+                    <>
                       {bulkEnabled && (
                         <TableCell className="w-10 align-top">
                           {selectableIds.includes(c.id) && <BulkCheckbox id={c.id} label={c.person ? `${c.person.lastName}, ${c.person.firstName}` : shown.title} />}
@@ -539,7 +547,34 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
                           </Button>
                         )}
                       </TableCell>
-                    </TableRow>
+                    </>
+                  );
+                  if (isRestricted) {
+                    return (
+                      <TableRow key={c.id} className={rowClass}>
+                        {cells}
+                      </TableRow>
+                    );
+                  }
+                  const isOpen = c.status !== "CERRADO";
+                  // Menú del botón derecho (idea 154): lo que se puede hacer sin entrar al expediente.
+                  return (
+                    <CaseRowMenu
+                      key={c.id}
+                      caseId={c.id}
+                      title={c.person ? `${c.person.lastName}, ${c.person.firstName}` : shown.title}
+                      personHref={c.person ? `/people/${c.person.dni || c.person.id}` : null}
+                      personDni={c.person && !isProvisionalDni(c.person.dni) ? c.person.dni : null}
+                      currentUserId={session.user.id!}
+                      today={today}
+                      canClose={isOpen && canCloseOrReopenCase(session.user, c.area.name)}
+                      canFollowUp={isOpen && canEditSocialRecords(session.user.role)}
+                      canAssign={isOpen && canAssignCase(session.user, c.areaId)}
+                      canTake={isOpen && !c.assignedTo && !canAssignCase(session.user, c.areaId) && canTakeCase(session.user, c.areaId)}
+                      className={rowClass}
+                    >
+                      {cells}
+                    </CaseRowMenu>
                   );
                 })}
               </TableBody>

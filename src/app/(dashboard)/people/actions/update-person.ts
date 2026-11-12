@@ -5,6 +5,8 @@ import { revalidatePath } from "next/cache";
 import { actionErrorMessage } from "@/lib/action-error";
 import { canEditSocialRecords } from "@/lib/permissions";
 import { parsePersonDataForm, updatePersonData, type UpdatePersonDataResult } from "@/services/person-data";
+import { applyPickedPoint } from "@/services/geocoding";
+import { parsePickedPoint } from "@/lib/address-preview";
 
 type UpdatePersonResult = ({ success: true } & UpdatePersonDataResult) | { success: false; error: string };
 
@@ -24,6 +26,11 @@ export async function updatePersonAction(dni: string, formData: FormData): Promi
   try {
     const result = await updatePersonData(dni, parsed.data, session.user.id);
     if (!result) return { success: false, error: "No encontramos a esta persona. Recargá la página y probá de nuevo." };
+    // El punto que se marcó en el mapa del formulario (idea 157) manda sobre el que se buscó solo.
+    const picked = parsePickedPoint(formData.get("punto_lat"), formData.get("punto_lon"));
+    if (picked && (await applyPickedPoint(dni, picked, session.user.id).catch(() => false))) {
+      result.ubicacion = "UBICADA";
+    }
 
     revalidatePath(`/people/${dni}`);
     revalidatePath("/people");

@@ -11,6 +11,7 @@ import { updatePersonAction } from "@/app/(dashboard)/people/actions/update-pers
 import { AddressFields } from "@/components/people/address-fields";
 import { GENEROS } from "@/lib/person-display";
 import type { AddressOptions } from "@/lib/localidades";
+import type { PickedPoint } from "@/lib/address-preview";
 import type { PersonEditData } from "@/services/person-data";
 import { toast } from "sonner";
 import { RequiredMark } from "@/components/ui/form-section";
@@ -49,10 +50,14 @@ export function EditPersonDialog({
     genero: person.genero,
   });
   const [form, setForm] = useState(initial);
+  const [picked, setPicked] = useState<PickedPoint | null>(null);
   const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => setForm({ ...form, [k]: e.target.value });
 
   const handleOpenChange = (next: boolean) => {
-    if (next) setForm(initial());
+    if (next) {
+      setForm(initial());
+      setPicked(null);
+    }
     setOpen(next);
   };
 
@@ -61,13 +66,19 @@ export function EditPersonDialog({
     setLoading(true);
     const data = new FormData();
     for (const [k, v] of Object.entries(form)) data.append(k, v);
+    if (picked) {
+      data.append("punto_lat", String(picked.lat));
+      data.append("punto_lon", String(picked.lon));
+    }
     try {
       const result = await updatePersonAction(person.dni, data);
       if (!result.success) {
         toast.error(result.error);
         return;
       }
-      if (result.cambios.length === 0) {
+      if (result.cambios.length === 0 && picked && result.ubicacion === "UBICADA") {
+        toast.success("Se guardó el punto en el mapa.");
+      } else if (result.cambios.length === 0) {
         toast.info("No había nada para cambiar.");
       } else {
         toast.success("Datos guardados. El cambio quedó anotado en la Historia.", {
@@ -124,6 +135,8 @@ export function EditPersonDialog({
             onChange={(v) => setForm({ ...form, ...v })}
             options={options}
             inputClassName={inputClass}
+            picked={picked}
+            onPickedChange={setPicked}
           />
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
