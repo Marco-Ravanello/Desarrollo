@@ -4,7 +4,7 @@ import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
 import { notifyDueFollowUps } from "@/services/follow-ups";
 import { notifyExpirations } from "@/services/expiry-notices";
-import { noticesRecheckCutoff } from "@/lib/bell";
+import { KEEP_NOTICE_TITLE_PREFIXES, noticesRecheckCutoff, readNoticesCutoff } from "@/lib/bell";
 
 /**
  * Seguimientos que vencen hoy y vencimientos de VTV, seguros, convenios y documentos: se revisan acá,
@@ -30,6 +30,19 @@ async function checkDueNotices(user: { id: string; role: any; areaId?: string | 
     await notifyExpirations({ id: user.id, role: user.role, areaId: user.areaId }, now);
   } catch (error) {
     console.error("No se pudieron revisar los vencimientos:", error);
+  }
+  // Limpieza (idea 132): los avisos leídos de hace más de 6 meses se borran, salvo los de algo vencido.
+  try {
+    await prisma.notification.deleteMany({
+      where: {
+        userId: user.id,
+        read: true,
+        createdAt: { lt: readNoticesCutoff(now) },
+        NOT: KEEP_NOTICE_TITLE_PREFIXES.map((p) => ({ title: { startsWith: p } })),
+      },
+    });
+  } catch (error) {
+    console.error("No se pudieron borrar los avisos viejos:", error);
   }
 }
 

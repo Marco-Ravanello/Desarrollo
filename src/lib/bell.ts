@@ -17,3 +17,22 @@ export function shouldPollBell(opts: { visible: boolean; lastFetchAt: number; no
   if (!opts.visible) return false;
   return opts.now - opts.lastFetchAt >= (opts.minGapMs ?? BELL_POLL_MS);
 }
+
+/** Los avisos ya leídos se borran solos a los 6 meses (idea 132). Los que no se leyeron quedan. */
+export const READ_NOTICE_KEEP_DAYS = 180;
+
+/**
+ * Avisos que no se borran aunque estén leídos y sean viejos: los de algo que ya venció
+ * ("Venció la VTV de …", "Terminó el convenio …"). Sirven para no volver a avisarlo mientras no se renueve.
+ */
+export const KEEP_NOTICE_TITLE_PREFIXES = ["Venció ", "Terminó "];
+
+/** Desde cuándo se guardan los avisos leídos: los anteriores se borran. */
+export const readNoticesCutoff = (now: Date) => new Date(now.getTime() - READ_NOTICE_KEEP_DAYS * 86_400_000);
+
+/** Si un aviso leído y viejo se puede borrar. */
+export function isOldReadNoticeDeletable(n: { read: boolean; createdAt: Date; title: string }, now: Date): boolean {
+  if (!n.read) return false;
+  if (n.createdAt >= readNoticesCutoff(now)) return false;
+  return !KEEP_NOTICE_TITLE_PREFIXES.some((p) => n.title.startsWith(p));
+}

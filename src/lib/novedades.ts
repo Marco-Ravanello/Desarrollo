@@ -16,6 +16,16 @@ export interface Novedad {
 export const NOVEDADES: Novedad[] = [
   {
     fecha: "2026-11-12",
+    parte: 2,
+    titulo: "Intervenciones hechas entre varios",
+    cambios: [
+      "Al cargar una intervención en el expediente, en \"Fue con\" podés sumar a quienes fueron con vos (hasta 4). Se ve en la historia del expediente y de la persona.",
+      "En Carga del equipo hay una columna nueva con las intervenciones de los últimos 30 días de cada profesional. Una intervención hecha entre varios cuenta para cada uno.",
+      "Los avisos de la campanita que ya leíste se borran solos a los 6 meses. Los que no leíste quedan.",
+    ],
+  },
+  {
+    fecha: "2026-11-12",
     titulo: "Editar el expediente y ver quién está de licencia",
     cambios: [
       "En el expediente, \"Más acciones\" tiene \"Editar expediente\": podés cambiar la prioridad y corregir la carátula o la descripción. Lo que cambia queda en la historia, con quién lo cambió y la descripción anterior.",

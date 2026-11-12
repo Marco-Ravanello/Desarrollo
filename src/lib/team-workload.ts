@@ -16,6 +16,10 @@ export type WorkloadMember = {
   stale: number;
   /** Expedientes que le asignaron en los últimos 7 días. */
   recent: number;
+  /** Intervenciones en expedientes del área en los últimos 30 días, cargadas o acompañadas (idea 124). */
+  done?: number;
+  /** De esas, cuántas hizo junto con otros profesionales. */
+  doneShared?: number;
   /** "De licencia hasta el 20/11" si hoy está fuera según su legajo de RRHH (idea 127); null si no. */
   away?: string | null;
 };
@@ -60,4 +64,25 @@ export function suggestAssignee<T extends { id: string; name: string; role: Role
 /** Quienes están de licencia hoy y tienen expedientes sin cerrar a cargo: para avisar y repartirlos (idea 127). */
 export function awayWithCases(rows: WorkloadMember[]): WorkloadMember[] {
   return rows.filter((r) => r.away && r.open > 0).sort((a, b) => b.urgent - a.urgent || b.open - a.open);
+}
+
+export const DONE_DAYS = 30;
+
+/**
+ * Cuántas intervenciones cuentan para cada profesional: las que cargó y aquellas en las que fue
+ * con quien la cargó (idea 124). "shared" son las que hizo junto con alguien más.
+ */
+export function tallyInterventions(rows: { userId: string; withUserIds: string[] | null }[]): Map<string, { total: number; shared: number }> {
+  const out = new Map<string, { total: number; shared: number }>();
+  for (const r of rows) {
+    const people = Array.from(new Set([r.userId, ...(r.withUserIds ?? [])].filter(Boolean)));
+    const shared = people.length > 1;
+    for (const id of people) {
+      const t = out.get(id) ?? { total: 0, shared: 0 };
+      t.total += 1;
+      if (shared) t.shared += 1;
+      out.set(id, t);
+    }
+  }
+  return out;
 }

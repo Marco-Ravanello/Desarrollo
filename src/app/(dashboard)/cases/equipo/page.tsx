@@ -87,7 +87,7 @@ export default async function TeamWorkloadPage({ searchParams }: { searchParams:
       />
       <PageHeader
         title="Carga del equipo"
-        description={`Cuántos expedientes sin cerrar tiene cada profesional de ${areaLabel}, para repartir mejor. Tocá un número para ver esos expedientes.`}
+        description={`Cuántos expedientes sin cerrar tiene cada profesional de ${areaLabel}, para repartir mejor. Tocá un número para ver esos expedientes. Una intervención hecha entre varios cuenta para cada uno.`}
         icon={UsersRound}
         actions={
           <div className="flex items-center gap-2">
@@ -162,13 +162,13 @@ export default async function TeamWorkloadPage({ searchParams }: { searchParams:
                 href={casesHref({ assigned: r.userId })}
                 leading={<InitialsAvatar name={r.name} seed={r.userId} size="sm" />}
                 title={r.name}
-                subtitle={`${plural(r.open, "sin cerrar", "sin cerrar")} · ${plural(r.urgent, "urgente")}`}
+                subtitle={`${plural(r.open, "sin cerrar", "sin cerrar")} · ${plural(r.urgent, "urgente")} · ${plural(r.done ?? 0, "intervención", "intervenciones")} en 30 días`}
                 meta={r.away ?? (r.stale > 0 ? `${plural(r.stale, "sin movimiento", "sin movimiento")}` : !r.member ? "De otra área" : undefined)}
               />
             ))}
           </MobileList>
           <div className="hidden overflow-x-auto md:block">
-            <table className="w-full min-w-[40rem] text-sm">
+            <table className="w-full min-w-[48rem] text-sm">
               <thead className="bg-muted/40 border-b border-border/60">
                 <tr className="border-b border-border/60 text-left text-xs text-muted-foreground">
                   <th className="h-11 px-4 text-left align-middle text-xs font-semibold text-muted-foreground whitespace-nowrap">Profesional</th>
@@ -176,6 +176,7 @@ export default async function TeamWorkloadPage({ searchParams }: { searchParams:
                   <th className="h-11 px-4 align-middle text-xs font-semibold text-muted-foreground whitespace-nowrap text-right">Urgentes</th>
                   <th className="h-11 px-4 align-middle text-xs font-semibold text-muted-foreground whitespace-nowrap text-right">Sin movimiento</th>
                   <th className="h-11 px-4 align-middle text-xs font-semibold text-muted-foreground whitespace-nowrap text-right">Nuevos (7 días)</th>
+                  <th className="h-11 px-4 align-middle text-xs font-semibold text-muted-foreground whitespace-nowrap text-right">Intervenciones (30 días)</th>
                 </tr>
               </thead>
               <tbody>
@@ -207,6 +208,12 @@ export default async function TeamWorkloadPage({ searchParams }: { searchParams:
                     <td className="px-4 py-3 align-middle text-right tabular-nums">{countLink(r.urgent, casesHref({ assigned: r.userId, priority: "URGENTE", status: "ACTIVOS" }))}</td>
                     <td className="px-4 py-3 align-middle text-right tabular-nums">{countLink(r.stale, casesHref({ assigned: r.userId, quiet: "1" }), true)}</td>
                     <td className="px-4 py-3 align-middle text-right tabular-nums">{r.recent === 0 ? <span className="text-muted-foreground">0</span> : formatNumber(r.recent)}</td>
+                    <td className="px-4 py-3 align-middle text-right tabular-nums">
+                      {(r.done ?? 0) === 0 ? <span className="text-muted-foreground">0</span> : formatNumber(r.done ?? 0)}
+                      {(r.doneShared ?? 0) > 0 && (
+                        <span className="block text-xs text-muted-foreground">{plural(r.doneShared ?? 0, "en equipo", "en equipo")}</span>
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>

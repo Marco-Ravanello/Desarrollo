@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { History, Loader2, Pencil, User } from "lucide-react";
+import { History, Loader2, Pencil, User, Users } from "lucide-react";
+import { companionsText } from "@/lib/intervention-companions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -97,6 +98,11 @@ export function InterventionItem({ row }: { row: InterventionRow }) {
             {row.author && (
               <span className="flex items-center gap-1 text-xs font-semibold text-muted-foreground">
                 <User className="h-3 w-3" /> {row.author}
+              </span>
+            )}
+            {row.withNames?.length > 0 && (
+              <span className="flex items-center gap-1 text-xs font-semibold text-muted-foreground">
+                <Users className="h-3 w-3" /> {companionsText(row.withNames)}
               </span>
             )}
             {row.editedAt && (
