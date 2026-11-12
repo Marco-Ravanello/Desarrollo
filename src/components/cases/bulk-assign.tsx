@@ -78,7 +78,7 @@ export function BulkSelectAll({ ids }: { ids: string[] }) {
   );
 }
 
-type Person = { id: string; name: string; open: number };
+type Person = { id: string; name: string; open: number; away?: string | null };
 
 /** La barra de abajo: cuántos están elegidos, a quién se asignan y el botón. */
 export function BulkAssignBar({ people, areaLabel }: { people: Person[]; areaLabel: string }) {
@@ -125,7 +125,7 @@ export function BulkAssignBar({ people, areaLabel }: { people: Person[]; areaLab
           <option value="">Dejar a cargo de…</option>
           {people.map((p) => (
             <option key={p.id} value={p.id}>
-              {p.name} · {p.open === 0 ? "ningún abierto" : plural(p.open, "abierto")}
+              {p.name} · {p.open === 0 ? "ningún abierto" : plural(p.open, "abierto")}{p.away ? ` · ${p.away.toLowerCase()}` : ""}
             </option>
           ))}
         </select>

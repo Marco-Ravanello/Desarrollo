@@ -55,11 +55,14 @@ const grid = "grid gap-x-6 gap-y-4 sm:grid-cols-2";
 export function HRRecordView({
   agent,
   leaves,
+  account,
   leaveKind,
   pendingReturn,
 }: {
   agent: Agent;
   leaves?: ReactNode;
+  /** Con qué usuario de la app está unido el legajo (idea 127). */
+  account?: ReactNode;
   /** El tipo de la licencia que explica la situación de hoy ("Duelo", "Vacaciones"…). */
   leaveKind?: string | null;
   pendingReturn?: boolean;
@@ -143,6 +146,8 @@ export function HRRecordView({
               {away && leaveKind && <Item label="Tipo de licencia">{leaveKind}</Item>}
             </dl>
           </FormSection>
+
+          {account}
         </div>
       </div>
 

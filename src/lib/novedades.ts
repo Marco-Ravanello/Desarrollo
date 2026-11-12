@@ -15,6 +15,15 @@ export interface Novedad {
 
 export const NOVEDADES: Novedad[] = [
   {
+    fecha: "2026-11-12",
+    titulo: "Editar el expediente y ver quién está de licencia",
+    cambios: [
+      "En el expediente, \"Más acciones\" tiene \"Editar expediente\": podés cambiar la prioridad y corregir la carátula o la descripción. Lo que cambia queda en la historia, con quién lo cambió y la descripción anterior.",
+      "En el legajo de Recursos Humanos se puede unir a la persona con su usuario de la app. Así, si está de licencia o de vacaciones, se ve al asignar expedientes, en el expediente y en Carga del equipo, que además propone a quién pasarle lo suyo. No se muestra el tipo de licencia.",
+      "La campanita de avisos ahora consulta solo mientras la pestaña está a la vista, y revisa seguimientos y vencimientos cada media hora. La app queda más liviana con muchas pestañas abiertas.",
+    ],
+  },
+  {
     fecha: "2026-11-06",
     parte: 2,
     titulo: "Buscar sin tildes, pedir clave al ingresar y menos botones arriba",

@@ -16,11 +16,14 @@ import { PrintButton } from "@/components/ui/print-layout";
 import { PageBreadcrumbs } from "@/components/layout/breadcrumbs-context";
 import { HRRecordView } from "../view-hr-detail";
 import { LeavesSection } from "./leaves-section";
+import { AccountLinkSection } from "./account-link-section";
+import { getLinkOptions } from "@/services/staff-away";
 import { getCurrentLeave, getLeavesFor, syncLeaveStatuses } from "@/services/hr-leaves";
 import { isAwayStatus } from "@/lib/hr-labels";
 import { BackFromLeaveButton } from "@/components/dashboard/back-from-leave-button";
 import { dateToDay, leaveKindLabel, yearSummary } from "@/lib/hr-leaves";
 import { diaAR } from "@/lib/fechas";
+import prisma from "@/lib/prisma";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -39,6 +42,10 @@ export default async function AgentPage({ params }: { params: Promise<{ id: stri
   const today = diaAR();
   const year = Number(today.slice(0, 4));
   const canEdit = canEditHR(session.user.role);
+  const link = canEdit ? await getLinkOptions(agent) : null;
+  const linkedOption = !canEdit && agent.userId
+    ? await prisma.user.findUnique({ where: { id: agent.userId }, select: { id: true, name: true, username: true } })
+    : null;
   // Terminó la licencia y todavía figura ausente: falta confirmar que volvió.
   const pendingReturn = Boolean(isAwayStatus(agent.status) && agent.statusUntil && dateToDay(agent.statusUntil) < today);
 
@@ -90,6 +97,18 @@ export default async function AgentPage({ params }: { params: Promise<{ id: stri
         agent={{ ...agent, salary: agent.salary ? Number(agent.salary) : null }}
         leaveKind={isAwayStatus(agent.status) && currentLeave ? leaveKindLabel(currentLeave.kind) : null}
         pendingReturn={pendingReturn}
+        account={
+          <AccountLinkSection
+            agentId={agent.id}
+            linkedUserId={agent.userId ?? null}
+            options={
+              link?.options ??
+              (linkedOption ? [{ id: linkedOption.id, name: linkedOption.name || linkedOption.username || "Usuario", detail: "", linkedTo: null }] : [])
+            }
+            suggestedId={link?.suggestedId ?? null}
+            canEdit={canEdit}
+          />
+        }
         leaves={
           <LeavesSection
             agentId={agent.id}

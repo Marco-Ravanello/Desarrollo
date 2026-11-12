@@ -37,6 +37,10 @@ model User {
   welcomeSeenAt           DateTime?
   /// Conversaciones con el Asistente de IA (se borran solas a los 10 días de la última pregunta).
   aiConversations         AssistantConversation[]
+  /// Su legajo de Recursos Humanos, si se unió (para saber si está de licencia al asignarle expedientes).
+  hrRecord                HRRecord?
+  /// Última vez que la campanita revisó seguimientos y vencimientos para esta persona (se hace cada 30 minutos como mucho).
+  noticesCheckedAt        DateTime?
   createdAt               DateTime                @default(now())
   updatedAt               DateTime                @updatedAt
 }
@@ -575,6 +579,9 @@ model HRRecord {
   emergencyContactName  String?
   emergencyContactPhone String?
   leaves                HRLeave[]
+  /// La cuenta de la app de esta persona, si tiene una (idea 127).
+  userId                String?      @unique
+  user                  User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
   createdAt             DateTime     @default(now())
 }
 
@@ -623,6 +630,9 @@ model Notification {
   read      Boolean  @default(false)
   link      String?
   createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([userId, read])
 }
 
 model Task {

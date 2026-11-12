@@ -14,10 +14,10 @@ import { suggestAssignee } from "@/lib/team-workload";
 import { plural } from "@/lib/formato";
 import type { Role } from "@prisma/client";
 
-type Option = { id: string; name: string; sameArea: boolean; role: Role; open: number };
+type Option = { id: string; name: string; sameArea: boolean; role: Role; open: number; away?: string | null };
 
 const optionLabel = (o: Option, currentUserId: string) =>
-  `${o.name}${o.id === currentUserId ? " (vos)" : ""} · ${o.open === 0 ? "ningún expediente" : plural(o.open, "abierto")}`;
+  `${o.name}${o.id === currentUserId ? " (vos)" : ""} · ${o.open === 0 ? "ningún expediente" : plural(o.open, "abierto")}${o.away ? ` · ${o.away.toLowerCase()}` : ""}`;
 
 const selectClass =
   "flex h-10 w-full rounded-xl border border-border/60 bg-muted/30 px-3 py-2 text-xs font-bold text-foreground focus:outline-none focus:ring-2 focus:ring-primary";
@@ -121,6 +121,14 @@ export function AssignCaseControl({
                 </optgroup>
               )}
             </select>
+            {(() => {
+              const chosen = options.find((o) => o.id === selected);
+              return chosen?.away ? (
+                <p className="text-xs font-semibold text-amber-800 dark:text-amber-300">
+                  {chosen.name} está {chosen.away.replace(/^De/, "de")}. Va a ver el aviso cuando vuelva.
+                </p>
+              ) : null;
+            })()}
             {suggested && selected !== suggested.id && (
               <p className="text-xs text-muted-foreground">
                 Con menos expedientes abiertos en el área: <span className="font-semibold text-foreground">{suggested.name}</span>{" "}

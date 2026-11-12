@@ -5,6 +5,8 @@ import { summarizeCase } from "@/lib/case-summary";
 import { sortByLoad, type WorkloadMember } from "@/lib/team-workload";
 import { dashboardCaseWhere, staleCaseWhere, type DashboardScope } from "@/services/dashboard";
 import { URGENT_OPEN_CASE_WHERE } from "@/lib/case-urgency";
+import { getAwayByUserIds } from "@/services/staff-away";
+import { awayText } from "@/lib/staff-away";
 
 // Carga del equipo de un área: cuántos expedientes tiene cada profesional y cuáles esperan a alguien.
 
@@ -53,6 +55,7 @@ export async function getTeamWorkload(scope: Scope, now = new Date()) {
       })
     : [];
 
+  const away = await getAwayByUserIds([...members, ...extra].map((u) => u.id), now);
   const rows: WorkloadMember[] = [...members, ...extra].map((u) => ({
     userId: u.id,
     name: u.name || u.username || "Sin nombre",
@@ -63,6 +66,7 @@ export async function getTeamWorkload(scope: Scope, now = new Date()) {
     urgent: count(urgent, u.id),
     stale: count(stale, u.id),
     recent: count(recent, u.id),
+    away: away.has(u.id) ? awayText(away.get(u.id)!) : null,
   }));
 
   const total = (rows: { _count: { _all: number } }[]) => rows.reduce((a, r) => a + r._count._all, 0);

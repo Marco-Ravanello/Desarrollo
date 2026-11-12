@@ -551,7 +551,7 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
       {bulkEnabled && bulkAreaObj && (
         <BulkAssignBar
           areaLabel={getAreaShortName(bulkAreaObj.name)}
-          people={bulkPeople.map((p) => ({ id: p.id, name: p.name, open: p.open }))}
+          people={bulkPeople.map((p) => ({ id: p.id, name: p.name, open: p.open, away: p.away }))}
         />
       )}
       </MaybeBulk>

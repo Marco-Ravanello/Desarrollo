@@ -1,12 +1,13 @@
 import prisma from "@/lib/prisma";
 import type { DerivationRow } from "@/services/derivations";
 import { reasonFromDetails } from "@/lib/case-closing";
+import { caseEditTitle, splitCaseEditDetails } from "@/lib/case-edit";
 
 // Movimientos de un expediente que no son intervenciones (apertura, derivaciones
 // y sus respuestas, cambios de profesional a cargo, seguimientos agendados, etiquetas, cierre y reapertura), para mostrarlos junto con las intervenciones en
 // una sola línea de tiempo.
 
-export type CaseEventKind = "APERTURA" | "CIERRE" | "REAPERTURA" | "DERIVACION" | "RESPUESTA" | "ASIGNACION" | "SEGUIMIENTO" | "ETIQUETAS";
+export type CaseEventKind = "APERTURA" | "CIERRE" | "REAPERTURA" | "DERIVACION" | "RESPUESTA" | "ASIGNACION" | "SEGUIMIENTO" | "ETIQUETAS" | "EDICION";
 
 export type CaseEvent = {
   id: string;
@@ -17,6 +18,8 @@ export type CaseEvent = {
   author: string | null;
   /** Cómo terminó una derivación (para el color). */
   outcome?: "PENDIENTE" | "ACEPTADA" | "RECHAZADA";
+  /** En una corrección del expediente: cómo decía la descripción antes. */
+  previousDescription?: string | null;
 };
 
 export async function getCaseEvents(
@@ -24,7 +27,7 @@ export async function getCaseEvents(
   derivations: DerivationRow[]
 ): Promise<CaseEvent[]> {
   const logs = await prisma.auditLog.findMany({
-    where: { entity: "Case", entityId: caseItem.id, action: { in: ["CREATE_CASE", "CLOSE_CASE", "REOPEN_CASE", "ASSIGN_CASE", "SCHEDULE_FOLLOW_UP", "CASE_LABELS"] } },
+    where: { entity: "Case", entityId: caseItem.id, action: { in: ["CREATE_CASE", "CLOSE_CASE", "REOPEN_CASE", "ASSIGN_CASE", "SCHEDULE_FOLLOW_UP", "CASE_LABELS", "CASE_EDIT"] } },
     orderBy: { createdAt: "asc" },
     select: { id: true, action: true, userId: true, createdAt: true, details: true },
   });
@@ -118,6 +121,22 @@ export async function getCaseEvents(
       date: l.createdAt.toISOString(),
       title: "Cambió las etiquetas",
       detail: l.details || null,
+      author: nameOf(l.userId),
+    });
+  }
+
+  // Correcciones de carátula, descripción o prioridad (idea 121).
+  for (const l of logs.filter((l) => l.action === "CASE_EDIT")) {
+    const { summary, previousDescription } = splitCaseEditDetails(l.details);
+    const title = caseEditTitle(summary);
+    const onlyPriority = title.startsWith("Cambió la prioridad");
+    events.push({
+      id: `edic-${l.id}`,
+      kind: "EDICION",
+      date: l.createdAt.toISOString(),
+      title,
+      detail: onlyPriority ? null : summary || null,
+      previousDescription,
       author: nameOf(l.userId),
     });
   }
