@@ -1,18 +1,36 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Download, Upload, FileDown, FileSpreadsheet, Loader2, AlertCircle, CheckCircle2, HandHeart } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
 import * as XLSX from "xlsx";
-import { exportInterventionsAction, getImportAreasAction, importInterventionsAction } from "./actions";
+import { exportInterventionsAction, getExportAreasAction, getImportAreasAction, importInterventionsAction } from "./actions";
+import { exportPresets } from "@/lib/intervention-export";
+import { diaAR } from "@/lib/fechas";
+import { getAreaShortName } from "@/lib/area-theme";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
 import { buildImportTemplate } from "@/lib/intervention-import";
 import { toast } from "sonner";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 export default function InterventionsAdminPage() {
   const [exporting, setExporting] = useState(false);
+  // Qué bajar: un período (este mes, de entrada) y, si se quiere, un área (idea 135).
+  const today = useMemo(() => diaAR(), []);
+  const presets = useMemo(() => exportPresets(today), [today]);
+  const [desde, setDesde] = useState(presets[0].range.desde);
+  const [hasta, setHasta] = useState(presets[0].range.hasta);
+  const [areaId, setAreaId] = useState("");
+  const [areas, setAreas] = useState<{ id: string; name: string }[]>([]);
+  useEffect(() => {
+    getExportAreasAction()
+      .then((res) => res.success && setAreas(res.areas))
+      .catch(() => {});
+  }, []);
   const [preparingTemplate, setPreparingTemplate] = useState(false);
   const [importing, setImporting] = useState(false);
   const [results, setResults] = useState<{ createdCount: number, errors: string[] } | null>(null);
@@ -20,7 +38,7 @@ export default function InterventionsAdminPage() {
   const handleExport = async () => {
     setExporting(true);
     try {
-      const result = await exportInterventionsAction();
+      const result = await exportInterventionsAction({ desde, hasta, areaId: areaId || null });
       if (!result.success) {
         toast.error(result.error);
         return;
@@ -28,8 +46,16 @@ export default function InterventionsAdminPage() {
       const worksheet = XLSX.utils.json_to_sheet(result.rows);
       const workbook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(workbook, worksheet, "Intervenciones");
-      XLSX.writeFile(workbook, `Intervenciones_Municipal_${new Date().toISOString().split('T')[0]}.xlsx`);
-      toast.success(result.rows.length === 1 ? "Listo, se bajó 1 intervención." : `Listo, se bajaron ${result.rows.length.toLocaleString("es-AR")} intervenciones.`);
+      if (result.rows.length === 0) {
+        toast.info(`No hay intervenciones ${result.scopeText}.`);
+        return;
+      }
+      XLSX.writeFile(workbook, result.fileName);
+      toast.success(
+        result.rows.length === 1
+          ? `Listo, se bajó 1 intervención ${result.scopeText}.`
+          : `Listo, se bajaron ${result.rows.length.toLocaleString("es-AR")} intervenciones ${result.scopeText}.`
+      );
     } catch {
       toast.error("No se pudo exportar. Revisá la conexión y probá de nuevo.");
     } finally {
@@ -152,10 +178,56 @@ export default function InterventionsAdminPage() {
               <Download className="h-5 w-5 text-emerald-700 dark:text-emerald-400" />
             </div>
             <CardTitle>Bajar las intervenciones cargadas</CardTitle>
-            <CardDescription>Todas las intervenciones de la app en una planilla de Excel. La descarga queda anotada en Auditoría.</CardDescription>
+            <CardDescription>Las de un período y, si querés, de un área, en una planilla de Excel. La descarga queda anotada en Auditoría.</CardDescription>
           </CardHeader>
-          <CardContent>
-            <Button variant="outline" onClick={handleExport} disabled={exporting} className="w-full rounded-xl">
+          <CardContent className="space-y-4">
+            <div className="flex flex-wrap gap-1.5" role="group" aria-label="Períodos rápidos">
+              {presets.map((p) => {
+                const on = p.range.desde === desde && p.range.hasta === hasta;
+                return (
+                  <button
+                    key={p.key}
+                    type="button"
+                    aria-pressed={on}
+                    onClick={() => {
+                      setDesde(p.range.desde);
+                      setHasta(p.range.hasta);
+                    }}
+                    className={cn(
+                      "rounded-full border px-3 py-1 text-xs font-semibold transition-colors",
+                      on ? "border-primary bg-primary text-primary-foreground" : "border-border/60 text-muted-foreground hover:border-primary/40 hover:text-foreground"
+                    )}
+                  >
+                    {p.label}
+                  </button>
+                );
+              })}
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="space-y-1.5">
+                <Label htmlFor="export-desde" className="text-xs font-bold">Desde</Label>
+                <Input id="export-desde" type="date" value={desde} max={today} onChange={(e) => setDesde(e.target.value)} className="rounded-xl" />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="export-hasta" className="text-xs font-bold">Hasta</Label>
+                <Input id="export-hasta" type="date" value={hasta} max={today} onChange={(e) => setHasta(e.target.value)} className="rounded-xl" />
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="export-area" className="text-xs font-bold">Área</Label>
+              <select
+                id="export-area"
+                value={areaId}
+                onChange={(e) => setAreaId(e.target.value)}
+                className="h-10 w-full rounded-xl border border-input bg-background px-3 text-sm"
+              >
+                <option value="">Todas las áreas</option>
+                {areas.map((a) => (
+                  <option key={a.id} value={a.id}>{getAreaShortName(a.name)}</option>
+                ))}
+              </select>
+            </div>
+            <Button variant="outline" onClick={handleExport} disabled={exporting || !desde || !hasta} className="w-full rounded-xl">
               {exporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileSpreadsheet className="mr-2 h-4 w-4" />}
               Bajar intervenciones a Excel
             </Button>

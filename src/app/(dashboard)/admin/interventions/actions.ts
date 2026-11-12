@@ -5,10 +5,18 @@ import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
 import { actionErrorMessage } from "@/lib/action-error";
 import { ensurePersonInPrisma } from "@/services/people";
-import { MANAGEMENT_ROLES } from "@/lib/permissions";
-import { formatFecha } from "@/lib/fechas";
+import { MANAGEMENT_ROLES, PERMISSIONS, hasPermission } from "@/lib/permissions";
+import { diaAR, formatFecha } from "@/lib/fechas";
+import type { Prisma } from "@prisma/client";
+import { isSensitiveArea } from "@/lib/sensitive-areas";
+import { interventionTypeLabel } from "@/lib/intervention-types";
+import { EXPORT_MAX_ROWS, checkExportRange, exportFileName, exportRangeText } from "@/lib/intervention-export";
 
-export async function exportInterventionsAction() {
+/**
+ * Baja las intervenciones de un período y, si se elige, de un área (idea 135). Antes se bajaban todas juntas.
+ * Los expedientes de Violencia de Género solo salen para quien puede verlos.
+ */
+export async function exportInterventionsAction(input: { desde?: string; hasta?: string; areaId?: string | null }) {
   const session = await auth();
   if (!session?.user?.id) {
     return { success: false as const, error: "Tu sesión expiró. Volvé a iniciar sesión." };
@@ -18,41 +26,86 @@ export async function exportInterventionsAction() {
   if (role !== "SUPERADMIN" && role !== "ADMIN_GENERAL" && role !== "DIRECCION_GENERAL") {
     return { success: false as const, error: "No se pudo exportar: tu rol no tiene permiso para exportar intervenciones." };
   }
+  const range = checkExportRange(input ?? {}, diaAR());
+  if (!range.ok) return { success: false as const, error: range.error };
+  const canViewSensitive = hasPermission(role, PERMISSIONS.VIEW_SENSITIVE_CASES);
 
   try {
+    let area: { id: string; name: string } | null = null;
+    if (input.areaId) {
+      area = await prisma.area.findUnique({ where: { id: input.areaId }, select: { id: true, name: true } });
+      if (!area || (!canViewSensitive && isSensitiveArea(area.name))) return { success: false as const, error: "No se encontró esa área." };
+    }
+    const where: Prisma.InterventionWhereInput = {
+      date: { gte: range.from, lt: range.toExclusive },
+      case: area
+        ? { areaId: area.id }
+        : canViewSensitive
+          ? {}
+          : { NOT: { area: { name: { contains: "violencia", mode: "insensitive" } } } },
+    };
+    const total = await prisma.intervention.count({ where });
+    if (total > EXPORT_MAX_ROWS) {
+      return {
+        success: false as const,
+        error: `Son ${total.toLocaleString("es-AR")} intervenciones: elegí un período más corto o un área (hasta ${EXPORT_MAX_ROWS.toLocaleString("es-AR")} por planilla).`,
+      };
+    }
     const interventions = await prisma.intervention.findMany({
-      include: {
-        person: true,
-        case: {
-          include: { area: true }
-        }
+      where,
+      select: {
+        date: true,
+        description: true,
+        type: true,
+        userId: true,
+        withUserIds: true,
+        person: { select: { firstName: true, lastName: true, dni: true } },
+        case: { select: { title: true, area: { select: { name: true } } } },
       },
-      orderBy: { date: 'desc' }
+      orderBy: { date: "desc" },
     });
+    const userIds = Array.from(new Set(interventions.flatMap((i) => [i.userId, ...i.withUserIds])));
+    const users = userIds.length
+      ? await prisma.user.findMany({ where: { id: { in: userIds } }, select: { id: true, name: true, username: true } })
+      : [];
+    const userName = new Map(users.map((u) => [u.id, u.name || u.username || ""]));
 
+    const scopeText = exportRangeText(range, area?.name);
     await prisma.auditLog.create({
       data: {
         userId: session.user.id,
-        action: 'EXPORT_INTERVENTIONS',
-        entity: 'Intervention',
-        entityId: 'ALL',
-        details: `Exportación masiva de ${interventions.length} registros de intervenciones sociales`
-      }
+        action: "EXPORT_INTERVENTIONS",
+        entity: "Intervention",
+        entityId: area?.id ?? "ALL",
+        details: `Descargó ${interventions.length} intervenciones ${scopeText}.`,
+      },
     });
 
-    const rows = interventions.map(i => ({
+    const rows = interventions.map((i) => ({
       Fecha: formatFecha(i.date),
       Persona: `${i.person.lastName}, ${i.person.firstName}`,
       DNI: i.person.dni,
       Area: i.case.area.name,
       Caso: i.case.title,
-      Descripcion: i.description
+      Tipo: interventionTypeLabel(i.type) ?? "",
+      Profesional: userName.get(i.userId) ?? "",
+      "Fue con": i.withUserIds.map((id) => userName.get(id)).filter(Boolean).join(", "),
+      Descripcion: i.description,
     }));
-    return { success: true as const, rows };
+    return { success: true as const, rows, fileName: exportFileName(range, area?.name), scopeText };
   } catch (error) {
     console.error("Error en exportInterventionsAction:", error);
     return { success: false as const, error: actionErrorMessage(error, "No se pudo exportar") };
   }
+}
+
+/** Áreas para elegir qué intervenciones bajar (sin Violencia de Género para quien no puede verlas). */
+export async function getExportAreasAction() {
+  const session = await auth();
+  if (!session?.user?.id) return { success: false as const, error: "Tu sesión expiró. Volvé a iniciar sesión." };
+  const canViewSensitive = hasPermission(session.user.role, PERMISSIONS.VIEW_SENSITIVE_CASES);
+  const areas = await prisma.area.findMany({ select: { id: true, name: true }, orderBy: { name: "asc" } });
+  return { success: true as const, areas: areas.filter((a) => canViewSensitive || !isSensitiveArea(a.name)), today: diaAR() };
 }
 
 /** Nombres de las áreas, para la hoja "Áreas" de la planilla modelo. */
